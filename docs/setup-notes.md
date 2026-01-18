@@ -80,3 +80,7 @@ non-interactive updates:
 
 ## Decision Log
 - Summary of key choices: `docs/decision-log.md`
+
+## Quality + Multi-Agent
+- Playbook: `docs/quality-playbook.md`
+- Runner config: `docs/multi-agent-runner.md`

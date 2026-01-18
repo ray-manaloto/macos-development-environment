@@ -9,7 +9,9 @@ setup: |
   curl https://mise.run | sh
   export PATH="$HOME/.local/bin:$PATH"
   mise use python@3.12
-  pip install langchain langgraph deepagents
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  export PATH="$HOME/.local/bin:$PATH"
+  uv pip install langchain langgraph deepagents
 
 run: |
   echo "Running agent workload"

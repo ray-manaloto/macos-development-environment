@@ -28,6 +28,13 @@ install_tmux() {
 }
 
 install_skypilot() {
+  if ! command -v uv >/dev/null 2>&1; then
+    if command -v curl >/dev/null 2>&1; then
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+      export PATH="$HOME/.local/bin:$PATH"
+    fi
+  fi
+
   if command -v uv >/dev/null 2>&1; then
     uv tool install --upgrade "skypilot[aws]"
     return 0

@@ -30,6 +30,9 @@ Example commands:
 - `sky status`
 - `sky down agent-cluster`
 
+Template notes:
+- Uses `uv` for Python package installs on the remote host.
+
 ## Aliases (oh-my-zsh)
 These are provided in `~/.oh-my-zsh/custom/aliases.zsh`:
 - `cloud-run`

@@ -42,9 +42,13 @@ troubleshoot runs.
 - `docs/ide-integrations.md`
 - `docs/tmux-cloud-workflow.md`
 - `docs/decision-log.md`
+- `docs/quality-playbook.md`
+- `docs/multi-agent-runner.md`
 
 ## Scripts
 - `scripts/install-langchain-cli-tools.sh`
 - `scripts/install-agent-stack.sh`
 - `scripts/optimize-tmux.sh`
 - `scripts/agent-hud`
+- `scripts/quality-checks.sh`
+- `scripts/run-multi-agent.sh`

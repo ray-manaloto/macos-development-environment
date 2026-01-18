@@ -11,7 +11,7 @@ if ! tmux has-session -t "$SESSION" 2>/dev/null; then
   tmux split-window -h -p 40 -c "#{pane_current_path}"
   tmux send-keys -t "$SESSION:2.2" "langgraph dev" C-m
   tmux split-window -v -c "#{pane_current_path}"
-  tmux send-keys -t "$SESSION:2.3" "langsmith-fetch --help" C-m
+  tmux send-keys -t "$SESSION:2.3" "echo 'Set RUN_ID then: langsmith-fetch run <RUN_ID>'" C-m
   tmux select-pane -t "$SESSION:2.1"
   tmux send-keys -t "$SESSION:2.1" "echo 'Ready: claude, codex, opencode...'" C-m
 
