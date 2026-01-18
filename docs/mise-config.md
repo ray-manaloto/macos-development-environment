@@ -1,7 +1,8 @@
 # mise Configuration
 
-This project assumes `mise` is the runtime source of truth. Use a global
-config to pin runtimes and expose shared environment variables.
+This project assumes `mise` is the runtime source of truth for Python, Node,
+and Bun. pixi and uv are installed via their official installers when
+missing, because their mise plugins are not consistently maintained.
 
 ## Example
 
@@ -12,8 +13,6 @@ Create `~/.config/mise/config.toml`:
 python = "latest"
 node = "latest"
 bun = "latest"
-uv = "latest"
-pixi = "latest"
 
 [env]
 # Identity
@@ -32,5 +31,5 @@ LANGCHAIN_API_KEY = "lsv2-..."
 
 ## Notes
 - Keep secrets out of Git repositories.
-- `mise` integrates best when its shims are early in `PATH`.
-- Prefer project-specific `.env` files for repo-scoped secrets.
+- Prefer per-project `.env` or `direnv` for repo-scoped secrets.
+- Ensure mise shims are early in `PATH` (handled in oh-my-zsh custom config).

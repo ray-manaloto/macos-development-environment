@@ -40,7 +40,10 @@ troubleshoot runs.
 - `docs/agent-stack.md`
 - `docs/mise-config.md`
 - `docs/ide-integrations.md`
+- `docs/tmux-cloud-workflow.md`
 
 ## Scripts
 - `scripts/install-langchain-cli-tools.sh`
 - `scripts/install-agent-stack.sh`
+- `scripts/optimize-tmux.sh`
+- `scripts/agent-hud`

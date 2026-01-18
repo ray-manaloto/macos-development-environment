@@ -4,7 +4,7 @@ This stack is a superset of LangChain tooling that includes general-purpose
 agent CLIs (Claude/Codex/OpenCode/Aider/etc.). It follows the preference
 order:
 
-- mise for runtimes
+- mise for runtimes (python/node/bun)
 - pixi for Python tools (fallback to uv, then pip)
 - bun for Node tools
 
@@ -43,6 +43,6 @@ Optional tools (when `INCLUDE_OPTIONAL=1`):
 - `fabric` (`go install github.com/danielmiessler/fabric@latest`)
 
 ## Notes
-- `mise` is the runtime source of truth. Keep `mise` shims early in `PATH`.
-- If pixi fails for a package (not in conda), the script falls back to `uv`.
+- `mise` is the runtime source of truth for Python/Node/Bun.
+- pixi and uv are installed via their official installers when missing.
 - For JS CLIs, bun installs the latest versions using `@latest`.

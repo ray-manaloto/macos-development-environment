@@ -20,9 +20,33 @@ ensure_mise() {
 }
 
 ensure_runtimes() {
-  mise install -q python@latest node@latest bun@latest uv@latest pixi@latest
-  mise use -g python@latest node@latest bun@latest uv@latest pixi@latest
+  mise install -q python@latest node@latest bun@latest
+  mise use -g python@latest node@latest bun@latest
   mise reshim
+}
+
+ensure_uv() {
+  if command -v uv >/dev/null 2>&1; then
+    uv self update >/dev/null 2>&1 || true
+    return 0
+  fi
+  if command -v curl >/dev/null 2>&1; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    return 0
+  fi
+  return 1
+}
+
+ensure_pixi() {
+  if command -v pixi >/dev/null 2>&1; then
+    pixi self-update >/dev/null 2>&1 || true
+    return 0
+  fi
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL https://pixi.sh/install.sh | bash
+    return 0
+  fi
+  return 1
 }
 
 install_python_tool() {
@@ -55,6 +79,8 @@ install_node_tool() {
 
 ensure_mise
 ensure_runtimes
+ensure_uv
+ensure_pixi
 
 PYTHON_TOOLS=(
   "langchain-cli"

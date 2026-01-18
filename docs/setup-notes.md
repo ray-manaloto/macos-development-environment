@@ -72,3 +72,8 @@ non-interactive updates:
 - Overview: `docs/agent-stack.md`
 - Install/update script: `scripts/install-agent-stack.sh`
 - mise guidance: `docs/mise-config.md`
+
+## Tmux + Cloud Workflow
+- Overview: `docs/tmux-cloud-workflow.md`
+- Install/update script: `scripts/optimize-tmux.sh`
+- Layout helper: `scripts/agent-hud`

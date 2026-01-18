@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SESSION="Agent-Control"
+
+if ! tmux has-session -t "$SESSION" 2>/dev/null; then
+  tmux new-session -d -s "$SESSION" -n "CODE"
+  tmux send-keys -t "$SESSION:1" "nvim ." C-m
+
+  tmux new-window -t "$SESSION" -n "BRAIN"
+  tmux split-window -h -p 40 -c "#{pane_current_path}"
+  tmux send-keys -t "$SESSION:2.2" "langgraph dev" C-m
+  tmux split-window -v -c "#{pane_current_path}"
+  tmux send-keys -t "$SESSION:2.3" "langsmith-fetch --help" C-m
+  tmux select-pane -t "$SESSION:2.1"
+  tmux send-keys -t "$SESSION:2.1" "echo 'Ready: claude, codex, opencode...'" C-m
+
+  tmux new-window -t "$SESSION" -n "CLOUD"
+  tmux send-keys -t "$SESSION:3" "watch -n 5 sky status" C-m
+
+  tmux select-window -t "$SESSION:1"
+fi
+
+tmux attach -t "$SESSION"

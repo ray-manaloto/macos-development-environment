@@ -1,0 +1,16 @@
+name: agent-burst-job
+resources:
+  cloud: aws
+  instance_type: m6i.xlarge
+  use_spot: true
+
+setup: |
+  echo "Setting up cloud environment"
+  curl https://mise.run | sh
+  export PATH="$HOME/.local/bin:$PATH"
+  mise use python@3.12
+  pip install langchain langgraph deepagents
+
+run: |
+  echo "Running agent workload"
+  python my_deep_research_agent.py
