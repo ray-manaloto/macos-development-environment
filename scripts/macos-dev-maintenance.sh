@@ -46,7 +46,8 @@ brew_has() {
 backup_dir() {
   local dir="$1"
   if [[ -d "$dir" ]]; then
-    local backup="${dir}.bak.$(date +%Y%m%d%H%M%S)"
+    local backup
+    backup="${dir}.bak.$(date +%Y%m%d%H%M%S)"
     mv "$dir" "$backup"
     log "Backed up $dir to $backup"
   fi
@@ -149,10 +150,10 @@ update_brew() {
   "$BREW" update || return 1
   "$BREW" upgrade --formula -v || return 1
 
-  local outdated_casks
-  outdated_casks=$("$BREW" outdated --cask | grep -v '^osquery$' || true)
-  if [[ -n "$outdated_casks" ]]; then
-    "$BREW" upgrade --cask -v $outdated_casks || return 1
+  local outdated_casks=()
+  mapfile -t outdated_casks < <("$BREW" outdated --cask | grep -v '^osquery$' || true)
+  if (( ${#outdated_casks[@]} > 0 )); then
+    "$BREW" upgrade --cask -v "${outdated_casks[@]}" || return 1
   fi
 
   return 0

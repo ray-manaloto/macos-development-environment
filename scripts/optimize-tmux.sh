@@ -61,7 +61,8 @@ install_tpm() {
 
 write_tmux_conf() {
   local conf="$HOME/.tmux.conf"
-  local backup="${conf}.bak.$(date +%Y%m%d%H%M%S)"
+  local backup
+  backup="${conf}.bak.$(date +%Y%m%d%H%M%S)"
   if [ -f "$conf" ]; then
     if [[ "$TMUX_FORCE_CONF" != "1" ]] && \
       ! grep -q "$MANAGED_MARKER" "$conf"; then

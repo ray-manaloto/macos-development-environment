@@ -22,7 +22,12 @@ run_shellcheck() {
     echo "shellcheck not installed; skipping"
     return 0
   fi
-  shellcheck -x $(list_scripts)
+  local scripts=()
+  mapfile -t scripts < <(list_scripts)
+  if (( ${#scripts[@]} == 0 )); then
+    return 0
+  fi
+  shellcheck -x "${scripts[@]}"
 }
 
 run_bash_syntax
