@@ -41,6 +41,7 @@ troubleshoot runs.
 - `docs/mise-config.md`
 - `docs/ide-integrations.md`
 - `docs/tmux-cloud-workflow.md`
+- `docs/decision-log.md`
 
 ## Scripts
 - `scripts/install-langchain-cli-tools.sh`

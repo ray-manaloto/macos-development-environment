@@ -77,3 +77,6 @@ non-interactive updates:
 - Overview: `docs/tmux-cloud-workflow.md`
 - Install/update script: `scripts/optimize-tmux.sh`
 - Layout helper: `scripts/agent-hud`
+
+## Decision Log
+- Summary of key choices: `docs/decision-log.md`
