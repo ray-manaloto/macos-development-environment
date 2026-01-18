@@ -69,6 +69,32 @@ Auto-fix actions:
 - Sync managed configs (`~/.oh-my-zsh/custom/*` and `~/.tmux.conf`).
 - Ensure tmux plugin manager (TPM) is installed.
 
+## Strict Cleanup (MDE_AUTOFIX_STRICT=1)
+Strict cleanup removes brew-managed runtimes (node, python, go, rust) once
+mise is available. Enable it only after confirming mise is installed and
+active.
+
+Pros:
+- Single runtime source of truth (mise) with consistent PATH resolution.
+- Fewer duplicate installs and version conflicts.
+- Centralized runtime upgrades via one tool.
+
+Cons:
+- Breaks scripts that hardcode brew runtime paths.
+- Removes brew-provided runtimes and their global packages.
+- `brew uninstall` may refuse if other formulae depend on those runtimes.
+
+Gotchas:
+- Verify `which node`, `which python`, `which go`, `which rustc` resolve to mise
+  shims before enabling strict cleanup.
+- Expect large downloads; run on reliable network/power.
+- Start a new shell session after cleanup to refresh PATH.
+
+Possible issues:
+- Brew upgrades can reintroduce runtimes as dependencies later.
+- CI or scripts that expect `/opt/homebrew/bin/*` will fail until updated.
+- If brew refuses uninstall due to dependencies, strict cleanup will be partial.
+
 ## Observability and Manual Runs
 - Start the job now:
   - `launchctl start com.ray-manaloto.macos-dev-maintenance`
