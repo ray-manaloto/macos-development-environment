@@ -37,6 +37,10 @@ troubleshoot runs.
 ## Docs
 - `docs/setup-notes.md`
 - `docs/langchain-cli-tools.md`
+- `docs/agent-stack.md`
+- `docs/mise-config.md`
+- `docs/ide-integrations.md`
 
 ## Scripts
 - `scripts/install-langchain-cli-tools.sh`
+- `scripts/install-agent-stack.sh`

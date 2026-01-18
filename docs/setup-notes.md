@@ -67,3 +67,8 @@ non-interactive updates:
 ## LangChain CLI Tooling
 - Inventory: `docs/langchain-cli-tools.md`
 - Install/update script: `scripts/install-langchain-cli-tools.sh`
+
+## AI Agent Stack
+- Overview: `docs/agent-stack.md`
+- Install/update script: `scripts/install-agent-stack.sh`
+- mise guidance: `docs/mise-config.md`
