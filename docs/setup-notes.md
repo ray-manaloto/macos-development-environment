@@ -63,3 +63,7 @@ non-interactive updates:
 - Homebrew curl is preferred in shell config when needed:
   - `export PATH="/opt/homebrew/opt/curl/bin:$PATH"`
 - Oh My Zsh updates are separate from launchd (they run within the shell).
+
+## LangChain CLI Tooling
+- Inventory: `docs/langchain-cli-tools.md`
+- Install/update script: `scripts/install-langchain-cli-tools.sh`

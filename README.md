@@ -36,3 +36,7 @@ troubleshoot runs.
 
 ## Docs
 - `docs/setup-notes.md`
+- `docs/langchain-cli-tools.md`
+
+## Scripts
+- `scripts/install-langchain-cli-tools.sh`
