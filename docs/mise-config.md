@@ -13,6 +13,8 @@ Create `~/.config/mise/config.toml`:
 python = "latest"
 node = "latest"
 bun = "latest"
+go = "latest"
+rust = "latest"
 
 [env]
 # Identity

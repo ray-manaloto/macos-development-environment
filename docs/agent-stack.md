@@ -4,7 +4,7 @@ This stack is a superset of LangChain tooling that includes general-purpose
 agent CLIs (Claude/Codex/OpenCode/Aider/etc.). It follows the preference
 order:
 
-- mise for runtimes (python/node/bun)
+- mise for runtimes (python/node/bun/go/rust)
 - pixi for Python tools (fallback to uv, then pip)
 - bun for Node tools
 

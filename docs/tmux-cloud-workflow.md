@@ -14,8 +14,10 @@ Notes:
 - Force pixi with `TMUX_INSTALL=pixi scripts/optimize-tmux.sh`.
 
 ## Tmux Config
-The script writes `~/.tmux.conf` and creates a timestamped backup if one
-already exists. Highlights:
+The script writes `~/.tmux.conf` from `templates/tmux.conf`. It only replaces
+files that are already managed (contain the managed header). Use
+`TMUX_FORCE_CONF=1` to override. A timestamped backup is created when
+overwriting. Highlights:
 - `tmux-256color` + RGB for accurate colors
 - `set-clipboard on` for macOS clipboard support
 - `prefix` stays at `C-b` with `C-a` as a secondary prefix

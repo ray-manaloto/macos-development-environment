@@ -37,3 +37,17 @@ best practices and your preferred tooling order.
 - Decision: separate LangChain-only tooling from the broader agent CLI stack.
 - Rationale: avoid mixing org-specific tooling with general-purpose CLIs.
 - Impact: clearer installs and upgrades, fewer conflicts.
+
+## 2026-01 - Launchd maintenance rename
+- Decision: replace `com.github.domt4.homebrew-autoupdate` with
+  `com.ray-manaloto.macos-dev-maintenance`.
+- Rationale: the job now handles broader macOS dev setup maintenance.
+- Impact: updated plist paths, logs, and script entrypoints.
+
+## 2026-01 - Auto-fix and manager cleanup
+- Decision: allow optional auto-fix to remove conflicting runtime managers
+  (nvm/volta/asdf/pyenv) and sync managed configs.
+- Rationale: reduce path conflicts and keep tooling aligned to mise-first
+  preferences.
+- Impact: `MDE_AUTOFIX=1` enables changes; strict mode optionally removes
+  brew-managed runtimes.

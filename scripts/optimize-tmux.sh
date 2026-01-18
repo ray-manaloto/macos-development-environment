@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_CONF="$SCRIPT_DIR/../templates/tmux.conf"
+TMUX_FORCE_CONF="${TMUX_FORCE_CONF:-0}"
+MANAGED_MARKER="Managed by macos-development-environment"
+
 TMUX_INSTALL="${TMUX_INSTALL:-auto}"
 
 install_tmux() {
@@ -58,53 +63,21 @@ write_tmux_conf() {
   local conf="$HOME/.tmux.conf"
   local backup="${conf}.bak.$(date +%Y%m%d%H%M%S)"
   if [ -f "$conf" ]; then
+    if [[ "$TMUX_FORCE_CONF" != "1" ]] && \
+      ! grep -q "$MANAGED_MARKER" "$conf"; then
+      echo "tmux.conf exists and is not managed; skipping (set TMUX_FORCE_CONF=1 to override)" >&2
+      return 0
+    fi
     cp "$conf" "$backup"
   fi
 
-  cat <<'TMUXCONF' > "$conf"
-# AGENT OPS TMUX CONFIG
+  if [[ -f "$TEMPLATE_CONF" ]]; then
+    cp "$TEMPLATE_CONF" "$conf"
+    return 0
+  fi
 
-# Terminal + color
-set -g default-terminal "tmux-256color"
-set -as terminal-overrides ",*:RGB"
-set -g set-clipboard on
-
-# UX
-set -g mouse on
-set -g base-index 1
-setw -g pane-base-index 1
-set -g renumber-windows on
-set -g history-limit 100000
-
-# Prefixes (keep default, add alternative)
-set -g prefix C-b
-set -g prefix2 C-a
-
-# Split panes in current path
-bind | split-window -h -c "#{pane_current_path}"
-bind - split-window -v -c "#{pane_current_path}"
-
-# Vim-style pane navigation
-bind h select-pane -L
-bind j select-pane -D
-bind k select-pane -U
-bind l select-pane -R
-
-# Status bar
-set -g status-position top
-set -g status-right-length 100
-set -g status-right "☁️  #(echo $AWS_PROFILE) | %H:%M "
-
-# Plugins
-set -g @plugin 'tmux-plugins/tpm'
-set -g @plugin 'tmux-plugins/tmux-sensible'
-set -g @plugin 'tmux-plugins/tmux-resurrect'
-set -g @plugin 'tmux-plugins/tmux-continuum'
-set -g @continuum-restore 'on'
-
-# Initialize TPM (keep at bottom)
-run '~/.tmux/plugins/tpm/tpm'
-TMUXCONF
+  echo "tmux template not found at $TEMPLATE_CONF" >&2
+  return 1
 }
 
 install_tmux
