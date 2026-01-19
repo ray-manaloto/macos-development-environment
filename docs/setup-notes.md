@@ -121,6 +121,17 @@ Possible issues:
 - Wrapper runs `@anthropic-ai/claude-code` (override with `MDE_CLAUDE_CLI`).
 - Use `\claude` to bypass the alias when needed.
 
+## Gemini CLI Wrapper
+- Managed wrapper: `scripts/gemini-wrapper.sh` (alias: `gemini`).
+- Installed to `~/.local/bin/gemini` for non-interactive shells.
+- Loads `GEMINI_API_KEY` from Keychain/1Password when available.
+- Loads `GITHUB_MCP_PAT` for GitHub MCP (Keychain `mde-github-mcp-pat` or `mde-github-token`, or `MDE_OP_GITHUB_TOKEN_REF`).
+- Removes `~/.bun/bin/gemini` so there is only one `gemini` on PATH.
+- Wrapper runs `@google/gemini-cli@latest` via `bunx` to avoid bun global dependency conflicts.
+- Wrapper prepends mise shims so extensions that invoke `npx` resolve the managed Node install.
+- If no `./tools.yaml` is present, `mcp-toolbox` is skipped to avoid MCP connection errors; set `MDE_GEMINI_ENABLE_MCP_TOOLBOX=1` or pass `--extensions` to override.
+- Use `\gemini` to bypass the alias when needed.
+
 ## Firebase CLI Logs
 - Managed wrapper: `scripts/firebase-wrapper.sh` (alias: `firebase`).
 - Logs move to `~/Library/Logs/firebase-tools/firebase-debug-YYYYMMDD_HHMMSS.log`.

@@ -33,6 +33,19 @@ cleanup_claude_cli() {
   fi
 }
 
+cleanup_gemini_cli() {
+  local cleanup="$SCRIPT_DIR/cleanup-gemini-cli.sh"
+  if [[ -x "$cleanup" ]]; then
+    "$cleanup" >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  local bun_gemini="$HOME/.bun/bin/gemini"
+  if [[ -e "$bun_gemini" ]]; then
+    rm -f "$bun_gemini" || true
+  fi
+}
+
 ensure_mise() {
   require_cmd mise || {
     echo "mise is required. Install with: curl https://mise.run | sh" >&2
@@ -179,6 +192,7 @@ for pkg in "${NODE_TOOLS[@]}"; do
 done
 
 cleanup_claude_cli
+cleanup_gemini_cli
 
 for pkg in "${GO_TOOLS[@]}"; do
   echo "[go] installing ${pkg}"

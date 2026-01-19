@@ -58,3 +58,7 @@ Optional tools (when `INCLUDE_OPTIONAL=1`):
 - pixi and uv are installed via their official installers when missing.
 - For JS CLIs, bun installs the latest versions using `@latest`.
 - Gemini CLI reads `GEMINI_API_KEY` (Keychain `mde-gemini-api-key` or `MDE_OP_GEMINI_API_KEY_REF`).
+- `gemini` uses the MDE wrapper to run via `bunx` (isolated deps).
+- Wrapper prepends mise shims so extensions that invoke `npx` resolve the managed Node install.
+- Wrapper also sets `GITHUB_MCP_PAT` (Keychain `mde-github-mcp-pat` or `mde-github-token`, or `MDE_OP_GITHUB_TOKEN_REF`).
+- `mcp-toolbox` is skipped when no `tools.yaml` is present unless `MDE_GEMINI_ENABLE_MCP_TOOLBOX=1` or `--extensions` is passed.

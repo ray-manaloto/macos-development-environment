@@ -81,6 +81,9 @@ sync_file "$TEMPLATE_DIR/zprofile/macos-dev-env.zsh" \
 sync_exec "$REPO_ROOT/scripts/claude-wrapper.sh" \
   "$HOME/.local/bin/claude"
 
+sync_exec "$REPO_ROOT/scripts/gemini-wrapper.sh" \
+  "$HOME/.local/bin/gemini"
+
 ensure_zprofile_include
 
 echo "Managed configs synced."

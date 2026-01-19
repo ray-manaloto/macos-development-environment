@@ -323,6 +323,14 @@ cleanup_claude_cli() {
   return 0
 }
 
+cleanup_gemini_cli() {
+  local cleanup="$SCRIPT_DIR/cleanup-gemini-cli.sh"
+  if [[ -x "$cleanup" ]]; then
+    "$cleanup" || return 1
+  fi
+  return 0
+}
+
 
 update_uv() {
   if ! have_cmd uv; then
@@ -416,11 +424,14 @@ main() {
   update_mise || failures=1
   update_bun || failures=1
   cleanup_claude_cli || failures=1
+  cleanup_gemini_cli || failures=1
   update_uv || failures=1
   update_pixi || failures=1
   if [[ "$MDE_UPDATE_AGENT_TOOLS" == "1" ]]; then
     update_agent_tools || failures=1
     cleanup_claude_cli || failures=1
+    cleanup_gemini_cli || failures=1
+  cleanup_gemini_cli || failures=1
   fi
   if [[ "$MDE_UPDATE_MCP" == "1" ]]; then
     update_mcp_servers || failures=1
