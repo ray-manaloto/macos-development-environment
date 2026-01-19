@@ -12,6 +12,8 @@ scripts/optimize-tmux.sh
 Notes:
 - On macOS, Homebrew tmux is recommended for clipboard integration.
 - Force pixi with `TMUX_INSTALL=pixi scripts/optimize-tmux.sh`.
+- TPM plugins are installed automatically (no prefix + I needed).
+- Verification: `scripts/verify-tmux-setup.sh` (runs in weekly validation).
 
 ## Tmux Config
 The script writes `~/.tmux.conf` from `templates/tmux.conf`. It only replaces

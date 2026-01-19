@@ -115,6 +115,8 @@ Possible issues:
   - `mde-status` (oh-my-zsh alias)
 - Health check (no secrets printed):
   - `scripts/health-check.sh`
+- Tmux verification (plugins + status bar):
+  - `scripts/verify-tmux-setup.sh`
 - One-time post-setup run with summary log:
   - `scripts/post-setup-run.sh`
   - Summary log: `~/Library/Logs/com.ray-manaloto.macos-dev-maintenance/post-setup-summary.log`

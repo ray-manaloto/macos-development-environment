@@ -61,6 +61,39 @@ install_tpm() {
   fi
 }
 
+
+install_tpm_plugins() {
+  local tpm_dir="$HOME/.tmux/plugins/tpm"
+  local conf="$HOME/.tmux.conf"
+  local session="mde-bootstrap"
+  local created_session=0
+
+  if [[ ! -x "$tpm_dir/bin/install_plugins" ]]; then
+    echo "tpm install script missing at $tpm_dir/bin/install_plugins" >&2
+    return 1
+  fi
+  if ! command -v tmux >/dev/null 2>&1; then
+    echo "tmux not available; cannot install plugins" >&2
+    return 1
+  fi
+  if [[ ! -f "$conf" ]]; then
+    echo "tmux config not found at $conf" >&2
+    return 1
+  fi
+
+  if ! tmux list-sessions >/dev/null 2>&1; then
+    tmux new-session -d -s "$session"
+    created_session=1
+  fi
+
+  tmux source-file "$conf"
+  "$tpm_dir/bin/install_plugins"
+
+  if [[ "$created_session" -eq 1 ]]; then
+    tmux kill-session -t "$session" >/dev/null 2>&1 || true
+  fi
+}
+
 write_tmux_conf() {
   local conf="$HOME/.tmux.conf"
   local backup
@@ -87,6 +120,6 @@ install_tmux
 install_skypilot
 install_tpm
 write_tmux_conf
+install_tpm_plugins
 
-echo "tmux + skypilot setup complete."
-echo "Open tmux and press prefix + I to install plugins."
+echo "tmux + skypilot setup complete (plugins installed)."
