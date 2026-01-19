@@ -31,6 +31,8 @@ sync_file "$TEMPLATE_DIR/oh-my-zsh/macos-env.zsh" \
   "$HOME/.oh-my-zsh/custom/macos-env.zsh"
 sync_file "$TEMPLATE_DIR/oh-my-zsh/aliases.zsh" \
   "$HOME/.oh-my-zsh/custom/aliases.zsh"
+sync_file "$TEMPLATE_DIR/oh-my-zsh/llvm.zsh" \
+  "$HOME/.oh-my-zsh/custom/llvm.zsh"
 sync_file "$TEMPLATE_DIR/tmux.conf" "$HOME/.tmux.conf"
 
 echo "Managed configs synced."

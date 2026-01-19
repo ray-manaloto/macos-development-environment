@@ -186,6 +186,10 @@ remove_brew_runtimes() {
   done
 
   if [[ -n "$BREW" ]]; then
+    if brew_has llvm; then
+      log "Keeping brew Python (llvm depends on it)."
+      return 0
+    fi
     if have_cmd rg; then
       "$BREW" list --formula | rg '^python(@|$)' || true
     else

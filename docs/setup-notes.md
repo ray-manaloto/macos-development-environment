@@ -113,6 +113,17 @@ Possible issues:
 - Managed oh-my-zsh custom files live under `templates/oh-my-zsh`.
   - Sync them with `scripts/ensure-managed-configs.sh`.
 
+## LLVM (opt-in)
+- Install/upgrade via Homebrew:
+  - `brew install llvm` or `brew upgrade llvm`
+- Keep Apple clang as default; opt into brewed LLVM per shell/project.
+- Toggle in oh-my-zsh (managed): set `MDE_USE_LLVM=1` before loading zsh.
+- Optional per-project via `direnv`:
+  - `export PATH="/opt/homebrew/opt/llvm/bin:$PATH"`
+  - `export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"`
+  - `export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"`
+  - `export PKG_CONFIG_PATH="/opt/homebrew/opt/llvm/lib/pkgconfig"`
+
 ## Secrets and Automation (1Password preferred)
 - Use a 1Password service account for unattended runs (no login prompts).
 - Store the service account token in Keychain:

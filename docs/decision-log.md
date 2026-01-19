@@ -84,3 +84,8 @@ best practices and your preferred tooling order.
   `OP_SERVICE_ACCOUNT_TOKEN` and `MDE_OP_*_REF` mappings, with Keychain
   fallback for local-only runs.
 
+## 2026-01 - LLVM install strategy
+- Decision: install LLVM via Homebrew and keep it opt-in via shell toggles.
+- Rationale: brew tracks the latest stable release; opt-in avoids SDK mismatches.
+- Impact: `MDE_USE_LLVM=1` enables brewed LLVM in zsh without changing defaults.
+
