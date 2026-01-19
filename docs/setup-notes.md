@@ -110,6 +110,8 @@ Possible issues:
 - Notifications are log-only by default (no UI toast).
 
 ## Validation and Post-Setup
+- Tools inventory (all managers):
+  - `scripts/tools-inventory.sh`
 - Status dashboard (quick overview):
   - `scripts/status-dashboard.sh`
   - `scripts/status-dashboard.sh --tmux` (tmux status bar)
