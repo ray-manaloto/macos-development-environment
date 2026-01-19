@@ -12,3 +12,4 @@ alias agent-hud="$HOME/dev/github/ray-manaloto/macos-development-environment/scr
 alias mde-status="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/status-dashboard.sh"
 alias mde-mcp-sync="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/setup-mcp-servers.sh"
 alias firebase="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/firebase-wrapper.sh"
+alias claude="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/claude-wrapper.sh"

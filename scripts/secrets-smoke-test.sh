@@ -33,7 +33,6 @@ main() {
   local failures=0
 
   check_secret "mde-github-token" GITHUB_TOKEN || failures=1
-  check_secret "mde-github-mcp-pat" GITHUB_MCP_PAT || failures=1
   check_secret "mde-openai-api-key" OPENAI_API_KEY || failures=1
   check_secret "mde-anthropic-api-key" ANTHROPIC_API_KEY || failures=1
   check_secret "mde-langsmith-api-key" LANGSMITH_API_KEY || failures=1

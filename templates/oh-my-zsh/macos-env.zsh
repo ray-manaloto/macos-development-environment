@@ -21,27 +21,27 @@ fi
 # Python toolchain behavior
 export UV_NO_MANAGED_PYTHON=1
 
-# PATH ordering (mise > bun > pixi > uv > brew).
+# PATH ordering (mise > local wrappers > bun > pixi > uv > brew).
 typeset -U path
 path_rest=($path)
 path_rest=(${path_rest:#$HOME/.local/share/mise/shims})
 path_rest=(${path_rest:#$HOME/.local/share/mise/bin})
+path_rest=(${path_rest:#$HOME/.local/bin})
 path_rest=(${path_rest:#$HOME/.bun/bin})
 path_rest=(${path_rest:#$HOME/.pixi/bin})
 path_rest=(${path_rest:#$HOME/.amp/bin})
 path_rest=(${path_rest:#$HOME/.antigravity/antigravity/bin})
-path_rest=(${path_rest:#$HOME/.local/bin})
 path_rest=(${path_rest:#$HOME/.oh-my-zsh/custom/bin})
 path_rest=(${path_rest:#/opt/google-cloud-sdk/bin})
 path_rest=(${path_rest:#/opt/homebrew/opt/curl/bin})
 path=(
   "$HOME/.local/share/mise/shims"
   "$HOME/.local/share/mise/bin"
+  "$HOME/.local/bin"
   "$HOME/.bun/bin"
   "$HOME/.pixi/bin"
   "$HOME/.amp/bin"
   "$HOME/.antigravity/antigravity/bin"
-  "$HOME/.local/bin"
   "$HOME/.oh-my-zsh/custom/bin"
   "/opt/google-cloud-sdk/bin"
   "/opt/homebrew/opt/curl/bin"

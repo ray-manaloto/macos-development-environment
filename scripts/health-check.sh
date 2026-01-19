@@ -26,7 +26,7 @@ have_cmd() {
 
 setup_path() {
   local home="${HOME:-/Users/rmanaloto}"
-  export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.bun/bin:$home/.pixi/bin:$home/.local/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 }
 
 check_cmd() {
@@ -182,7 +182,6 @@ main() {
   check_gcloud
 
   check_secret "mde-github-token"
-  check_secret "mde-github-mcp-pat"
   check_secret "mde-openai-api-key"
   check_secret "mde-anthropic-api-key"
   check_secret "mde-langsmith-api-key"

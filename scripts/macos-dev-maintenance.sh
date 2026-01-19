@@ -65,7 +65,6 @@ load_1password_secrets() {
   export OP_SERVICE_ACCOUNT_TOKEN="$token"
 
   load_op_secret MDE_OP_GITHUB_TOKEN_REF GITHUB_TOKEN
-  load_op_secret MDE_OP_GITHUB_MCP_PAT_REF GITHUB_MCP_PAT
   load_op_secret MDE_OP_OPENAI_API_KEY_REF OPENAI_API_KEY
   load_op_secret MDE_OP_ANTHROPIC_API_KEY_REF ANTHROPIC_API_KEY
   load_op_secret MDE_OP_LANGSMITH_API_KEY_REF LANGSMITH_API_KEY
@@ -95,7 +94,6 @@ load_keychain_secret() {
 
 load_keychain_secrets() {
   load_keychain_secret "mde-github-token" GITHUB_TOKEN
-  load_keychain_secret "mde-github-mcp-pat" GITHUB_MCP_PAT
   load_keychain_secret "mde-openai-api-key" OPENAI_API_KEY
   load_keychain_secret "mde-anthropic-api-key" ANTHROPIC_API_KEY
   load_keychain_secret "mde-langsmith-api-key" LANGSMITH_API_KEY
@@ -123,7 +121,7 @@ ensure_gcloud_sdk_location() {
 
 setup_path() {
   local home="${HOME:-/Users/rmanaloto}"
-  export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.bun/bin:$home/.pixi/bin:$home/.local/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 }
 
 find_brew() {

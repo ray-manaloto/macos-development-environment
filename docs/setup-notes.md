@@ -112,6 +112,13 @@ Possible issues:
 - Notifications are log-only by default (no UI toast).
 
 
+
+## Claude Code Wrapper
+- Managed wrapper: `scripts/claude-wrapper.sh` (alias: `claude`).
+- Installed to `~/.local/bin/claude` for non-interactive shells.
+- Loads `GITHUB_PERSONAL_ACCESS_TOKEN` from the same GitHub token used elsewhere.
+- Use `\claude` to bypass the alias when needed.
+
 ## Firebase CLI Logs
 - Managed wrapper: `scripts/firebase-wrapper.sh` (alias: `firebase`).
 - Logs move to `~/Library/Logs/firebase-tools/firebase-debug-YYYYMMDD_HHMMSS.log`.
@@ -159,6 +166,9 @@ Possible issues:
 - Node-based CLIs (`claude`, `codex`) require Node; ensure mise shims are in PATH.
 
 ## Shell Configuration Notes
+- Login shells (e.g., `zsh -lc`) load `~/.zprofile.d/macos-dev-env.zsh` to keep mise shims on PATH.
+- `~/.local/bin` is prepended for managed wrappers (e.g., `claude`).
+- `scripts/ensure-managed-configs.sh` keeps the zprofile include in sync.
 - Homebrew curl is preferred in shell config when needed:
   - `export PATH="/opt/homebrew/opt/curl/bin:$PATH"`
 - Managed oh-my-zsh custom files live under `templates/oh-my-zsh`.
@@ -183,7 +193,6 @@ Possible issues:
 - Install the 1Password CLI (`op`) and ensure it is on `PATH`.
 - Configure secret references in the launchd plist (references are not secrets):
   - `MDE_OP_GITHUB_TOKEN_REF=op://Vault/GitHub/token`
-  - `MDE_OP_GITHUB_MCP_PAT_REF=op://Vault/GitHub/mcp_pat` (optional)
   - `MDE_OP_OPENAI_API_KEY_REF=op://Vault/OpenAI/api_key`
   - `MDE_OP_ANTHROPIC_API_KEY_REF=op://Vault/Anthropic/api_key`
   - `MDE_OP_LANGSMITH_API_KEY_REF=op://Vault/LangSmith/api_key`
@@ -191,7 +200,6 @@ Possible issues:
 - The maintenance script loads these into the environment when available.
 - Keychain fallback (local-only, no 1Password service account):
   - `security add-generic-password -a "$USER" -s mde-github-token -w`
-  - `security add-generic-password -a "$USER" -s mde-github-mcp-pat -w` (optional)
   - `security add-generic-password -a "$USER" -s mde-openai-api-key -w`
   - `security add-generic-password -a "$USER" -s mde-anthropic-api-key -w` (optional)
   - `security add-generic-password -a "$USER" -s mde-langsmith-api-key -w` (optional)

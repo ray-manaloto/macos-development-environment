@@ -27,6 +27,47 @@ sync_file() {
   cp "$src" "$dest"
 }
 
+sync_exec() {
+  local src="$1"
+  local dest="$2"
+  local dest_dir
+
+  if [[ ! -f "$src" ]]; then
+    echo "wrapper missing: $src" >&2
+    return 1
+  fi
+
+  dest_dir="$(dirname "$dest")"
+  mkdir -p "$dest_dir"
+
+  if [[ -f "$dest" ]] && ! grep -q "$MANAGED_MARKER" "$dest"; then
+    if grep -q "mde-mcp-common.sh" "$dest"; then
+      install -m 0755 "$src" "$dest"
+      return 0
+    fi
+    echo "skipping unmanaged wrapper: $dest" >&2
+    return 0
+  fi
+
+  install -m 0755 "$src" "$dest"
+}
+
+ensure_zprofile_include() {
+  local zprofile="$HOME/.zprofile"
+
+  if [[ -f "$zprofile" ]] && grep -q "macos-dev-env.zsh" "$zprofile"; then
+    return 0
+  fi
+
+  cat <<'EOF' >> "$zprofile"
+
+# Managed by macos-development-environment
+if [ -f "$HOME/.zprofile.d/macos-dev-env.zsh" ]; then
+  . "$HOME/.zprofile.d/macos-dev-env.zsh"
+fi
+EOF
+}
+
 sync_file "$TEMPLATE_DIR/oh-my-zsh/macos-env.zsh" \
   "$HOME/.oh-my-zsh/custom/macos-env.zsh"
 sync_file "$TEMPLATE_DIR/oh-my-zsh/aliases.zsh" \
@@ -34,5 +75,12 @@ sync_file "$TEMPLATE_DIR/oh-my-zsh/aliases.zsh" \
 sync_file "$TEMPLATE_DIR/oh-my-zsh/llvm.zsh" \
   "$HOME/.oh-my-zsh/custom/llvm.zsh"
 sync_file "$TEMPLATE_DIR/tmux.conf" "$HOME/.tmux.conf"
+sync_file "$TEMPLATE_DIR/zprofile/macos-dev-env.zsh" \
+  "$HOME/.zprofile.d/macos-dev-env.zsh"
+
+sync_exec "$REPO_ROOT/scripts/claude-wrapper.sh" \
+  "$HOME/.local/bin/claude"
+
+ensure_zprofile_include
 
 echo "Managed configs synced."
