@@ -7,6 +7,7 @@ MDE_AUTOFIX="${MDE_AUTOFIX:-0}"
 MDE_AUTOFIX_STRICT="${MDE_AUTOFIX_STRICT:-0}"
 MDE_UPDATE_OMZ="${MDE_UPDATE_OMZ:-0}"
 MDE_UPDATE_AGENT_TOOLS="${MDE_UPDATE_AGENT_TOOLS:-1}"
+MDE_UPDATE_MCP="${MDE_UPDATE_MCP:-1}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOCK_DIR="${TMPDIR:-/tmp}/macos_dev_maintenance.lock"
@@ -67,6 +68,7 @@ load_1password_secrets() {
   load_op_secret MDE_OP_GITHUB_MCP_PAT_REF GITHUB_MCP_PAT
   load_op_secret MDE_OP_OPENAI_API_KEY_REF OPENAI_API_KEY
   load_op_secret MDE_OP_ANTHROPIC_API_KEY_REF ANTHROPIC_API_KEY
+  load_op_secret MDE_OP_LANGSMITH_API_KEY_REF LANGSMITH_API_KEY
 }
 
 load_keychain_secret() {
@@ -96,6 +98,7 @@ load_keychain_secrets() {
   load_keychain_secret "mde-github-mcp-pat" GITHUB_MCP_PAT
   load_keychain_secret "mde-openai-api-key" OPENAI_API_KEY
   load_keychain_secret "mde-anthropic-api-key" ANTHROPIC_API_KEY
+  load_keychain_secret "mde-langsmith-api-key" LANGSMITH_API_KEY
 }
 
 ensure_gcloud_sdk_location() {
@@ -359,6 +362,20 @@ update_agent_tools() {
   return 0
 }
 
+update_mcp_servers() {
+  local repo_root="$(cd "$SCRIPT_DIR/.." && pwd)"
+  local mcp_script="$repo_root/scripts/setup-mcp-servers.sh"
+
+  if [[ ! -x "$mcp_script" ]]; then
+    log "MCP setup script missing; skipping MCP sync."
+    return 0
+  fi
+
+  log "Syncing MCP servers."
+  "$mcp_script" || return 1
+  return 0
+}
+
 update_oh_my_zsh() {
   if [[ "$MDE_UPDATE_OMZ" != "1" ]]; then
     return 0
@@ -393,6 +410,9 @@ main() {
   update_pixi || failures=1
   if [[ "$MDE_UPDATE_AGENT_TOOLS" == "1" ]]; then
     update_agent_tools || failures=1
+  fi
+  if [[ "$MDE_UPDATE_MCP" == "1" ]]; then
+    update_mcp_servers || failures=1
   fi
   update_oh_my_zsh || failures=1
 

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/mde-mcp-common.sh"
+
+mde_mcp_require_secret "LANGSMITH_API_KEY" "mde-langsmith-api-key" "MDE_OP_LANGSMITH_API_KEY_REF" "LangSmith API key"
+
+if ! mde_mcp_have_cmd langsmith-mcp-server; then
+  echo "langsmith-mcp-server not installed." >&2
+  exit 1
+fi
+
+exec langsmith-mcp-server

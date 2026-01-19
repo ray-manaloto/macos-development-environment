@@ -59,9 +59,10 @@ plist.
   python, go, rust) when mise is present.
 - `MDE_UPDATE_OMZ=1`: update oh-my-zsh from git.
 - `MDE_UPDATE_AGENT_TOOLS=1`: update agent tooling (agent stack + LangChain CLI).
+- `MDE_UPDATE_MCP=1`: sync MCP servers for Claude Desktop, Claude Code, and Codex.
 
 Defaults in the plist: `MDE_AUTOFIX=1`, `MDE_AUTOFIX_STRICT=0`,
-`MDE_UPDATE_OMZ=0`, `MDE_UPDATE_AGENT_TOOLS=1`.
+`MDE_UPDATE_OMZ=0`, `MDE_UPDATE_AGENT_TOOLS=1`, `MDE_UPDATE_MCP=1`.
 
 Auto-fix actions:
 - Ensure global mise versions (python/node/bun/go/rust).
@@ -70,6 +71,7 @@ Auto-fix actions:
 - Sync managed configs (`~/.oh-my-zsh/custom/*` and `~/.tmux.conf`).
 - Ensure tmux plugin manager (TPM) is installed.
 - Update agent tooling (agent stack + LangChain CLI inventory).
+- Sync MCP servers (Claude Desktop, Claude Code, Codex).
 
 ## Strict Cleanup (MDE_AUTOFIX_STRICT=1)
 Strict cleanup removes brew-managed runtimes (node, python, go, rust) once
@@ -133,6 +135,23 @@ Possible issues:
 - Log rotation (newsyslog, requires sudo):
   - `sudo scripts/setup-newsyslog-rotation.sh`
 
+
+## MCP Servers (Claude/Codex)
+- Setup/sync: `scripts/setup-mcp-servers.sh`
+- Alias: `mde-mcp-sync`
+- Config file (common `.mcp.json` schema): `configs/mcp-servers.mcp.json`
+- Override config path: `MDE_MCP_CONFIG=/path/to/mcp-servers.mcp.json`
+- Installs wrapper scripts into `~/.local/bin` and updates:
+  - Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json`
+  - Claude Code: `claude mcp add` (scope default: `user`)
+  - Codex CLI: `codex mcp add`
+- Managed servers (default): `github`, `langsmith`, `notebooklm`, `context7`,
+  `brave-search`, `filesystem`, `MCP_DOCKER`.
+- Override defaults:
+  - `MDE_MCP_SCOPE=user|project|local` (Claude Code scope)
+  - `MDE_MCP_FILESYSTEM_ROOTS="$HOME/dev:$HOME/Documents"` (colon-separated)
+- Node-based CLIs (`claude`, `codex`) require Node; ensure mise shims are in PATH.
+
 ## Shell Configuration Notes
 - Homebrew curl is preferred in shell config when needed:
   - `export PATH="/opt/homebrew/opt/curl/bin:$PATH"`
@@ -161,12 +180,16 @@ Possible issues:
   - `MDE_OP_GITHUB_MCP_PAT_REF=op://Vault/GitHub/mcp_pat` (optional)
   - `MDE_OP_OPENAI_API_KEY_REF=op://Vault/OpenAI/api_key`
   - `MDE_OP_ANTHROPIC_API_KEY_REF=op://Vault/Anthropic/api_key`
+  - `MDE_OP_LANGSMITH_API_KEY_REF=op://Vault/LangSmith/api_key`
+  - `MDE_OP_BRAVE_API_KEY_REF=op://Vault/Brave/api_key` (optional)
 - The maintenance script loads these into the environment when available.
 - Keychain fallback (local-only, no 1Password service account):
   - `security add-generic-password -a "$USER" -s mde-github-token -w`
   - `security add-generic-password -a "$USER" -s mde-github-mcp-pat -w` (optional)
   - `security add-generic-password -a "$USER" -s mde-openai-api-key -w`
   - `security add-generic-password -a "$USER" -s mde-anthropic-api-key -w` (optional)
+  - `security add-generic-password -a "$USER" -s mde-langsmith-api-key -w` (optional)
+  - `security add-generic-password -a "$USER" -s mde-brave-api-key -w` (optional)
 - Keychain values are used only when 1Password does not provide a value.
 - Keep secrets out of `~/.oh-my-zsh/custom/*`; use `op run -- <cmd>` for ad-hoc work.
 - For tmux, avoid global exports; prefer `op run -- tmux new-session ...` or per-session `setenv`.

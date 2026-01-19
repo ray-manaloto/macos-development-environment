@@ -1,0 +1,23 @@
+{
+  "github": {
+    "command": "mde-mcp-github"
+  },
+  "langsmith": {
+    "command": "mde-mcp-langsmith"
+  },
+  "notebooklm": {
+    "command": "mde-mcp-notebooklm"
+  },
+  "context7": {
+    "command": "mde-mcp-context7"
+  },
+  "brave-search": {
+    "command": "mde-mcp-brave-search"
+  },
+  "filesystem": {
+    "command": "mde-mcp-filesystem"
+  },
+  "MCP_DOCKER": {
+    "command": "mde-mcp-docker"
+  }
+}

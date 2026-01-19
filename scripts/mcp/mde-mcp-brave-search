@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/mde-mcp-common.sh"
+
+mde_mcp_require_secret "BRAVE_API_KEY" "mde-brave-api-key" "MDE_OP_BRAVE_API_KEY_REF" "Brave API key"
+
+mde_mcp_run_node_tool "@modelcontextprotocol/server-brave-search"

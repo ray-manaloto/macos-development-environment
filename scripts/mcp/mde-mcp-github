@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/mde-mcp-common.sh"
+
+if [[ -z "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" ]]; then
+  mde_mcp_require_secret "GITHUB_MCP_PAT" "mde-github-mcp-pat" "MDE_OP_GITHUB_MCP_PAT_REF" "GitHub MCP PAT" || true
+  if [[ -n "${GITHUB_MCP_PAT:-}" ]]; then
+    export GITHUB_PERSONAL_ACCESS_TOKEN="$GITHUB_MCP_PAT"
+  else
+    mde_mcp_require_secret "GITHUB_TOKEN" "mde-github-token" "MDE_OP_GITHUB_TOKEN_REF" "GitHub token" || exit 1
+    export GITHUB_PERSONAL_ACCESS_TOKEN="$GITHUB_TOKEN"
+  fi
+fi
+
+mde_mcp_run_node_tool "@modelcontextprotocol/server-github"

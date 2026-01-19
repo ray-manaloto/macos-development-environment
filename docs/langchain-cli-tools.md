@@ -58,6 +58,17 @@ at the time of review, grouped by ecosystem.
   so the installer patches it to include `pipeline.*` plus notebook templates
   before installing so the `docs` CLI works.
 
+## LangSmith Credentials
+
+- `langsmith-fetch`, `langsmith-migrator`, and `langsmith-mcp-server` require
+  `LANGSMITH_API_KEY` (env var or `~/.langsmith-cli/config.yaml` via
+  `langsmith-fetch config set api-key`).
+- Optional overrides: `LANGSMITH_ENDPOINT` (defaults to
+  `https://api.smith.langchain.com`), `LANGSMITH_PROJECT`, or
+  `LANGSMITH_PROJECT_UUID`.
+- The LangSmith SDK also honors `LANGCHAIN_API_KEY`/`LANGCHAIN_ENDPOINT`,
+  but this setup standardizes on `LANGSMITH_*`.
+
 ## Install Script
 
 Use `scripts/install-langchain-cli-tools.sh` to install and upgrade the

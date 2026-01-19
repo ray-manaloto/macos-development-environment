@@ -185,6 +185,7 @@ main() {
   check_secret "mde-github-mcp-pat"
   check_secret "mde-openai-api-key"
   check_secret "mde-anthropic-api-key"
+  check_secret "mde-langsmith-api-key"
 
   check_log_health
 

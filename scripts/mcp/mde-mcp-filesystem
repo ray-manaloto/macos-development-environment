@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/mde-mcp-common.sh"
+
+roots=()
+if [[ "$#" -gt 0 ]]; then
+  roots=("$@")
+else
+  IFS=":" read -r -a roots <<< "${MDE_MCP_FILESYSTEM_ROOTS:-$HOME}"
+fi
+
+if [[ "${#roots[@]}" -eq 0 ]]; then
+  echo "No filesystem roots specified." >&2
+  exit 1
+fi
+
+mde_mcp_run_node_tool "@modelcontextprotocol/server-filesystem" "${roots[@]}"
