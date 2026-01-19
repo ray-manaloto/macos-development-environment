@@ -5,4 +5,4 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/mde-mcp-common.sh"
 
-mde_mcp_run_node_tool "context7-mcp"
+mde_mcp_run_node_tool "@upstash/context7-mcp"

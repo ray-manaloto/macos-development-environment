@@ -111,6 +111,12 @@ Possible issues:
   - Repo source: `scripts/macos-dev-maintenance.sh`
 - Notifications are log-only by default (no UI toast).
 
+
+## Firebase CLI Logs
+- Managed wrapper: `scripts/firebase-wrapper.sh` (alias: `firebase`).
+- Logs move to `~/Library/Logs/firebase-tools/firebase-debug-YYYYMMDD_HHMMSS.log`.
+- Use `\firebase` to bypass the alias when needed.
+
 ## Validation and Post-Setup
 - Tools inventory (all managers):
   - `scripts/tools-inventory.sh`

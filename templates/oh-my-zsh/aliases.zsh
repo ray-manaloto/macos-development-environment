@@ -11,3 +11,4 @@ alias cloud-stop='sky down agent-cluster'
 alias agent-hud="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/agent-hud"
 alias mde-status="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/status-dashboard.sh"
 alias mde-mcp-sync="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/setup-mcp-servers.sh"
+alias firebase="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/firebase-wrapper.sh"
