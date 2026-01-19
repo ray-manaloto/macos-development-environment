@@ -176,6 +176,7 @@ main() {
 
   check_file "$HOME/.oh-my-zsh/custom/macos-env.zsh" 1
   check_file "$HOME/.oh-my-zsh/custom/llvm.zsh" 0
+  check_file "/etc/newsyslog.d/com.ray-manaloto.macos-dev-maintenance.conf" 0
 
   check_launchd
   check_gcloud

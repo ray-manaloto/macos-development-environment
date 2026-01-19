@@ -110,6 +110,9 @@ Possible issues:
 ## Validation and Post-Setup
 - Status dashboard (quick overview):
   - `scripts/status-dashboard.sh`
+  - `scripts/status-dashboard.sh --tmux` (tmux status bar)
+  - `scripts/status-dashboard.sh --json` (automation)
+  - `mde-status` (oh-my-zsh alias)
 - Health check (no secrets printed):
   - `scripts/health-check.sh`
 - One-time post-setup run with summary log:

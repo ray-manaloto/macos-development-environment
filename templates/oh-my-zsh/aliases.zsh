@@ -9,3 +9,4 @@ alias cloud-stop='sky down agent-cluster'
 
 # Agent HUD helper (keeps repo script as source of truth)
 alias agent-hud="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/agent-hud"
+alias mde-status="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/status-dashboard.sh"

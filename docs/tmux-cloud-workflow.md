@@ -20,6 +20,8 @@ files that are already managed (contain the managed header). Use
 overwriting. Highlights:
 - `tmux-256color` + RGB for accurate colors
 - `set-clipboard on` for macOS clipboard support
+- Status bar includes AWS profile + MDE dashboard summary
+  (`scripts/status-dashboard.sh --tmux`)
 - `prefix` stays at `C-b` with `C-a` as a secondary prefix
 - Mouse support and large history for log review
 
@@ -41,6 +43,7 @@ These are provided in `~/.oh-my-zsh/custom/aliases.zsh`:
 - `cloud-ssh`
 - `cloud-view`
 - `cloud-stop`
+- `mde-status`
 
 ## Agent HUD
 Launch the tmux layout:
