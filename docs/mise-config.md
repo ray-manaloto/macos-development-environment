@@ -25,6 +25,9 @@ ANTHROPIC_API_KEY = "sk-ant-..."
 OPENAI_API_KEY = "sk-proj-..."
 GOOGLE_API_KEY = "AIza..."
 
+# Python toolchain behavior
+UV_NO_MANAGED_PYTHON = "1"
+
 # LangChain observability
 LANGCHAIN_TRACING_V2 = "true"
 LANGCHAIN_PROJECT = "agent-sandbox-local"

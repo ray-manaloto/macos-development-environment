@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export UV_NO_MANAGED_PYTHON="${UV_NO_MANAGED_PYTHON:-1}"
+
 PIXI_ENV="${PIXI_ENV:-langchain-cli-tools}"
 INCLUDE_INTERNAL="${INCLUDE_INTERNAL:-1}"
 

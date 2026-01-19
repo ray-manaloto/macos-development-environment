@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export UV_NO_MANAGED_PYTHON="${UV_NO_MANAGED_PYTHON:-1}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_CONF="$SCRIPT_DIR/../templates/tmux.conf"
 TMUX_FORCE_CONF="${TMUX_FORCE_CONF:-0}"

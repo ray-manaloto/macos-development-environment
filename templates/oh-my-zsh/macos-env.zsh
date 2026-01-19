@@ -24,6 +24,9 @@ if command -v gh >/dev/null 2>&1; then
   export GITHUB_MCP_PAT="$GITHUB_TOKEN"
 fi
 
+# Python toolchain behavior
+export UV_NO_MANAGED_PYTHON=1
+
 # PATH ordering (mise > bun > pixi > uv > brew).
 typeset -U path
 path_rest=($path)

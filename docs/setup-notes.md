@@ -121,6 +121,20 @@ Possible issues:
   conflicts during updates.
 - Prefer `shellcheck` on scripts and run `scripts/quality-checks.sh` after edits.
 
+
+## Python Versioning (Best Practices)
+- Runtime owner: use mise for all Python versions (single source of truth).
+- Install multiple versions with mise:
+  - `mise install python@3.10 python@3.11 python@3.12`
+- Set a global default (stable or latest):
+  - `mise use -g python@3.12` or `mise use -g python@latest`
+- Pin per-project versions in `mise.toml` (recommended for reproducibility).
+- Use `uv` or `pixi` for tools/venvs; avoid global `pip install --user`.
+- Prevent uv-managed Python duplicates:
+  - `export UV_NO_MANAGED_PYTHON=1`
+- If Homebrew Python is required by other formulae, keep it installed but
+  ensure mise shims are first in `PATH`. Optionally `brew unlink python@3.x`.
+
 ## LangChain CLI Tooling
 - Inventory: `docs/langchain-cli-tools.md`
 - Install/update script: `scripts/install-langchain-cli-tools.sh`
