@@ -28,6 +28,115 @@ setup_path() {
 json_escape() {
   printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
 }
+json_array() {
+  local first=1
+  printf '['
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    if [[ "$first" -eq 0 ]]; then
+      printf ', '
+    fi
+    printf '"%s"' "$(json_escape "$line")"
+    first=0
+  done
+  printf ']'
+}
+
+inventory_mise() {
+  if ! command -v mise >/dev/null 2>&1; then
+    return 0
+  fi
+  mise ls --installed 2>/dev/null | awk '{print $1 "@" $2}'
+}
+
+inventory_uv() {
+  if ! command -v uv >/dev/null 2>&1; then
+    return 0
+  fi
+  uv tool list 2>/dev/null | awk 'NF>=2 && $1 !~ /^-/ {print $1 "@" $2}'
+}
+
+inventory_pixi() {
+  if ! command -v pixi >/dev/null 2>&1; then
+    return 0
+  fi
+  pixi global list 2>/dev/null | awk -F': ' '/──/ {
+    name=$1
+    gsub(/^[^A-Za-z0-9@._-]+/, "", name)
+    if ($2 != "") {
+      gsub(/[[:space:]]+$/, "", $2)
+      print name "@" $2
+    } else {
+      print name
+    }
+  }'
+}
+
+inventory_bun() {
+  if ! command -v bun >/dev/null 2>&1; then
+    return 0
+  fi
+  bun pm -g ls 2>/dev/null | awk '/[├└]──/ {
+    line=$0
+    sub(/^[^A-Za-z0-9@._-]+/, "", line)
+    split(line, parts, " ")
+    print parts[1]
+  }'
+}
+
+inventory_brew_formula() {
+  if ! command -v brew >/dev/null 2>&1; then
+    return 0
+  fi
+  brew list --formula 2>/dev/null
+}
+
+inventory_brew_cask() {
+  if ! command -v brew >/dev/null 2>&1; then
+    return 0
+  fi
+  brew list --cask 2>/dev/null
+}
+
+inventory_pipx() {
+  if ! command -v pipx >/dev/null 2>&1; then
+    return 0
+  fi
+  pipx list 2>/dev/null | awk '/^package / {
+    version=$3
+    gsub(/,/, "", version)
+    print $2 "@" version
+  }'
+}
+
+inventory_json() {
+  local mise
+  local uv
+  local pixi
+  local bun
+  local brew_formula
+  local brew_cask
+  local pipx
+
+  mise="$(inventory_mise | json_array)"
+  uv="$(inventory_uv | json_array)"
+  pixi="$(inventory_pixi | json_array)"
+  bun="$(inventory_bun | json_array)"
+  brew_formula="$(inventory_brew_formula | json_array)"
+  brew_cask="$(inventory_brew_cask | json_array)"
+  pipx="$(inventory_pipx | json_array)"
+
+  printf '{'
+  printf '"mise": %s, ' "$mise"
+  printf '"uv": %s, ' "$uv"
+  printf '"pixi": %s, ' "$pixi"
+  printf '"bun": %s, ' "$bun"
+  printf '"brew_formula": %s, ' "$brew_formula"
+  printf '"brew_cask": %s, ' "$brew_cask"
+  printf '"pipx": %s' "$pipx"
+  printf '}'
+}
+
 
 last_match() {
   local file="$1"
@@ -170,6 +279,9 @@ output_json() {
   local bun_bin="${16}"
   local tmux_status="${17}"
   local tmux_line="${18}"
+  local inventory
+
+  inventory="$(inventory_json)"
 
   printf '{\n'
   printf '  "maintenance_job": {"state": "%s", "last_exit": "%s"},\n' "$(json_escape "$maint_state")" "$(json_escape "$maint_exit")"
@@ -184,8 +296,9 @@ output_json() {
   printf '  },\n'
   printf '  "tmux_verification": {"status": "%s", "last_line": "%s"},\n' \
     "$(json_escape "$tmux_status")" "$(json_escape "$tmux_line")"
-  printf '  "tools": {"gcloud": "%s", "mise": "%s", "uv": "%s", "pixi": "%s", "bun": "%s"}\n' \
+  printf '  "tools": {"gcloud": "%s", "mise": "%s", "uv": "%s", "pixi": "%s", "bun": "%s"},\n' \
     "$(json_escape "$gcloud_bin")" "$(json_escape "$mise_bin")" "$(json_escape "$uv_bin")" "$(json_escape "$pixi_bin")" "$(json_escape "$bun_bin")"
+  printf '  "inventory": %s\n' "$inventory"
   printf '}\n'
 }
 
