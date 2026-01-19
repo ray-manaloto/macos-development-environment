@@ -16,9 +16,17 @@ Use the installer script:
 scripts/install-agent-stack.sh
 ```
 
+Maintenance integration:
+- When `MDE_UPDATE_AGENT_TOOLS=1` (default), the weekly maintenance job runs
+  this installer to keep tools updated.
+
 Options:
 - `PIXI_ENV=agent-stack` to change the pixi global environment name.
 - `INCLUDE_OPTIONAL=0` to skip optional tools like `gh copilot` and `fabric`.
+- `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1` is enabled by default to build
+  PyO3-based wheels on newer Python versions.
+- `TOOL_PYTHON_VERSION=3.12` to install Python tools using a
+  stable runtime even when `python@latest` is newer.
 
 ## Tools Installed
 
@@ -33,10 +41,12 @@ Python tools:
 Node tools:
 - `@anthropic-ai/claude-code`
 - `@openai/codex`
-- `opencode`
 - `openwork`
 - `create-agent-chat-app`
 - `@modelcontextprotocol/inspector`
+
+Go tools:
+- `opencode`
 
 Optional tools (when `INCLUDE_OPTIONAL=1`):
 - `gh copilot` extension (if `gh` is installed)

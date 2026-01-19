@@ -58,9 +58,10 @@ plist.
 - `MDE_AUTOFIX_STRICT=1`: additionally remove brew-managed runtimes (node,
   python, go, rust) when mise is present.
 - `MDE_UPDATE_OMZ=1`: update oh-my-zsh from git.
+- `MDE_UPDATE_AGENT_TOOLS=1`: update agent tooling (agent stack + LangChain CLI).
 
 Defaults in the plist: `MDE_AUTOFIX=1`, `MDE_AUTOFIX_STRICT=0`,
-`MDE_UPDATE_OMZ=0`.
+`MDE_UPDATE_OMZ=0`, `MDE_UPDATE_AGENT_TOOLS=1`.
 
 Auto-fix actions:
 - Ensure global mise versions (python/node/bun/go/rust).
@@ -68,6 +69,7 @@ Auto-fix actions:
   mise is available).
 - Sync managed configs (`~/.oh-my-zsh/custom/*` and `~/.tmux.conf`).
 - Ensure tmux plugin manager (TPM) is installed.
+- Update agent tooling (agent stack + LangChain CLI inventory).
 
 ## Strict Cleanup (MDE_AUTOFIX_STRICT=1)
 Strict cleanup removes brew-managed runtimes (node, python, go, rust) once
@@ -214,6 +216,10 @@ Possible issues:
 ## LangChain CLI Tooling
 - Inventory: `docs/langchain-cli-tools.md`
 - Install/update script: `scripts/install-langchain-cli-tools.sh`
+- `UV_TOOL_TIMEOUT_SECONDS=600` caps long installs (set to `0` to disable).
+- `DOCS_MONOREPO_SUBMODULES=1` controls docs submodule cloning (set `0` to skip).
+- `DOCS_MONOREPO_DEPTH=1` controls docs clone depth (set `0` for full history).
+- `docs-monorepo` is patched during install to include `pipeline.*` + template data.
 
 ## AI Agent Stack
 - Overview: `docs/agent-stack.md`

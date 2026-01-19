@@ -48,6 +48,16 @@ at the time of review, grouped by ecosystem.
   (`deepagents-cli`) toolchains. The winner depends on `PATH` ordering between
   `~/.local/bin` (uv) and `~/.bun/bin`.
 
+## Known Upstream Issues
+
+- `learning-langchain` ships an invalid `project.scripts.langgraph-dev`. The
+  installer patches it to `langgraph.cli:dev_command` so the tool can install;
+  pass `--config ch9/py/langgraph.json --verbose` manually if needed.
+- `docs-monorepo` requires Python >=3.13; the installer uses `python@latest`
+  for it. The upstream `pyproject.toml` only lists `packages = ["pipeline"]`,
+  so the installer patches it to include `pipeline.*` plus notebook templates
+  before installing so the `docs` CLI works.
+
 ## Install Script
 
 Use `scripts/install-langchain-cli-tools.sh` to install and upgrade the
@@ -58,9 +68,22 @@ inventory in this doc. The script:
   or git installs.
 - Falls back to git installs for Python CLIs that are not published to PyPI.
 
+Maintenance integration:
+- When `MDE_UPDATE_AGENT_TOOLS=1` (default), the weekly maintenance job runs
+  this installer to keep tools updated.
+
 Options:
 - `INCLUDE_INTERNAL=0` to skip internal or example CLIs (default is `1`).
 - `PIXI_ENV=langchain-cli-tools` to change the pixi global environment name.
+- `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1` is enabled by default to build
+  PyO3-based wheels on newer Python versions.
+- `UV_TOOL_FORCE=1` to allow uv to overwrite conflicting binaries (for example `langchain`).
+- `UV_TOOL_TIMEOUT_SECONDS=600` to cap long installs (used for `docs-monorepo`).
+- `DOCS_MONOREPO_SUBMODULES=1` to clone docs submodules (set `0` to skip when
+  you only need the `docs` CLI).
+- `DOCS_MONOREPO_DEPTH=1` to control clone depth (set `0` for full history).
+- `TOOL_PYTHON_VERSION=3.12` to install tools using a stable
+  Python runtime when `python@latest` is newer.
 
 Example:
 

@@ -6,6 +6,7 @@ export UV_NO_MANAGED_PYTHON="${UV_NO_MANAGED_PYTHON:-1}"
 MDE_AUTOFIX="${MDE_AUTOFIX:-0}"
 MDE_AUTOFIX_STRICT="${MDE_AUTOFIX_STRICT:-0}"
 MDE_UPDATE_OMZ="${MDE_UPDATE_OMZ:-0}"
+MDE_UPDATE_AGENT_TOOLS="${MDE_UPDATE_AGENT_TOOLS:-1}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOCK_DIR="${TMPDIR:-/tmp}/macos_dev_maintenance.lock"
@@ -339,6 +340,25 @@ update_pixi() {
   return 0
 }
 
+update_agent_tools() {
+  local repo_root="$(cd "$SCRIPT_DIR/.." && pwd)"
+  local agent_script="$repo_root/scripts/install-agent-stack.sh"
+  local langchain_script="$repo_root/scripts/install-langchain-cli-tools.sh"
+
+  if [[ ! -x "$agent_script" || ! -x "$langchain_script" ]]; then
+    log "Agent tooling scripts missing; skipping agent tool updates."
+    return 0
+  fi
+
+  log "Updating agent stack tools."
+  INCLUDE_OPTIONAL=1 "$agent_script" || return 1
+
+  log "Updating LangChain CLI tools."
+  INCLUDE_INTERNAL=1 "$langchain_script" || return 1
+
+  return 0
+}
+
 update_oh_my_zsh() {
   if [[ "$MDE_UPDATE_OMZ" != "1" ]]; then
     return 0
@@ -371,6 +391,9 @@ main() {
   update_bun || failures=1
   update_uv || failures=1
   update_pixi || failures=1
+  if [[ "$MDE_UPDATE_AGENT_TOOLS" == "1" ]]; then
+    update_agent_tools || failures=1
+  fi
   update_oh_my_zsh || failures=1
 
   if [[ "$MDE_AUTOFIX" == "1" ]]; then
