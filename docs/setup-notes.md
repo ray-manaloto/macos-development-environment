@@ -117,7 +117,8 @@ Possible issues:
 - Install/upgrade via Homebrew:
   - `brew install llvm` or `brew upgrade llvm`
 - Keep Apple clang as default; opt into brewed LLVM per shell/project.
-- Toggle in oh-my-zsh (managed): set `MDE_USE_LLVM=1` before loading zsh.
+- Enabled by default via oh-my-zsh (managed). Set `MDE_USE_LLVM=0` before
+  loading zsh to disable.
 - Optional per-project via `direnv`:
   - `export PATH="/opt/homebrew/opt/llvm/bin:$PATH"`
   - `export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"`

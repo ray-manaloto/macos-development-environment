@@ -1,8 +1,12 @@
 #!/usr/bin/env zsh
 # Managed by macos-development-environment.
-# Enable with: MDE_USE_LLVM=1
+# Enabled by default. Set MDE_USE_LLVM=0 to disable.
 
-if [[ "${MDE_USE_LLVM:-0}" != "1" ]]; then
+if [[ -z "${MDE_USE_LLVM:-}" ]]; then
+  export MDE_USE_LLVM=1
+fi
+
+if [[ "${MDE_USE_LLVM}" != "1" ]]; then
   return 0
 fi
 
