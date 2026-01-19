@@ -155,6 +155,8 @@ Possible issues:
   `sudo gcloud components update-macos-python --quiet` once. Avoid setting
   `CLOUDSDK_PYTHON` unless you need an override.
 - Migration from `~/google-cloud-sdk` (if present):
+  - One-shot sudo wrapper (recommended):
+    - `sudo scripts/setup-gcloud-sudo-all.sh`
   - Manual (one-time):
     - `sudo mv ~/google-cloud-sdk /opt/google-cloud-sdk`
     - `sudo chown -R "$USER":staff /opt/google-cloud-sdk`
