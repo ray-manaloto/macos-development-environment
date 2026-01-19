@@ -117,6 +117,8 @@ Possible issues:
 - Managed wrapper: `scripts/claude-wrapper.sh` (alias: `claude`).
 - Installed to `~/.local/bin/claude` for non-interactive shells.
 - Loads `GITHUB_PERSONAL_ACCESS_TOKEN` from the same GitHub token used elsewhere.
+- Removes `~/.bun/bin/claude` so there is only one `claude` on PATH.
+- Wrapper runs `@anthropic-ai/claude-code` (override with `MDE_CLAUDE_CLI`).
 - Use `\claude` to bypass the alias when needed.
 
 ## Firebase CLI Logs

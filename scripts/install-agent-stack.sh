@@ -5,6 +5,8 @@ export UV_NO_MANAGED_PYTHON="${UV_NO_MANAGED_PYTHON:-1}"
 
 export PYO3_USE_ABI3_FORWARD_COMPATIBILITY="${PYO3_USE_ABI3_FORWARD_COMPATIBILITY:-1}"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 PIXI_ENV="${PIXI_ENV:-agent-stack}"
 INCLUDE_OPTIONAL="${INCLUDE_OPTIONAL:-1}"
 
@@ -14,6 +16,20 @@ require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "missing required command: $1" >&2
     return 1
+  fi
+}
+
+
+cleanup_claude_cli() {
+  local cleanup="$SCRIPT_DIR/cleanup-claude-cli.sh"
+  if [[ -x "$cleanup" ]]; then
+    "$cleanup" >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  local bun_claude="$HOME/.bun/bin/claude"
+  if [[ -e "$bun_claude" ]]; then
+    rm -f "$bun_claude" || true
   fi
 }
 
@@ -160,6 +176,8 @@ for pkg in "${NODE_TOOLS[@]}"; do
     node_failures+=("$pkg")
   fi
 done
+
+cleanup_claude_cli
 
 for pkg in "${GO_TOOLS[@]}"; do
   echo "[go] installing ${pkg}"

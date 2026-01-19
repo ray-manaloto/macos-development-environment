@@ -36,6 +36,28 @@ find_claude() {
   return 1
 }
 
+resolve_claude() {
+  if [[ -n "${MDE_CLAUDE_CLI:-}" && -f "${MDE_CLAUDE_CLI}" ]]; then
+    printf '%s\n' "$MDE_CLAUDE_CLI"
+    return 0
+  fi
+
+  local bun_cli="$HOME/.bun/install/global/node_modules/@anthropic-ai/claude-code/cli.js"
+  if [[ -f "$bun_cli" ]]; then
+    printf '%s\n' "$bun_cli"
+    return 0
+  fi
+
+  local found=""
+  found="$(find_claude || true)"
+  if [[ -n "$found" ]]; then
+    printf '%s\n' "$found"
+    return 0
+  fi
+
+  return 1
+}
+
 if [[ -z "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" ]]; then
   mde_mcp_load_op_secret MDE_OP_GITHUB_TOKEN_REF GITHUB_TOKEN
   mde_mcp_load_keychain_secret "mde-github-token" GITHUB_TOKEN
@@ -45,9 +67,9 @@ if [[ -z "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" ]]; then
   fi
 fi
 
-claude_bin="$(find_claude || true)"
+claude_bin="$(resolve_claude || true)"
 if [[ -z "$claude_bin" ]]; then
-  echo "claude CLI not found in PATH." >&2
+  echo "claude CLI not found. Install @anthropic-ai/claude-code or set MDE_CLAUDE_CLI." >&2
   exit 1
 fi
 
