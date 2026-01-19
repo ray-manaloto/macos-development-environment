@@ -111,7 +111,7 @@ Possible issues:
 - Status dashboard (quick overview):
   - `scripts/status-dashboard.sh`
   - `scripts/status-dashboard.sh --tmux` (tmux status bar)
-  - `scripts/status-dashboard.sh --json` (automation)
+  - `scripts/status-dashboard.sh --json` (automation; includes tmux verification)
   - `mde-status` (oh-my-zsh alias)
 - Health check (no secrets printed):
   - `scripts/health-check.sh`
