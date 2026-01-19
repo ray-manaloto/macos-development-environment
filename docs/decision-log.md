@@ -51,3 +51,11 @@ best practices and your preferred tooling order.
   preferences.
 - Impact: `MDE_AUTOFIX=1` enables changes; strict mode optionally removes
   brew-managed runtimes.
+
+
+## 2026-01 - Python runtime ownership
+- Decision: disable uv-managed Python downloads by default and use mise as the
+  single runtime source of truth.
+- Rationale: avoid duplicated runtime installs and PATH conflicts.
+- Impact: `UV_NO_MANAGED_PYTHON=1` set in templates and scripts; uv only manages
+  tools/venvs.
