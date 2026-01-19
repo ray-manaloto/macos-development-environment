@@ -107,6 +107,14 @@ Possible issues:
   - Repo source: `scripts/macos-dev-maintenance.sh`
 - Notifications are log-only by default (no UI toast).
 
+## Validation and Post-Setup
+- Health check (no secrets printed):
+  - `scripts/health-check.sh`
+- One-time post-setup run with summary log:
+  - `scripts/post-setup-run.sh`
+  - Summary log: `~/Library/Logs/com.ray-manaloto.macos-dev-maintenance/post-setup-summary.log`
+  - Run log: `~/Library/Logs/com.ray-manaloto.macos-dev-maintenance/post-setup-run.log`
+
 ## Shell Configuration Notes
 - Homebrew curl is preferred in shell config when needed:
   - `export PATH="/opt/homebrew/opt/curl/bin:$PATH"`
