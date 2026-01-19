@@ -97,6 +97,26 @@ load_keychain_secrets() {
   load_keychain_secret "mde-anthropic-api-key" ANTHROPIC_API_KEY
 }
 
+ensure_gcloud_sdk_location() {
+  local src="$HOME/google-cloud-sdk"
+  local helper="/usr/local/sbin/mde-gcloud-migrate"
+
+  if [[ ! -d "$src" ]]; then
+    return 0
+  fi
+
+  if [[ ! -x "$helper" ]]; then
+    log "gcloud SDK in $src; install sudo helper to migrate."
+    return 0
+  fi
+
+  if sudo -n "$helper"; then
+    log "gcloud SDK migration completed."
+  else
+    log "gcloud SDK migration skipped (sudo not permitted)."
+  fi
+}
+
 setup_path() {
   local home="${HOME:-/Users/rmanaloto}"
   export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.bun/bin:$home/.pixi/bin:$home/.local/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -338,6 +358,7 @@ main() {
   trap 'rmdir "$LOCK_DIR"' EXIT
 
   setup_path
+  ensure_gcloud_sdk_location || true
   load_1password_secrets || true
   load_keychain_secrets || true
   if [[ -x "$SCRIPT_DIR/secrets-smoke-test.sh" ]]; then

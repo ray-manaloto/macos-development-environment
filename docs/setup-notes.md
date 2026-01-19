@@ -155,9 +155,13 @@ Possible issues:
   `sudo gcloud components update-macos-python --quiet` once. Avoid setting
   `CLOUDSDK_PYTHON` unless you need an override.
 - Migration from `~/google-cloud-sdk` (if present):
-  - `sudo mv ~/google-cloud-sdk /opt/google-cloud-sdk`
-  - `sudo chown -R "$USER":staff /opt/google-cloud-sdk`
-  - `/opt/google-cloud-sdk/install.sh --quiet --path-update false --command-completion false`
+  - Manual (one-time):
+    - `sudo mv ~/google-cloud-sdk /opt/google-cloud-sdk`
+    - `sudo chown -R "$USER":staff /opt/google-cloud-sdk`
+    - `/opt/google-cloud-sdk/install.sh --quiet --path-update false --command-completion false`
+  - Automated (passwordless, least-privilege helper):
+    - `sudo scripts/setup-gcloud-sudo-helper.sh`
+    - Then maintenance will attempt migration via `/usr/local/sbin/mde-gcloud-migrate`.
 - Use `direnv` or per-repo `.env` files instead of global secrets.
 - Store managed dotfile overrides in `~/.oh-my-zsh/custom` to avoid merge
   conflicts during updates.
