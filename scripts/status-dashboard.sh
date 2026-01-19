@@ -239,6 +239,35 @@ cmd_path() {
   fi
 }
 
+
+claude_paths() {
+  local entries=()
+  local matches=()
+  local entry
+  local candidate
+  local existing
+  local seen
+
+  IFS=':' read -r -a entries <<< "$PATH"
+  for entry in "${entries[@]}"; do
+    candidate="$entry/claude"
+    if [[ -x "$candidate" ]]; then
+      seen=0
+      for existing in "${matches[@]}"; do
+        if [[ "$existing" == "$candidate" ]]; then
+          seen=1
+          break
+        fi
+      done
+      if [[ "$seen" -eq 0 ]]; then
+        matches+=("$candidate")
+      fi
+    fi
+  done
+
+  printf '%s\n' "${matches[@]}"
+}
+
 gcloud_path() {
   if [[ -x /opt/google-cloud-sdk/bin/gcloud ]]; then
     printf '/opt/google-cloud-sdk/bin/gcloud'
@@ -279,7 +308,27 @@ output_json() {
   local bun_bin="${16}"
   local tmux_status="${17}"
   local tmux_line="${18}"
+  local claude_expected="$HOME/.local/bin/claude"
+  local claude_status="missing"
+  local claude_paths=""
+  local claude_paths_json="[]"
   local inventory
+
+  claude_paths="$(claude_paths || true)"
+  if [[ -n "$claude_paths" ]]; then
+    local claude_count
+    local claude_first
+    claude_count="$(printf '%s\n' "$claude_paths" | sed '/^$/d' | wc -l | tr -d ' ')"
+    claude_first="$(printf '%s\n' "$claude_paths" | sed -n '1p')"
+    if [[ "$claude_count" -gt 1 ]]; then
+      claude_status="multiple"
+    elif [[ "$claude_first" != "$claude_expected" ]]; then
+      claude_status="mismatch"
+    else
+      claude_status="ok"
+    fi
+  fi
+  claude_paths_json="$(printf '%s\n' "$claude_paths" | json_array)"
 
   inventory="$(inventory_json)"
 
@@ -298,6 +347,8 @@ output_json() {
     "$(json_escape "$tmux_status")" "$(json_escape "$tmux_line")"
   printf '  "tools": {"gcloud": "%s", "mise": "%s", "uv": "%s", "pixi": "%s", "bun": "%s"},\n' \
     "$(json_escape "$gcloud_bin")" "$(json_escape "$mise_bin")" "$(json_escape "$uv_bin")" "$(json_escape "$pixi_bin")" "$(json_escape "$bun_bin")"
+  printf '  "claude": {"status": "%s", "expected": "%s", "paths": %s},\n' \
+    "$(json_escape "$claude_status")" "$(json_escape "$claude_expected")" "$claude_paths_json"
   printf '  "inventory": %s\n' "$inventory"
   printf '}\n'
 }
