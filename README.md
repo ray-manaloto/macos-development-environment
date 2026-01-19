@@ -12,6 +12,18 @@ and troubleshoot runs.
 - Tail logs:
   - `tail -n 200 ~/Library/Logs/com.ray-manaloto.macos-dev-maintenance/macos-dev-maintenance.out`
 
+## Golden Path (One-Time Setup)
+- Run all sudo-required setup steps (gcloud migration + log rotation):
+  - `sudo scripts/setup-sudo-all.sh`
+- Install the weekly validation job:
+  - `scripts/install-validation-launchd.sh`
+- Start the maintenance job now:
+  - `launchctl start com.ray-manaloto.macos-dev-maintenance`
+- Run the post-setup validation once:
+  - `scripts/post-setup-run.sh`
+- Confirm health:
+  - `scripts/health-check.sh`
+
 ## Automation Overview
 - Launchd job:
   - `~/Library/LaunchAgents/com.ray-manaloto.macos-dev-maintenance.plist`
