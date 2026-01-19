@@ -45,6 +45,50 @@ check_cmd() {
   fi
 }
 
+
+check_claude_path() {
+  local expected="$HOME/.local/bin/claude"
+  local matches=()
+  local entry
+  local candidate
+  local existing
+  local seen
+
+  IFS=':' read -r -a entries <<< "$PATH"
+  for entry in "${entries[@]}"; do
+    candidate="$entry/claude"
+    if [[ -x "$candidate" ]]; then
+      seen=0
+      for existing in "${matches[@]}"; do
+        if [[ "$existing" == "$candidate" ]]; then
+          seen=1
+          break
+        fi
+      done
+      if [[ "$seen" -eq 0 ]]; then
+        matches+=("$candidate")
+      fi
+    fi
+  done
+
+  if [[ "${#matches[@]}" -eq 0 ]]; then
+    warn "claude not found in PATH"
+    return 0
+  fi
+
+  if [[ "${#matches[@]}" -gt 1 ]]; then
+    fail "multiple claude binaries: ${matches[*]}"
+    return 1
+  fi
+
+  if [[ "${matches[0]}" != "$expected" ]]; then
+    fail "claude path mismatch: ${matches[0]} (expected $expected)"
+    return 1
+  fi
+
+  log "ok: claude path $expected"
+}
+
 check_file() {
   local path="$1"
   local required="$2"
@@ -173,6 +217,7 @@ main() {
   check_cmd uv 0
   check_cmd pixi 0
   check_cmd rg 1
+  check_claude_path
 
   check_file "$HOME/.oh-my-zsh/custom/macos-env.zsh" 1
   check_file "$HOME/.oh-my-zsh/custom/llvm.zsh" 0
