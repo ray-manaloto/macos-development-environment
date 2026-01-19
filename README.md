@@ -67,6 +67,7 @@ and troubleshoot runs.
 - `scripts/status-dashboard.sh`
 - `scripts/health-check.sh`
 - `scripts/verify-tmux-setup.sh`
+- `scripts/verify-all.sh`
 - `scripts/post-setup-run.sh`
 - `scripts/install-validation-launchd.sh`
 - `scripts/setup-sudo-all.sh`

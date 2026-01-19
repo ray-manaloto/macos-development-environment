@@ -117,6 +117,8 @@ Possible issues:
   - `scripts/health-check.sh`
 - Tmux verification (plugins + status bar):
   - `scripts/verify-tmux-setup.sh`
+- Verify all (health + tmux + dashboard JSON):
+  - `scripts/verify-all.sh`
 - One-time post-setup run with summary log:
   - `scripts/post-setup-run.sh`
   - Summary log: `~/Library/Logs/com.ray-manaloto.macos-dev-maintenance/post-setup-summary.log`
