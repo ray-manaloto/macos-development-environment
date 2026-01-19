@@ -70,6 +70,27 @@ summary_status() {
   printf '%s' "$line" | awk '{print $NF}'
 }
 
+
+tmux_verification_status() {
+  local line="$1"
+
+  if [[ -z "$line" || "$line" == "missing" ]]; then
+    printf 'unknown'
+    return 0
+  fi
+
+  if [[ "$line" == *"PASSED"* ]]; then
+    printf 'PASS'
+    return 0
+  fi
+  if [[ "$line" == *"FAILED"* ]]; then
+    printf 'FAIL'
+    return 0
+  fi
+
+  printf 'unknown'
+}
+
 launchd_status_code() {
   local label="$1"
   launchctl list 2>/dev/null | awk -v label="$label" '$3==label {print $2}' || true
@@ -147,6 +168,8 @@ output_json() {
   local uv_bin="${14}"
   local pixi_bin="${15}"
   local bun_bin="${16}"
+  local tmux_status="${17}"
+  local tmux_line="${18}"
 
   printf '{\n'
   printf '  "maintenance_job": {"state": "%s", "last_exit": "%s"},\n' "$(json_escape "$maint_state")" "$(json_escape "$maint_exit")"
@@ -159,6 +182,8 @@ output_json() {
   printf '    "summary": {"path": "%s", "size": "%s", "status": "%s"}\n' \
     "$(json_escape "$SUMMARY_LOG")" "$(json_escape "$summary_size")" "$(json_escape "$summary")"
   printf '  },\n'
+  printf '  "tmux_verification": {"status": "%s", "last_line": "%s"},\n' \
+    "$(json_escape "$tmux_status")" "$(json_escape "$tmux_line")"
   printf '  "tools": {"gcloud": "%s", "mise": "%s", "uv": "%s", "pixi": "%s", "bun": "%s"}\n' \
     "$(json_escape "$gcloud_bin")" "$(json_escape "$mise_bin")" "$(json_escape "$uv_bin")" "$(json_escape "$pixi_bin")" "$(json_escape "$bun_bin")"
   printf '}\n'
@@ -198,7 +223,9 @@ main() {
   local last_maint_line
   local last_valid_line
   local last_summary_line
+  local last_tmux_line
   local summary
+  local tmux_status
   local last_maint_time
   local maint_size
   local valid_size
@@ -217,7 +244,9 @@ main() {
   last_maint_line="$(last_match "$MAINT_LOG" "Homebrew update\\.")"
   last_valid_line="$(last_match "$VALID_LOG" ".")"
   last_summary_line="$(last_match "$SUMMARY_LOG" "Post-setup summary")"
+  last_tmux_line="$(last_match "$SUMMARY_LOG" "Tmux verification")"
   summary="$(summary_status "$last_summary_line")"
+  tmux_status="$(tmux_verification_status "$last_tmux_line")"
   last_maint_time="$(extract_time "$last_maint_line")"
 
   maint_size="$(log_size "$MAINT_LOG")"
@@ -238,7 +267,8 @@ main() {
       output_json "$maint_state" "$maint_exit" "$valid_state" "$valid_exit" \
         "$last_maint_line" "$last_valid_line" "$summary" "$last_maint_time" \
         "$maint_size" "$valid_size" "$summary_size" \
-        "$gcloud_bin" "$mise_bin" "$uv_bin" "$pixi_bin" "$bun_bin"
+        "$gcloud_bin" "$mise_bin" "$uv_bin" "$pixi_bin" "$bun_bin" \
+        "$tmux_status" "$last_tmux_line"
       ;;
     *)
       log "Status dashboard"
@@ -250,6 +280,7 @@ main() {
       log "Last maintenance: $last_maint_line"
       log "Last validation:  $last_valid_line"
       log "Last summary:     $last_summary_line"
+      log "Last tmux verify: $last_tmux_line"
       log "gcloud: $gcloud_bin"
       log "mise: $mise_bin"
       log "uv:   $uv_bin"
