@@ -68,6 +68,35 @@ load_1password_secrets() {
   load_op_secret MDE_OP_ANTHROPIC_API_KEY_REF ANTHROPIC_API_KEY
 }
 
+load_keychain_secret() {
+  local label="$1"
+  local env_var="$2"
+  local value
+
+  if [[ -n "${!env_var:-}" ]]; then
+    return 0
+  fi
+  if ! have_cmd security; then
+    return 0
+  fi
+
+  value="$(security find-generic-password -s "$label" -w 2>/dev/null || true)"
+  if [[ -z "$value" ]]; then
+    return 0
+  fi
+
+  printf -v "$env_var" '%s' "$value"
+  export "$env_var"
+  return 0
+}
+
+load_keychain_secrets() {
+  load_keychain_secret "mde-github-token" GITHUB_TOKEN
+  load_keychain_secret "mde-github-mcp-pat" GITHUB_MCP_PAT
+  load_keychain_secret "mde-openai-api-key" OPENAI_API_KEY
+  load_keychain_secret "mde-anthropic-api-key" ANTHROPIC_API_KEY
+}
+
 setup_path() {
   local home="${HOME:-/Users/rmanaloto}"
   export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.bun/bin:$home/.pixi/bin:$home/.local/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -302,6 +331,7 @@ main() {
 
   setup_path
   load_1password_secrets || true
+  load_keychain_secrets || true
 
   failures=0
   update_brew || failures=1

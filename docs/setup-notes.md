@@ -124,6 +124,12 @@ Possible issues:
   - `MDE_OP_OPENAI_API_KEY_REF=op://Vault/OpenAI/api_key`
   - `MDE_OP_ANTHROPIC_API_KEY_REF=op://Vault/Anthropic/api_key`
 - The maintenance script loads these into the environment when available.
+- Keychain fallback (local-only, no 1Password service account):
+  - `security add-generic-password -a "$USER" -s mde-github-token -w`
+  - `security add-generic-password -a "$USER" -s mde-github-mcp-pat -w` (optional)
+  - `security add-generic-password -a "$USER" -s mde-openai-api-key -w`
+  - `security add-generic-password -a "$USER" -s mde-anthropic-api-key -w` (optional)
+- Keychain values are used only when 1Password does not provide a value.
 - Keep secrets out of `~/.oh-my-zsh/custom/*`; use `op run -- <cmd>` for ad-hoc work.
 - For tmux, avoid global exports; prefer `op run -- tmux new-session ...` or per-session `setenv`.
 
