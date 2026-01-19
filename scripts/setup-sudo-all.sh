@@ -27,4 +27,11 @@ else
   log "gcloud sudo setup script missing; skipping."
 fi
 
+if [[ -x "$SCRIPT_DIR/setup-newsyslog-rotation.sh" ]]; then
+  log "Installing log rotation config."
+  "$SCRIPT_DIR/setup-newsyslog-rotation.sh"
+else
+  log "Log rotation setup script missing; skipping."
+fi
+
 log "Sudo setup tasks complete."

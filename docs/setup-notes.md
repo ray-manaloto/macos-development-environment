@@ -114,6 +114,11 @@ Possible issues:
   - `scripts/post-setup-run.sh`
   - Summary log: `~/Library/Logs/com.ray-manaloto.macos-dev-maintenance/post-setup-summary.log`
   - Run log: `~/Library/Logs/com.ray-manaloto.macos-dev-maintenance/post-setup-run.log`
+- Weekly validation via launchd (installs + runs at load):
+  - `scripts/install-validation-launchd.sh`
+  - Logs: `~/Library/Logs/com.ray-manaloto.macos-dev-maintenance/macos-dev-validation.out`
+- Log rotation (newsyslog, requires sudo):
+  - `sudo scripts/setup-newsyslog-rotation.sh`
 
 ## Shell Configuration Notes
 - Homebrew curl is preferred in shell config when needed:

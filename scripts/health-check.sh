@@ -24,6 +24,11 @@ have_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
+setup_path() {
+  local home="${HOME:-/Users/rmanaloto}"
+  export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.bun/bin:$home/.pixi/bin:$home/.local/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+}
+
 check_cmd() {
   local name="$1"
   local required="$2"
@@ -71,12 +76,26 @@ check_secret() {
   fi
 }
 
-check_launchd() {
-  if launchctl list | rg -q '^-\s+0\s+com\.ray-manaloto\.macos-dev-maintenance$'; then
-    log "ok: launchd job loaded"
-  else
-    fail "launchd job not loaded"
+check_launchd_job() {
+  local label="$1"
+  local name="$2"
+  local status
+
+  status="$(launchctl list 2>/dev/null | awk -v label="$label" '$3 == label {print $2}' || true)"
+  if [[ -z "$status" ]]; then
+    fail "$name job not loaded"
+    return 1
   fi
+
+  log "ok: $name job loaded"
+  if [[ "$status" != "0" ]]; then
+    warn "$name job last exit status: $status"
+  fi
+}
+
+check_launchd() {
+  check_launchd_job "com.ray-manaloto.macos-dev-maintenance" "launchd maintenance"
+  check_launchd_job "com.ray-manaloto.macos-dev-validation" "launchd validation"
 }
 
 check_gcloud() {
@@ -146,6 +165,7 @@ check_log_health() {
 }
 
 main() {
+  setup_path
   log "Starting health check."
   check_cmd mise 1
   check_cmd brew 0
