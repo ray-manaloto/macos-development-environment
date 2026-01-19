@@ -38,6 +38,7 @@ path_rest=(${path_rest:#$HOME/.amp/bin})
 path_rest=(${path_rest:#$HOME/.antigravity/antigravity/bin})
 path_rest=(${path_rest:#$HOME/.local/bin})
 path_rest=(${path_rest:#$HOME/.oh-my-zsh/custom/bin})
+path_rest=(${path_rest:#/opt/google-cloud-sdk/bin})
 path_rest=(${path_rest:#/opt/homebrew/opt/curl/bin})
 path=(
   "$HOME/.local/share/mise/shims"
@@ -48,6 +49,7 @@ path=(
   "$HOME/.antigravity/antigravity/bin"
   "$HOME/.local/bin"
   "$HOME/.oh-my-zsh/custom/bin"
+  "/opt/google-cloud-sdk/bin"
   "/opt/homebrew/opt/curl/bin"
   $path_rest
 )

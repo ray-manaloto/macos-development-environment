@@ -59,3 +59,18 @@ best practices and your preferred tooling order.
 - Rationale: avoid duplicated runtime installs and PATH conflicts.
 - Impact: `UV_NO_MANAGED_PYTHON=1` set in templates and scripts; uv only manages
   tools/venvs.
+
+
+## 2026-01 - gcloud install source
+- Decision: install Google Cloud SDK via the official installer under
+  `/opt/google-cloud-sdk` and remove Homebrew `gcloud-cli`.
+- Rationale: avoid Homebrew Python dependency conflicts with strict cleanup.
+- Impact: `/opt/google-cloud-sdk/bin` added to PATH and maintained outside brew.
+
+## 2026-01 - gcloud Python update
+- Decision: use `gcloud components update-macos-python` (sudo) when needed to
+  keep the SDK-managed Python current and rely on gcloud's internal venv.
+- Rationale: keep gcloud runtime self-contained; `gsutil` is legacy and we use
+  `gcloud storage` instead.
+- Impact: no `CLOUDSDK_PYTHON` export needed; gcloud uses
+  `~/.config/gcloud/virtenv` by default.

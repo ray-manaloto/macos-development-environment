@@ -116,6 +116,16 @@ Possible issues:
 ## Modern Best Practices (extra)
 - Keep Homebrew limited to OS-level packages; use mise for runtimes.
 - Install `gpg` so mise can verify downloads (auto-fix installs `gnupg` via brew).
+- Prefer the official Google Cloud SDK installer for `gcloud` and install
+  it under `/opt/google-cloud-sdk` (PATH managed via oh-my-zsh templates).
+- `gsutil` is legacy; use `gcloud storage` commands instead.
+- If you need the SDK-managed Python, run
+  `sudo gcloud components update-macos-python --quiet` once. Avoid setting
+  `CLOUDSDK_PYTHON` unless you need an override.
+- Migration from `~/google-cloud-sdk` (if present):
+  - `sudo mv ~/google-cloud-sdk /opt/google-cloud-sdk`
+  - `sudo chown -R "$USER":staff /opt/google-cloud-sdk`
+  - `/opt/google-cloud-sdk/install.sh --quiet --path-update false --command-completion false`
 - Use `direnv` or per-repo `.env` files instead of global secrets.
 - Store managed dotfile overrides in `~/.oh-my-zsh/custom` to avoid merge
   conflicts during updates.
