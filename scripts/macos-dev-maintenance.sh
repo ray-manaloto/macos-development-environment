@@ -231,7 +231,11 @@ update_brew() {
   "$BREW" upgrade --formula -v || return 1
 
   local outdated_casks=()
-  mapfile -t outdated_casks < <("$BREW" outdated --cask | grep -v '^osquery$' || true)
+  while IFS= read -r cask; do
+    [[ -z "$cask" ]] && continue
+    [[ "$cask" == "osquery" ]] && continue
+    outdated_casks+=("$cask")
+  done < <("$BREW" outdated --cask || true)
   if (( ${#outdated_casks[@]} > 0 )); then
     "$BREW" upgrade --cask -v "${outdated_casks[@]}" || return 1
   fi
@@ -332,6 +336,9 @@ main() {
   setup_path
   load_1password_secrets || true
   load_keychain_secrets || true
+  if [[ -x "$SCRIPT_DIR/secrets-smoke-test.sh" ]]; then
+    "$SCRIPT_DIR/secrets-smoke-test.sh" || true
+  fi
 
   failures=0
   update_brew || failures=1
