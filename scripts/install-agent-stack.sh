@@ -150,6 +150,7 @@ PYTHON_TOOLS=(
 NODE_TOOLS=(
   "@anthropic-ai/claude-code"
   "@openai/codex"
+  "@google/gemini-cli"
   "openwork"
   "create-agent-chat-app"
   "@modelcontextprotocol/inspector"

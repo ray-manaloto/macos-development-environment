@@ -36,6 +36,7 @@ main() {
   check_secret "mde-openai-api-key" OPENAI_API_KEY || failures=1
   check_secret "mde-anthropic-api-key" ANTHROPIC_API_KEY || failures=1
   check_secret "mde-langsmith-api-key" LANGSMITH_API_KEY || failures=1
+  check_secret "mde-gemini-api-key" GEMINI_API_KEY || failures=1
 
   if [[ "$failures" -ne 0 ]]; then
     return 1

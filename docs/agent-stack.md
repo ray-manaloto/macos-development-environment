@@ -41,6 +41,7 @@ Python tools:
 Node tools:
 - `@anthropic-ai/claude-code`
 - `@openai/codex`
+- `@google/gemini-cli`
 - `openwork`
 - `create-agent-chat-app`
 - `@modelcontextprotocol/inspector`
@@ -56,3 +57,4 @@ Optional tools (when `INCLUDE_OPTIONAL=1`):
 - `mise` is the runtime source of truth for Python/Node/Bun.
 - pixi and uv are installed via their official installers when missing.
 - For JS CLIs, bun installs the latest versions using `@latest`.
+- Gemini CLI reads `GEMINI_API_KEY` (Keychain `mde-gemini-api-key` or `MDE_OP_GEMINI_API_KEY_REF`).

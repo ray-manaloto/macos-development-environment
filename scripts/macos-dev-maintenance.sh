@@ -68,6 +68,7 @@ load_1password_secrets() {
   load_op_secret MDE_OP_OPENAI_API_KEY_REF OPENAI_API_KEY
   load_op_secret MDE_OP_ANTHROPIC_API_KEY_REF ANTHROPIC_API_KEY
   load_op_secret MDE_OP_LANGSMITH_API_KEY_REF LANGSMITH_API_KEY
+  load_op_secret MDE_OP_GEMINI_API_KEY_REF GEMINI_API_KEY
 }
 
 load_keychain_secret() {
@@ -97,6 +98,7 @@ load_keychain_secrets() {
   load_keychain_secret "mde-openai-api-key" OPENAI_API_KEY
   load_keychain_secret "mde-anthropic-api-key" ANTHROPIC_API_KEY
   load_keychain_secret "mde-langsmith-api-key" LANGSMITH_API_KEY
+  load_keychain_secret "mde-gemini-api-key" GEMINI_API_KEY
 }
 
 ensure_gcloud_sdk_location() {

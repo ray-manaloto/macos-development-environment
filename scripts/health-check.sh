@@ -230,6 +230,7 @@ main() {
   check_secret "mde-openai-api-key"
   check_secret "mde-anthropic-api-key"
   check_secret "mde-langsmith-api-key"
+  check_secret "mde-gemini-api-key"
 
   check_log_health
 
