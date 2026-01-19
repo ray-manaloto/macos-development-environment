@@ -48,19 +48,33 @@ fi
 SRC="$HOME_DIR/google-cloud-sdk"
 DST="/opt/google-cloud-sdk"
 
+fix_gcloud_config_permissions() {
+  local cfg="$HOME_DIR/.config/gcloud"
+  if [[ -d "$cfg" ]]; then
+    chown -R "$TARGET_USER":staff "$cfg"
+  fi
+}
+
 if [[ ! -d "$SRC" ]]; then
   log "gcloud SDK not found at $SRC."
+  fix_gcloud_config_permissions
   exit 0
 fi
 
 if [[ -e "$DST" ]]; then
   log "gcloud SDK already at $DST."
+  fix_gcloud_config_permissions
   exit 0
 fi
 
 mv "$SRC" "$DST"
 chown -R "$TARGET_USER":staff "$DST"
-"$DST/install.sh" --quiet --path-update false --command-completion false
+if command -v sudo >/dev/null 2>&1; then
+  sudo -u "$TARGET_USER" -H "$DST/install.sh" --quiet --path-update false --command-completion false
+else
+  su -l "$TARGET_USER" -c "$DST/install.sh --quiet --path-update false --command-completion false"
+fi
+fix_gcloud_config_permissions
 log "gcloud SDK migrated to $DST."
 SCRIPT
 

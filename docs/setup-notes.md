@@ -162,6 +162,10 @@ Possible issues:
   - Automated (passwordless, least-privilege helper):
     - `sudo scripts/setup-gcloud-sudo-helper.sh`
     - Then maintenance will attempt migration via `/usr/local/sbin/mde-gcloud-migrate`.
+    - The helper runs `install.sh` as your user and fixes `~/.config/gcloud`
+      ownership if it was created by root.
+  - If you see `PermissionError` under `~/.config/gcloud/virtenv`, fix ownership:
+    - `sudo chown -R "$USER":staff ~/.config/gcloud`
 - Use `direnv` or per-repo `.env` files instead of global secrets.
 - Store managed dotfile overrides in `~/.oh-my-zsh/custom` to avoid merge
   conflicts during updates.
