@@ -64,6 +64,12 @@ and troubleshoot runs.
 - `scripts/macos-dev-maintenance.sh`
 - `scripts/ensure-managed-configs.sh`
 - `scripts/optimize-tmux.sh`
+- `scripts/status-dashboard.sh`
+- `scripts/health-check.sh`
+- `scripts/post-setup-run.sh`
+- `scripts/install-validation-launchd.sh`
+- `scripts/setup-sudo-all.sh`
+- `scripts/setup-newsyslog-rotation.sh`
 - `scripts/agent-hud`
 - `scripts/quality-checks.sh`
 - `scripts/run-multi-agent.sh`

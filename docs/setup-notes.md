@@ -108,6 +108,8 @@ Possible issues:
 - Notifications are log-only by default (no UI toast).
 
 ## Validation and Post-Setup
+- Status dashboard (quick overview):
+  - `scripts/status-dashboard.sh`
 - Health check (no secrets printed):
   - `scripts/health-check.sh`
 - One-time post-setup run with summary log:
