@@ -19,6 +19,55 @@ have_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
+load_op_secret() {
+  local ref_var="$1"
+  local env_var="$2"
+  local ref
+  local value
+
+  ref="${!ref_var:-}"
+  if [[ -z "$ref" ]]; then
+    return 0
+  fi
+  if [[ -n "${!env_var:-}" ]]; then
+    return 0
+  fi
+
+  value="$(op read "$ref" 2>/dev/null || true)"
+  if [[ -z "$value" ]]; then
+    log "1Password read failed for $ref_var."
+    return 0
+  fi
+
+  printf -v "$env_var" '%s' "$value"
+  export "$env_var"
+  return 0
+}
+
+load_1password_secrets() {
+  local token="${OP_SERVICE_ACCOUNT_TOKEN:-}"
+
+  if [[ -z "$token" ]] && have_cmd security; then
+    token="$(security find-generic-password -s mde-op-sa -w 2>/dev/null || true)"
+  fi
+
+  if [[ -z "$token" ]]; then
+    return 0
+  fi
+
+  if ! have_cmd op; then
+    log "1Password CLI not found; skipping secrets load."
+    return 0
+  fi
+
+  export OP_SERVICE_ACCOUNT_TOKEN="$token"
+
+  load_op_secret MDE_OP_GITHUB_TOKEN_REF GITHUB_TOKEN
+  load_op_secret MDE_OP_GITHUB_MCP_PAT_REF GITHUB_MCP_PAT
+  load_op_secret MDE_OP_OPENAI_API_KEY_REF OPENAI_API_KEY
+  load_op_secret MDE_OP_ANTHROPIC_API_KEY_REF ANTHROPIC_API_KEY
+}
+
 setup_path() {
   local home="${HOME:-/Users/rmanaloto}"
   export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.bun/bin:$home/.pixi/bin:$home/.local/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -252,6 +301,7 @@ main() {
   trap 'rmdir "$LOCK_DIR"' EXIT
 
   setup_path
+  load_1password_secrets || true
 
   failures=0
   update_brew || failures=1

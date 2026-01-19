@@ -18,12 +18,6 @@ if [ -s "$BUN_INSTALL/_bun" ]; then
   source "$BUN_INSTALL/_bun"
 fi
 
-# GitHub token exports (best-effort).
-if command -v gh >/dev/null 2>&1; then
-  export GITHUB_TOKEN="$(gh auth token 2>/dev/null)"
-  export GITHUB_MCP_PAT="$GITHUB_TOKEN"
-fi
-
 # Python toolchain behavior
 export UV_NO_MANAGED_PYTHON=1
 

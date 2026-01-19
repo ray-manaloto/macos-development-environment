@@ -113,6 +113,20 @@ Possible issues:
 - Managed oh-my-zsh custom files live under `templates/oh-my-zsh`.
   - Sync them with `scripts/ensure-managed-configs.sh`.
 
+## Secrets and Automation (1Password preferred)
+- Use a 1Password service account for unattended runs (no login prompts).
+- Store the service account token in Keychain:
+  - `security add-generic-password -a "$USER" -s mde-op-sa -w`
+- Install the 1Password CLI (`op`) and ensure it is on `PATH`.
+- Configure secret references in the launchd plist (references are not secrets):
+  - `MDE_OP_GITHUB_TOKEN_REF=op://Vault/GitHub/token`
+  - `MDE_OP_GITHUB_MCP_PAT_REF=op://Vault/GitHub/mcp_pat` (optional)
+  - `MDE_OP_OPENAI_API_KEY_REF=op://Vault/OpenAI/api_key`
+  - `MDE_OP_ANTHROPIC_API_KEY_REF=op://Vault/Anthropic/api_key`
+- The maintenance script loads these into the environment when available.
+- Keep secrets out of `~/.oh-my-zsh/custom/*`; use `op run -- <cmd>` for ad-hoc work.
+- For tmux, avoid global exports; prefer `op run -- tmux new-session ...` or per-session `setenv`.
+
 ## Modern Best Practices (extra)
 - Keep Homebrew limited to OS-level packages; use mise for runtimes.
 - Install `gpg` so mise can verify downloads (auto-fix installs `gnupg` via brew).

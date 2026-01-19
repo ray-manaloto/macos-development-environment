@@ -74,3 +74,12 @@ best practices and your preferred tooling order.
   `gcloud storage` instead.
 - Impact: no `CLOUDSDK_PYTHON` export needed; gcloud uses
   `~/.config/gcloud/virtenv` by default.
+
+## 2026-01 - Secrets automation
+- Decision: use 1Password service accounts with the `op` CLI for unattended
+  secrets in automation scripts.
+- Rationale: avoids interactive logins and keeps secrets out of shell startup
+  files and launchd plists.
+- Impact: maintenance script loads secrets via Keychain-backed
+  `OP_SERVICE_ACCOUNT_TOKEN` and `MDE_OP_*_REF` mappings.
+
