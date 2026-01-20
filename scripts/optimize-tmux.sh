@@ -35,6 +35,12 @@ install_tmux() {
 }
 
 install_skypilot() {
+  if command -v pixi >/dev/null 2>&1; then
+    if pixi global install "skypilot[aws]"; then
+      return 0
+    fi
+  fi
+
   if ! command -v uv >/dev/null 2>&1; then
     if command -v curl >/dev/null 2>&1; then
       curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -50,7 +56,7 @@ install_skypilot() {
     pip install --upgrade "skypilot[aws]"
     return 0
   fi
-  echo "skypilot install failed: uv or pip required" >&2
+  echo "skypilot install failed: pixi, uv, or pip required" >&2
   return 1
 }
 

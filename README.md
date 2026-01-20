@@ -25,6 +25,8 @@ and troubleshoot runs.
   - `scripts/post-setup-run.sh`
 - Confirm health:
   - `scripts/health-check.sh`
+- Initialize SkyPilot AWS config (optional):
+  - `scripts/setup-skypilot-aws.sh --init-config`
 
 ## Automation Overview
 - Launchd job:
@@ -82,6 +84,8 @@ and troubleshoot runs.
 - `scripts/verify-anthropic-key.py`
 - `scripts/set-keychain-secret.py`
 - `scripts/setup-secrets-env.sh`
+- `scripts/setup-skypilot-aws.sh`
+- `scripts/sky-status.sh`
 - `scripts/verify-ai-research-skills.sh`
 - `scripts/post-setup-run.sh`
 - `scripts/install-validation-launchd.sh`

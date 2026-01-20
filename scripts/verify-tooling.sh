@@ -39,6 +39,16 @@ else
   run_status=1
 fi
 
+if [[ -x "$SCRIPT_DIR/setup-skypilot-aws.sh" ]]; then
+  log "Running SkyPilot AWS verification."
+  if ! "$SCRIPT_DIR/setup-skypilot-aws.sh"; then
+    run_status=1
+  fi
+else
+  log "SkyPilot setup script missing."
+  run_status=1
+fi
+
 if [[ "$run_status" -eq 0 ]]; then
   log "Tooling verification PASSED."
   exit 0

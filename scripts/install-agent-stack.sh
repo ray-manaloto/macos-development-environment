@@ -318,6 +318,7 @@ PYTHON_TOOLS=(
   "langchain-cli"
   "langgraph-cli"
   "langsmith-fetch"
+  "skypilot[aws]"
   "aider-chat"
   "open-interpreter"
   "crewai"

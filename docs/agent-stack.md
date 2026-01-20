@@ -41,6 +41,7 @@ Python tools:
 - `langchain-cli`
 - `langgraph-cli`
 - `langsmith-fetch`
+- `skypilot[aws]` (CLI: `sky`)
 - `aider-chat`
 - `open-interpreter`
 - `crewai`

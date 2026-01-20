@@ -31,10 +31,20 @@ overwriting. Highlights:
 Template:
 - `templates/agent_cloud.yaml`
 
+Setup (AWS credentials from secrets.env):
+- `scripts/setup-skypilot-aws.sh --init-config`
+  - Creates `agent_cloud.yaml` in the repo root (copy of template).
+  - Runs `sky check aws` to validate credentials.
+
 Example commands:
-- `sky launch -d -c agent-cluster templates/agent_cloud.yaml`
-- `sky status`
+- `sky launch -d -c agent-cluster agent_cloud.yaml`
+- `scripts/sky-status.sh` (or `cloud-status` alias)
 - `sky down agent-cluster`
+
+Status notes:
+- `scripts/sky-status.sh` adds AWS account + EC2 details after `sky status`.
+- Cached AWS output defaults to 60s (override with `MDE_SKY_AWS_TTL=120`).
+- Install AWS CLI for the extra AWS output (`mise use -g awscli@latest`).
 
 Template notes:
 - Uses `uv` for Python package installs on the remote host.

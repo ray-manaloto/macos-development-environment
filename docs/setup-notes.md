@@ -227,6 +227,7 @@ Possible issues:
   - Template: `templates/secrets.env.example`
   - Helper: `scripts/setup-secrets-env.sh --open`
   - Lock permissions: `chmod 600 ~/.config/macos-development-environment/secrets.env`
+  - AWS (SkyPilot): add `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION`
   - Override path: `MDE_ENV_FILE=/path/to/secrets.env`
   - Disable autoload: `MDE_ENV_AUTOLOAD=0`
   - Override existing env: `MDE_ENV_OVERRIDE=1` (default)
@@ -258,6 +259,18 @@ Possible issues:
 - `.gitignore` includes `.env` and `secrets.env` to prevent accidental check-in.
 - Keep secrets out of `~/.oh-my-zsh/custom/*`; use `op run -- <cmd>` for ad-hoc work.
 - For tmux, avoid global exports; prefer `op run -- tmux new-session ...` or per-session `setenv`.
+
+## SkyPilot (AWS)
+- Install with `scripts/install-agent-stack.sh` or `scripts/optimize-tmux.sh` (includes `skypilot[aws]`).
+- Optional: install AWS CLI for richer status output (`mise use -g awscli@latest`).
+- Add AWS keys to `~/.config/macos-development-environment/secrets.env`.
+- Initialize config + validate access:
+  - `scripts/setup-skypilot-aws.sh --init-config`
+- Validate later with:
+  - `scripts/setup-skypilot-aws.sh`
+- Status + AWS details:
+  - `scripts/sky-status.sh` (cache TTL via `MDE_SKY_AWS_TTL=120`)
+- See `docs/tmux-cloud-workflow.md` for launch/stop workflows.
 
 ## UV Cache
 - Default cache directory: `~/Library/Caches/uv` (set via `UV_CACHE_DIR`).

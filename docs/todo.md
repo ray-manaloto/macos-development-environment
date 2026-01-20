@@ -12,14 +12,10 @@ This is the consolidated task list.
 - Add `mise doctor` to validation (script + docs).
 - Add `mise test-tool` coverage to validation (script + docs).
 
-## Secrets
-- Add OpenAI, Anthropic, and Google API key storage + loading (Keychain + optional 1Password refs).
-
 ## Tooling
 - Install Pitchfork CLI (per `https://pitchfork.jdx.dev/quickstart.html`).
 - Install `vercel-labs/agent-browser`.
 - Install `vercel-labs/dev3000`.
-- Install SkyPilot (per `https://docs.skypilot.co/en/latest/getting-started/installation.html`).
 
 ## LangChain
 - Install LangChain integrations: `langchain-openai`, `langchain-anthropic`, `langchain-aws`, `langchain-mcp-adapters`.

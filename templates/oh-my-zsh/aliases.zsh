@@ -3,6 +3,8 @@
 
 # Cloud workflow (SkyPilot)
 alias cloud-run='sky launch -d -c agent-cluster agent_cloud.yaml'
+alias cloud-status="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/sky-status.sh"
+alias sky-status="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/sky-status.sh"
 alias cloud-ssh='ssh agent-cluster'
 alias cloud-view='ssh -L 8123:localhost:8123 agent-cluster'
 alias cloud-stop='sky down agent-cluster'
