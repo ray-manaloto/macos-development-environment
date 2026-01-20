@@ -55,6 +55,46 @@ path=(
 )
 unset path_rest
 
+# Env file (plaintext secrets).
+export MDE_ENV_FILE="${MDE_ENV_FILE:-$HOME/.config/macos-development-environment/secrets.env}"
+
+mde_load_env_file() {
+  local file="$1"
+  local override="${2:-1}"
+  local line key value
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" ]] && continue
+    [[ "$line" == \#* ]] && continue
+    line="${line#export }"
+    key="${line%%=*}"
+    value="${line#*=}"
+    key="${key%"${key##*[![:space:]]}"}"
+    key="${key#"${key%%[![:space:]]*}"}"
+    [[ -z "$key" ]] && continue
+    if [[ "$override" != "1" && -n "${(P)key:-}" ]]; then
+      continue
+    fi
+    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+      value="${value#\"}"
+      value="${value%\"}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+      value="${value#\'}"
+      value="${value%\'}"
+    fi
+    export "$key"="$value"
+  done < "$file"
+}
+
+if [[ "${MDE_ENV_AUTOLOAD:-1}" == "1" && -f "$MDE_ENV_FILE" ]]; then
+  mde_load_env_file "$MDE_ENV_FILE" "${MDE_ENV_OVERRIDE:-1}"
+  if [[ -z "${MDE_SECRET_OVERRIDE:-}" ]]; then
+    export MDE_SECRET_OVERRIDE=0
+  fi
+fi
+
 # Secrets from Keychain (set MDE_AUTOLOAD_SECRETS=0 to disable).
 mde_load_keychain_secret() {
   local label="$1"
@@ -66,7 +106,8 @@ mde_load_keychain_secret() {
 mde_export_secret() {
   local label="$1"
   local env_var="$2"
-  if [[ -n "${(P)env_var:-}" ]]; then
+  local override="${MDE_SECRET_OVERRIDE:-1}"
+  if [[ -n "${(P)env_var:-}" && "$override" != "1" ]]; then
     return 0
   fi
   local value=""

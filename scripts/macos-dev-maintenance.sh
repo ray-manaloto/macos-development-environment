@@ -32,7 +32,8 @@ load_op_secret() {
   if [[ -z "$ref" ]]; then
     return 0
   fi
-  if [[ -n "${!env_var:-}" ]]; then
+  local override="${MDE_SECRET_OVERRIDE:-1}"
+  if [[ -n "${!env_var:-}" && "$override" != "1" ]]; then
     return 0
   fi
 
@@ -78,7 +79,8 @@ load_keychain_secret() {
   local env_var="$2"
   local value
 
-  if [[ -n "${!env_var:-}" ]]; then
+  local override="${MDE_SECRET_OVERRIDE:-1}"
+  if [[ -n "${!env_var:-}" && "$override" != "1" ]]; then
     return 0
   fi
   if ! have_cmd security; then
@@ -102,6 +104,48 @@ load_keychain_secrets() {
   load_keychain_secret "mde-langsmith-api-key" LANGSMITH_API_KEY
   load_keychain_secret "mde-langsmith-workspace-id" LANGSMITH_WORKSPACE_ID
   load_keychain_secret "mde-gemini-api-key" GEMINI_API_KEY
+}
+
+load_env_file_secrets() {
+  local env_file="${MDE_ENV_FILE:-$HOME/.config/macos-development-environment/secrets.env}"
+  local override="${MDE_ENV_OVERRIDE:-1}"
+  local line key value
+
+  if [[ "${MDE_ENV_AUTOLOAD:-1}" != "1" ]]; then
+    return 0
+  fi
+
+  if [[ ! -f "$env_file" ]]; then
+    return 0
+  fi
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" ]] && continue
+    [[ "$line" == \#* ]] && continue
+    line="${line#export }"
+    key="${line%%=*}"
+    value="${line#*=}"
+    key="${key%"${key##*[![:space:]]}"}"
+    key="${key#"${key%%[![:space:]]*}"}"
+    [[ -z "$key" ]] && continue
+    if [[ "$override" != "1" && -n "${!key:-}" ]]; then
+      continue
+    fi
+    if [[ "$value" == "\"*\"" && "$value" == *"\"" ]]; then
+      value="${value#\"}"
+      value="${value%\"}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+      value="${value#\'}"
+      value="${value%\'}"
+    fi
+    export "$key"="$value"
+  done < "$env_file"
+
+  if [[ -z "${MDE_SECRET_OVERRIDE:-}" ]]; then
+    export MDE_SECRET_OVERRIDE=0
+  fi
 }
 
 ensure_gcloud_sdk_location() {
@@ -430,6 +474,7 @@ main() {
 
   setup_path
   ensure_gcloud_sdk_location || true
+  load_env_file_secrets || true
   load_1password_secrets || true
   load_keychain_secrets || true
   if [[ -x "$SCRIPT_DIR/secrets-smoke-test.sh" ]]; then

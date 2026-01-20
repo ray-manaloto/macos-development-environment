@@ -7,6 +7,8 @@ and troubleshoot runs.
 
 ## Quickstart
 - Review `docs/setup-notes.md` for the launchd job, tool updates, and log paths.
+- Configure secrets in `~/.config/macos-development-environment/secrets.env` (template: `templates/secrets.env.example`).
+  - Helper: `scripts/setup-secrets-env.sh --open`
 - Run the job manually if needed:
   - `launchctl start com.ray-manaloto.macos-dev-maintenance`
 - Tail logs:
@@ -75,6 +77,11 @@ and troubleshoot runs.
 - `scripts/health-check.sh`
 - `scripts/verify-tmux-setup.sh`
 - `scripts/verify-all.sh`
+- `scripts/verify-openai-key.py`
+- `scripts/verify-openai-key-cli.py`
+- `scripts/verify-anthropic-key.py`
+- `scripts/set-keychain-secret.py`
+- `scripts/setup-secrets-env.sh`
 - `scripts/verify-ai-research-skills.sh`
 - `scripts/post-setup-run.sh`
 - `scripts/install-validation-launchd.sh`

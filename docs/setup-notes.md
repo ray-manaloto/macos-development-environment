@@ -153,6 +153,15 @@ Possible issues:
   - `mde-status` (oh-my-zsh alias)
 - Health check (no secrets printed):
   - `scripts/health-check.sh`
+- Secrets check (no values printed):
+  - `scripts/secrets-smoke-test.sh`
+  - `mde-secrets-check` (oh-my-zsh alias)
+- API key verification (provider API check):
+  - `scripts/verify-openai-key.py`
+  - `scripts/verify-openai-key-cli.py` (use when env overrides keychain)
+  - `scripts/verify-anthropic-key.py`
+- Keychain helper (stdin -> Keychain):
+  - `scripts/set-keychain-secret.py --service mde-openai-api-key --stdin`
 - Tmux verification (plugins + status bar):
   - `scripts/verify-tmux-setup.sh`
 - Tooling verification (agent + LangChain):
@@ -198,6 +207,7 @@ Possible issues:
   - `export PATH="/opt/homebrew/opt/curl/bin:$PATH"`
 - Managed oh-my-zsh custom files live under `templates/oh-my-zsh`.
   - Sync them with `scripts/ensure-managed-configs.sh`.
+- When a `.env` file is loaded, keychain overrides are disabled by default (`MDE_SECRET_OVERRIDE=0`). Set `MDE_SECRET_OVERRIDE=1` to force keychain/1Password to win.
 
 ## LLVM (opt-in)
 - Install/upgrade via Homebrew:
@@ -211,8 +221,17 @@ Possible issues:
   - `export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"`
   - `export PKG_CONFIG_PATH="/opt/homebrew/opt/llvm/lib/pkgconfig"`
 
-## Secrets and Automation (1Password preferred)
-- Use a 1Password service account for unattended runs (no login prompts).
+## Secrets and Automation (non-interactive)
+- Preferred: `.env` file loaded by both shells and launchd runs:
+  - Default path: `~/.config/macos-development-environment/secrets.env`
+  - Template: `templates/secrets.env.example`
+  - Helper: `scripts/setup-secrets-env.sh --open`
+  - Lock permissions: `chmod 600 ~/.config/macos-development-environment/secrets.env`
+  - Override path: `MDE_ENV_FILE=/path/to/secrets.env`
+  - Disable autoload: `MDE_ENV_AUTOLOAD=0`
+  - Override existing env: `MDE_ENV_OVERRIDE=1` (default)
+  - Keychain/1Password override: `MDE_SECRET_OVERRIDE=1` (default is `0` when env file is loaded)
+- Use a 1Password service account for unattended runs when available (no login prompts).
 - Store the service account token in Keychain:
   - `security add-generic-password -a "$USER" -s mde-op-sa -w`
 - Install the 1Password CLI (`op`) and ensure it is on `PATH`.
@@ -234,7 +253,9 @@ Possible issues:
   - `security add-generic-password -a "$USER" -s mde-langsmith-workspace-id -w` (service keys)
   - `security add-generic-password -a "$USER" -s mde-gemini-api-key -w` (optional)
   - `security add-generic-password -a "$USER" -s mde-brave-api-key -w` (optional)
-- Keychain values are used only when 1Password does not provide a value.
+- Keychain values are used only when `.env` and 1Password do not provide a value.
+- For LangSmith personal keys, omit `LANGSMITH_WORKSPACE_ID` (service keys require it).
+- `.gitignore` includes `.env` and `secrets.env` to prevent accidental check-in.
 - Keep secrets out of `~/.oh-my-zsh/custom/*`; use `op run -- <cmd>` for ad-hoc work.
 - For tmux, avoid global exports; prefer `op run -- tmux new-session ...` or per-session `setenv`.
 
