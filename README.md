@@ -53,6 +53,8 @@ and troubleshoot runs.
 - `docs/ai-agent-langchain-langsmith.md`
 - `docs/ai-agent-langchain-langsmith-cheatsheet.md`
 - `docs/langchain-langsmith-workflow-optimization.md`
+- `docs/agent-playbook.md`
+- `docs/langchain-langsmith-weekly-checklist.md`
 - `docs/agent-stack.md`
 - `docs/mise-config.md`
 - `docs/ide-integrations.md`

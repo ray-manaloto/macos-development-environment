@@ -64,6 +64,7 @@ langsmith-fetch thread <thread-id> --format json
 
 ### 3) Project Baseline Snapshot
 - Set a project UUID for repeatable exports.
+- Keep a dated folder so you can compare changes week to week.
 
 ```bash
 langsmith-fetch config set project-uuid <uuid>
@@ -83,6 +84,7 @@ langgraph --help
 ### 2) Compare Before/After Traces
 - Export traces before and after changes, diff key metrics.
 - Keep the outputs under `./out/traces-before` and `./out/traces-after`.
+- Use `jq` to compare latency or error rates across the snapshots.
 
 ### 3) MCP for Cross-Tool Debugging
 - Serve LangSmith data via MCP and re-use across agents or IDEs.
@@ -109,6 +111,12 @@ validate-checkpointer --help
 
 ### 3) Data Extraction Regression Checks
 - Run `pylon-extract` on a known corpus and compare output diffs.
+- Store outputs next to traces so regressions are easier to explain.
+
+## Performance And Cost
+- Export traces to JSON and rank by latency or token usage with `jq`.
+- Use the same prompt inputs before/after model or tool changes.
+- Keep high-cost runs in a separate folder for review.
 
 ## Multi-Agent Orchestration
 
@@ -128,6 +136,7 @@ validate-checkpointer --help
 ### 1) Trace-Based Context Audit
 - Review traces for prompt bloat and unused context.
 - Identify repeated large inputs and move them to cached retrieval.
+- Prefer smaller summaries plus retrieval over giant inline prompts.
 
 ### 2) Profile And Preset Models
 - Use `langchain-profiles` to standardize model configs per workflow.
@@ -141,6 +150,7 @@ validate-checkpointer --help
 - Use `create-*` scaffolds to standardize new agent projects.
 - Use `mcpdoc` and MCP servers to share context across tools consistently.
 - Use `scripts/verify-all.sh` for one-shot validation across the stack.
+- Use the weekly checklist to keep traces and tooling in sync.
 
 ## Guardrails And Gotchas
 - `langchain` is provided by `langc`; it is patched during install.

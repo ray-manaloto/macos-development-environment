@@ -293,6 +293,8 @@ Possible issues:
 - Agent guide: `docs/ai-agent-langchain-langsmith.md`
 - Agent cheat sheet: `docs/ai-agent-langchain-langsmith-cheatsheet.md`
 - Workflow optimization: `docs/langchain-langsmith-workflow-optimization.md`
+- Agent playbook: `docs/agent-playbook.md`
+- Weekly checklist: `docs/langchain-langsmith-weekly-checklist.md`
 - Install/update script: `scripts/install-langchain-cli-tools.sh`
 - `UV_TOOL_TIMEOUT_SECONDS=600` caps long installs (set to `0` to disable).
 - `DOCS_MONOREPO_SUBMODULES=1` controls docs submodule cloning (set `0` to skip).

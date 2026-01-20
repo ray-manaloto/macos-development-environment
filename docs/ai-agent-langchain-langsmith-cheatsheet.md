@@ -7,7 +7,8 @@ Quick reference for AI agents using the LangChain/LangSmith CLI toolchain.
 - `scripts/verify-langchain-tools.sh`
 
 ## Auth
-- Keychain: `mde-langsmith-api-key`
+- Personal key: `mde-langsmith-api-key`
+- Service key: set `LANGSMITH_WORKSPACE_ID` if required
 - Override host: `LANGSMITH_ENDPOINT=https://api.smith.langchain.com`
 
 ## LangSmith Fetch

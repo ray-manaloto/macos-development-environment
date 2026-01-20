@@ -17,8 +17,8 @@ automation.
 - Use `MDE_LANGCHAIN_SMOKE=0` for a faster tool presence check.
 
 **Secrets And Auth**
-- Set `LANGSMITH_API_KEY` via Keychain entry `mde-langsmith-api-key`.
-- For service keys, add `LANGSMITH_WORKSPACE_ID` or Keychain `mde-langsmith-workspace-id`.
+- Personal keys: store `LANGSMITH_API_KEY` in Keychain `mde-langsmith-api-key`.
+- Service keys: add `LANGSMITH_WORKSPACE_ID` (Keychain `mde-langsmith-workspace-id`).
 - Override the API host with `LANGSMITH_ENDPOINT` when using non-default hosting.
 - Avoid printing secrets; let wrappers load them when possible.
 
@@ -36,6 +36,7 @@ automation.
 - Summarize errors, latency spikes, or tool failures from the exported JSON.
 - Reproduce the issue locally with `langgraph-dev` or `langgraph` CLIs.
 - Record findings and attach exported data to your final report.
+- Store outputs under `./out/` so reviews are consistent.
 
 **Problem-Solving Workflow (Recommended)**
 - Start with `langsmith-fetch trace <id>` or `thread <id>` when a specific ID is known.
