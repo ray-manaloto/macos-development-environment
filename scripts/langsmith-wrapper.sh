@@ -57,6 +57,11 @@ if [[ -z "${LANGSMITH_API_KEY:-}" ]]; then
   load_keychain_secret "mde-langsmith-api-key" LANGSMITH_API_KEY
 fi
 
+if [[ -z "${LANGSMITH_WORKSPACE_ID:-}" && -z "${LANGCHAIN_WORKSPACE_ID:-}" ]]; then
+  load_op_secret MDE_OP_LANGSMITH_WORKSPACE_ID_REF LANGSMITH_WORKSPACE_ID
+  load_keychain_secret "mde-langsmith-workspace-id" LANGSMITH_WORKSPACE_ID
+fi
+
 self_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 cmd_name="$(basename "$0")"
 

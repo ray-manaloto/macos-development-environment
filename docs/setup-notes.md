@@ -221,6 +221,7 @@ Possible issues:
   - `MDE_OP_OPENAI_API_KEY_REF=op://Vault/OpenAI/api_key`
   - `MDE_OP_ANTHROPIC_API_KEY_REF=op://Vault/Anthropic/api_key`
   - `MDE_OP_LANGSMITH_API_KEY_REF=op://Vault/LangSmith/api_key`
+  - `MDE_OP_LANGSMITH_WORKSPACE_ID_REF=op://Vault/LangSmith/workspace_id`
   - `MDE_OP_GEMINI_API_KEY_REF=op://Vault/Gemini/api_key`
   - `MDE_OP_BRAVE_API_KEY_REF=op://Vault/Brave/api_key` (optional)
 - The maintenance script loads these into the environment when available.
@@ -230,6 +231,7 @@ Possible issues:
   - `security add-generic-password -a "$USER" -s mde-openai-api-key -w`
   - `security add-generic-password -a "$USER" -s mde-anthropic-api-key -w` (optional)
   - `security add-generic-password -a "$USER" -s mde-langsmith-api-key -w` (optional)
+  - `security add-generic-password -a "$USER" -s mde-langsmith-workspace-id -w` (service keys)
   - `security add-generic-password -a "$USER" -s mde-gemini-api-key -w` (optional)
   - `security add-generic-password -a "$USER" -s mde-brave-api-key -w` (optional)
 - Keychain values are used only when 1Password does not provide a value.

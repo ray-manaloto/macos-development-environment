@@ -50,9 +50,14 @@ at the time of review, grouped by ecosystem.
 
 ## Known Upstream Issues
 
-- `learning-langchain` ships an invalid `project.scripts.langgraph-dev`. The
-  installer patches it to `langgraph.cli:dev_command` so the tool can install;
-  pass `--config ch9/py/langgraph.json --verbose` manually if needed.
+- `learning-langchain` ships a `langgraph-dev` entrypoint that targets
+  `langgraph.cli:dev_command`, which no longer exists. The installer patches it
+  to `langgraph_cli.cli:cli` so `langgraph-dev --help` works consistently.
+- `langc` depends on `typer<0.10`, which is incompatible with newer `click`.
+  The installer pins `click<8.2` and removes the `--no-poetry/--with-poetry`
+  alias so `langchain --help` works.
+- `deepagents-acp` requires Python >=3.14 and launches an ACP server (no `--help`).
+  The verifier checks the module import instead of running the server.
 - `docs-monorepo` requires Python >=3.13; the installer uses `python@latest`
   for it. The upstream `pyproject.toml` only lists `packages = ["pipeline"]`,
   so the installer patches it to include `pipeline.*` plus notebook templates
@@ -72,6 +77,9 @@ at the time of review, grouped by ecosystem.
 - Optional overrides: `LANGSMITH_ENDPOINT` (defaults to
   `https://api.smith.langchain.com`), `LANGSMITH_PROJECT`, or
   `LANGSMITH_PROJECT_UUID`.
+- For service API keys, set `LANGSMITH_WORKSPACE_ID` (or `LANGCHAIN_WORKSPACE_ID`).
+  The verifier also checks `MDE_OP_LANGSMITH_WORKSPACE_ID_REF` or Keychain entry
+  `mde-langsmith-workspace-id` if present.
 - The LangSmith SDK also honors `LANGCHAIN_API_KEY`/`LANGCHAIN_ENDPOINT`,
   but this setup standardizes on `LANGSMITH_*`.
 
@@ -110,3 +118,18 @@ Example:
 ```bash
 INCLUDE_INTERNAL=0 scripts/install-langchain-cli-tools.sh
 ```
+## Validation
+
+Run the verification script to confirm installs + wrappers + LangSmith auth:
+
+```bash
+scripts/verify-langchain-tools.sh
+```
+
+Options:
+- `MDE_LANGCHAIN_SMOKE=0` to skip CLI smoke tests.
+- `MDE_LANGCHAIN_SMOKE_TIMEOUT=8` to change the per-command timeout (seconds).
+- `MDE_LANGCHAIN_SMOKE_STRICT=1` to force smoke checks even without a TTY (useful in CI).
+- `MDE_LANGSMITH_PING=0` to skip the LangSmith API key check.
+- `LANGSMITH_ENDPOINT` or `LANGSMITH_API_URL` to target a non-default API host.
+

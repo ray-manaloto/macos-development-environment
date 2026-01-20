@@ -65,5 +65,5 @@ Optional tools (when `INCLUDE_OPTIONAL=1`):
 - `gemini` uses the MDE wrapper to run via `bunx` (isolated deps).
 - Wrapper prepends mise shims so extensions that invoke `npx` resolve the managed Node install.
 - Wrapper also sets `GITHUB_MCP_PAT` (Keychain `mde-github-mcp-pat` or `mde-github-token`, or `MDE_OP_GITHUB_TOKEN_REF`).
-- oh-my-zsh auto-exports Keychain secrets when `MDE_AUTOLOAD_SECRETS=1` (default) so CLIs inherit `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `LANGSMITH_API_KEY`, `GITHUB_TOKEN`, and `GITHUB_MCP_PAT`.
+- oh-my-zsh auto-exports Keychain secrets when `MDE_AUTOLOAD_SECRETS=1` (default) so CLIs inherit `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `LANGSMITH_API_KEY`, `LANGSMITH_WORKSPACE_ID`, `GITHUB_TOKEN`, and `GITHUB_MCP_PAT`.
 - `mcp-toolbox` is skipped when no `tools.yaml` is present unless `MDE_GEMINI_ENABLE_MCP_TOOLBOX=1` or `--extensions` is passed.

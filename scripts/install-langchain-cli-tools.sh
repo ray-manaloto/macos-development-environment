@@ -195,12 +195,133 @@ path = Path(sys.argv[1])
 text = path.read_text()
 text = text.replace(
     'langgraph.cli:dev_command --config ch9/py/langgraph.json --verbose',
-    'langgraph.cli:dev_command',
+    'langgraph_cli.cli:cli',
 )
+text = text.replace('langgraph.cli:dev_command', 'langgraph_cli.cli:cli')
 path.write_text(text)
 PY
     else
-      sed -i '' 's/langgraph.cli:dev_command --config ch9\/py\/langgraph.json --verbose/langgraph.cli:dev_command/' "$tmp_dir/pyproject.toml"
+      sed -i '' 's/langgraph.cli:dev_command --config ch9\/py\/langgraph.json --verbose/langgraph_cli.cli:cli/' "$tmp_dir/pyproject.toml"
+      sed -i '' 's/langgraph.cli:dev_command/langgraph_cli.cli:cli/' "$tmp_dir/pyproject.toml"
+    fi
+  fi
+
+  uv_python="$(tool_python_path "$python_version" || true)"
+  if [[ -n "$uv_python" ]]; then
+    UV_PYTHON="$uv_python" uv tool install --upgrade "${extra_args[@]}" "$tmp_dir"
+  else
+    uv tool install --upgrade "${extra_args[@]}" "$tmp_dir"
+  fi
+  local status=$?
+  rm -rf "$tmp_dir"
+  return "$status"
+}
+
+install_langc() {
+  local python_version="$1"
+  shift
+  local extra_args=("$@")
+  local tmp_dir=""
+  local uv_python=""
+
+  if ! command -v git >/dev/null 2>&1; then
+    return 1
+  fi
+
+  tmp_dir="$(mktemp -d 2>/dev/null || mktemp -d -t langc)"
+  if [[ -z "$tmp_dir" ]]; then
+    return 1
+  fi
+
+  if ! git clone --depth 1 https://github.com/langchain-ai/cli.git "$tmp_dir" >/dev/null 2>&1; then
+    rm -rf "$tmp_dir"
+    return 1
+  fi
+
+  if [[ -d "$tmp_dir/langc" ]]; then
+    if command -v python3 >/dev/null 2>&1; then
+      python3 - "$tmp_dir" <<'PYDOC'
+from pathlib import Path
+import textwrap
+import sys
+
+root = Path(sys.argv[1])
+cli_path = root / "langc" / "cli.py"
+if cli_path.exists():
+    text = cli_path.read_text()
+    old_import = textwrap.dedent("""\
+from langc.namespaces import hub
+from langc.namespaces import serve
+
+""")
+    new_import = textwrap.dedent("""\
+from langc.namespaces import hub
+try:
+    from langc.namespaces import serve
+except Exception as exc:
+    serve = None
+    _serve_import_error = exc
+
+""")
+    if old_import in text:
+        text = text.replace(old_import, new_import)
+
+    old_add_variants = [
+        'app.add_typer(serve.serve, name="serve", help=serve.__doc__)\n\n',
+        'app.add_typer(serve.serve, name="serve", help=serve.__doc__)\n',
+    ]
+    new_add = textwrap.dedent("""\
+if serve:
+    app.add_typer(serve.serve, name="serve", help=serve.__doc__)
+else:
+    @app.command(name="serve")
+    def serve_unavailable() -> None:
+        typer.echo(f"LangServe commands unavailable: {_serve_import_error}", err=True)
+        raise typer.Exit(code=1)
+
+""")
+    for old_add in old_add_variants:
+        if old_add in text:
+            text = text.replace(old_add, new_add)
+            break
+
+    cli_path.write_text(text)
+
+for rel_path in ("langc/namespaces/hub.py", "langc/namespaces/serve.py"):
+    target = root / rel_path
+    if not target.exists():
+        continue
+    text = target.read_text()
+    updated = text.replace('"--no-poetry/--with-poetry"', '"--no-poetry"')
+    updated = updated.replace('"-n/"', '"-n"')
+    if updated != text:
+        target.write_text(updated)
+
+pyproject = root / "pyproject.toml"
+if pyproject.exists():
+    lines = pyproject.read_text().splitlines()
+    has_click = False
+    deps_start = None
+    insert_line = None
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped == "[tool.poetry.dependencies]":
+            deps_start = idx
+            insert_line = idx + 1
+            continue
+        if deps_start is not None:
+            if stripped.startswith("[") and stripped.endswith("]"):
+                break
+            if stripped.startswith("click"):
+                has_click = True
+            if stripped.startswith("typer"):
+                insert_line = idx + 1
+    if deps_start is not None and not has_click:
+        if insert_line is None:
+            insert_line = deps_start + 1
+        lines.insert(insert_line, 'click = "<8.2"')
+        pyproject.write_text("\n".join(lines) + "\n")
+PYDOC
     fi
   fi
 
@@ -216,6 +337,7 @@ PY
 }
 
 install_docs_monorepo() {
+
   local python_version="$1"
   shift
   local extra_args=("$@")
@@ -309,6 +431,15 @@ install_python_tool() {
   local subdir="$3"
   local python_version="$4"
   local uv_args=()
+
+  if [[ "$name" == "langc" ]]; then
+    if install_langc "$python_version" "${uv_args[@]}"; then
+      if uv_tool_present "$name"; then
+        return 0
+      fi
+    fi
+    return 1
+  fi
 
   if [[ -n "$repo" ]] && is_git_only_tool "$name"; then
     if install_with_uv_git "$name" "$repo" "$subdir" "$python_version" "${uv_args[@]}"; then

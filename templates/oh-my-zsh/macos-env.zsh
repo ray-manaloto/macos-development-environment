@@ -81,6 +81,7 @@ if [[ "${MDE_AUTOLOAD_SECRETS:-1}" == "1" ]]; then
   mde_export_secret "mde-anthropic-api-key" ANTHROPIC_API_KEY
   mde_export_secret "mde-gemini-api-key" GEMINI_API_KEY
   mde_export_secret "mde-langsmith-api-key" LANGSMITH_API_KEY
+  mde_export_secret "mde-langsmith-workspace-id" LANGSMITH_WORKSPACE_ID
   mde_export_secret "mde-github-token" GITHUB_TOKEN
   mde_export_secret "mde-github-mcp-pat" GITHUB_MCP_PAT
 fi
