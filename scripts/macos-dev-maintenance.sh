@@ -7,6 +7,7 @@ MDE_AUTOFIX="${MDE_AUTOFIX:-0}"
 MDE_AUTOFIX_STRICT="${MDE_AUTOFIX_STRICT:-0}"
 MDE_UPDATE_OMZ="${MDE_UPDATE_OMZ:-0}"
 MDE_UPDATE_AGENT_TOOLS="${MDE_UPDATE_AGENT_TOOLS:-1}"
+MDE_UV_CACHE_PRUNE="${MDE_UV_CACHE_PRUNE:-0}"
 MDE_UPDATE_MCP="${MDE_UPDATE_MCP:-1}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -124,6 +125,8 @@ ensure_gcloud_sdk_location() {
 setup_path() {
   local home="${HOME:-/Users/rmanaloto}"
   export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  export UV_CACHE_DIR="${UV_CACHE_DIR:-$home/Library/Caches/uv}"
+  mkdir -p "$UV_CACHE_DIR" 2>/dev/null || true
 }
 
 find_brew() {
@@ -351,6 +354,18 @@ update_uv() {
   return 0
 }
 
+prune_uv_cache() {
+  if [[ "$MDE_UV_CACHE_PRUNE" != "1" ]]; then
+    return 0
+  fi
+  if ! have_cmd uv; then
+    return 0
+  fi
+  log "Pruning uv cache."
+  uv cache prune || return 1
+  return 0
+}
+
 update_pixi() {
   if ! have_cmd pixi; then
     return 0
@@ -426,6 +441,7 @@ main() {
   cleanup_claude_cli || failures=1
   cleanup_gemini_cli || failures=1
   update_uv || failures=1
+  prune_uv_cache || failures=1
   update_pixi || failures=1
   if [[ "$MDE_UPDATE_AGENT_TOOLS" == "1" ]]; then
     update_agent_tools || failures=1

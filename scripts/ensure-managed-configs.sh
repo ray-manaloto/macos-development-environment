@@ -84,6 +84,29 @@ sync_exec "$REPO_ROOT/scripts/claude-wrapper.sh" \
 sync_exec "$REPO_ROOT/scripts/gemini-wrapper.sh" \
   "$HOME/.local/bin/gemini"
 
+sync_exec "$REPO_ROOT/scripts/langsmith-wrapper.sh" \
+  "$HOME/.local/bin/langsmith-fetch"
+
+sync_exec "$REPO_ROOT/scripts/langsmith-wrapper.sh" \
+  "$HOME/.local/bin/langsmith-migrator"
+
+sync_exec "$REPO_ROOT/scripts/langsmith-wrapper.sh"   "$HOME/.local/bin/langsmith-mcp-server"
+
+fabric_dest="$HOME/.local/bin/fabric"
+fabric_bin_dir="${MDE_FABRIC_BIN_DIR:-$HOME/.local/share/mde/bin}"
+
+if [[ -f "$fabric_dest" && ! -L "$fabric_dest" ]]; then
+  if ! grep -q "$MANAGED_MARKER" "$fabric_dest" 2>/dev/null; then
+    mkdir -p "$fabric_bin_dir"
+    if [[ ! -f "$fabric_bin_dir/fabric" ]]; then
+      mv "$fabric_dest" "$fabric_bin_dir/fabric" 2>/dev/null || true
+    fi
+  fi
+fi
+
+sync_exec "$REPO_ROOT/scripts/fabric-wrapper.sh" \
+  "$fabric_dest"
+
 ensure_zprofile_include
 
 echo "Managed configs synced."

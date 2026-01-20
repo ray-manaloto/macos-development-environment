@@ -24,4 +24,14 @@ if [ -d "$HOME/.local/share/mise/shims" ]; then
   add_path_front "$HOME/.local/share/mise/shims"
 fi
 
+if [ -z "${UV_CACHE_DIR:-}" ]; then
+  UV_CACHE_DIR="$HOME/Library/Caches/uv"
+fi
+export UV_CACHE_DIR
+
+if [ -z "${GOBIN:-}" ]; then
+  GOBIN="$HOME/.local/bin"
+fi
+export GOBIN
+
 export PATH

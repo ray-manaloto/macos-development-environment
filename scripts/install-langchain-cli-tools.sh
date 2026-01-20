@@ -2,6 +2,8 @@
 set -euo pipefail
 
 export UV_NO_MANAGED_PYTHON="${UV_NO_MANAGED_PYTHON:-1}"
+export UV_CACHE_DIR="${UV_CACHE_DIR:-$HOME/Library/Caches/uv}"
+mkdir -p "$UV_CACHE_DIR" 2>/dev/null || true
 
 export PYO3_USE_ABI3_FORWARD_COMPATIBILITY="${PYO3_USE_ABI3_FORWARD_COMPATIBILITY:-1}"
 
@@ -291,12 +293,31 @@ PYDOC
 }
 
 
+is_git_only_tool() {
+  case "$1" in
+    langc)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+
 install_python_tool() {
   local name="$1"
   local repo="$2"
   local subdir="$3"
   local python_version="$4"
   local uv_args=()
+
+  if [[ -n "$repo" ]] && is_git_only_tool "$name"; then
+    if install_with_uv_git "$name" "$repo" "$subdir" "$python_version" "${uv_args[@]}"; then
+      if uv_tool_present "$name"; then
+        return 0
+      fi
+    fi
+    return 1
+  fi
 
   if [[ "$UV_TOOL_FORCE" == "1" ]]; then
     case "$name" in
@@ -351,6 +372,23 @@ install_python_tool() {
 install_node_tool() {
   local pkg="$1"
   bun add -g "${pkg}@latest"
+}
+
+sync_langsmith_wrappers() {
+  local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local repo_root="$(cd "$script_dir/.." && pwd)"
+  local wrapper="$repo_root/scripts/langsmith-wrapper.sh"
+  local dest_dir="$HOME/.local/bin"
+
+  if [[ ! -f "$wrapper" ]]; then
+    echo "langsmith wrapper missing: $wrapper" >&2
+    return 1
+  fi
+
+  mkdir -p "$dest_dir"
+  install -m 0755 "$wrapper" "$dest_dir/langsmith-fetch"
+  install -m 0755 "$wrapper" "$dest_dir/langsmith-migrator"
+  install -m 0755 "$wrapper" "$dest_dir/langsmith-mcp-server"
 }
 
 require_cmd uv
@@ -413,6 +451,8 @@ for pkg in "${NODE_TOOLS[@]}"; do
     node_failures+=("$pkg")
   fi
 done
+
+sync_langsmith_wrappers
 
 if (( ${#python_failures[@]} > 0 || ${#node_failures[@]} > 0 )); then
   echo "Install completed with failures:" >&2

@@ -38,6 +38,16 @@ else
   run_status=1
 fi
 
+if [[ -x "$SCRIPT_DIR/verify-tooling.sh" ]]; then
+  log "Running tooling verification."
+  if ! "$SCRIPT_DIR/verify-tooling.sh"; then
+    run_status=1
+  fi
+else
+  log "Tooling verification script missing."
+  run_status=1
+fi
+
 if [[ -x "$SCRIPT_DIR/status-dashboard.sh" ]]; then
   log "Status dashboard JSON:"
   if ! "$SCRIPT_DIR/status-dashboard.sh" --json; then

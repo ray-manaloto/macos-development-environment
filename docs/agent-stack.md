@@ -51,14 +51,19 @@ Go tools:
 
 Optional tools (when `INCLUDE_OPTIONAL=1`):
 - `gh copilot` extension (if `gh` is installed)
-- `fabric` (`go install github.com/danielmiessler/fabric@latest`)
+- `fabric` (official installer: `curl -fsSL https://raw.githubusercontent.com/danielmiessler/fabric/main/scripts/installer/install.sh | INSTALL_DIR="$HOME/.local/bin" bash`)
 
 ## Notes
 - `mise` is the runtime source of truth for Python/Node/Bun.
 - pixi and uv are installed via their official installers when missing.
 - For JS CLIs, bun installs the latest versions using `@latest`.
+- Go tools install into `GOBIN` (defaulted to `~/.local/bin`) so upgrades do not wipe them.
+- Fabric setup is non-interactive when `MDE_FABRIC_SETUP=1` (default). It writes a profile env file (default `~/.config/fabric/.env.anthropic`) and symlinks `~/.config/fabric/.env`; set `MDE_FABRIC_OVERWRITE=1` to refresh keys, `MDE_FABRIC_PROFILE` to select `anthropic|openai|gemini|all`, `MDE_FABRIC_ENV_FILE` to override the path, and `MDE_FABRIC_DEFAULT_VENDOR`/`MDE_FABRIC_DEFAULT_MODEL` to seed defaults.
+- Run `fabric --setup` manually if you want the interactive wizard.
+- The `fabric` wrapper enforces the profile symlink and unsets `OPENAI_API_KEY` when using the `anthropic` profile to avoid provider probe errors.
 - Gemini CLI reads `GEMINI_API_KEY` (Keychain `mde-gemini-api-key` or `MDE_OP_GEMINI_API_KEY_REF`).
 - `gemini` uses the MDE wrapper to run via `bunx` (isolated deps).
 - Wrapper prepends mise shims so extensions that invoke `npx` resolve the managed Node install.
 - Wrapper also sets `GITHUB_MCP_PAT` (Keychain `mde-github-mcp-pat` or `mde-github-token`, or `MDE_OP_GITHUB_TOKEN_REF`).
+- oh-my-zsh auto-exports Keychain secrets when `MDE_AUTOLOAD_SECRETS=1` (default) so CLIs inherit `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `LANGSMITH_API_KEY`, `GITHUB_TOKEN`, and `GITHUB_MCP_PAT`.
 - `mcp-toolbox` is skipped when no `tools.yaml` is present unless `MDE_GEMINI_ENABLE_MCP_TOOLBOX=1` or `--extensions` is passed.

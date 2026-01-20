@@ -21,7 +21,7 @@ at the time of review, grouped by ecosystem.
 | `deepagents`, `deepagents-cli` | `deepagents-cli` | `langchain-ai/deepagents` (`libs/deepagents-cli`) |
 | `deepacp` | `deepagents-acp` | `langchain-ai/deepagents` (`libs/acp`) |
 | `pylon-extract` | `pylon-data-extractor` | `langchain-ai/pylon_data_extractor` |
-| `langchain` | `langc` | `langchain-ai/cli` |
+| `langchain` | `langc` | `langchain-ai/cli` (git install) |
 | `docs` | `docs-monorepo` | `langchain-ai/docs` |
 | `app` | `langchain-plugin` | `langchain-ai/langchain-aiplugin` |
 | `langgraph-dev` | `learning-langchain` | `langchain-ai/learning-langchain` |
@@ -57,12 +57,18 @@ at the time of review, grouped by ecosystem.
   for it. The upstream `pyproject.toml` only lists `packages = ["pipeline"]`,
   so the installer patches it to include `pipeline.*` plus notebook templates
   before installing so the `docs` CLI works.
+- `docs-monorepo` installs from a patched local checkout each run, so it will
+  always rebuild (git clone + patch). To skip or speed it up, set
+  `INCLUDE_INTERNAL=0` or `DOCS_MONOREPO_SUBMODULES=0`.
 
 ## LangSmith Credentials
 
 - `langsmith-fetch`, `langsmith-migrator`, and `langsmith-mcp-server` require
   `LANGSMITH_API_KEY` (env var or `~/.langsmith-cli/config.yaml` via
   `langsmith-fetch config set api-key`).
+- MDE installs wrappers for these CLIs in `~/.local/bin` to load
+  `LANGSMITH_API_KEY` from 1Password (`MDE_OP_LANGSMITH_API_KEY_REF`) or
+  Keychain (`mde-langsmith-api-key`) when present.
 - Optional overrides: `LANGSMITH_ENDPOINT` (defaults to
   `https://api.smith.langchain.com`), `LANGSMITH_PROJECT`, or
   `LANGSMITH_PROJECT_UUID`.
@@ -70,6 +76,9 @@ at the time of review, grouped by ecosystem.
   but this setup standardizes on `LANGSMITH_*`.
 
 ## Install Script
+
+- `langc` is git-only; the installer skips the PyPI lookup to avoid
+  confusing resolution errors.
 
 Use `scripts/install-langchain-cli-tools.sh` to install and upgrade the
 inventory in this doc. The script:

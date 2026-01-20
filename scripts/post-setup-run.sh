@@ -36,6 +36,7 @@ fi
 
 health_status=0
 tmux_status=0
+tooling_status=0
 if [[ -x "$SCRIPT_DIR/health-check.sh" ]]; then
   log "Running health check." | tee -a "$SUMMARY_LOG"
   if ! "$SCRIPT_DIR/health-check.sh" | tee -a "$SUMMARY_LOG"; then
@@ -56,7 +57,17 @@ else
   tmux_status=1
 fi
 
-if [[ "$run_status" -eq 0 && "$health_status" -eq 0 && "$tmux_status" -eq 0 ]]; then
+if [[ -x "$SCRIPT_DIR/verify-tooling.sh" ]]; then
+  log "Running tooling verification." | tee -a "$SUMMARY_LOG"
+  if ! "$SCRIPT_DIR/verify-tooling.sh" | tee -a "$SUMMARY_LOG"; then
+    tooling_status=1
+  fi
+else
+  log "Tooling verification script missing." | tee -a "$SUMMARY_LOG"
+  tooling_status=1
+fi
+
+if [[ "$run_status" -eq 0 && "$health_status" -eq 0 && "$tmux_status" -eq 0 && "$tooling_status" -eq 0 ]]; then
   log "Post-setup summary: PASS" | tee -a "$SUMMARY_LOG"
   exit 0
 fi

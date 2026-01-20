@@ -132,6 +132,12 @@ Possible issues:
 - If no `./tools.yaml` is present, `mcp-toolbox` is skipped to avoid MCP connection errors; set `MDE_GEMINI_ENABLE_MCP_TOOLBOX=1` or pass `--extensions` to override.
 - Use `\gemini` to bypass the alias when needed.
 
+## LangSmith CLI Wrappers
+- Managed wrapper: `scripts/langsmith-wrapper.sh` (aliases: `langsmith-fetch`, `langsmith-migrator`, `langsmith-mcp-server`).
+- Installed to `~/.local/bin` for non-interactive shells.
+- Loads `LANGSMITH_API_KEY` from Keychain/1Password when available.
+- Use `LANGSMITH_API_KEY=... langsmith-fetch ...` to override when needed.
+
 ## Firebase CLI Logs
 - Managed wrapper: `scripts/firebase-wrapper.sh` (alias: `firebase`).
 - Logs move to `~/Library/Logs/firebase-tools/firebase-debug-YYYYMMDD_HHMMSS.log`.
@@ -149,7 +155,13 @@ Possible issues:
   - `scripts/health-check.sh`
 - Tmux verification (plugins + status bar):
   - `scripts/verify-tmux-setup.sh`
-- Verify all (health + tmux + dashboard JSON):
+- Tooling verification (agent + LangChain):
+  - `scripts/verify-tooling.sh`
+- Agent tool verification:
+  - `scripts/verify-agent-tools.sh`
+- LangChain tool verification:
+  - `scripts/verify-langchain-tools.sh`
+- Verify all (health + tmux + tooling + dashboard JSON):
   - `scripts/verify-all.sh`
 - One-time post-setup run with summary log:
   - `scripts/post-setup-run.sh`
@@ -223,6 +235,12 @@ Possible issues:
 - Keychain values are used only when 1Password does not provide a value.
 - Keep secrets out of `~/.oh-my-zsh/custom/*`; use `op run -- <cmd>` for ad-hoc work.
 - For tmux, avoid global exports; prefer `op run -- tmux new-session ...` or per-session `setenv`.
+
+## UV Cache
+- Default cache directory: `~/Library/Caches/uv` (set via `UV_CACHE_DIR`).
+- Maintenance prune (optional): set `MDE_UV_CACHE_PRUNE=1` to run `uv cache prune`.
+- To clean the old cache after switching: `UV_CACHE_DIR=~/.cache/uv uv cache clean`.
+- Do not delete cache files manually; use `uv cache clean` or `uv cache prune`.
 
 ## Modern Best Practices (extra)
 - Keep Homebrew limited to OS-level packages; use mise for runtimes.
