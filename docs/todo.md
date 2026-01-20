@@ -16,6 +16,7 @@ This is the consolidated task list.
 - Install Pitchfork CLI (per `https://pitchfork.jdx.dev/quickstart.html`).
 - Install `vercel-labs/agent-browser`.
 - Install `vercel-labs/dev3000`.
+- Decide on optional AWS/Kubernetes tools beyond the defaults.
 
 ## LangChain
 - Install LangChain integrations: `langchain-openai`, `langchain-anthropic`, `langchain-aws`, `langchain-mcp-adapters`.

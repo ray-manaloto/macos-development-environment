@@ -22,6 +22,12 @@ Install AI research skills marketplace (Claude Code plugins):
 scripts/install-ai-research-skills.sh
 ```
 
+Install AWS + Kubernetes tools:
+
+```bash
+scripts/install-aws-k8s-tools.sh
+```
+
 Maintenance integration:
 - When `MDE_UPDATE_AGENT_TOOLS=1` (default), the weekly maintenance job runs
   this installer to keep tools updated.

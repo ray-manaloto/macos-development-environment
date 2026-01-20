@@ -86,6 +86,8 @@ and troubleshoot runs.
 - `scripts/setup-secrets-env.sh`
 - `scripts/setup-skypilot-aws.sh`
 - `scripts/sky-status.sh`
+- `scripts/install-aws-k8s-tools.sh`
+- `scripts/verify-aws-k8s-tools.sh`
 - `scripts/verify-ai-research-skills.sh`
 - `scripts/post-setup-run.sh`
 - `scripts/install-validation-launchd.sh`

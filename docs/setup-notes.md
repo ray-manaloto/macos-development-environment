@@ -264,6 +264,13 @@ Possible issues:
 - Install with `scripts/install-agent-stack.sh` or `scripts/optimize-tmux.sh` (includes `skypilot[aws]`).
 - Optional: install AWS CLI for richer status output (`mise use -g awscli@latest`).
 - Add AWS keys to `~/.config/macos-development-environment/secrets.env`.
+
+## AWS + Kubernetes Tooling
+- Install core AWS + Kubernetes CLIs:
+  - `scripts/install-aws-k8s-tools.sh`
+- Verification:
+  - `scripts/verify-aws-k8s-tools.sh`
+- Optional tools include `eksctl`, `k9s`, `kubectx`, `kubens`, `stern`, and `session-manager-plugin`.
 - Initialize config + validate access:
   - `scripts/setup-skypilot-aws.sh --init-config`
 - Validate later with:

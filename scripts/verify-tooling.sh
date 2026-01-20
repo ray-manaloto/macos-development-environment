@@ -49,6 +49,16 @@ else
   run_status=1
 fi
 
+if [[ -x "$SCRIPT_DIR/verify-aws-k8s-tools.sh" ]]; then
+  log "Running AWS/Kubernetes tool verification."
+  if ! "$SCRIPT_DIR/verify-aws-k8s-tools.sh"; then
+    run_status=1
+  fi
+else
+  log "AWS/Kubernetes verification script missing."
+  run_status=1
+fi
+
 if [[ "$run_status" -eq 0 ]]; then
   log "Tooling verification PASSED."
   exit 0
