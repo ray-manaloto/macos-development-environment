@@ -290,6 +290,8 @@ Possible issues:
 
 ## LangChain CLI Tooling
 - Inventory: `docs/langchain-cli-tools.md`
+- Agent guide: `docs/ai-agent-langchain-langsmith.md`
+- Agent cheat sheet: `docs/ai-agent-langchain-langsmith-cheatsheet.md`
 - Install/update script: `scripts/install-langchain-cli-tools.sh`
 - `UV_TOOL_TIMEOUT_SECONDS=600` caps long installs (set to `0` to disable).
 - `DOCS_MONOREPO_SUBMODULES=1` controls docs submodule cloning (set `0` to skip).

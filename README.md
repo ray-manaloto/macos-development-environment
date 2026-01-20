@@ -50,6 +50,8 @@ and troubleshoot runs.
 ## Docs
 - `docs/setup-notes.md`
 - `docs/langchain-cli-tools.md`
+- `docs/ai-agent-langchain-langsmith.md`
+- `docs/ai-agent-langchain-langsmith-cheatsheet.md`
 - `docs/agent-stack.md`
 - `docs/mise-config.md`
 - `docs/ide-integrations.md`
