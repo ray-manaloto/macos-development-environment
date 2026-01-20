@@ -56,6 +56,7 @@ and troubleshoot runs.
 - `docs/agent-playbook.md`
 - `docs/langchain-langsmith-weekly-checklist.md`
 - `docs/agent-stack.md`
+- `docs/ai-research-skills.md`
 - `docs/mise-config.md`
 - `docs/ide-integrations.md`
 - `docs/tmux-cloud-workflow.md`
@@ -66,6 +67,7 @@ and troubleshoot runs.
 ## Scripts
 - `scripts/install-langchain-cli-tools.sh`
 - `scripts/install-agent-stack.sh`
+- `scripts/install-ai-research-skills.sh`
 - `scripts/macos-dev-maintenance.sh`
 - `scripts/ensure-managed-configs.sh`
 - `scripts/optimize-tmux.sh`
@@ -73,6 +75,7 @@ and troubleshoot runs.
 - `scripts/health-check.sh`
 - `scripts/verify-tmux-setup.sh`
 - `scripts/verify-all.sh`
+- `scripts/verify-ai-research-skills.sh`
 - `scripts/post-setup-run.sh`
 - `scripts/install-validation-launchd.sh`
 - `scripts/setup-sudo-all.sh`

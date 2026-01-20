@@ -16,6 +16,12 @@ Use the installer script:
 scripts/install-agent-stack.sh
 ```
 
+Install AI research skills marketplace (Claude Code plugins):
+
+```bash
+scripts/install-ai-research-skills.sh
+```
+
 Maintenance integration:
 - When `MDE_UPDATE_AGENT_TOOLS=1` (default), the weekly maintenance job runs
   this installer to keep tools updated.
@@ -27,6 +33,7 @@ Options:
   PyO3-based wheels on newer Python versions.
 - `TOOL_PYTHON_VERSION=3.12` to install Python tools using a
   stable runtime even when `python@latest` is newer.
+- `MDE_AI_RESEARCH_FORCE=1` to reinstall all AI research skills plugins.
 
 ## Tools Installed
 

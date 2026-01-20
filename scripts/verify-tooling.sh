@@ -29,6 +29,16 @@ else
   run_status=1
 fi
 
+if [[ -x "$SCRIPT_DIR/verify-ai-research-skills.sh" ]]; then
+  log "Running AI research skills verification."
+  if ! "$SCRIPT_DIR/verify-ai-research-skills.sh"; then
+    run_status=1
+  fi
+else
+  log "AI research skills verification script missing."
+  run_status=1
+fi
+
 if [[ "$run_status" -eq 0 ]]; then
   log "Tooling verification PASSED."
   exit 0

@@ -306,6 +306,12 @@ Possible issues:
 - Install/update script: `scripts/install-agent-stack.sh`
 - mise guidance: `docs/mise-config.md`
 
+## AI Research Skills Marketplace
+- Overview: `docs/ai-research-skills.md`
+- Install/update script: `scripts/install-ai-research-skills.sh`
+- Verification script: `scripts/verify-ai-research-skills.sh`
+- Set `MDE_AI_RESEARCH_FORCE=1` to reinstall all plugins.
+
 ## Tmux + Cloud Workflow
 - Overview: `docs/tmux-cloud-workflow.md`
 - Install/update script: `scripts/optimize-tmux.sh`

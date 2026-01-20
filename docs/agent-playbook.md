@@ -57,3 +57,4 @@ langsmith-fetch threads ./out/threads --limit 25 --format raw
 - Guide: `docs/ai-agent-langchain-langsmith.md`
 - Workflow optimization: `docs/langchain-langsmith-workflow-optimization.md`
 - Weekly checklist: `docs/langchain-langsmith-weekly-checklist.md`
+- AI research skills: `docs/ai-research-skills.md`
