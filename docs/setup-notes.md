@@ -270,7 +270,18 @@ Possible issues:
   - `scripts/install-aws-k8s-tools.sh`
 - Verification:
   - `scripts/verify-aws-k8s-tools.sh`
-- Optional tools include `eksctl`, `k9s`, `kubectx`, `kubens`, `stern`, and `session-manager-plugin`.
+- Optional tools include `eksctl`, `k9s`, `kubectx`, `kubens`, `stern`, and `session-manager-plugin` (requires sudo; install with `--allow-sudo` after caching credentials).
+- Additional AWS tools to consider later (not installed by default):
+  - `aws-vault` (credential/session management)
+  - `sso-credential-process` (SSO auth helper)
+  - `aws-sam-cli` (serverless)
+  - `terraform` / `terragrunt` (IaC)
+  - `packer` (AMI builds)
+- Additional Kubernetes tools to consider later (not installed by default):
+  - `kubelogin` (OIDC auth)
+  - `kustomize`
+  - `kubeseal` (sealed secrets)
+  - `kubetail` (logs)
 - Initialize config + validate access:
   - `scripts/setup-skypilot-aws.sh --init-config`
 - Validate later with:

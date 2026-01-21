@@ -57,6 +57,44 @@ setup_path() {
   export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 }
 
+load_env_file_secrets() {
+  local env_file="${MDE_ENV_FILE:-$HOME/.config/macos-development-environment/secrets.env}"
+  local override="${MDE_ENV_OVERRIDE:-1}"
+  local line key value
+
+  if [[ "${MDE_ENV_AUTOLOAD:-1}" != "1" ]]; then
+    return 0
+  fi
+
+  if [[ ! -f "$env_file" ]]; then
+    return 0
+  fi
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" ]] && continue
+    [[ "$line" == \#* ]] && continue
+    line="${line#export }"
+    key="${line%%=*}"
+    value="${line#*=}"
+    key="${key%"${key##*[![:space:]]}"}"
+    key="${key#"${key%%[![:space:]]*}"}"
+    [[ -z "$key" ]] && continue
+    if [[ "$override" != "1" && -n "${!key:-}" ]]; then
+      continue
+    fi
+    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+      value="${value#\"}"
+      value="${value%\"}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+      value="${value#\'}"
+      value="${value%\'}"
+    fi
+    export "$key"="$value"
+  done < "$env_file"
+}
+
 file_mtime() {
   local path="$1"
   if stat -f %m "$path" >/dev/null 2>&1; then
@@ -68,10 +106,22 @@ file_mtime() {
 
 sky_status() {
   local output=""
-  if output="$(sky status --all 2>/dev/null)"; then
+  local help=""
+  local args=()
+
+  if help="$(sky status -h 2>/dev/null)"; then
+    if printf '%s' "$help" | grep -q -- '--all-users'; then
+      args+=(--all-users)
+    elif printf '%s' "$help" | grep -q -- '--all'; then
+      args+=(--all)
+    fi
+  fi
+
+  if output="$(sky status "${args[@]}" 2>/dev/null)"; then
     printf '%s\n' "$output"
     return 0
   fi
+
   sky status
 }
 
@@ -101,6 +151,7 @@ aws_summary() {
   local tmp_file=""
   tmp_file="$(mktemp)"
 
+  local block_status=0
   set +e
   {
     local region="${AWS_DEFAULT_REGION:-${AWS_REGION:-}}"
@@ -127,28 +178,32 @@ aws_summary() {
       log "AWS ARN: $arn"
     else
       log "WARN: Unable to fetch AWS caller identity."
-      return 1
+      block_status=1
     fi
 
     log "EC2 instances (pending/running):"
-    aws ec2 describe-instances \
+    if ! aws ec2 describe-instances \
       --filters Name=instance-state-name,Values=pending,running \
       --query 'Reservations[].Instances[].{Id:InstanceId,State:State.Name,Type:InstanceType,AZ:Placement.AvailabilityZone,Name:Tags[?Key==`Name`]|[0].Value,Launch:LaunchTime}' \
-      --output table 2>/dev/null || log "WARN: EC2 describe-instances failed."
+      --output table 2>/dev/null; then
+      log "WARN: EC2 describe-instances failed."
+      block_status=1
+    fi
   } > "$tmp_file"
-  local block_status=$?
+  local cmd_status=$?
   set -e
 
   cat "$tmp_file"
   mv "$tmp_file" "$cache_file"
 
-  if [[ "$block_status" -ne 0 ]]; then
+  if [[ "$cmd_status" -ne 0 || "$block_status" -ne 0 ]]; then
     return 1
   fi
 }
 
 main() {
   setup_path
+  load_env_file_secrets
 
   local status=0
 

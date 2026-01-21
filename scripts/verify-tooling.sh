@@ -49,6 +49,16 @@ else
   run_status=1
 fi
 
+if [[ -x "$SCRIPT_DIR/sky-status.sh" ]]; then
+  log "Running SkyPilot status check."
+  if ! "$SCRIPT_DIR/sky-status.sh" --no-aws --strict; then
+    run_status=1
+  fi
+else
+  log "SkyPilot status script missing."
+  run_status=1
+fi
+
 if [[ -x "$SCRIPT_DIR/verify-aws-k8s-tools.sh" ]]; then
   log "Running AWS/Kubernetes tool verification."
   if ! "$SCRIPT_DIR/verify-aws-k8s-tools.sh"; then

@@ -3,18 +3,20 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: install-aws-k8s-tools.sh [--no-brew] [--optional=0|1]
+Usage: install-aws-k8s-tools.sh [--no-brew] [--optional=0|1] [--allow-sudo]
 
 Installs core AWS + Kubernetes CLI tools. Prefers mise, falls back to Homebrew.
 
 Options:
   --no-brew     Disable Homebrew fallback installs.
   --optional    Enable optional tools (default: 1).
+  --allow-sudo Allow sudo-required installs when cached credentials exist.
 USAGE
 }
 
 use_brew=1
 include_optional=1
+allow_sudo=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -26,6 +28,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --optional=1)
       include_optional=1
+      ;;
+    --allow-sudo)
+      allow_sudo=1
       ;;
     -h|--help)
       usage
@@ -82,10 +87,31 @@ install_with_brew() {
   brew install "$formula"
 }
 
+sudo_ready() {
+  if [[ "$allow_sudo" -ne 1 ]]; then
+    return 1
+  fi
+  if sudo -n true 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
+
 install_tool() {
   local tool="$1"
   local cmd="$2"
   local brew_formula="$3"
+  local requires_sudo="${4:-0}"
+
+  if [[ "$requires_sudo" == "1" && "$allow_sudo" -ne 1 ]]; then
+    log "skip: $tool requires sudo (use --allow-sudo after caching credentials)"
+    return 0
+  fi
+
+  if [[ "$requires_sudo" == "1" && ! sudo_ready ]]; then
+    log "skip: $tool requires sudo but no cached credentials"
+    return 0
+  fi
 
   if command -v "$cmd" >/dev/null 2>&1; then
     log "ok: $cmd already installed"
@@ -124,7 +150,7 @@ optional+=("k9s:k9s:k9s")
 optional+=("kubectx:kubectx:kubectx")
 optional+=("kubens:kubens:kubectx")
 optional+=("stern:stern:stern")
-optional+=("session-manager-plugin:session-manager-plugin:session-manager-plugin")
+optional+=("session-manager-plugin:session-manager-plugin:session-manager-plugin:1")
 
 failures=0
 
@@ -139,8 +165,8 @@ done
 if [[ "$include_optional" -eq 1 ]]; then
   log "Installing optional AWS/Kubernetes tools."
   for entry in "${optional[@]}"; do
-    IFS=':' read -r tool cmd brew_formula <<< "$entry"
-    if ! install_tool "$tool" "$cmd" "$brew_formula"; then
+    IFS=':' read -r tool cmd brew_formula requires_sudo <<< "$entry"
+    if ! install_tool "$tool" "$cmd" "$brew_formula" "${requires_sudo:-0}"; then
       log "optional: $tool missing"
     fi
   done
