@@ -290,6 +290,16 @@ Possible issues:
   - `scripts/sky-status.sh` (cache TTL via `MDE_SKY_AWS_TTL=120`)
 - See `docs/tmux-cloud-workflow.md` for launch/stop workflows.
 
+## OpenLIT Telemetry
+- Deploy/Update/Status via SkyPilot:
+  - `scripts/openlit-control.sh deploy`
+  - `scripts/openlit-control.sh update`
+  - `scripts/openlit-control.sh status`
+- Write OTLP env vars to secrets file:
+  - `scripts/openlit-control.sh env --write-env`
+- Docs: `docs/openlit-telemetry.md`
+
+
 ## UV Cache
 - Default cache directory: `~/Library/Caches/uv` (set via `UV_CACHE_DIR`).
 - Maintenance prune (optional): set `MDE_UV_CACHE_PRUNE=1` to run `uv cache prune`.

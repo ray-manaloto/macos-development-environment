@@ -64,6 +64,7 @@ and troubleshoot runs.
 - `docs/mise-config.md`
 - `docs/ide-integrations.md`
 - `docs/tmux-cloud-workflow.md`
+- `docs/openlit-telemetry.md`
 - `docs/decision-log.md`
 - `docs/quality-playbook.md`
 - `docs/multi-agent-runner.md`
@@ -86,6 +87,8 @@ and troubleshoot runs.
 - `scripts/setup-secrets-env.sh`
 - `scripts/setup-skypilot-aws.sh`
 - `scripts/sky-status.sh`
+- `scripts/openlit-control.sh`
+- `scripts/verify-openlit.sh`
 - `scripts/install-aws-k8s-tools.sh`
 - `scripts/verify-aws-k8s-tools.sh`
 - `scripts/verify-ai-research-skills.sh`

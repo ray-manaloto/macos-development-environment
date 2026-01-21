@@ -69,6 +69,16 @@ else
   run_status=1
 fi
 
+if [[ -x "$SCRIPT_DIR/verify-openlit.sh" ]]; then
+  log "Running OpenLIT verification."
+  if ! "$SCRIPT_DIR/verify-openlit.sh"; then
+    run_status=1
+  fi
+else
+  log "OpenLIT verification script missing."
+  run_status=1
+fi
+
 if [[ "$run_status" -eq 0 ]]; then
   log "Tooling verification PASSED."
   exit 0

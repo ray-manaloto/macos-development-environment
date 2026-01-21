@@ -16,3 +16,8 @@ alias mde-secrets-check="$HOME/dev/github/ray-manaloto/macos-development-environ
 alias mde-mcp-sync="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/setup-mcp-servers.sh"
 alias firebase="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/firebase-wrapper.sh"
 alias claude="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/claude-wrapper.sh"
+
+# OpenLIT telemetry
+alias openlit="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/openlit-control.sh"
+alias openlit-status="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/openlit-control.sh status"
+alias openlit-deploy="$HOME/dev/github/ray-manaloto/macos-development-environment/scripts/openlit-control.sh deploy"

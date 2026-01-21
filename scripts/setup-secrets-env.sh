@@ -63,6 +63,14 @@ OPENAI_API_KEY=sk-proj-...
 ANTHROPIC_API_KEY=sk-ant-...
 GEMINI_API_KEY=AIza...
 
+
+# OpenLIT / OpenTelemetry (non-secret)
+OPENLIT_ENDPOINT=http://<YOUR_OPENLIT_IP>:4318
+OTEL_EXPORTER_OTLP_ENDPOINT=http://<YOUR_OPENLIT_IP>:4318
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+# OTEL_SERVICE_NAME=macbook-dev
+# OTEL_RESOURCE_ATTRIBUTES=env=local
+
 # LangSmith (personal keys only need LANGSMITH_API_KEY)
 LANGSMITH_API_KEY=lsv2-...
 # LANGSMITH_WORKSPACE_ID=...  # only for service keys (tenant id)

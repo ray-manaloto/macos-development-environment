@@ -38,6 +38,14 @@ for cmd in aws kubectl helm; do
   fi
 done
 
+if command -v aws >/dev/null 2>&1; then
+  if aws sts get-caller-identity --output json >/dev/null 2>&1; then
+    log "ok: aws sts get-caller-identity"
+  else
+    log "warn: aws sts get-caller-identity failed (check IAM perms for sts:GetCallerIdentity)"
+  fi
+fi
+
 for cmd in eksctl k9s kubectx kubens stern session-manager-plugin; do
   check_cmd "$cmd" 0 || true
   done

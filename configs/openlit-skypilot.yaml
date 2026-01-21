@@ -1,0 +1,26 @@
+name: openlit-server
+resources:
+  cloud: aws
+  instance_type: m5.large
+  ports:
+    - 3000
+    - 4317
+    - 4318
+
+setup: |
+  set -euo pipefail
+  echo "Installing Docker..."
+  sudo apt-get update
+  sudo apt-get install -y docker.io docker-compose-plugin git
+  sudo usermod -aG docker "$USER"
+
+run: |
+  set -euo pipefail
+  echo "Starting OpenLIT..."
+  if [ ! -d "openlit" ]; then
+    git clone https://github.com/openlit/openlit.git
+  fi
+
+  cd openlit
+  sudo docker compose up -d
+  sudo docker compose logs -f

@@ -20,3 +20,7 @@ This is the consolidated task list.
 
 ## LangChain
 - Install LangChain integrations: `langchain-openai`, `langchain-anthropic`, `langchain-aws`, `langchain-mcp-adapters`.
+
+
+## Observability
+- Add OpenLIT Kubernetes manifest/Helm integration when available.
