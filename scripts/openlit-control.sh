@@ -143,6 +143,8 @@ sky_status_flag() {
 sky_cluster_ip() {
   local output=""
   local flag=""
+  local ip=""
+  local re="[0-9]{1,3}(\.[0-9]{1,3}){3}"
 
   if flag="$(sky_status_flag '--ip')"; then
     output="$(sky status $flag "$cluster" 2>/dev/null || true)"
@@ -151,11 +153,24 @@ sky_cluster_ip() {
   fi
 
   if command -v rg >/dev/null 2>&1; then
-    printf '%s' "$output" | rg -o '\\b[0-9]{1,3}(\\.[0-9]{1,3}){3}\\b' | head -n1
+    ip="$(printf '%s' "$output" | rg -o "$re" | head -n1)"
+  else
+    ip="$(printf '%s' "$output" | grep -Eo "$re" | head -n1 || true)"
+  fi
+
+  if [[ -n "$ip" ]]; then
+    printf '%s' "$ip"
     return 0
   fi
 
-  printf '%s' "$output" | grep -Eo '\\b[0-9]{1,3}(\\.[0-9]{1,3}){3}\\b' | head -n1 || true
+  if flag="$(sky_status_flag '--endpoints')"; then
+    output="$(sky status $flag "$cluster" 2>/dev/null || true)"
+    if command -v rg >/dev/null 2>&1; then
+      printf '%s' "$output" | rg -o "$re" | head -n1
+      return 0
+    fi
+    printf '%s' "$output" | grep -Eo "$re" | head -n1 || true
+  fi
 }
 
 openlit_endpoint() {
@@ -176,6 +191,9 @@ openlit_endpoint() {
 
 sky_deploy() {
   local repo_root=""
+  local help=""
+  local detach_flag=""
+
   repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
   ensure_config "$repo_root"
 
@@ -184,7 +202,19 @@ sky_deploy() {
     exit 1
   fi
 
-  sky launch -c "$cluster" "$config_path" --detach
+  if help="$(sky launch -h 2>/dev/null)"; then
+    if printf '%s' "$help" | rg -q -- '--detach-run'; then
+      detach_flag="--detach-run"
+    elif printf '%s' "$help" | rg -q -- '--detach'; then
+      detach_flag="--detach"
+    fi
+  fi
+
+  if [[ -n "$detach_flag" ]]; then
+    sky launch -y -c "$cluster" "$config_path" "$detach_flag"
+  else
+    sky launch -y -c "$cluster" "$config_path"
+  fi
   log "OpenLIT deployed on SkyPilot cluster: $cluster"
 }
 
