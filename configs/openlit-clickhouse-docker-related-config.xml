@@ -1,0 +1,5 @@
+<clickhouse>
+  <!-- Override docker_related_config.xml to avoid IPv6/dual-stack warnings -->
+  <listen_host>0.0.0.0</listen_host>
+  <listen_try>1</listen_try>
+</clickhouse>

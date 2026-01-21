@@ -124,6 +124,9 @@ write_tmux_conf() {
 
 install_tmux
 install_skypilot
+if [[ -x "$SCRIPT_DIR/patch-skypilot.sh" ]]; then
+  "$SCRIPT_DIR/patch-skypilot.sh"
+fi
 install_tpm
 write_tmux_conf
 install_tpm_plugins

@@ -7,12 +7,49 @@ resources:
     - 4317
     - 4318
 
+file_mounts:
+  ~/mde-openlit/clickhouse-docker-related-config.xml: configs/openlit-clickhouse-docker-related-config.xml
+  ~/mde-openlit/clickhouse-overrides.xml: configs/openlit-clickhouse-overrides.xml
+  ~/mde-openlit/docker-compose.override.yml: configs/openlit-docker-compose.override.yml
+
 setup: |
   set -euo pipefail
   echo "Installing Docker..."
-  sudo apt-get update
-  sudo apt-get install -y docker.io docker-compose-plugin git
+  sudo systemctl stop docker 2>/dev/null || true
+  sudo systemctl stop containerd 2>/dev/null || true
+  sudo DEBIAN_FRONTEND=noninteractive apt-get update -y
+  sudo DEBIAN_FRONTEND=noninteractive apt-get purge -y \
+    containerd containerd.io docker.io docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin || true
+  sudo DEBIAN_FRONTEND=noninteractive apt-get autoremove -y || true
+
+  if apt-cache policy docker-ce 2>/dev/null | grep -q Candidate; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      docker-ce docker-ce-cli containerd.io docker-compose-plugin git
+  else
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      docker.io docker-compose-plugin git
+  fi
+
+  # Ensure docker-proxy path exists for port publishing.
+  if [[ -x /usr/bin/docker-proxy ]]; then
+    sudo mkdir -p /usr/libexec/docker
+    sudo ln -sf /usr/bin/docker-proxy /usr/libexec/docker/docker-proxy
+  fi
+
+  sudo systemctl daemon-reload
+  sudo systemctl enable docker || true
+  sudo systemctl restart docker
+
+  for _ in $(seq 1 12); do
+    if sudo systemctl is-active --quiet docker; then
+      break
+    fi
+    sleep 5
+  done
+  sudo systemctl is-active --quiet docker
+
   sudo usermod -aG docker "$USER"
+  sudo sysctl -w kernel.task_delayacct=1
 
 run: |
   set -euo pipefail
@@ -22,5 +59,20 @@ run: |
   fi
 
   cd openlit
-  sudo docker compose up -d
-  sudo docker compose logs -f
+  mkdir -p assets
+  if [ -f ~/mde-openlit/clickhouse-docker-related-config.xml ]; then
+    cp ~/mde-openlit/clickhouse-docker-related-config.xml assets/clickhouse-docker-related-config.xml
+  fi
+  if [ -f ~/mde-openlit/clickhouse-overrides.xml ]; then
+    cp ~/mde-openlit/clickhouse-overrides.xml assets/clickhouse-mde-overrides.xml
+  fi
+  if [ -f ~/mde-openlit/docker-compose.override.yml ]; then
+    cp ~/mde-openlit/docker-compose.override.yml docker-compose.override.yml
+  fi
+
+  # Ensure ClickHouse data volume exists for ClickHouse state.
+  sudo docker volume create openlit_clickhouse-data >/dev/null
+
+  sudo docker compose down || true
+  sudo docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
+  sudo docker compose -f docker-compose.yml -f docker-compose.override.yml logs -f

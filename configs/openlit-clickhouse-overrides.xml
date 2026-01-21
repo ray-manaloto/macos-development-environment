@@ -1,0 +1,4 @@
+<clickhouse>
+  <!-- Disable cgroup memory observer to avoid startup errors on minimal cgroups -->
+  <cgroups_memory_usage_observer_wait_time>0</cgroups_memory_usage_observer_wait_time>
+</clickhouse>

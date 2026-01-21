@@ -348,6 +348,10 @@ for pkg in "${PYTHON_TOOLS[@]}"; do
   fi
 done
 
+if command -v sky >/dev/null 2>&1 && [[ -x "$SCRIPT_DIR/patch-skypilot.sh" ]]; then
+  "$SCRIPT_DIR/patch-skypilot.sh"
+fi
+
 for pkg in "${NODE_TOOLS[@]}"; do
   echo "[node] installing ${pkg}"
   if ! install_node_tool "$pkg"; then

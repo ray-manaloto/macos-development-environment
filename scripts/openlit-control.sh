@@ -132,9 +132,16 @@ sky_status_flag() {
   local help=""
 
   if help="$(sky status -h 2>/dev/null)"; then
-    if printf '%s' "$help" | rg -q -- "${flag}"; then
-      printf '%s' "$flag"
-      return 0
+    if command -v rg >/dev/null 2>&1; then
+      if printf '%s' "$help" | rg -q -- "${flag}"; then
+        printf '%s' "$flag"
+        return 0
+      fi
+    else
+      if printf '%s' "$help" | grep -q -- "${flag}"; then
+        printf '%s' "$flag"
+        return 0
+      fi
     fi
   fi
   return 1
@@ -201,6 +208,8 @@ sky_deploy() {
     log "Missing SkyPilot config: $config_path"
     exit 1
   fi
+
+  cd "$repo_root" || exit 1
 
   if help="$(sky launch -h 2>/dev/null)"; then
     if printf '%s' "$help" | rg -q -- '--detach-run'; then

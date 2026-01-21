@@ -1,0 +1,5 @@
+services:
+  clickhouse:
+    volumes:
+      - ./assets/clickhouse-docker-related-config.xml:/etc/clickhouse-server/config.d/docker_related_config.xml:ro
+      - ./assets/clickhouse-mde-overrides.xml:/etc/clickhouse-server/config.d/zz-mde-overrides.xml:ro

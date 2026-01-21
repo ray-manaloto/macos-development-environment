@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 usage() {
   cat <<'USAGE'
 Usage: setup-skypilot-aws.sh [--no-check] [--init-config] [--force]
@@ -53,6 +55,52 @@ setup_path() {
 }
 
 setup_path
+
+ensure_aws_credentials() {
+  local access_key="${AWS_ACCESS_KEY_ID:-}"
+  local secret_key="${AWS_SECRET_ACCESS_KEY:-}"
+  local region="${AWS_REGION:-${AWS_DEFAULT_REGION:-}}"
+  local profile="${MDE_AWS_PROFILE:-default}"
+  local marker="# Managed by macos-development-environment"
+  local creds_dir="$HOME/.aws"
+  local creds_file="$creds_dir/credentials"
+  local config_file="$creds_dir/config"
+
+  if [[ -z "$access_key" || -z "$secret_key" ]]; then
+    return 0
+  fi
+
+  mkdir -p "$creds_dir" 2>/dev/null || true
+
+  if [[ -f "$creds_file" ]] && ! grep -q "$marker" "$creds_file" 2>/dev/null; then
+    log "AWS credentials file exists and is not managed; skipping write."
+    return 0
+  fi
+
+  {
+    echo "$marker"
+    echo "[$profile]"
+    echo "aws_access_key_id=$access_key"
+    echo "aws_secret_access_key=$secret_key"
+  } >"$creds_file"
+
+  if [[ -n "$region" ]]; then
+    if [[ -f "$config_file" ]] && ! grep -q "$marker" "$config_file" 2>/dev/null; then
+      log "AWS config file exists and is not managed; skipping write."
+    else
+      {
+        echo "$marker"
+        echo "[default]"
+        echo "region=$region"
+        echo "output=json"
+      } >"$config_file"
+    fi
+  fi
+
+  chmod 600 "$creds_file" 2>/dev/null || true
+  chmod 600 "$config_file" 2>/dev/null || true
+  log "AWS credentials written to $creds_file"
+}
 
 load_env_file() {
   local env_file="$1"
@@ -114,6 +162,8 @@ if [[ "$failures" -ne 0 ]]; then
   exit 1
 fi
 
+ensure_aws_credentials
+
 if [[ "$init_config" -eq 1 ]]; then
   local_cfg="$repo_root/agent_cloud.yaml"
   template_cfg="$repo_root/templates/agent_cloud.yaml"
@@ -130,7 +180,22 @@ if [[ "$no_check" -ne 1 ]]; then
     log "SkyPilot CLI not found. Install first: sky --version"
     exit 1
   fi
-  log "Running: sky check aws"
-  sky check aws
+  if [[ -x "$SCRIPT_DIR/patch-skypilot.sh" ]]; then
+    "$SCRIPT_DIR/patch-skypilot.sh"
+  fi
+  if [[ "${MDE_SKY_API_RESTART:-1}" == "1" ]]; then
+    log "Restarting SkyPilot API server"
+    sky api stop >/dev/null 2>&1 || true
+    env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN \
+      -u AWS_PROFILE -u AWS_REGION -u AWS_DEFAULT_REGION \
+      sky api start >/dev/null 2>&1 || true
+  fi
+  if [[ "${MDE_AWS_KEEP_ENV_FOR_SKY_CHECK:-0}" == "1" ]]; then
+    log "Running: sky check aws"
+    sky check aws
+  else
+    log "Running: sky check aws (using static credentials)"
+    env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN       -u AWS_PROFILE -u AWS_REGION -u AWS_DEFAULT_REGION       sky check aws
+  fi
   log "SkyPilot AWS check complete."
 fi

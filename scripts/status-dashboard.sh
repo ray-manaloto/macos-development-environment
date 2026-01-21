@@ -280,6 +280,21 @@ gcloud_path() {
   printf 'missing'
 }
 
+openlit_status_line() {
+  if ! command -v sky >/dev/null 2>&1; then
+    printf 'sky missing'
+    return 0
+  fi
+  sky status openlit-cluster 2>/dev/null | awk 'NR>=3 && $1=="openlit-cluster"{print; exit}' || printf 'not found'
+}
+
+openlit_endpoints() {
+  local script="./scripts/openlit-control.sh"
+  if [[ -x "$script" ]]; then
+    "$script" endpoints 2>/dev/null | paste -sd' ' -
+  fi
+}
+
 output_tmux() {
   local maint_state="$1"
   local valid_state="$2"
@@ -306,8 +321,10 @@ output_json() {
   local uv_bin="${14}"
   local pixi_bin="${15}"
   local bun_bin="${16}"
-  local tmux_status="${17}"
-  local tmux_line="${18}"
+  local openlit_status="${17}"
+  local openlit_eps="${18}"
+  local tmux_status="${19}"
+  local tmux_line="${20}"
   local claude_expected="$HOME/.local/bin/claude"
   local claude_status="missing"
   local claude_paths=""
@@ -349,6 +366,8 @@ output_json() {
     "$(json_escape "$gcloud_bin")" "$(json_escape "$mise_bin")" "$(json_escape "$uv_bin")" "$(json_escape "$pixi_bin")" "$(json_escape "$bun_bin")"
   printf '  "claude": {"status": "%s", "expected": "%s", "paths": %s},\n' \
     "$(json_escape "$claude_status")" "$(json_escape "$claude_expected")" "$claude_paths_json"
+  printf '  "openlit": {"status_line": "%s", "endpoints": "%s"},\n' \
+    "$(json_escape "$openlit_status")" "$(json_escape "$openlit_eps")"
   printf '  "inventory": %s\n' "$inventory"
   printf '}\n'
 }
@@ -399,6 +418,8 @@ main() {
   local uv_bin
   local pixi_bin
   local bun_bin
+  local openlit_status_line
+  local openlit_eps
 
   maint_state="$(launchd_state com.ray-manaloto.macos-dev-maintenance)"
   valid_state="$(launchd_state com.ray-manaloto.macos-dev-validation)"
@@ -422,6 +443,8 @@ main() {
   uv_bin="$(cmd_path uv)"
   pixi_bin="$(cmd_path pixi)"
   bun_bin="$(cmd_path bun)"
+  openlit_status_line="$(openlit_status_line)"
+  openlit_eps="$(openlit_endpoints)"
 
   case "$mode" in
     tmux)
@@ -432,6 +455,7 @@ main() {
         "$last_maint_line" "$last_valid_line" "$summary" "$last_maint_time" \
         "$maint_size" "$valid_size" "$summary_size" \
         "$gcloud_bin" "$mise_bin" "$uv_bin" "$pixi_bin" "$bun_bin" \
+        "$openlit_status_line" "$openlit_eps" \
         "$tmux_status" "$last_tmux_line"
       ;;
     *)
@@ -445,6 +469,8 @@ main() {
       log "Last validation:  $last_valid_line"
       log "Last summary:     $last_summary_line"
       log "Last tmux verify: $last_tmux_line"
+      log "OpenLIT status: $openlit_status_line"
+      log "OpenLIT endpoints: ${openlit_eps:-n/a}"
       log "gcloud: $gcloud_bin"
       log "mise: $mise_bin"
       log "uv:   $uv_bin"
