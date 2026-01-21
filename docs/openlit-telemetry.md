@@ -25,7 +25,7 @@ scripts/openlit-control.sh status
 scripts/openlit-control.sh endpoints
 ```
 
-3) Write telemetry env to your secrets file:
+3) Write telemetry env to your secrets file (sets OTEL_* and Gemini CLI GEMINI_TELEMETRY_* for OpenLIT):
 
 ```bash
 scripts/openlit-control.sh env --write-env
@@ -36,6 +36,19 @@ scripts/openlit-control.sh env --write-env
 ```bash
 source ~/.zshrc
 ```
+
+## Integrated Tooling
+- macOS global OTLP env: `OPENLIT_ENDPOINT`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`.
+- Gemini CLI: `GEMINI_TELEMETRY_ENABLED=1`, `GEMINI_TELEMETRY_TARGET=local`, `GEMINI_TELEMETRY_OTLP_ENDPOINT`/`_PROTOCOL`, `GEMINI_TELEMETRY_LOG_PROMPTS=1`.
+- LangChain/LangSmith + other OTEL-aware CLIs/SDKs: inherit OTEL_* env for traces/metrics to OpenLIT.
+- Status dashboard: `scripts/status-dashboard.sh --json` includes `openlit` and `gemini_telemetry` entries.
+
+## UI Access
+- URL: http://<OPENLIT_IP>:3000 (OpenLIT UI served directly; no Caddy layer).
+- Preseeded user: `admin@example.com`
+- Preseeded password: `OpenlitTemp!123`
+- You can change the password after login from the OpenLIT UI. Keep the value in `~/.config/macos-development-environment/secrets.env` if you want it documented locally (not required for runtime).
+
 
 ## Local Telemetry Environment
 Use OTLP HTTP for widest compatibility:

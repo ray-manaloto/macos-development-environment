@@ -117,6 +117,14 @@ set_env_line() {
   chmod 600 "$file" 2>/dev/null || true
 }
 
+get_env_value() {
+  local file="$1"
+  local key="$2"
+  if [[ -f "$file" ]]; then
+    grep -E "^${key}=" "$file" 2>/dev/null | tail -n1 | sed -e "s/^${key}=//" || true
+  fi
+}
+
 ensure_config() {
   local repo_root="$1"
   local default_cfg="$repo_root/configs/openlit-skypilot.yaml"
@@ -247,6 +255,9 @@ sky_endpoints() {
 
 sky_env() {
   local endpoint=""
+  local otlp_protocol="http/protobuf"
+  local ui_user=""
+  local ui_pass=""
   endpoint="$(openlit_endpoint || true)"
 
   if [[ -z "$endpoint" ]]; then
@@ -254,11 +265,32 @@ sky_env() {
     return 1
   fi
 
+  ui_user="${OPENLIT_UI_USER:-$(get_env_value "$env_file" "OPENLIT_UI_USER")}"
+  ui_pass="${OPENLIT_UI_PASSWORD:-$(get_env_value "$env_file" "OPENLIT_UI_PASSWORD")}"
+  if [[ -z "$ui_user" ]]; then
+    ui_user="admin@example.com"
+  fi
+  if [[ -z "$ui_pass" ]]; then
+    if command -v openssl >/dev/null 2>&1; then
+      ui_pass="$(openssl rand -base64 18 | tr -d '=/[:space:]')"
+    else
+      ui_pass="changeme-openlit"
+    fi
+    log "Generated OpenLIT UI password; stored in $env_file."
+  fi
+
   if [[ "$write_env" -eq 1 ]]; then
     mkdir -p "$(dirname "$env_file")" 2>/dev/null || true
     set_env_line "$env_file" "OPENLIT_ENDPOINT" "$endpoint"
     set_env_line "$env_file" "OTEL_EXPORTER_OTLP_ENDPOINT" "$endpoint"
-    set_env_line "$env_file" "OTEL_EXPORTER_OTLP_PROTOCOL" "http/protobuf"
+    set_env_line "$env_file" "OTEL_EXPORTER_OTLP_PROTOCOL" "$otlp_protocol"
+    set_env_line "$env_file" "GEMINI_TELEMETRY_ENABLED" "1"
+    set_env_line "$env_file" "GEMINI_TELEMETRY_TARGET" "local"
+    set_env_line "$env_file" "GEMINI_TELEMETRY_OTLP_ENDPOINT" "$endpoint"
+    set_env_line "$env_file" "GEMINI_TELEMETRY_OTLP_PROTOCOL" "http"
+    set_env_line "$env_file" "GEMINI_TELEMETRY_LOG_PROMPTS" "1"
+    set_env_line "$env_file" "OPENLIT_UI_USER" "$ui_user"
+    set_env_line "$env_file" "OPENLIT_UI_PASSWORD" "$ui_pass"
     log "Updated $env_file with OpenLIT OTLP settings."
     return 0
   fi
@@ -266,7 +298,14 @@ sky_env() {
   cat <<EOF_ENV
 export OPENLIT_ENDPOINT="$endpoint"
 export OTEL_EXPORTER_OTLP_ENDPOINT="$endpoint"
-export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+export OTEL_EXPORTER_OTLP_PROTOCOL="$otlp_protocol"
+export GEMINI_TELEMETRY_ENABLED="1"
+export GEMINI_TELEMETRY_TARGET="local"
+export GEMINI_TELEMETRY_OTLP_ENDPOINT="$endpoint"
+export GEMINI_TELEMETRY_OTLP_PROTOCOL="http"
+export GEMINI_TELEMETRY_LOG_PROMPTS="1"
+export OPENLIT_UI_USER="$ui_user"
+export OPENLIT_UI_PASSWORD="$ui_pass"
 EOF_ENV
 }
 

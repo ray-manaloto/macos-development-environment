@@ -290,9 +290,35 @@ openlit_status_line() {
 
 openlit_endpoints() {
   local script="./scripts/openlit-control.sh"
+  local out=""
   if [[ -x "$script" ]]; then
-    "$script" endpoints 2>/dev/null | paste -sd' ' -
+    out=$("$script" endpoints 2>/dev/null || true)
+    printf '%s' "$out" | paste -sd' ' -
   fi
+}
+
+gemini_telemetry_status() {
+  local enabled="${GEMINI_TELEMETRY_ENABLED:-}"
+  local target="${GEMINI_TELEMETRY_TARGET:-}"
+  local endpoint="${GEMINI_TELEMETRY_OTLP_ENDPOINT:-}"
+  local protocol="${GEMINI_TELEMETRY_OTLP_PROTOCOL:-}"
+
+  if [[ -z "$enabled" && -z "$endpoint" ]]; then
+    printf 'not-set'
+    return 0
+  fi
+  if [[ "$enabled" != "1" && "$enabled" != "true" ]]; then
+    printf 'disabled'
+    return 0
+  fi
+  if [[ -z "$endpoint" ]]; then
+    printf 'no-endpoint'
+    return 0
+  fi
+  if [[ -z "$protocol" ]]; then
+    protocol="default"
+  fi
+  printf 'ok (%s %s %s)' "${target:-local}" "$endpoint" "$protocol"
 }
 
 output_tmux() {
@@ -323,8 +349,9 @@ output_json() {
   local bun_bin="${16}"
   local openlit_status="${17}"
   local openlit_eps="${18}"
-  local tmux_status="${19}"
-  local tmux_line="${20}"
+  local gemini_status="${19}"
+  local tmux_status="${20}"
+  local tmux_line="${21}"
   local claude_expected="$HOME/.local/bin/claude"
   local claude_status="missing"
   local claude_paths=""
@@ -368,6 +395,7 @@ output_json() {
     "$(json_escape "$claude_status")" "$(json_escape "$claude_expected")" "$claude_paths_json"
   printf '  "openlit": {"status_line": "%s", "endpoints": "%s"},\n' \
     "$(json_escape "$openlit_status")" "$(json_escape "$openlit_eps")"
+  printf '  "gemini_telemetry": "%s",\n' "$(json_escape "$gemini_status")"
   printf '  "inventory": %s\n' "$inventory"
   printf '}\n'
 }
@@ -420,6 +448,7 @@ main() {
   local bun_bin
   local openlit_status_line
   local openlit_eps
+  local gemini_status
 
   maint_state="$(launchd_state com.ray-manaloto.macos-dev-maintenance)"
   valid_state="$(launchd_state com.ray-manaloto.macos-dev-validation)"
@@ -445,6 +474,7 @@ main() {
   bun_bin="$(cmd_path bun)"
   openlit_status_line="$(openlit_status_line)"
   openlit_eps="$(openlit_endpoints)"
+  gemini_status="$(gemini_telemetry_status)"
 
   case "$mode" in
     tmux)
@@ -455,7 +485,7 @@ main() {
         "$last_maint_line" "$last_valid_line" "$summary" "$last_maint_time" \
         "$maint_size" "$valid_size" "$summary_size" \
         "$gcloud_bin" "$mise_bin" "$uv_bin" "$pixi_bin" "$bun_bin" \
-        "$openlit_status_line" "$openlit_eps" \
+        "$openlit_status_line" "$openlit_eps" "$gemini_status" \
         "$tmux_status" "$last_tmux_line"
       ;;
     *)
@@ -471,6 +501,7 @@ main() {
       log "Last tmux verify: $last_tmux_line"
       log "OpenLIT status: $openlit_status_line"
       log "OpenLIT endpoints: ${openlit_eps:-n/a}"
+      log "Gemini telemetry: $gemini_status"
       log "gcloud: $gcloud_bin"
       log "mise: $mise_bin"
       log "uv:   $uv_bin"

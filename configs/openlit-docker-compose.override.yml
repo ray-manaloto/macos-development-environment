@@ -1,4 +1,15 @@
 services:
+  openlit:
+    environment:
+      PORT: "3000"
+      DOCKER_PORT: "3000"
+    ports:
+      - "3000:3000"
+      - "4317:4317"
+      - "4318:4318"
+    expose:
+      - "3000"
+
   clickhouse:
     volumes:
       - ./assets/clickhouse-docker-related-config.xml:/etc/clickhouse-server/config.d/docker_related_config.xml:ro
