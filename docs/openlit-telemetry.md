@@ -50,6 +50,15 @@ source ~/.zshrc
 - You can change the password after login from the OpenLIT UI. Keep the value in `~/.config/macos-development-environment/secrets.env` if you want it documented locally (not required for runtime).
 
 
+## OAuth (Google)
+- Enabled on the AWS-hosted OpenLIT instance via NextAuth.
+- Configure the Google OAuth app with:
+  - Authorized redirect URI: `http://44.220.132.99:3000/api/auth/callback/google`
+  - Authorized JavaScript origin: `http://44.220.132.99:3000`
+- Required env (kept in `~/.config/macos-development-environment/secrets.env` and pushed to the server): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `AUTH_TRUST_HOST=true`.
+- GitHub OAuth: planned; not enabled yet.
+
+
 ## Local Telemetry Environment
 Use OTLP HTTP for widest compatibility:
 
