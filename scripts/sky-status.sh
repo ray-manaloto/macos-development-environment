@@ -52,6 +52,19 @@ log() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
 }
 
+kill_stale_api_server() {
+  local port="${SKY_API_PORT:-46580}"
+  # If a stale SkyPilot API server is holding the port, kill it to allow restart.
+  if lsof -i :"$port" -sTCP:LISTEN -n -P 2>/dev/null | grep -q sky; then
+    local pids
+    pids=$(lsof -i :"$port" -sTCP:LISTEN -n -P 2>/dev/null | awk 'NR>1 {print $2}' | sort -u)
+    if [[ -n "$pids" ]]; then
+      log "Killing stale SkyPilot API server on port $port (PIDs: $pids)"
+      kill $pids 2>/dev/null || true
+    fi
+  fi
+}
+
 setup_path() {
   local home="${HOME:-/Users/rmanaloto}"
   export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -203,6 +216,7 @@ aws_summary() {
 
 main() {
   setup_path
+  kill_stale_api_server
   load_env_file_secrets
 
   local status=0
