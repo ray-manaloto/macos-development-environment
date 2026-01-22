@@ -1,0 +1,174 @@
+name: grafana-stack
+resources:
+  cloud: aws
+  region: us-east-1
+  instance_type: m5.xlarge
+  disk_size: 100
+  ports:
+    - 3000  # Grafana
+    - 3200  # Loki
+    - 9009  # Tempo (gRPC)
+    - 3100  # Loki HTTP
+    - 8080  # Mimir/Prom (if using single binary)
+setup: |
+  sudo apt-get update -y
+  sudo apt-get install -y docker.io docker-compose-plugin
+  sudo systemctl enable --now docker
+  mkdir -p ~/grafana-stack
+  cat <<'COMPOSE' > ~/grafana-stack/docker-compose.yaml
+version: "3.8"
+services:
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    depends_on:
+      - tempo
+      - loki
+    restart: unless-stopped
+  tempo:
+    image: grafana/tempo:2.5.0
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "3200:3200"
+      - "4317:4317" # OTLP gRPC (optional)
+    restart: unless-stopped
+  loki:
+    image: grafana/loki:2.9.8
+    command: ["-config.file=/etc/loki.yaml"]
+    volumes:
+      - ./loki.yaml:/etc/loki.yaml
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+  mimir:
+    image: grafana/mimir:2.12.0
+    command: ["-config.file=/etc/mimir.yaml"]
+    volumes:
+      - ./mimir.yaml:/etc/mimir.yaml
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+COMPOSE
+  cat <<'TEMPO' > ~/grafana-stack/tempo.yaml
+search_enabled: true
+server:
+  http_listen_port: 3200
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+storage:
+  trace:
+    backend: s3
+    s3:
+      bucket: ${TEMPO_S3_BUCKET}
+      region: ${AWS_REGION}
+      access_key: ${TEMPO_S3_ACCESS_KEY}
+      secret_key: ${TEMPO_S3_SECRET_KEY}
+compactor:
+  compaction:
+    block_retention: 168h
+TEMPO
+  cat <<'LOKI' > ~/grafana-stack/loki.yaml
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+distributor:
+  ring:
+    kvstore:
+      store: inmemory
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+  chunk_idle_period: 1h
+  chunk_retain_period: 30s
+  max_transfer_retries: 0
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: s3
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+storage_config:
+  aws:
+    s3: s3://${LOKI_S3_BUCKET}
+    region: ${AWS_REGION}
+  boltdb_shipper:
+    shared_store: s3
+    active_index_directory: /loki/index
+    cache_location: /loki/cache
+    cache_ttl: 24h
+limits_config:
+  ingestion_rate_mb: 4
+  ingestion_burst_size_mb: 6
+  max_query_length: 720h
+  max_query_parallelism: 32
+  max_streams_per_user: 0
+  max_global_streams_per_user: 0
+compactor:
+  retention_enabled: true
+  retention_delete_delay: 24h
+  retention_delete_worker_count: 150
+  delete_request_cancel_period: 24h
+  working_directory: /loki/retention
+LOKI
+  cat <<'MIMIR' > ~/grafana-stack/mimir.yaml
+activity_tracker: {}
+auth_enabled: false
+blocks_storage:
+  backend: s3
+  s3:
+    bucket_name: ${MIMIR_S3_BUCKET}
+    region: ${AWS_REGION}
+    access_key_id: ${MIMIR_S3_ACCESS_KEY}
+    secret_access_key: ${MIMIR_S3_SECRET_KEY}
+  tsdb:
+    dir: /data/tsdb
+compactor:
+  data_dir: /data/compactor
+  sharding_enabled: true
+distributor:
+  ring:
+    kvstore:
+      store: inmemory
+ingester:
+  ring:
+    replication_factor: 1
+    kvstore:
+      store: inmemory
+limits:
+  ingestion_burst_size_mb: 32
+  ingestion_rate_mb: 16
+  max_label_names_per_series: 60
+  max_global_series_per_user: 0
+memberlist:
+  join_members: []
+query_frontend:
+  parallelize_shardable_queries: true
+server:
+  http_listen_port: 8080
+storage:
+  tsdb:
+    retention_period: 336h
+MIMIR
+run: |
+  cd ~/grafana-stack
+  docker compose up -d
+  docker compose ps
+file_mounts:
+  # optional override files can be added here later

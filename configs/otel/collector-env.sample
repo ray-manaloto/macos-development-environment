@@ -1,0 +1,6 @@
+# Fill these before deployment or set via sky env_vars
+OPENLIT_ENDPOINT=https://openlit.example.com
+OPENLIT_TOKEN=changeme-openlit
+TEMPO_ENDPOINT=https://tempo.example.com
+LOKI_ENDPOINT=https://loki.example.com/loki/api/v1/push
+MIMIR_ENDPOINT=https://mimir.example.com/api/v1/push

@@ -4,12 +4,21 @@ This setup deploys OpenLIT on AWS via SkyPilot and configures macOS tools to
 send OpenTelemetry (OTLP) telemetry to it. Kubernetes deployment is supported
 via a user-supplied manifest.
 
-## Summary (from SkyPilot AWS OpenLIT Deployment Guide.docx)
-- Architecture: SkyPilot provisions an EC2 instance, OpenLIT runs via Docker
-  Compose, and MacBook tools send OTLP telemetry to the public endpoint.
-- Required ports: UI (3000), OTLP gRPC (4317), OTLP HTTP (4318).
-- Typical flow: `sky launch` -> `sky status --ip` -> set `OPENLIT_ENDPOINT` and
-  `OTEL_EXPORTER_OTLP_ENDPOINT` to `http://<IP>:4318`.
+## OTLP fan-out (single endpoint)
+- One collector/Alloy endpoint (4317/4318) with TLS/auth, deployed via SkyPilot (see configs/skypilot/otel-gateway.yaml).
+- Fan-out exporters: OpenLIT (traces/metrics/logs), Grafana Tempo (traces), Loki (logs), Mimir/Prometheus (metrics).
+- Clients set `OTEL_EXPORTER_OTLP_ENDPOINT=https://<gateway>:4318` + auth; logs fall back to file tail → OTLP if native OTLP missing.
+
+## Stacks to deploy (SkyPilot)
+1) **OTLP Gateway**: configs/skypilot/otel-gateway.yaml with configs/otel/collector-gateway.yaml and env sample configs/otel/collector-env.sample.
+2) **Grafana Stack**: configs/skypilot/grafana-stack.yaml (Tempo, Loki, Mimir, Grafana UI) backed by S3.
+3) **OpenLIT**: existing openlit cluster; collector exporter points to OPENLIT_ENDPOINT.
+4) **Postgres (RDS)**: configs/skypilot/rds-postgres.yaml for managed Postgres with CloudWatch logs/metrics; scraped via collector.
+
+## Typical flow
+- `scripts/openlit-control.sh deploy` (OpenLIT) and `sky launch` otel-gateway/grafana-stack as needed.
+- `sky status --ip` to capture gateway/LB IPs; set env in collector-env.sample or SkyPilot env_vars.
+- `scripts/openlit-control.sh status` and `scripts/status-dashboard.sh --json` to verify OpenLIT + collector/grafana endpoints.
 
 ## Quickstart (SkyPilot on AWS)
 1) Deploy OpenLIT:

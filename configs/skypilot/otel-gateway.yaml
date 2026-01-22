@@ -1,0 +1,53 @@
+name: otel-gateway
+resources:
+  cloud: aws
+  region: us-east-1
+  # small instance is fine for ingress; adjust later if needed
+  instance_type: m5.large
+  disk_size: 50
+  ports:
+    - 4317
+    - 4318
+    - 8888
+setup: |
+  sudo apt-get update -y
+  sudo apt-get install -y ca-certificates curl unzip
+  if ! command -v otelcol >/dev/null 2>&1; then
+    ARCH=$(uname -m)
+    if [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]]; then
+      ARCH=arm64
+    else
+      ARCH=amd64
+    fi
+    VERSION=0.109.0
+    curl -L -o otelcol.tar.gz "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${VERSION}/otelcol_${VERSION}_linux_${ARCH}.tar.gz"
+    tar -xzf otelcol.tar.gz otelcol
+    sudo mv otelcol /usr/local/bin/
+    rm otelcol.tar.gz
+  fi
+  sudo mkdir -p /etc/otelcol
+  cat <<'CONF' | sudo tee /etc/otelcol/config.yaml
+${COLLECTOR_CONFIG}
+CONF
+  sudo tee /etc/systemd/system/otelcol.service >/dev/null <<'SERVICE'
+[Unit]
+Description=OpenTelemetry Collector
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/otelcol --config=/etc/otelcol/config.yaml
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+  sudo systemctl daemon-reload
+  sudo systemctl enable otelcol
+run: |
+  sudo systemctl restart otelcol
+  sudo systemctl status --no-pager otelcol || true
+file_mounts:
+  /etc/otelcol/config.yaml: configs/otel/collector-gateway.yaml
+  /etc/otelcol/env.sh: configs/otel/collector-env.sample
+  # Certs can be mounted here when available

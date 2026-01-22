@@ -1,0 +1,37 @@
+name: rds-postgres
+resources:
+  cloud: aws
+  region: us-east-1
+  # RDS is managed; skypilot here uses AWS CLI to provision (idempotent)
+setup: |
+  set -euo pipefail
+  : "${DB_INSTANCE_ID:=mde-openlit-pg}"
+  : "${DB_USERNAME:=mdeadmin}"
+  : "${DB_PASSWORD:?set DB_PASSWORD}"
+  : "${DB_INSTANCE_CLASS:=db.t4g.medium}"
+  : "${DB_STORAGE_GB:=50}"
+  : "${DB_ENGINE_VERSION:=16}"
+  : "${DB_SUBNET_GROUP:=default}"
+  : "${DB_VPC_SECURITY_GROUPS:=}" # comma-separated SG IDs
+
+  if ! aws rds describe-db-instances --db-instance-identifier "$DB_INSTANCE_ID" >/dev/null 2>&1; then
+    aws rds create-db-instance \
+      --db-instance-identifier "$DB_INSTANCE_ID" \
+      --db-instance-class "$DB_INSTANCE_CLASS" \
+      --engine postgres \
+      --engine-version "$DB_ENGINE_VERSION" \
+      --allocated-storage "$DB_STORAGE_GB" \
+      --master-username "$DB_USERNAME" \
+      --master-user-password "$DB_PASSWORD" \
+      --backup-retention-period 7 \
+      --no-multi-az \
+      --publicly-accessible false \
+      --storage-encrypted \
+      --deletion-protection \
+      ${DB_SUBNET_GROUP:+--db-subnet-group-name "$DB_SUBNET_GROUP"} \
+      ${DB_VPC_SECURITY_GROUPS:+--vpc-security-group-ids ${DB_VPC_SECURITY_GROUPS//,/ }}
+  else
+    echo "RDS instance $DB_INSTANCE_ID exists; skipping create"
+  fi
+run: |
+  aws rds describe-db-instances --db-instance-identifier "$DB_INSTANCE_ID" --query "DBInstances[0].{Endpoint:Endpoint.Address,Port:Endpoint.Port,Status:DBInstanceStatus}" --output table
