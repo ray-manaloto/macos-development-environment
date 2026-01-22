@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@/agents/*": ["agents/*"],
+      "@/tools/*": ["tools/*"],
+      "@/prompts/*": ["prompts/*"]
+    }
+  },
+  "include": [
+    "agents/**/*",
+    "tools/**/*",
+    "prompts/**/*",
+    "agents.json"
+  ]
+}

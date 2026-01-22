@@ -1,0 +1,52 @@
+{
+  "name": "macos-development-environment-tools",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "devDependencies": {
+    "@prisma/client": "^7.3.0",
+    "add-skill": "1.0.23",
+    "agent-browser": "github:vercel-labs/agent-browser",
+    "agent-cli": "github:vercel-labs/awesome-ai",
+    "agent-skills": "github:vercel-labs/agent-skills",
+    "agents": "github:wshobson/agents",
+    "awesome-claude-skills": "github:ComposioHQ/awesome-claude-skills",
+    "beagle": "github:existential-birds/beagle",
+    "claude-code-templates": "github:davila7/claude-code-templates",
+    "claude-plugin-marketplace": "github:JosiahSiegel/claude-plugin-marketplace",
+    "claude-skills": "github:rknall/claude-skills",
+    "dev3000": "github:vercel-labs/dev3000",
+    "husky": "^9.1.7",
+    "json-render": "github:vercel-labs/json-render",
+    "prisma": "^7.3.0",
+    "skillport": "github:gotalab/skillport",
+    "skills": "github:trailofbits/skills",
+    "superpowers": "github:obra/superpowers",
+    "ui-ux-pro-max-skill": "github:nextlevelbuilder/ui-ux-pro-max-skill"
+  },
+  "scripts": {
+    "dev3000": "dev3000",
+    "d3k": "d3k",
+    "agent-browser": "agent-browser",
+    "json-render": "json-render",
+    "add-skill": "add-skill",
+    "cct": "cct"
+  },
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "@prisma/engines",
+    "@sentry/cli",
+    "@swc/core",
+    "agent-browser",
+    "bufferutil",
+    "esbuild",
+    "json-render",
+    "prisma",
+    "sharp"
+  ],
+  "dependencies": {
+    "ai": "^6.0.0-beta.169",
+    "diff": "^8.0.3",
+    "zod": "^4.3.5"
+  }
+}

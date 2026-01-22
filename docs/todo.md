@@ -24,3 +24,24 @@ This is the consolidated task list.
 
 ## Observability
 - Add OpenLIT Kubernetes manifest/Helm integration when available.
+
+
+## Vercel Labs tools & skills (project scope only)
+- [x] Install `vercel-labs/dev3000` via bun (project devDependency).
+- [x] Install `vercel-labs/json-render` via bun (project devDependency).
+- [x] Install `vercel-labs/awesome-ai` (`agent-cli`) via bun (project devDependency).
+- [x] Add project-scoped skills/hooks/slash-command packages via bun:
+  - `vercel-labs/agent-skills`
+  - `vercel-labs/add-skill`
+  - `vercel-labs/agent-browser`
+  - `obra/superpowers`
+  - `nextlevelbuilder/ui-ux-pro-max-skill`
+  - `trailofbits/skills`
+  - `f/awesome-chatgpt-prompts`
+  - `rknall/claude-skills`
+  - `wshobson/agents`
+  - `davila7/claude-code-templates`
+  - `ComposioHQ/awesome-claude-skills`
+  - `existential-birds/beagle`
+  - `JosiahSiegel/claude-plugin-marketplace`
+
