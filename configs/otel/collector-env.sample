@@ -4,3 +4,10 @@ OPENLIT_TOKEN=changeme-openlit
 TEMPO_ENDPOINT=https://tempo.example.com
 LOKI_ENDPOINT=https://loki.example.com/loki/api/v1/push
 MIMIR_ENDPOINT=https://mimir.example.com/api/v1/push
+
+# Example test values (for documentation only; replace for real deploy)
+# OPENLIT_ENDPOINT=https://test-openlit.local:4318
+# OPENLIT_TOKEN=test-openlit-token-123
+# TEMPO_ENDPOINT=https://test-tempo.local:4318
+# LOKI_ENDPOINT=https://test-loki.local/loki/api/v1/push
+# MIMIR_ENDPOINT=https://test-mimir.local/api/v1/push

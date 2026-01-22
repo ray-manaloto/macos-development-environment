@@ -46,3 +46,6 @@ Use when installing, repairing, or validating the MacBook dev setup maintained i
 - After changes, run: verify-tooling.sh → sky-status.sh → status-dashboard.sh --json.
 - Keep bun.lock/package.json committed for JS tools; avoid stray global npm installs.
 - Keep SkyPilot install managed by install-agent-stack and patch-skypilot.sh (no manual uv tool installs).
+
+## OTLP test values
+- See docs/telemetry-env-test-values.md for placeholder endpoints/tokens/buckets/passwords. Replace with real values before deployment.
