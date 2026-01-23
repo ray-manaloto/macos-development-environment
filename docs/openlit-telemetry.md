@@ -52,6 +52,18 @@ source ~/.zshrc
 - LangChain/LangSmith + other OTEL-aware CLIs/SDKs: inherit OTEL_* env for traces/metrics to OpenLIT.
 - Status dashboard: `scripts/status-dashboard.sh --json` includes `openlit` and `gemini_telemetry` entries.
 
+## Required secrets.env keys
+Store these in `~/.config/macos-development-environment/secrets.env` before installing/validating the AWS stack:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `AWS_DEFAULT_REGION`
+- `GRAFANA_PASSWORD`
+- `DB_PASSWORD`
+
+`scripts/openlit-control.sh env --write-env` will add the OTEL_* and GEMINI_TELEMETRY_* entries.
+
 ## UI Access
 - URL: http://<OPENLIT_IP>:3000 (OpenLIT UI served directly; no Caddy layer).
 - Preseeded user: `admin@example.com`
@@ -117,6 +129,16 @@ scripts/openlit-control.sh k8s-env --endpoint http://<LOAD_BALANCER_IP>:4318 --w
 ```
 
 ## Status / Verification
+- OTEL stack validation (SkyPilot collector + Grafana/Tempo/Loki/Mimir + RDS) from macOS:
+
+```bash
+scripts/validate-otel-stack.sh
+```
+
+  - Uses clusters: rm-rmanaloto-mde-otel-gw-prod-use1 and rm-rmanaloto-mde-graf-prod-use1.
+  - Requires AWS CLI creds + GRAFANA_PASSWORD and DB_PASSWORD in secrets.env.
+  - Checks collector service, Grafana API health/login, Tempo/Loki/Mimir health, and RDS describe.
+
 - Full status + AWS details:
 
 ```bash

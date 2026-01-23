@@ -36,6 +36,12 @@ Setup (AWS credentials from secrets.env):
   - Creates `agent_cloud.yaml` in the repo root (copy of template).
   - Runs `sky check aws` to validate credentials.
 
+Required secrets in `~/.config/macos-development-environment/secrets.env`:
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `AWS_DEFAULT_REGION`
+
 Example commands:
 - `sky launch -d -c agent-cluster agent_cloud.yaml`
 - `scripts/sky-status.sh` (or `cloud-status` alias)

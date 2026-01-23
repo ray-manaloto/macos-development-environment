@@ -24,6 +24,10 @@ This is the consolidated task list.
 
 ## Observability
 - Add OpenLIT Kubernetes manifest/Helm integration when available.
+- [x] Deploy OTLP gateway via SkyPilot and confirm collector healthy.
+- [x] Deploy Grafana stack (Grafana/Tempo/Loki/Mimir) via SkyPilot.
+- [x] Provision RDS instance `rm-rmanaloto-mde-rds-prod-use1` for telemetry validation.
+- [x] Re-run `scripts/validate-otel-stack.sh` after RDS is online to reach full green.
 
 
 ## Vercel Labs tools & skills (project scope only)
@@ -44,4 +48,3 @@ This is the consolidated task list.
   - `ComposioHQ/awesome-claude-skills`
   - `existential-birds/beagle`
   - `JosiahSiegel/claude-plugin-marketplace`
-
