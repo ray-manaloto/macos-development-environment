@@ -138,6 +138,7 @@ scripts/validate-otel-stack.sh
   - Uses clusters: rm-rmanaloto-mde-otel-gw-prod-use1 and rm-rmanaloto-mde-graf-prod-use1.
   - Requires AWS CLI creds + GRAFANA_PASSWORD and DB_PASSWORD in secrets.env.
   - Checks collector service, Grafana API health/login, Tempo/Loki/Mimir health, and RDS describe.
+  - If using SkyPilot to provision RDS, ensure the instance role (e.g., `skypilot-v1`) has `rds:DescribeDBInstances` and `rds:CreateDBInstance`.
 
 - Full status + AWS details:
 
