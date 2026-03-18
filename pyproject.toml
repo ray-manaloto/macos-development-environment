@@ -1,0 +1,79 @@
+[project]
+name = "mde"
+version = "0.1.0"
+description = "Typed Python library for macOS development environment management"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.10",
+    "pyyaml>=6.0",
+    "tomli>=2.0; python_version < '3.11'",
+]
+
+[project.scripts]
+mde-py = "mde.__main__:main"
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+# ── Ruff: ALL rules, zero exceptions ──
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D203",     # conflicts with D211 (no-blank-line-before-class)
+    "D213",     # conflicts with D212 (multi-line-summary-first-line)
+    "COM812",   # conflicts with ruff formatter (missing-trailing-comma)
+    "ISC001",   # conflicts with ruff formatter (single-line-implicit-string-concatenation)
+    "T201",     # print is intentional CLI output
+    "PLC0415",  # lazy imports are deliberate for CLI startup speed
+    "S607",     # partial executable paths unavoidable for system tools (mise, brew, etc.)
+    "S603",     # subprocess calls with literal args are safe in this context
+    "PLW1510",  # subprocess.run without check= is intentional (we inspect returncode)
+    "UP036",    # version block for tomli compat is intentional
+    "UP042",    # ditto
+    "TC003",    # false positive: Path used at runtime for method calls
+    "PLR0913",  # convenience methods with keyword-only args are readable
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",     # assert is expected in tests
+    "INP001",   # test files don't need __init__.py
+    "PLR2004",  # magic values in test assertions are readable
+    "ARG002",   # unused fixture args are fine in tests
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
+
+# ── ty: strict mode ──
+[tool.ty.environment]
+python-version = "3.12"
+
+[tool.ty.src]
+include = ["src/mde"]
+
+[tool.ty.rules]
+possibly-missing-attribute = "error"
+possibly-missing-import = "error"
+unused-ignore-comment = "warn"
+
+# ── pytest ──
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.15.6",
+]

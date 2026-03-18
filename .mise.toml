@@ -1,0 +1,207 @@
+[tasks."mde:sync-dotfiles"]
+description = "Sync managed shell/config files (chezmoi-first, legacy fallback)"
+run = "scripts/ensure-managed-configs.sh"
+
+[tasks."mde:update"]
+description = "Run maintenance update lifecycle"
+run = "uv run python -m mde update"
+
+[tasks."mde:update:fast"]
+description = "Run maintenance with agent/mcp updates disabled"
+run = "MDE_UPDATE_MCP=0 scripts/macos-dev-maintenance.sh"
+
+[tasks."mde:verify"]
+description = "Run verification checks"
+run = "uv run python -m mde verify"
+
+[tasks."mde:agent:preflight"]
+description = "Verify the agent runtime contract before any agent run"
+run = "scripts/mde-agent-preflight.sh"
+
+[tasks."mde:agent:verify"]
+description = "Verify runtime policy drift across agents, skills, prompts, and docs"
+run = "scripts/mde-agent-verify.sh"
+
+[tasks."mde:refs:refresh"]
+description = "Refresh mirrored reference bundle metadata for one domain or all domains"
+run = "scripts/mde-refs-refresh.sh \"$@\""
+
+[tasks."mde:refs:verify"]
+description = "Verify mirrored reference bundle metadata for one domain or all domains"
+run = "scripts/mde-refs-verify.sh \"$@\""
+
+[tasks."mde:team:domain"]
+description = "Run the domain SDLC team for a specific domain"
+run = "scripts/teams/run-mde-domain-team.sh \"$@\""
+
+[tasks."mde:team:modern-best-practices"]
+description = "Run the modern-best-practices SDLC modernization workflow across the primary owning teams"
+run = "scripts/teams/run-modern-best-practices-upgrade-team.sh \"$@\""
+
+[tasks."mde:preset:verify"]
+description = "Verify preset bundle coverage and cookbook ownership"
+run = "scripts/mde-preset-verify.sh \"$@\""
+
+[tasks."mde:domain:verify"]
+description = "Verify domain catalog coverage, team configs, and orchestration delegation"
+run = "scripts/mde-domain-verify.sh \"$@\""
+
+[tasks."mde:learn:init"]
+description = "Initialize claude-flow learning memory DB"
+run = "scripts/mde-learn.sh init"
+
+[tasks."mde:learn:search"]
+description = "Search learning memory for patterns"
+run = "scripts/mde-learn.sh search \"$@\""
+
+[tasks."mde:learn:store"]
+description = "Store a pattern in learning memory"
+run = "scripts/mde-learn.sh store \"$@\""
+
+[tasks."mde:learn:consolidate"]
+description = "Run memory consolidation and neural optimization"
+run = "scripts/mde-learn.sh consolidate"
+
+[tasks."mde:learn:status"]
+description = "Show learning stats (memory + neural)"
+run = "uv run python -m mde learn status"
+
+[tasks."mde:learn:verify"]
+description = "Verify learning registry coverage and writeback requirements"
+run = "uv run python -m mde learn verify"
+
+[tasks."mde:agent:report"]
+description = "Print the current agent runtime policy report"
+run = "scripts/mde-agent-report.sh"
+
+[tasks."mde:test"]
+description = "Run shell test suites"
+run = "scripts/tests/run-all.sh"
+
+[tasks."mde:drift"]
+description = "Run runtime/tool ownership drift checks"
+run = "uv run python -m mde drift check"
+
+[tasks."mde:migrate:global-tools"]
+description = "Classify and migrate legacy global tool installs into the mise ownership model"
+run = "scripts/mde-migrate-to-mise.sh global-tools"
+
+[tasks."mde:research:autoimprove"]
+description = "Run the bounded multi-agent autoresearch loop for host setup and tooling improvements"
+run = "scripts/mde-research-autoimprove.sh"
+
+[tasks."mde:status"]
+description = "Show status dashboard JSON"
+run = "uv run python -m mde status"
+
+[tasks."mde:mcp:sync"]
+description = "Sync managed MCP server configuration"
+run = "scripts/setup-mcp-servers.sh"
+
+[tasks."mde:agents:review"]
+description = "Review repo agent surfaces and supporting contracts"
+run = "scripts/mde-agents-review.sh"
+
+[tasks."mde:secrets:refresh"]
+description = "Refresh the global SOPS runtime secret file from the merged fnox secret set"
+run = "uv run python -m mde secrets refresh"
+
+[tasks."mde:secrets:restore:keychain"]
+description = "Restore the global SOPS runtime secret file into keychain-backed fnox entries"
+run = "scripts/mde-sops-secrets-import-keychain.sh"
+
+[tasks."mde:secrets:backup:1password"]
+description = "Back up the encrypted global SOPS runtime secret file into 1Password"
+run = "scripts/mde-sops-secrets-backup-1password.sh"
+
+[tasks."mde:remediate"]
+description = "Run deterministic host remediation workflow"
+run = "uv run python -m mde remediate"
+
+[tasks."mde:bootstrap:devcontainer"]
+description = "Bootstrap devcontainer profile with mise + chezmoi"
+run = "bash .devcontainer/post-create.sh"
+
+[tasks."mde:devcontainer:image:build"]
+description = "Build the published devcontainer image locally for smoke validation"
+run = "scripts/devcontainer-image-build.sh"
+
+[tasks."mde:devcontainer:image:smoke"]
+description = "Run the published devcontainer image sanity contract against the locally built image"
+run = "scripts/devcontainer-image-smoke.sh"
+
+[tasks."mde:devcontainer:lifecycle:smoke"]
+description = "Run a real devcontainer up/exec lifecycle smoke using devcontainer.json"
+run = "scripts/devcontainer-lifecycle-smoke.sh"
+
+[tasks."mde:shell:profile"]
+description = "Profile macOS zsh/Oh My Zsh startup using the repo-owned workflow"
+run = "scripts/profile-zsh-startup.sh all"
+
+[tasks."mde:shell:profile:baseline"]
+description = "Run a coarse zsh startup timing baseline"
+run = "scripts/profile-zsh-startup.sh baseline"
+
+[tasks."mde:shell:profile:install-bench"]
+description = "Install or update the managed zsh-bench checkout"
+run = "scripts/install-zsh-bench.sh"
+
+[tasks."mde:shell:profile:bench"]
+description = "Run optional zsh-bench latency benchmarking when available"
+run = "scripts/profile-zsh-startup.sh bench"
+
+[tasks."mde:shell:profile:zprof"]
+description = "Profile zsh startup functions with zprof"
+run = "scripts/profile-zsh-startup.sh zprof"
+
+[tasks."mde:shell:profile:xtrace"]
+description = "Capture timestamped zsh startup xtrace output"
+run = "scripts/profile-zsh-startup.sh xtrace"
+
+[tasks."mde:shell:profile:syscalls"]
+description = "Attempt syscall/file tracing for zsh startup"
+run = "scripts/profile-zsh-startup.sh syscalls"
+
+[tasks."mde:prune"]
+description = "Prune stale uv/bun globals migrated to mise + orphan mise versions"
+run = "uv run python -m mde prune"
+
+[tasks."mde:validate"]
+description = "Run declarative tools validation + mise doctor"
+run = "uv run python -m mde validate"
+
+[tasks."mde:validate:fix"]
+description = "Run validation with auto-fix for known issues"
+run = "uv run python -m mde validate --fix"
+
+[tasks."mde:validate:configs"]
+description = "Validate config files only"
+run = "uv run python -m mde validate --configs"
+
+[tasks."mde:test:py"]
+description = "Run Python test suite"
+run = "uv run pytest tests/mde/ -v"
+
+[tasks."mde:doctor"]
+description = "System health check"
+run = "uv run python -m mde doctor"
+
+[tasks."install:fabric"]
+description = "Install fabric AI tool and configure env"
+run = "scripts/install-agent-stack.sh"
+
+[tasks."install:gh-copilot"]
+description = "Install/upgrade GitHub Copilot CLI extension"
+run = "gh extension install github/gh-copilot 2>/dev/null || gh extension upgrade github/gh-copilot 2>/dev/null || true"
+
+[tasks."install:langsmith-wrappers"]
+description = "Sync langsmith wrapper scripts to ~/.local/bin"
+run = "scripts/install-langchain-cli-tools.sh"
+
+[tasks."mde:team:claude-flow-learning"]
+description = "Run the claude-flow learning improvement team"
+run = "scripts/teams/run-claude-flow-learning-team.sh \"$@\""
+
+[tasks."mde:refs:clone-frameworks"]
+description = "Clone agent framework repos for offline research"
+run = "scripts/clone-agent-framework-repos.sh"
