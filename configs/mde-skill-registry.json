@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "skills": [
+    {
+      "id": "skills/1password-fnox",
+      "canonical_path": ".agents/skills/1password-fnox/SKILL.md",
+      "aliases": ["1password-fnox", "1password"]
+    },
+    {
+      "id": "skills/mise-enforcement",
+      "canonical_path": ".agents/skills/mise-enforcement/SKILL.md",
+      "aliases": ["mise-enforcement"]
+    },
+    {
+      "id": "skills/research-source-discovery",
+      "canonical_path": ".agents/skills/research-source-discovery/SKILL.md",
+      "aliases": ["research-source-discovery"]
+    },
+    {
+      "id": "skills/github-repo-mining",
+      "canonical_path": ".agents/skills/github-repo-mining/SKILL.md",
+      "aliases": ["github-repo-mining"]
+    },
+    {
+      "id": "skills/social-signal-mining",
+      "canonical_path": ".agents/skills/social-signal-mining/SKILL.md",
+      "aliases": ["social-signal-mining"]
+    },
+    {
+      "id": "skills/evidence-synthesis",
+      "canonical_path": ".agents/skills/evidence-synthesis/SKILL.md",
+      "aliases": ["evidence-synthesis"]
+    },
+    {
+      "id": "skills/mde-agent-runtime-contract",
+      "canonical_path": ".agents/skills/mde-agent-runtime-contract/SKILL.md",
+      "aliases": ["mde-agent-runtime-contract"]
+    },
+    {
+      "id": "skills/mde-global-tool-migration",
+      "canonical_path": ".agents/skills/mde-global-tool-migration/SKILL.md",
+      "aliases": ["mde-global-tool-migration"]
+    },
+    {
+      "id": "skills/mde-autoresearch",
+      "canonical_path": ".agents/skills/mde-autoresearch/SKILL.md",
+      "aliases": ["mde-autoresearch"]
+    },
+    {
+      "id": "skills/mde-python-backend-selection",
+      "canonical_path": ".agents/skills/mde-python-backend-selection/SKILL.md",
+      "aliases": ["mde-python-backend-selection"]
+    },
+    {
+      "id": "skills/mde-node-cli-declaration",
+      "canonical_path": ".agents/skills/mde-node-cli-declaration/SKILL.md",
+      "aliases": ["mde-node-cli-declaration"]
+    },
+    {
+      "id": "skills/mde-native-tool-validation",
+      "canonical_path": ".agents/skills/mde-native-tool-validation/SKILL.md",
+      "aliases": ["mde-native-tool-validation"]
+    },
+    {
+      "id": "skills/mde-package-cache-policy",
+      "canonical_path": ".agents/skills/mde-package-cache-policy/SKILL.md",
+      "aliases": ["mde-package-cache-policy"]
+    },
+    {
+      "id": "skills/mde-homebrew",
+      "canonical_path": ".agents/skills/mde-homebrew/SKILL.md",
+      "aliases": ["mde-homebrew", "homebrew", "brew"]
+    }
+  ]
+}

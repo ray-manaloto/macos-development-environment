@@ -1,0 +1,14 @@
+{
+  "id": "bundle-rust-starter",
+  "domain_id": "rust",
+  "name": "Rust Starter Bundle",
+  "description": "Starter bundle for Cargo-managed Rust projects.",
+  "preset_ids": ["preset-rust"],
+  "primary_manifest": "Cargo.toml",
+  "included_files": ["Cargo.toml"],
+  "reference_source_ids": ["rust-book", "cargo-book", "rustup-book"],
+  "notes": [
+    "Starter bundles are repo-scoped scaffolds, not host-global installers.",
+    "The owning domain team decides when companion manifests or lockfiles are required."
+  ]
+}

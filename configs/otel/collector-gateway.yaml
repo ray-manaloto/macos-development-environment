@@ -1,0 +1,58 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 2s
+    limit_mib: 1024
+    spike_limit_mib: 512
+  batch:
+    send_batch_size: 8192
+    timeout: 2s
+  attributes/defaults:
+    actions:
+      - key: service.name
+        action: upsert
+        value: default-service
+      - key: deployment.environment
+        action: insert
+        value: prod
+
+exporters:
+  otlphttp/openlit:
+    endpoint: ${OPENLIT_ENDPOINT}
+    headers:
+      Authorization: Bearer ${OPENLIT_TOKEN}
+  otlphttp/tempo:
+    endpoint: ${TEMPO_ENDPOINT}
+  loki:
+    endpoint: ${LOKI_ENDPOINT}
+  prometheusremotewrite/mimir:
+    endpoint: ${MIMIR_ENDPOINT}
+  logging/debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, attributes/defaults]
+      exporters: [otlphttp/openlit, otlphttp/tempo]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, attributes/defaults]
+      exporters: [prometheusremotewrite/mimir]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, attributes/defaults]
+      exporters: [loki]
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+    logs:
+      level: info

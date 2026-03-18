@@ -1,0 +1,534 @@
+{
+  "version": 1,
+  "generated_at": "2026-03-15",
+  "routing_policy": {
+    "default_domain": "mise-core",
+    "fallback_team_id": "mde-mise-core-domain-team",
+    "match_order": [
+      "file_globs",
+      "keywords",
+      "ecosystem_aliases"
+    ],
+    "notes": [
+      "Classify setup and tooling changes through the owning domain before adopting guidance.",
+      "Mirror-first research uses configs/mde-reference-sources.json plus .artifacts/reference-mirror/.",
+      "Starter bundles and presets live under configs/tool-bundles/ and configs/mde-preset-catalog.json."
+    ],
+    "required_stage_ids": [
+      "mirror-refresh-agent",
+      "docs-tutorial-agent",
+      "repo-mining-agent",
+      "social-signal-agent",
+      "authority-agent",
+      "implementation-agent",
+      "validation-agent",
+      "learning-consolidator-agent"
+    ]
+  },
+  "domains": [
+    {
+      "id": "mise-core",
+      "name": "Mise Core",
+      "category": "toolchain-authority",
+      "description": "Global runtime and CLI authority, backend selection, registries, tasks, trust, drift, and shared environment policy.",
+      "ecosystem_aliases": [
+        "mise",
+        "asdf",
+        "rtx",
+        "shim",
+        "registry",
+        "backend"
+      ],
+      "keywords": [
+        "mise",
+        "registry",
+        "backend",
+        "shim",
+        "trust",
+        "drift",
+        "tasks",
+        "plugin"
+      ],
+      "file_globs": [
+        ".mise.toml",
+        "mise.toml",
+        "configs/mde-*.json",
+        "scripts/**/mise*"
+      ],
+      "team_id": "mde-mise-core-domain-team",
+      "team_config_path": "configs/agent-teams/mde-mise-core-domain-team.yaml",
+      "prompt_set_path": "prompts/agent-team/mde-domain-sdlc",
+      "bundle_path": "configs/tool-bundles/mise-core",
+      "preset_ids": [
+        "preset-mise-core",
+        "preset-mde-foundation"
+      ],
+      "reference_source_group": "mise-core",
+      "learning_record_id": "domain-mise-core",
+      "reference_bundle_id": "mise-core",
+      "preset_bundle_id": "preset-mise-core",
+      "tool_bundle_dir": "configs/tool-bundles/mise-core",
+      "project_authority": "repo .mise.toml tasks, agent runtime contracts, and generated modernization outputs",
+      "global_cli_authority_mode": "mise declarative entry",
+      "cache_contract": [
+        "MISE_*",
+        "BUN_INSTALL"
+      ],
+      "derived_from_authority": "scripts/generate_modernization_matrix.py -> configs/mde-modernization-matrix.json",
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/presets.html"
+      ]
+    },
+    {
+      "id": "python-pixi-uv",
+      "name": "Python Pixi UV",
+      "category": "language-runtime",
+      "description": "Python packaging and project realization path across mise, pixi, uv, pyproject, and lockfile policy.",
+      "ecosystem_aliases": [
+        "python",
+        "pixi",
+        "uv",
+        "pip",
+        "pipx",
+        "pyproject"
+      ],
+      "keywords": [
+        "python",
+        "pixi",
+        "uv",
+        "pip",
+        "pipx",
+        "ruff",
+        "pytest",
+        "pyproject"
+      ],
+      "file_globs": [
+        "pyproject.toml",
+        "uv.lock",
+        "pixi.toml",
+        "pixi.lock",
+        "requirements*.txt"
+      ],
+      "team_id": "mde-python-pixi-uv-domain-team",
+      "team_config_path": "configs/agent-teams/mde-python-pixi-uv-domain-team.yaml",
+      "prompt_set_path": "prompts/agent-team/mde-domain-sdlc",
+      "bundle_path": "configs/tool-bundles/python-pixi-uv",
+      "preset_ids": [
+        "preset-python-pixi-uv",
+        "preset-python-maintainer"
+      ],
+      "reference_source_group": "python-pixi-uv",
+      "learning_record_id": "domain-python-pixi-uv",
+      "reference_bundle_id": "python-pixi-uv",
+      "preset_bundle_id": "preset-python-pixi-uv",
+      "tool_bundle_dir": "configs/tool-bundles/python-pixi-uv",
+      "project_authority": "pixi.toml plus pixi.lock, with pyproject.toml [tool.pixi] only when package metadata is required",
+      "global_cli_authority_mode": "domain decision required between repo pixi bundle, pyproject tool.pixi, pixi-global manifest, and mise managed CLIs",
+      "cache_contract": [
+        "PIXI_HOME",
+        "UV_CACHE_DIR",
+        "PIP_CACHE_DIR"
+      ],
+      "derived_from_authority": "configs/tool-bundles/python-pixi-uv/pixi.toml",
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/python.html"
+      ],
+      "authority_requirements": [
+        "Compare repo pixi.toml plus pixi.lock, optional pyproject.toml with [tool.pixi], pixi-global.toml, and mise managed Python CLI realization paths.",
+        "State when pixi.toml is the default, when pyproject.toml is required, and how PIXI_HOME and UV_CACHE_DIR are enforced.",
+        "Treat raw pixi global install and uv tool install as imperative execution paths unless explicitly adopted through a domain decision record."
+      ]
+    },
+    {
+      "id": "javascript-typescript",
+      "name": "JavaScript TypeScript",
+      "category": "language-runtime",
+      "description": "Node, Bun, TypeScript, package-manager, and frontend/backend CLI guidance under mise authority.",
+      "ecosystem_aliases": [
+        "javascript",
+        "typescript",
+        "node",
+        "bun",
+        "npm",
+        "package.json"
+      ],
+      "keywords": [
+        "javascript",
+        "typescript",
+        "node",
+        "bun",
+        "npm",
+        "tsconfig",
+        "package.json"
+      ],
+      "file_globs": [
+        "package.json",
+        "bun.lock",
+        "bun.lockb",
+        "tsconfig*.json",
+        "eslint.config.*"
+      ],
+      "team_id": "mde-javascript-typescript-domain-team",
+      "team_config_path": "configs/agent-teams/mde-javascript-typescript-domain-team.yaml",
+      "prompt_set_path": "prompts/agent-team/mde-domain-sdlc",
+      "bundle_path": "configs/tool-bundles/javascript-typescript",
+      "preset_ids": [
+        "preset-javascript-typescript",
+        "preset-web-cli-authoring"
+      ],
+      "reference_source_group": "javascript-typescript",
+      "learning_record_id": "domain-javascript-typescript",
+      "reference_bundle_id": "javascript-typescript",
+      "preset_bundle_id": "preset-javascript-typescript",
+      "tool_bundle_dir": "configs/tool-bundles/javascript-typescript",
+      "project_authority": "package.json plus lockfile and mise npm backend declarations for global CLIs",
+      "global_cli_authority_mode": "mise npm backend declarations",
+      "cache_contract": [
+        "BUN_INSTALL",
+        "npm cache"
+      ],
+      "derived_from_authority": "configs/tool-bundles/javascript-typescript/package.json",
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/nodejs.html"
+      ]
+    },
+    {
+      "id": "ruby",
+      "name": "Ruby",
+      "category": "language-runtime",
+      "description": "Ruby runtime, Gem/Bundler workflows, and Ruby CLI ownership under mise authority.",
+      "ecosystem_aliases": [
+        "ruby",
+        "bundler",
+        "gem",
+        "gemspec"
+      ],
+      "keywords": [
+        "ruby",
+        "bundler",
+        "gem",
+        "gemfile",
+        "gemspec"
+      ],
+      "file_globs": [
+        "Gemfile",
+        "Gemfile.lock",
+        "*.gemspec",
+        ".ruby-version"
+      ],
+      "team_id": "mde-ruby-domain-team",
+      "team_config_path": "configs/agent-teams/mde-ruby-domain-team.yaml",
+      "prompt_set_path": "prompts/agent-team/mde-domain-sdlc",
+      "bundle_path": "configs/tool-bundles/ruby",
+      "preset_ids": [
+        "preset-ruby"
+      ],
+      "reference_source_group": "ruby",
+      "learning_record_id": "domain-ruby",
+      "reference_bundle_id": "ruby",
+      "preset_bundle_id": "preset-ruby",
+      "tool_bundle_dir": "configs/tool-bundles/ruby",
+      "project_authority": "Gemfile plus gem native manifests with mise runtime declarations",
+      "global_cli_authority_mode": "mise gem backend or recorded Ruby global pattern",
+      "cache_contract": [
+        "GEM_HOME",
+        "BUNDLE_PATH"
+      ],
+      "derived_from_authority": "configs/tool-bundles/ruby/Gemfile",
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/ruby.html"
+      ]
+    },
+    {
+      "id": "go",
+      "name": "Go",
+      "category": "language-runtime",
+      "description": "Go runtime, modules, workspace layout, and CLI packaging under mise authority.",
+      "ecosystem_aliases": [
+        "go",
+        "golang",
+        "gomod",
+        "gows"
+      ],
+      "keywords": [
+        "go",
+        "golang",
+        "go.mod",
+        "go.work",
+        "gofmt",
+        "toolchain"
+      ],
+      "file_globs": [
+        "go.mod",
+        "go.sum",
+        "go.work"
+      ],
+      "team_id": "mde-go-domain-team",
+      "team_config_path": "configs/agent-teams/mde-go-domain-team.yaml",
+      "prompt_set_path": "prompts/agent-team/mde-domain-sdlc",
+      "bundle_path": "configs/tool-bundles/go",
+      "preset_ids": [
+        "preset-go"
+      ],
+      "reference_source_group": "go",
+      "learning_record_id": "domain-go",
+      "reference_bundle_id": "go",
+      "preset_bundle_id": "preset-go",
+      "tool_bundle_dir": "configs/tool-bundles/go",
+      "project_authority": "go.mod and go.sum with mise runtime declarations for the Go toolchain",
+      "global_cli_authority_mode": "mise go backend declarations or recorded domain decision",
+      "cache_contract": [
+        "GOCACHE",
+        "GOMODCACHE"
+      ],
+      "derived_from_authority": "configs/tool-bundles/go/go.mod",
+      "cookbook_pages": []
+    },
+    {
+      "id": "rust",
+      "name": "Rust",
+      "category": "language-runtime",
+      "description": "Rust toolchain, cargo workflows, crate policy, and CLI distribution under mise authority.",
+      "ecosystem_aliases": [
+        "rust",
+        "cargo",
+        "rustup",
+        "crate"
+      ],
+      "keywords": [
+        "rust",
+        "cargo",
+        "rustup",
+        "cargo.toml",
+        "clippy",
+        "fmt"
+      ],
+      "file_globs": [
+        "Cargo.toml",
+        "Cargo.lock",
+        "rust-toolchain.toml"
+      ],
+      "team_id": "mde-rust-domain-team",
+      "team_config_path": "configs/agent-teams/mde-rust-domain-team.yaml",
+      "prompt_set_path": "prompts/agent-team/mde-domain-sdlc",
+      "bundle_path": "configs/tool-bundles/rust",
+      "preset_ids": [
+        "preset-rust"
+      ],
+      "reference_source_group": "rust",
+      "learning_record_id": "domain-rust",
+      "reference_bundle_id": "rust",
+      "preset_bundle_id": "preset-rust",
+      "tool_bundle_dir": "configs/tool-bundles/rust",
+      "project_authority": "Cargo.toml and Cargo.lock with mise runtime declarations for Rust and cargo",
+      "global_cli_authority_mode": "mise cargo backend declarations or recorded domain decision",
+      "cache_contract": [
+        "CARGO_HOME",
+        "RUSTUP_HOME"
+      ],
+      "derived_from_authority": "configs/tool-bundles/rust/Cargo.toml",
+      "cookbook_pages": []
+    },
+    {
+      "id": "cpp",
+      "name": "C and C++",
+      "category": "systems-language",
+      "description": "C/C++ toolchains, build systems, package managers, and compiler policy under mise-first orchestration.",
+      "ecosystem_aliases": [
+        "c",
+        "cpp",
+        "cmake",
+        "conan",
+        "vcpkg"
+      ],
+      "keywords": [
+        "c",
+        "cpp",
+        "cmake",
+        "conan",
+        "vcpkg",
+        "clang",
+        "gcc"
+      ],
+      "file_globs": [
+        "CMakeLists.txt",
+        "conanfile.*",
+        "vcpkg.json",
+        "compile_commands.json"
+      ],
+      "team_id": "mde-cpp-domain-team",
+      "team_config_path": "configs/agent-teams/mde-cpp-domain-team.yaml",
+      "prompt_set_path": "prompts/agent-team/mde-domain-sdlc",
+      "bundle_path": "configs/tool-bundles/cpp",
+      "preset_ids": [
+        "preset-cpp"
+      ],
+      "reference_source_group": "cpp",
+      "learning_record_id": "domain-cpp",
+      "reference_bundle_id": "cpp",
+      "preset_bundle_id": "preset-cpp",
+      "tool_bundle_dir": "configs/tool-bundles/cpp",
+      "project_authority": "CMakeLists.txt and CMakePresets.json paired with mise runtime and compiler declarations",
+      "global_cli_authority_mode": "mise runtime/tool declarations with CMake preset scaffolding",
+      "cache_contract": [
+        "CMAKE_BUILD_PARALLEL_LEVEL"
+      ],
+      "derived_from_authority": "configs/tool-bundles/cpp/CMakePresets.json",
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/cpp.html"
+      ]
+    },
+    {
+      "id": "docker",
+      "name": "Docker",
+      "category": "containers",
+      "description": "Docker CLI, Compose, buildx, image authoring, and container workflow guidance.",
+      "ecosystem_aliases": [
+        "docker",
+        "compose",
+        "container",
+        "buildx",
+        "oci"
+      ],
+      "keywords": [
+        "docker",
+        "compose",
+        "container",
+        "buildx",
+        "dockerfile",
+        "oci"
+      ],
+      "file_globs": [
+        "Dockerfile",
+        "docker-compose*.yml",
+        "docker-compose*.yaml",
+        "compose.yaml",
+        ".dockerignore"
+      ],
+      "team_id": "mde-docker-domain-team",
+      "team_config_path": "configs/agent-teams/mde-docker-domain-team.yaml",
+      "prompt_set_path": "prompts/agent-team/mde-domain-sdlc",
+      "bundle_path": "configs/tool-bundles/docker",
+      "preset_ids": [
+        "preset-docker",
+        "preset-mde-foundation"
+      ],
+      "reference_source_group": "docker",
+      "learning_record_id": "domain-docker",
+      "reference_bundle_id": "docker",
+      "preset_bundle_id": "preset-docker",
+      "tool_bundle_dir": "configs/tool-bundles/docker",
+      "project_authority": "Dockerfile plus compose and devcontainer config with mise task wrappers",
+      "global_cli_authority_mode": "task oriented authority with Docker and devcontainer runtime declarations",
+      "cache_contract": [
+        "BUILDKIT_INLINE_CACHE",
+        "docker layer cache"
+      ],
+      "derived_from_authority": "configs/tool-bundles/docker/compose.yaml",
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/docker.html"
+      ]
+    },
+    {
+      "id": "terraform",
+      "name": "Terraform",
+      "category": "infrastructure-as-code",
+      "description": "Terraform CLI, HCL authoring, provider management, and IaC validation patterns.",
+      "ecosystem_aliases": [
+        "terraform",
+        "tofu",
+        "hcl",
+        "providers"
+      ],
+      "keywords": [
+        "terraform",
+        "hcl",
+        "providers",
+        "tfvars",
+        "plan",
+        "state"
+      ],
+      "file_globs": [
+        "*.tf",
+        "*.tfvars",
+        ".terraform.lock.hcl"
+      ],
+      "team_id": "mde-terraform-domain-team",
+      "team_config_path": "configs/agent-teams/mde-terraform-domain-team.yaml",
+      "prompt_set_path": "prompts/agent-team/mde-domain-sdlc",
+      "bundle_path": "configs/tool-bundles/terraform",
+      "preset_ids": [
+        "preset-terraform",
+        "preset-platform-iac"
+      ],
+      "reference_source_group": "terraform",
+      "learning_record_id": "domain-terraform",
+      "reference_bundle_id": "terraform",
+      "preset_bundle_id": "preset-terraform",
+      "tool_bundle_dir": "configs/tool-bundles/terraform",
+      "project_authority": "versions.tf plus Terraform module config with mise runtime declarations",
+      "global_cli_authority_mode": "mise runtime declaration plus Terraform task scaffolding",
+      "cache_contract": [
+        "TF_PLUGIN_CACHE_DIR"
+      ],
+      "derived_from_authority": "configs/tool-bundles/terraform/versions.tf",
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/terraform.html"
+      ]
+    },
+    {
+      "id": "shell-editor",
+      "name": "Shell and Editor",
+      "category": "authoring-environment",
+      "description": "Shell scripting, editor ergonomics, linting, formatting, and authoring contracts for local automation.",
+      "ecosystem_aliases": [
+        "shell",
+        "bash",
+        "zsh",
+        "editor",
+        "shellcheck",
+        "editorconfig"
+      ],
+      "keywords": [
+        "shell",
+        "bash",
+        "zsh",
+        "shellcheck",
+        "editorconfig",
+        "editor",
+        "shfmt"
+      ],
+      "file_globs": [
+        "*.sh",
+        ".editorconfig",
+        ".shellcheckrc",
+        ".vimrc",
+        "init.lua"
+      ],
+      "team_id": "mde-shell-editor-domain-team",
+      "team_config_path": "configs/agent-teams/mde-shell-editor-domain-team.yaml",
+      "prompt_set_path": "prompts/agent-team/mde-domain-sdlc",
+      "bundle_path": "configs/tool-bundles/shell-editor",
+      "preset_ids": [
+        "preset-shell-editor",
+        "preset-mde-foundation"
+      ],
+      "reference_source_group": "shell-editor",
+      "learning_record_id": "domain-shell-editor",
+      "reference_bundle_id": "shell-editor",
+      "preset_bundle_id": "preset-shell-editor",
+      "tool_bundle_dir": "configs/tool-bundles/shell-editor",
+      "project_authority": ".editorconfig, shell runtime config, and editor task scaffolding",
+      "global_cli_authority_mode": "task oriented authority with shell and editor defaults recorded per domain",
+      "cache_contract": [
+        "XDG_CACHE_HOME",
+        "EDITORCONFIG"
+      ],
+      "derived_from_authority": "configs/tool-bundles/shell-editor/.editorconfig",
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/shell-tricks.html",
+        "https://mise.jdx.dev/mise-cookbook/neovim.html"
+      ]
+    }
+  ]
+}

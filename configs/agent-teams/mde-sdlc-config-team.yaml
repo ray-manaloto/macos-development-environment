@@ -1,0 +1,39 @@
+team:
+  id: mde-sdlc-config-team
+  name: SDLC Config Team
+  goal: Create agent team configs and prompts with per-agent skill enforcement and non-skippable review gates.
+  output_dir: reports/sdlc-config
+  shared_artifacts_dir: .artifacts/sdlc-config
+  repo_root: .
+  workflow_skill: superpowers:subagent-driven-development
+
+subagents:
+  - id: team-config-writer
+    stage: 1
+    objective: Write team YAML configs with required_skills, gate_criteria, and max_attempts per agent.
+    required_skills: [skills/mde-agent-runtime-contract, superpowers:writing-plans]
+    required_plugins: [superpowers, agent-teams]
+    output_files: [configs/agent-teams/mde-superpowers-validation-team.yaml]
+    prompt_file: prompts/agent-team/sdlc-config/team-config-writer.md
+
+  - id: prompt-writer
+    stage: 2
+    objective: Write agent prompt files with mandatory skill activation and anti-skip enforcement.
+    required_skills: [skills/mde-agent-runtime-contract, superpowers:writing-plans]
+    required_plugins: [superpowers]
+    output_files: [prompts/agent-team/superpowers-validation/*.md]
+    prompt_file: prompts/agent-team/sdlc-config/prompt-writer.md
+
+  - id: config-reviewer
+    stage: 3
+    objective: Blackbox review of team configs and prompts against design principles.
+    required_skills: [skills/mde-agent-runtime-contract, superpowers:requesting-code-review]
+    required_plugins: [superpowers]
+    gate_criteria:
+      - "Every subagent has required_skills and required_plugins"
+      - "Every prompt has Mandatory skill activation steps section"
+      - "Review stages (2, 6, 7) have gate_criteria with measurable pass/fail"
+      - "No prompt allows skipping verification"
+    output_files:
+      - "reports/sdlc-config/{{date}}-review.md"
+    prompt_file: prompts/agent-team/sdlc-config/config-reviewer.md

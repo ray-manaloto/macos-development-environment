@@ -1,0 +1,111 @@
+team:
+  id: octokit-sdlc-team
+  name: Octokit SDLC Team
+  goal: Build and harden the Octokit discovery library with full SDLC coverage.
+  output_dir: reports/octokit-sdlc
+  shared_artifacts_dir: .artifacts/octokit-sdlc
+  repo_root: /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment
+
+subagents:
+  - id: spec-planner
+    stage: 1
+    objective: Produce implementation-ready spec and plan.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - writing-plans
+      - brainstorming
+      - software-architecture
+    required_plugins:
+      - skillport
+    output_files:
+      - docs/plans/{{date}}-octokit-sdlc-spec-plan.md
+    prompt_file: prompts/agent-team/octokit-sdlc/spec-planner.md
+
+  - id: spec-reviewer
+    stage: 2
+    objective: Critique and tighten the spec/plan for correctness and risk.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - requesting-code-review
+      - review-verification-protocol
+      - code-review-checklist
+    required_plugins:
+      - skillport
+    output_files:
+      - docs/plans/{{date}}-octokit-sdlc-spec-review.md
+    prompt_file: prompts/agent-team/octokit-sdlc/spec-reviewer.md
+
+  - id: bdd-test-designer
+    stage: 3
+    objective: Create BDD tests from accepted spec and plan.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - test-driven-development
+      - vitest-testing
+      - testing-patterns
+    required_plugins:
+      - skillport
+    output_files:
+      - tests/octokit-sdlc/**/*.test.*
+      - docs/plans/{{date}}-octokit-sdlc-test-design.md
+    prompt_file: prompts/agent-team/octokit-sdlc/bdd-test-designer.md
+
+  - id: coding-agent
+    stage: 4
+    objective: Implement the plan to satisfy BDD tests with minimal changes.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - test-driven-development
+      - verification-before-completion
+      - clean-code
+    required_plugins:
+      - skillport
+    output_files:
+      - scripts/octokit/**
+      - package.json
+      - bun.lock
+    prompt_file: prompts/agent-team/octokit-sdlc/coding-agent.md
+
+  - id: qa-functional
+    stage: 5
+    objective: Validate behavior and CLI UX end-to-end.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - webapp-testing
+      - quality-playbook
+      - systematic-debugging
+    required_plugins:
+      - skillport
+    output_files:
+      - reports/octokit-sdlc/qa-functional.md
+    prompt_file: prompts/agent-team/octokit-sdlc/qa-functional.md
+
+  - id: qa-nonfunctional
+    stage: 5
+    objective: Validate reliability, edge cases, rate limits, and operability.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - verification-before-completion
+      - security-review
+      - review-verification-protocol
+    required_plugins:
+      - skillport
+    output_files:
+      - reports/octokit-sdlc/qa-nonfunctional.md
+    prompt_file: prompts/agent-team/octokit-sdlc/qa-nonfunctional.md
+
+  - id: docs-agent
+    stage: 6
+    objective: Produce human and AI-agent-friendly docs and quickstart.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - doc-coauthoring
+      - documentation-templates
+      - prompt-engineering
+    required_plugins:
+      - skillport
+    output_files:
+      - docs/octokit-repo-discovery.md
+      - docs/teams/octokit-sdlc-team.md
+      - reports/octokit-sdlc/docs-validation.md
+    prompt_file: prompts/agent-team/octokit-sdlc/docs-agent.md

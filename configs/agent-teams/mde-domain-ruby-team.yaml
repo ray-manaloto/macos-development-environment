@@ -1,0 +1,76 @@
+team:
+  id: mde-domain-ruby-team
+  domain: ruby
+  name: Ruby Domain SDLC Team
+  goal: Research, validate, and maintain declarative authority for the Ruby domain using mirrored references, preset bundles, and learning writeback.
+  output_dir: reports/mde-domain-sdlc
+  shared_artifacts_dir: .artifacts/mde-domain-sdlc
+  repo_root: /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment
+  reference_bundle_id: refs-ruby
+  preset_bundle_id: preset-ruby
+  tool_bundle_dir: configs/tool-bundles/ruby
+
+subagents:
+  - id: mirror-refresh-agent
+    stage: 1
+    objective: Refresh or validate mirrored references before synthesis decisions.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/research-source-discovery]
+    output_files:
+      - reports/mde-domain-sdlc/ruby/{date}-01-mirror-refresh.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/mirror-refresh-agent.md
+
+  - id: docs-tutorial-agent
+    stage: 2
+    objective: Extract implementation guidance from official docs, cookbooks, tutorials, and release notes.
+    required_skills: [skills/mde-agent-runtime-contract, skills/research-source-discovery]
+    output_files:
+      - reports/mde-domain-sdlc/ruby/{date}-02-docs-tutorial.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/docs-tutorial-agent.md
+
+  - id: repo-mining-agent
+    stage: 3
+    objective: Mine upstream repositories for portable patterns and implementation evidence.
+    required_skills: [skills/mde-agent-runtime-contract, skills/github-repo-mining]
+    output_files:
+      - reports/mde-domain-sdlc/ruby/{date}-03-repo-mining.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/repo-mining-agent.md
+
+  - id: social-signal-agent
+    stage: 4
+    objective: Extract grounded lessons from community discussions without treating them as authoritative.
+    required_skills: [skills/mde-agent-runtime-contract, skills/social-signal-mining]
+    output_files:
+      - reports/mde-domain-sdlc/ruby/{date}-04-social-signal.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/social-signal-agent.md
+
+  - id: authority-agent
+    stage: 5
+    objective: Define project authority, global CLI authority mode, and cache contract for the domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/evidence-synthesis, skills/mise-enforcement]
+    output_files:
+      - reports/mde-domain-sdlc/ruby/{date}-05-authority.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/authority-agent.md
+
+  - id: implementation-agent
+    stage: 6
+    objective: Map accepted authority decisions to preset bundles, starter files, and task scaffolding.
+    required_skills: [skills/mde-agent-runtime-contract, skills/evidence-synthesis, skills/mise-enforcement]
+    output_files:
+      - reports/mde-domain-sdlc/ruby/{date}-06-implementation.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/implementation-agent.md
+
+  - id: validation-agent
+    stage: 7
+    objective: Define proof commands, smoke checks, and acceptance criteria for the domain bundle.
+    required_skills: [skills/mde-agent-runtime-contract, skills/evidence-synthesis]
+    output_files:
+      - reports/mde-domain-sdlc/ruby/{date}-07-validation.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/validation-agent.md
+
+  - id: learning-consolidator-agent
+    stage: 8
+    objective: Write the accepted findings back to the learning registry and identify affected prompts, skills, docs, and tasks.
+    required_skills: [skills/mde-agent-runtime-contract, skills/evidence-synthesis, skills/mise-enforcement]
+    output_files:
+      - reports/mde-domain-sdlc/ruby/{date}-08-learning.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/learning-consolidator-agent.md

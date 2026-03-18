@@ -1,0 +1,14 @@
+{
+  "id": "bundle-go-starter",
+  "domain_id": "go",
+  "name": "Go Starter Bundle",
+  "description": "Starter bundle for Go module and workspace conventions.",
+  "preset_ids": ["preset-go"],
+  "primary_manifest": "go.mod",
+  "included_files": ["go.mod"],
+  "reference_source_ids": ["go-docs", "go-modules-reference", "go-release-notes"],
+  "notes": [
+    "Starter bundles are repo-scoped scaffolds, not host-global installers.",
+    "The owning domain team decides when companion manifests or lockfiles are required."
+  ]
+}

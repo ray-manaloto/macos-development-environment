@@ -1,6 +1,17 @@
 .DS_Store
 firebase-debug.log
-secrets.env
 .env
+fnox.local.toml
 node_modules/
 .bun/
+reports/
+.swarm/
+.artifacts/
+.artifacts/reference-mirror/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/

@@ -2,6 +2,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/mde-secrets.sh
+source "$SCRIPT_DIR/lib/mde-secrets.sh"
 
 MARKETPLACE_REPO="${MDE_AI_RESEARCH_MARKETPLACE_REPO:-zechenzhangAGI/AI-research-SKILLs}"
 MARKETPLACE_NAME="${MDE_AI_RESEARCH_MARKETPLACE_NAME:-ai-research-skills}"
@@ -42,62 +44,12 @@ setup_path() {
   export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 }
 
-have_cmd() {
-  command -v "$1" >/dev/null 2>&1
-}
-
-load_keychain_secret() {
-  local label="$1"
-  local env_var="$2"
-  local value=""
-
-  if [[ -n "${!env_var:-}" || ! $(command -v security 2>/dev/null) ]]; then
-    return 0
-  fi
-
-  value="$(security find-generic-password -s "$label" -w 2>/dev/null || true)"
-  if [[ -n "$value" ]]; then
-    printf -v "$env_var" '%s' "$value"
-    export "$env_var"
-  fi
-}
-
-load_op_secret() {
-  local ref_var="$1"
-  local env_var="$2"
-  local ref=""
-  local token=""
-  local value=""
-
-  ref="${!ref_var:-}"
-  if [[ -z "$ref" || -n "${!env_var:-}" ]]; then
-    return 0
-  fi
-
-  if [[ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]]; then
-    token="$OP_SERVICE_ACCOUNT_TOKEN"
-  elif have_cmd security; then
-    token="$(security find-generic-password -s mde-op-sa -w 2>/dev/null || true)"
-  fi
-
-  if [[ -z "$token" || ! $(command -v op 2>/dev/null) ]]; then
-    return 0
-  fi
-
-  export OP_SERVICE_ACCOUNT_TOKEN="$token"
-  value="$(op read "$ref" 2>/dev/null || true)"
-  if [[ -n "$value" ]]; then
-    printf -v "$env_var" '%s' "$value"
-    export "$env_var"
-  fi
-}
-
 ensure_node() {
-  if have_cmd node; then
+  if mde_have_cmd node; then
     return 0
   fi
 
-  if have_cmd mise; then
+  if mde_have_cmd mise; then
     log "node not found; installing via mise."
     mise install -q node@latest
     mise use -g node@latest
@@ -117,7 +69,7 @@ json_has_key() {
     return 1
   fi
 
-  if have_cmd python3; then
+  if mde_have_cmd python3; then
     python3 - "$file" "$key" <<'PY'
 import json
 import sys
@@ -137,7 +89,7 @@ PY
     return $?
   fi
 
-  if have_cmd rg; then
+  if mde_have_cmd rg; then
     rg -q "\"${key}\"" "$file"
     return $?
   fi
@@ -209,8 +161,7 @@ main() {
 
   ensure_node
 
-  load_op_secret MDE_OP_ANTHROPIC_API_KEY_REF ANTHROPIC_API_KEY
-  load_keychain_secret "mde-anthropic-api-key" ANTHROPIC_API_KEY
+  mde_load_secrets
 
   if ! marketplace_installed; then
     log "Adding marketplace ${MARKETPLACE_REPO}."

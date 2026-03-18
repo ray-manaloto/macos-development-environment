@@ -1,0 +1,1048 @@
+{
+  "version": 1,
+  "generated_at": "2026-03-15",
+  "mirror_root": ".artifacts/reference-mirror",
+  "mirror_policy": {
+    "mode": "mirror-first",
+    "refresh_owner_subagent": "mirror-refresh",
+    "staleness_days_default": 30,
+    "required_kinds": [
+      "official-docs",
+      "official-cookbook",
+      "upstream-repo",
+      "release-notes"
+    ]
+  },
+  "source_groups": [
+    {
+      "id": "mise-core",
+      "domain_id": "mise-core",
+      "source_ids": [
+        "mise-docs",
+        "mise-cookbook",
+        "mise-registry-docs",
+        "mise-releases",
+        "mise-repo",
+        "mise-curated-reference"
+      ]
+    },
+    {
+      "id": "python-pixi-uv",
+      "domain_id": "python-pixi-uv",
+      "source_ids": [
+        "pixi-docs",
+        "pixi-repo",
+        "uv-docs",
+        "uv-repo",
+        "python-packaging-guide",
+        "python-cookbook",
+        "python-curated-pixi-uv"
+      ]
+    },
+    {
+      "id": "javascript-typescript",
+      "domain_id": "javascript-typescript",
+      "source_ids": [
+        "node-docs",
+        "bun-docs",
+        "typescript-docs",
+        "typescript-repo",
+        "npm-docs",
+        "javascript-cookbook",
+        "javascript-curated-reference"
+      ]
+    },
+    {
+      "id": "ruby",
+      "domain_id": "ruby",
+      "source_ids": [
+        "ruby-docs",
+        "bundler-docs",
+        "rubygems-guides",
+        "ruby-repo",
+        "ruby-cookbook",
+        "ruby-curated-reference"
+      ]
+    },
+    {
+      "id": "go",
+      "domain_id": "go",
+      "source_ids": [
+        "go-docs",
+        "go-modules-reference",
+        "go-release-notes",
+        "go-repo",
+        "go-curated-reference"
+      ]
+    },
+    {
+      "id": "rust",
+      "domain_id": "rust",
+      "source_ids": [
+        "rust-book",
+        "cargo-book",
+        "rustup-book",
+        "rust-releases",
+        "rust-curated-reference"
+      ]
+    },
+    {
+      "id": "cpp",
+      "domain_id": "cpp",
+      "source_ids": [
+        "cmake-docs",
+        "conan-docs",
+        "vcpkg-docs",
+        "cppreference",
+        "cpp-cookbook"
+      ]
+    },
+    {
+      "id": "docker",
+      "domain_id": "docker",
+      "source_ids": [
+        "docker-docs",
+        "docker-compose-docs",
+        "docker-buildx-docs",
+        "docker-repo",
+        "docker-cookbook",
+        "docker-curated-reference"
+      ]
+    },
+    {
+      "id": "terraform",
+      "domain_id": "terraform",
+      "source_ids": [
+        "terraform-docs",
+        "terraform-language-docs",
+        "terraform-registry-docs",
+        "terraform-repo",
+        "terraform-cookbook",
+        "terraform-curated-reference"
+      ]
+    },
+    {
+      "id": "shell-editor",
+      "domain_id": "shell-editor",
+      "source_ids": [
+        "bash-manual",
+        "zsh-docs",
+        "shellcheck-docs",
+        "editorconfig-docs",
+        "neovim-docs",
+        "shell-cookbook",
+        "neovim-cookbook",
+        "shell-curated-reference"
+      ]
+    },
+    {
+      "id": "agent-learning-frameworks",
+      "domain_id": "agent-learning-frameworks",
+      "source_ids": [
+        "claude-flow-repo",
+        "langgraph-repo",
+        "crewai-repo",
+        "autogen-repo",
+        "dspy-repo",
+        "letta-repo",
+        "openai-agents-repo",
+        "semantic-kernel-repo",
+        "aider-repo",
+        "openhands-repo",
+        "attractor-repo",
+        "get-shit-done-repo",
+        "oh-my-claudecode-repo"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "mise-docs",
+      "title": "mise official documentation",
+      "domain_ids": [
+        "mise-core"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://mise.jdx.dev/",
+      "mirror_path_hint": "official/mise/docs/index.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "mise-cookbook",
+      "title": "mise cookbook",
+      "domain_ids": [
+        "mise-core"
+      ],
+      "kind": "official-cookbook",
+      "authority": "official",
+      "url": "https://mise.jdx.dev/cookbook/",
+      "mirror_path_hint": "official/mise/cookbook/index.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "mise-registry-docs",
+      "title": "mise registry and backend docs",
+      "domain_ids": [
+        "mise-core"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://mise.jdx.dev/registry.html",
+      "mirror_path_hint": "official/mise/docs/registry.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "mise-releases",
+      "title": "mise release notes",
+      "domain_ids": [
+        "mise-core"
+      ],
+      "kind": "release-notes",
+      "authority": "upstream",
+      "url": "https://github.com/jdx/mise/releases",
+      "mirror_path_hint": "upstream/mise/releases/index.html",
+      "refresh_cadence_days": 7
+    },
+    {
+      "id": "mise-repo",
+      "title": "mise upstream repository",
+      "domain_ids": [
+        "mise-core"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/jdx/mise",
+      "mirror_path_hint": "upstream/mise/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "pixi-docs",
+      "title": "Pixi documentation",
+      "domain_ids": [
+        "python-pixi-uv"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://pixi.sh/latest/",
+      "mirror_path_hint": "official/pixi/docs/index.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "pixi-repo",
+      "title": "Pixi upstream repository",
+      "domain_ids": [
+        "python-pixi-uv"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/prefix-dev/pixi",
+      "mirror_path_hint": "upstream/pixi/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "uv-docs",
+      "title": "uv documentation",
+      "domain_ids": [
+        "python-pixi-uv"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://docs.astral.sh/uv/",
+      "mirror_path_hint": "official/uv/docs/index.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "uv-repo",
+      "title": "uv upstream repository",
+      "domain_ids": [
+        "python-pixi-uv"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/astral-sh/uv",
+      "mirror_path_hint": "upstream/uv/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "python-packaging-guide",
+      "title": "Python Packaging User Guide",
+      "domain_ids": [
+        "python-pixi-uv"
+      ],
+      "kind": "official-docs",
+      "authority": "ecosystem",
+      "url": "https://packaging.python.org/en/latest/",
+      "mirror_path_hint": "ecosystem/python-packaging/index.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "node-docs",
+      "title": "Node.js documentation",
+      "domain_ids": [
+        "javascript-typescript"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://nodejs.org/docs/latest/api/",
+      "mirror_path_hint": "official/node/docs/index.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "bun-docs",
+      "title": "Bun documentation",
+      "domain_ids": [
+        "javascript-typescript"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://bun.sh/docs",
+      "mirror_path_hint": "official/bun/docs/index.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "typescript-docs",
+      "title": "TypeScript documentation",
+      "domain_ids": [
+        "javascript-typescript"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://www.typescriptlang.org/docs/",
+      "mirror_path_hint": "official/typescript/docs/index.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "typescript-repo",
+      "title": "TypeScript upstream repository",
+      "domain_ids": [
+        "javascript-typescript"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/microsoft/TypeScript",
+      "mirror_path_hint": "upstream/typescript/repo/README.md",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "npm-docs",
+      "title": "npm documentation",
+      "domain_ids": [
+        "javascript-typescript"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://docs.npmjs.com/",
+      "mirror_path_hint": "official/npm/docs/index.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "ruby-docs",
+      "title": "Ruby documentation",
+      "domain_ids": [
+        "ruby"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://www.ruby-lang.org/en/documentation/",
+      "mirror_path_hint": "official/ruby/docs/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "bundler-docs",
+      "title": "Bundler documentation",
+      "domain_ids": [
+        "ruby"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://bundler.io/docs.html",
+      "mirror_path_hint": "official/bundler/docs/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "rubygems-guides",
+      "title": "RubyGems guides",
+      "domain_ids": [
+        "ruby"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://guides.rubygems.org/",
+      "mirror_path_hint": "official/rubygems/guides/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "ruby-repo",
+      "title": "Ruby upstream repository",
+      "domain_ids": [
+        "ruby"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/ruby/ruby",
+      "mirror_path_hint": "upstream/ruby/repo/README.md",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "go-docs",
+      "title": "Go documentation",
+      "domain_ids": [
+        "go"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://go.dev/doc/",
+      "mirror_path_hint": "official/go/docs/index.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "go-modules-reference",
+      "title": "Go modules reference",
+      "domain_ids": [
+        "go"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://go.dev/ref/mod",
+      "mirror_path_hint": "official/go/docs/ref-mod.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "go-release-notes",
+      "title": "Go release notes",
+      "domain_ids": [
+        "go"
+      ],
+      "kind": "release-notes",
+      "authority": "official",
+      "url": "https://go.dev/doc/devel/release",
+      "mirror_path_hint": "official/go/docs/release.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "go-repo",
+      "title": "Go upstream repository",
+      "domain_ids": [
+        "go"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/golang/go",
+      "mirror_path_hint": "upstream/go/repo/README.md",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "rust-book",
+      "title": "The Rust Programming Language",
+      "domain_ids": [
+        "rust"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://doc.rust-lang.org/book/",
+      "mirror_path_hint": "official/rust/book/index.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "cargo-book",
+      "title": "The Cargo Book",
+      "domain_ids": [
+        "rust"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://doc.rust-lang.org/cargo/",
+      "mirror_path_hint": "official/rust/cargo/index.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "rustup-book",
+      "title": "The rustup book",
+      "domain_ids": [
+        "rust"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://rust-lang.github.io/rustup/",
+      "mirror_path_hint": "official/rust/rustup/index.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "rust-releases",
+      "title": "Rust release notes",
+      "domain_ids": [
+        "rust"
+      ],
+      "kind": "release-notes",
+      "authority": "official",
+      "url": "https://doc.rust-lang.org/stable/releases.html",
+      "mirror_path_hint": "official/rust/releases.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "cmake-docs",
+      "title": "CMake documentation",
+      "domain_ids": [
+        "cpp"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://cmake.org/cmake/help/latest/",
+      "mirror_path_hint": "official/cmake/docs/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "conan-docs",
+      "title": "Conan documentation",
+      "domain_ids": [
+        "cpp"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://docs.conan.io/2/",
+      "mirror_path_hint": "official/conan/docs/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "vcpkg-docs",
+      "title": "vcpkg documentation",
+      "domain_ids": [
+        "cpp"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://learn.microsoft.com/vcpkg/",
+      "mirror_path_hint": "official/vcpkg/docs/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "cppreference",
+      "title": "cppreference",
+      "domain_ids": [
+        "cpp"
+      ],
+      "kind": "external-reference",
+      "authority": "community",
+      "url": "https://en.cppreference.com/w/",
+      "mirror_path_hint": "community/cppreference/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "docker-docs",
+      "title": "Docker documentation",
+      "domain_ids": [
+        "docker"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://docs.docker.com/",
+      "mirror_path_hint": "official/docker/docs/index.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "docker-compose-docs",
+      "title": "Docker Compose documentation",
+      "domain_ids": [
+        "docker"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://docs.docker.com/compose/",
+      "mirror_path_hint": "official/docker/compose/index.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "docker-buildx-docs",
+      "title": "Docker Buildx documentation",
+      "domain_ids": [
+        "docker"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://docs.docker.com/build/",
+      "mirror_path_hint": "official/docker/buildx/index.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "docker-repo",
+      "title": "Docker upstream repository",
+      "domain_ids": [
+        "docker"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/docker/cli",
+      "mirror_path_hint": "upstream/docker/cli/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "terraform-docs",
+      "title": "Terraform documentation",
+      "domain_ids": [
+        "terraform"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://developer.hashicorp.com/terraform/docs",
+      "mirror_path_hint": "official/terraform/docs/index.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "terraform-language-docs",
+      "title": "Terraform language documentation",
+      "domain_ids": [
+        "terraform"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://developer.hashicorp.com/terraform/language",
+      "mirror_path_hint": "official/terraform/language/index.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "terraform-registry-docs",
+      "title": "Terraform Registry documentation",
+      "domain_ids": [
+        "terraform"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://developer.hashicorp.com/terraform/registry",
+      "mirror_path_hint": "official/terraform/registry/index.html",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "terraform-repo",
+      "title": "Terraform upstream repository",
+      "domain_ids": [
+        "terraform"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/hashicorp/terraform",
+      "mirror_path_hint": "upstream/terraform/repo/README.md",
+      "refresh_cadence_days": 21
+    },
+    {
+      "id": "bash-manual",
+      "title": "GNU Bash manual",
+      "domain_ids": [
+        "shell-editor"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://www.gnu.org/software/bash/manual/",
+      "mirror_path_hint": "official/bash/manual/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "zsh-docs",
+      "title": "Zsh documentation",
+      "domain_ids": [
+        "shell-editor"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://zsh.sourceforge.io/Doc/",
+      "mirror_path_hint": "official/zsh/docs/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "shellcheck-docs",
+      "title": "ShellCheck documentation",
+      "domain_ids": [
+        "shell-editor"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://www.shellcheck.net/wiki/",
+      "mirror_path_hint": "official/shellcheck/wiki/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "editorconfig-docs",
+      "title": "EditorConfig documentation",
+      "domain_ids": [
+        "shell-editor"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://editorconfig.org/",
+      "mirror_path_hint": "official/editorconfig/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "neovim-docs",
+      "title": "Neovim documentation",
+      "domain_ids": [
+        "shell-editor"
+      ],
+      "kind": "official-docs",
+      "authority": "official",
+      "url": "https://neovim.io/doc/",
+      "mirror_path_hint": "official/neovim/docs/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "python-cookbook",
+      "title": "mise cookbook python",
+      "domain_ids": [
+        "python-pixi-uv"
+      ],
+      "kind": "official-cookbook",
+      "authority": "official",
+      "url": "https://mise.jdx.dev/mise-cookbook/python.html",
+      "mirror_path_hint": "official/mise/cookbook/python.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "python-curated-pixi-uv",
+      "title": "Python packaging and environment workflow notes",
+      "domain_ids": [
+        "python-pixi-uv"
+      ],
+      "kind": "external-reference",
+      "authority": "community",
+      "url": "https://pydevtools.com/handbook/explanation/what-is-an-environment-manager/",
+      "mirror_path_hint": "community/python-pixi-uv/environment-manager.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "javascript-cookbook",
+      "title": "mise cookbook nodejs",
+      "domain_ids": [
+        "javascript-typescript"
+      ],
+      "kind": "official-cookbook",
+      "authority": "official",
+      "url": "https://mise.jdx.dev/mise-cookbook/nodejs.html",
+      "mirror_path_hint": "official/mise/cookbook/nodejs.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "javascript-curated-reference",
+      "title": "TypeScript ecosystem best practices",
+      "domain_ids": [
+        "javascript-typescript"
+      ],
+      "kind": "external-reference",
+      "authority": "community",
+      "url": "https://www.totaltypescript.com/",
+      "mirror_path_hint": "community/javascript-typescript/totaltypescript.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "ruby-cookbook",
+      "title": "mise cookbook ruby",
+      "domain_ids": [
+        "ruby"
+      ],
+      "kind": "official-cookbook",
+      "authority": "official",
+      "url": "https://mise.jdx.dev/mise-cookbook/ruby.html",
+      "mirror_path_hint": "official/mise/cookbook/ruby.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "ruby-curated-reference",
+      "title": "Thoughtbot Ruby articles",
+      "domain_ids": [
+        "ruby"
+      ],
+      "kind": "external-reference",
+      "authority": "community",
+      "url": "https://thoughtbot.com/blog/tags/ruby",
+      "mirror_path_hint": "community/ruby/thoughtbot-ruby.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "go-curated-reference",
+      "title": "Go project layout discussion",
+      "domain_ids": [
+        "go"
+      ],
+      "kind": "external-reference",
+      "authority": "community",
+      "url": "https://github.com/golang-standards/project-layout",
+      "mirror_path_hint": "community/go/project-layout.md",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "rust-curated-reference",
+      "title": "Rust design patterns",
+      "domain_ids": [
+        "rust"
+      ],
+      "kind": "external-reference",
+      "authority": "community",
+      "url": "https://rust-unofficial.github.io/patterns/",
+      "mirror_path_hint": "community/rust/patterns/index.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "cpp-cookbook",
+      "title": "mise cookbook c plus plus",
+      "domain_ids": [
+        "cpp"
+      ],
+      "kind": "official-cookbook",
+      "authority": "official",
+      "url": "https://mise.jdx.dev/mise-cookbook/cpp.html",
+      "mirror_path_hint": "official/mise/cookbook/cpp.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "docker-cookbook",
+      "title": "mise cookbook docker",
+      "domain_ids": [
+        "docker"
+      ],
+      "kind": "official-cookbook",
+      "authority": "official",
+      "url": "https://mise.jdx.dev/mise-cookbook/docker.html",
+      "mirror_path_hint": "official/mise/cookbook/docker.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "docker-curated-reference",
+      "title": "Dockerfile security best practices",
+      "domain_ids": [
+        "docker"
+      ],
+      "kind": "external-reference",
+      "authority": "community",
+      "url": "https://snyk.io/blog/10-docker-image-security-best-practices/",
+      "mirror_path_hint": "community/docker/security-best-practices.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "terraform-cookbook",
+      "title": "mise cookbook terraform",
+      "domain_ids": [
+        "terraform"
+      ],
+      "kind": "official-cookbook",
+      "authority": "official",
+      "url": "https://mise.jdx.dev/mise-cookbook/terraform.html",
+      "mirror_path_hint": "official/mise/cookbook/terraform.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "terraform-curated-reference",
+      "title": "Terraform operating model guidance",
+      "domain_ids": [
+        "terraform"
+      ],
+      "kind": "external-reference",
+      "authority": "community",
+      "url": "https://www.gruntwork.io/blog?category=terraform",
+      "mirror_path_hint": "community/terraform/gruntwork-blog.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "shell-cookbook",
+      "title": "mise cookbook shell tricks",
+      "domain_ids": [
+        "shell-editor"
+      ],
+      "kind": "official-cookbook",
+      "authority": "official",
+      "url": "https://mise.jdx.dev/mise-cookbook/shell-tricks.html",
+      "mirror_path_hint": "official/mise/cookbook/shell-tricks.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "neovim-cookbook",
+      "title": "mise cookbook neovim",
+      "domain_ids": [
+        "shell-editor"
+      ],
+      "kind": "official-cookbook",
+      "authority": "official",
+      "url": "https://mise.jdx.dev/mise-cookbook/neovim.html",
+      "mirror_path_hint": "official/mise/cookbook/neovim.html",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "shell-curated-reference",
+      "title": "Shell scripting style and pitfalls",
+      "domain_ids": [
+        "shell-editor"
+      ],
+      "kind": "external-reference",
+      "authority": "community",
+      "url": "https://mywiki.wooledge.org/BashPitfalls",
+      "mirror_path_hint": "community/shell-editor/bash-pitfalls.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "mise-curated-reference",
+      "title": "mise community discussions",
+      "domain_ids": [
+        "mise-core"
+      ],
+      "kind": "external-reference",
+      "authority": "community",
+      "url": "https://github.com/jdx/mise/discussions",
+      "mirror_path_hint": "community/mise-core/discussions.html",
+      "refresh_cadence_days": 30
+    },
+    {
+      "id": "claude-flow-repo",
+      "title": "Claude Flow upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/ruvnet/claude-flow",
+      "mirror_path_hint": "upstream/claude-flow/repo/README.md",
+      "refresh_cadence_days": 7
+    },
+    {
+      "id": "langgraph-repo",
+      "title": "LangGraph upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/langchain-ai/langgraph",
+      "mirror_path_hint": "upstream/langgraph/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "crewai-repo",
+      "title": "CrewAI upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/crewAIInc/crewAI",
+      "mirror_path_hint": "upstream/crewai/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "autogen-repo",
+      "title": "AutoGen upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/microsoft/autogen",
+      "mirror_path_hint": "upstream/autogen/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "dspy-repo",
+      "title": "DSPy upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/stanfordnlp/dspy",
+      "mirror_path_hint": "upstream/dspy/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "letta-repo",
+      "title": "Letta (MemGPT) upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/cpacker/MemGPT",
+      "mirror_path_hint": "upstream/letta/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "openai-agents-repo",
+      "title": "OpenAI Agents Python upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/openai/openai-agents-python",
+      "mirror_path_hint": "upstream/openai-agents/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "semantic-kernel-repo",
+      "title": "Semantic Kernel upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/microsoft/semantic-kernel",
+      "mirror_path_hint": "upstream/semantic-kernel/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "aider-repo",
+      "title": "Aider upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/Aider-AI/aider",
+      "mirror_path_hint": "upstream/aider/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "openhands-repo",
+      "title": "OpenHands upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/All-Hands-AI/OpenHands",
+      "mirror_path_hint": "upstream/openhands/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "attractor-repo",
+      "title": "Attractor upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/strongdm/attractor",
+      "mirror_path_hint": "upstream/attractor/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "get-shit-done-repo",
+      "title": "Get Shit Done upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/gsd-build/get-shit-done",
+      "mirror_path_hint": "upstream/get-shit-done/repo/README.md",
+      "refresh_cadence_days": 14
+    },
+    {
+      "id": "oh-my-claudecode-repo",
+      "title": "Oh My Claude Code upstream repository",
+      "domain_ids": [
+        "agent-learning-frameworks"
+      ],
+      "kind": "upstream-repo",
+      "authority": "upstream",
+      "url": "https://github.com/yeachan-heo/oh-my-claudecode",
+      "mirror_path_hint": "upstream/oh-my-claudecode/repo/README.md",
+      "refresh_cadence_days": 14
+    }
+  ]
+}

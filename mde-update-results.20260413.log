@@ -1,0 +1,1716 @@
+➜  cpp-playground git:(main) mde-update                                                                                                                                                 17:54
+➜  cpp-playground git:(main) which mde-update                                                                                                                                           17:54
+mde-update: aliased to mde update
+➜  cpp-playground git:(main) mde update                                                                                                                                                 17:54
+[2026-03-13 17:54:31] Found stale maintenance lock; clearing.
+/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/scripts/macos-dev-maintenance.sh: line 528: 54860 Killed: 9                  "$SCRIPT_DIR/secrets-smoke-test.sh"
+[2026-03-13 17:54:31] Homebrew update.
+==> Updating Homebrew...
+Error: Can't find a working Curl!
+Error: Can't find a working Curl!
+Error: Can't find a working Curl!
+Error: Can't find a working Curl!
+Error: Can't find a working Curl!
+[2026-03-13 17:54:34] mise self-update + upgrade.
+Checking target-arch... mise-v2026.3.9-macos-arm64.tar.gz
+Checking current version... v2026.3.6
+Looking for tag: v2026.3.9
+
+mise release status:
+  * Current exe: "/Users/rmanaloto/.local/bin/mise"
+  * New exe release: "mise-v2026.3.9-macos-arm64.tar.gz"
+  * New exe download url: "https://api.github.com/repos/jdx/mise/releases/assets/373316166"
+
+The new release will be downloaded/extracted and the existing binary will be replaced.
+Downloading...
+[00:00:04] [========================================] 26.51 MiB/26.51 MiB (0s) Done                                                                                                           Verifying downloaded file...
+Extracting archive... Done
+Replacing binary file... Done
+Updated mise to 2026.3.9
+gpg: Signature made Wed Mar 11 04:01:13 2026 CDT
+gpg:                using EDDSA key 5BE8A3F6C8A5C01D106C0AD820B1A390B168D356
+gpg: Good signature from "Antoine du Hamel <antoine.duhamel@platformatic.dev>" [unknown]
+gpg:                 aka "Antoine du Hamel <duhamelantoine1995@gmail.com>" [unknown]
+gpg:                 aka "Antoine du Hamel <antoine.duhamel@rosa.be>" [unknown]
+Resolving dependencies
+Resolving dependencies
+Resolving dependencies
+Resolving dependencies
+Resolved, downloaded and extracted [9]
+mise Cannot parse Rekor public key with id cf1199155bddd051268d1f16ac5c0c75c009f6fb5a63f4177f8e18d7051e3fa0: Pkcs8 spki error : Ecdsa-P256 from der bytes to public key failed: unknown/unsupported algorithm OID: 1.2.840.10045.2.1
+Resolving dependencies
+mise Cannot parse Rekor public key with id cf1199155bddd051268d1f16ac5c0c75c009f6fb5a63f4177f8e18d7051e3fa0: Pkcs8 spki error : Ecdsa-P256 from der bytes to public key failed: unknown/unsupported algorithm OID: 1.2.840.10045.2.1
+Resolving dependencies
+error: install script from "node-liblzma" terminated by SIGKILL (Forced quit)
+mise ERROR bun failed
+bun add v1.3.10 (30e609e0)
+Resolving dependencies
+Resolved, downloaded and extracted [4]
+Resolved, downloaded and extracted [155]
+error: install script from "tree-sitter-bash" terminated by SIGKILL (Forced quit)
+mise ERROR bun failed
+bun add v1.3.10 (30e609e0)
+Resolving dependencies
+Resolved, downloaded and extracted [4]
+Saved lockfile
+Resolving dependencies
+mise Cannot parse Rekor public key with id cf1199155bddd051268d1f16ac5c0c75c009f6fb5a63f4177f8e18d7051e3fa0: Pkcs8 spki error : Ecdsa-P256 from der bytes to public key failed: unknown/unsupported algorithm OID: 1.2.840.10045.2.1
+Resolving dependencies
+Resolved, downloaded and extracted [13]
+Saved lockfile
+Resolving dependencies
+Resolved, downloaded and extracted [22]
+Saved lockfile
+Resolving dependencies
+Resolved, downloaded and extracted [4]
+Saved lockfile
+warn: @ralph-orchestrator/ralph-cli's postinstall cost you 30.7s
+Saved lockfile
+Resolved, downloaded and extracted [30]
+Resolved, downloaded and extracted [9]
+error: The current working directory was deleted, so that command didn't work. Please cd into a different directory and try again.
+node:internal/bootstrap/switches/does_own_process_state:142
+    cachedCwd = rawMethods.cwd();
+                           ^
+Error: ENOENT: process.cwd failed with error no such file or directory, the current working directory was likely removed without changing the working directory, uv_cwd
+    at process.wrappedCwd [as cwd] (node:internal/bootstrap/switches/does_own_process_state:142:28)
+    at node:path:1236:24
+    at Object.resolve (node:path:1270:19)
+    at resolveMainPath (node:internal/modules/run_main:35:36)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:146:20)
+    at node:internal/main/run_main_module:33:47 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'uv_cwd'
+}
+Node.js v25.8.0
+error: postinstall script from "opencode-ai" exited with 1
+mise ERROR bun failed
+bun add v1.3.10 (30e609e0)
+Saved lockfile
+Resolved, downloaded and extracted [50]
+error: install script from "node-liblzma" terminated by SIGKILL (Forced quit)
+mise ERROR bun failed
+bun add v1.3.10 (30e609e0)
+mise Cannot parse Rekor public key with id cf1199155bddd051268d1f16ac5c0c75c009f6fb5a63f4177f8e18d7051e3fa0: Pkcs8 spki error : Ecdsa-P256 from der bytes to public key failed: unknown/unsupported algorithm OID: 1.2.840.10045.2.1
+Resolved 71 packages in 1.05s
+Resolved, downloaded and extracted [6]
+Saved lockfile
+Prepared 3 packages in 2.97s
+Installed 71 packages in 133ms
+ + aiofile==3.9.0
+ + annotated-doc==0.0.4
+ + annotated-types==0.7.0
+ + anyio==4.12.1
+ + attrs==25.4.0
+ + authlib==1.6.9
+ + beartype==0.22.9
+ + cachetools==7.0.5
+ + caio==0.9.25
+ + certifi==2026.2.25
+ + cffi==2.0.0
+ + click==8.3.1
+ + cryptography==46.0.5
+ + cyclopts==4.9.0
+ + dnspython==2.8.0
+ + docstring-parser==0.17.0
+ + docutils==0.22.4
+ + email-validator==2.3.0
+ + exceptiongroup==1.3.1
+ + fastmcp==3.1.0
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + httpx-sse==0.4.3
+ + idna==3.11
+ + importlib-metadata==8.7.1
+ + jaraco-classes==3.4.0
+ + jaraco-context==6.1.1
+ + jaraco-functools==4.4.0
+ + jsonref==1.1.0
+ + jsonschema==4.26.0
+ + jsonschema-path==0.4.5
+ + jsonschema-specifications==2025.9.1
+ + keyring==25.7.0
+ + markdown-it-py==4.0.0
+ + mcp==1.26.0
+ + mdurl==0.1.2
+ + more-itertools==10.8.0
+ + openapi-pydantic==0.5.1
+ + opentelemetry-api==1.40.0
+ + packaging==26.0
+ + pathable==0.5.0
+ + platformdirs==4.9.4
+ + py-key-value-aio==0.4.4
+ + pycparser==3.0
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + pydantic-settings==2.13.1
+ + pygments==2.19.2
+ + pyjwt==2.12.1
+ + pyperclip==1.11.0
+ + python-dotenv==1.2.2
+ + python-multipart==0.0.22
+ + pyyaml==6.0.3
+ + referencing==0.37.0
+ + rich==14.3.3
+ + rich-rst==1.3.2
+ + rpds-py==0.30.0
+ + shellingham==1.5.4
+ + sse-starlette==3.3.2
+ + starlette==0.52.1
+ + typer==0.24.1
+ + typing-extensions==4.15.0
+ + typing-inspection==0.4.2
+ + uncalled-for==0.2.0
+ + uvicorn==0.41.0
+ + watchfiles==1.1.1
+ + websocket-client==1.9.0
+ + websockets==16.0
+ + zipp==3.23.0
+Installed 2 executables: nlm, notebooklm-mcp
+Resolved, downloaded and extracted [195]
+error: install script from "bufferutil" terminated by SIGKILL (Forced quit)
+mise ERROR bun failed
+bun add v1.3.10 (30e609e0)
+mise 2026.3.9 by @jdx                                                                                                                                                                  [23/23]
+github:ast-grep/ast-grep@0.41.1   verify SLSA provenance                                                                                                                                     ✔
+usage@3.0.0                       extract usage-universal-apple-darwin.tar.gz                                                                                                                ✔
+awscli@2.34.9                     extract AWSCLIV2-2.34.9.pkg                                                                                                                                ✔
+atuin@18.13.2                     extract atuin-aarch64-apple-darwin.tar.gz                                                                                                                  ✔
+chezmoi@2.70.0                    extract chezmoi_2.70.0_darwin_arm64.tar.gz                                                                                                                 ✔
+uv@0.10.10                        extract uv-aarch64-apple-darwin.tar.gz                                                                                                                     ✔
+node@25.8.1                       11.11.0                                                                                                                                                    ✔
+fd@10.4.2                         extract fd-v10.4.2-aarch64-apple-darwin.tar.gz                                                                                                             ✔
+github-cli@2.88.1                 extract gh_2.88.1_macOS_arm64.zip                                                                                                                          ✔
+lefthook@2.1.4                    extract lefthook_2.1.4_MacOS_arm64.gz                                                                                                                      ✔
+npm:@openai/codex@0.114.0         5 packages installed [48.41s]                                                                                                                              ✔
+npm:@ralph-orchestrator/ralph-cli@2.8.0 bun add v1.3.10 (30e609e0)                                                                                                                           ◞
+gemini-cli@0.33.1                 bun add v1.3.10 (30e609e0)                                                                                                                                 ◞
+npm:opencode-ai@1.2.26            bun add v1.3.10 (30e609e0)                                                                                                                                 ◞
+npm:@biomejs/biome@2.4.7          5 packages installed [25.75s]                                                                                                                              ✔
+claude@2.1.75                     2 packages installed [25.08s]                                                                                                                              ✔
+npm:@googleworkspace/cli@0.15.0   6 packages installed [38.00s]                                                                                                                              ✔
+npm:skills@1.4.5                  50 packages installed [1312.00ms]                                                                                                                          ✔
+npm:agent-browser@0.19.0          4 packages installed [25.56s]                                                                                                                              ✔
+npm:just-bash@2.13.0              bun add v1.3.10 (30e609e0)                                                                                                                                 ◞
+npm:dev3000@0.0.171               bun add v1.3.10 (30e609e0)                                                                                                                                 ◞
+npm:portless@0.6.0                1 package installed [1384.00ms]                                                                                                                            ✔
+mise 2026.3.9 by @jdx                                                                                                                                                                  [23/23]
+github:ast-grep/ast-grep@0.41.1   verify SLSA provenance                                                                                                                                     ✔
+usage@3.0.0                       extract usage-universal-apple-darwin.tar.gz                                                                                                                ✔
+awscli@2.34.9                     extract AWSCLIV2-2.34.9.pkg                                                                                                                                ✔
+atuin@18.13.2                     extract atuin-aarch64-apple-darwin.tar.gz                                                                                                                  ✔
+chezmoi@2.70.0                    extract chezmoi_2.70.0_darwin_arm64.tar.gz                                                                                                                 ✔
+uv@0.10.10                        extract uv-aarch64-apple-darwin.tar.gz                                                                                                                     ✔
+node@25.8.1                       11.11.0                                                                                                                                                    ✔
+fd@10.4.2                         extract fd-v10.4.2-aarch64-apple-darwin.tar.gz                                                                                                             ✔
+github-cli@2.88.1                 extract gh_2.88.1_macOS_arm64.zip                                                                                                                          ✔
+lefthook@2.1.4                    extract lefthook_2.1.4_MacOS_arm64.gz                                                                                                                      ✔
+npm:@openai/codex@0.114.0         5 packages installed [48.41s]                                                                                                                              ✔
+npm:@ralph-orchestrator/ralph-cli@2.8.0 bun add v1.3.10 (30e609e0)                                                                                                                           ◟
+gemini-cli@0.33.1                 bun add v1.3.10 (30e609e0)                                                                                                                                 ◟
+npm:opencode-ai@1.2.26            bun add v1.3.10 (30e609e0)                                                                                                                                 ◟
+npm:@biomejs/biome@2.4.7          5 packages installed [25.75s]                                                                                                                              ✔
+claude@2.1.75                     2 packages installed [25.08s]                                                                                                                              ✔
+npm:@googleworkspace/cli@0.15.0   6 packages installed [38.00s]                                                                                                                              ✔
+npm:skills@1.4.5                  50 packages installed [1312.00ms]                                                                                                                          ✔
+npm:agent-browser@0.19.0          4 packages installed [25.56s]                                                                                                                              ✔
+npm:just-bash@2.13.0              bun add v1.3.10 (30e609e0)                                                                                                                                 ◟
+npm:dev3000@0.0.171               bun add v1.3.10 (30e609e0)                                                                                                                                 ◟
+npm:portless@0.6.0                1 package installed [1384.00ms]                                                                                                                            ✔
+uninstall node@25.8.0             remove ~/Library/Caches/mise/node/25.8.0                                                                                                                   ✔
+uninstall uv@0.10.9               remove ~/Library/Caches/mise/uv/0.10.9                                                                                                                     ✔
+uninstall chezmoi@2.69.4          remove ~/Library/Caches/mise/chezmoi/2.69.4                                                                                                                ✔
+uninstall usage@2.18.2            remove ~/Library/Caches/mise/usage/2.18.2                                                                                                                  ✔
+uninstall fd@10.4.1               remove ~/Library/Caches/mise/fd/10.4.1                                                                                                                     ✔
+uninstall atuin@18.12.1           remove ~/Library/Caches/mise/atuin/18.12.1                                                                                                                 ✔
+uninstall github:ast-grep/ast-grep@0.41.0 remove ~/Library/Caches/mise/github-ast-grep-ast-grep/0.41.0                                                                                       ✔
+uninstall awscli@2.34.4           remove ~/Library/Caches/mise/awscli/2.34.4                                                                                                                 ✔
+uninstall github-cli@2.87.3       remove ~/Library/Caches/mise/github-cli/2.87.3                                                                                                             ✔
+uninstall npm:@openai/codex@0.112.0 remove ~/Library/Caches/mise/npm-openai-codex/0.112.0                                                                                                    ✔
+uninstall lefthook@2.1.3          remove ~/Library/Caches/mise/lefthook/2.1.3                                                                                                                ✔
+uninstall npm:@biomejs/biome@2.4.6 remove ~/Library/Caches/mise/npm-biomejs-biome/2.4.6                                                                                                      ✔
+uninstall npm:@googleworkspace/cli@0.9.0 remove ~/Library/Caches/mise/npm-googleworkspace-cli/0.9.0                                                                                          ✔
+uninstall npm:skills@1.4.4        remove ~/Library/Caches/mise/npm-skills/1.4.4                                                                                                              ✔
+uninstall npm:agent-browser@0.17.1 remove ~/Library/Caches/mise/npm-agent-browser/0.17.1                                                                                                     ✔
+uninstall npm:portless@0.5.2      remove ~/Library/Caches/mise/npm-portless/0.5.2                                                                                                            ✔
+
+Upgraded 18 tools:
+  node 25.8.0 → 25.8.1
+  uv 0.10.9 → 0.10.10
+  chezmoi 2.69.4 → 2.70.0
+  usage 2.18.2 → 3.0.0
+  fd 10.4.1 → 10.4.2
+  atuin 18.12.1 → 18.13.2
+  github:ast-grep/ast-grep 0.41.0 → 0.41.1
+  awscli 2.34.4 → 2.34.9
+  github-cli 2.87.3 → 2.88.1
+  npm:@openai/codex 0.112.0 → 0.114.0
+  lefthook 2.1.3 → 2.1.4
+  npm:@biomejs/biome 2.4.6 → 2.4.7
+  claude 2.1.72 → 2.1.75
+  npm:@googleworkspace/cli 0.9.0 → 0.15.0
+  npm:skills 1.4.4 → 1.4.5
+  npm:agent-browser 0.17.1 → 0.19.0
+  npm:portless 0.5.2 → 0.6.0
+mise ERROR Failed to install tools: npm:@google/gemini-cli@latest, npm:@ralph-orchestrator/ralph-cli@latest, npm:dev3000@latest, npm:just-bash@latest, npm:opencode-ai@latest
+
+npm:@google/gemini-cli@latest: bun exited with non-zero status: no exit status
+
+npm:@ralph-orchestrator/ralph-cli@latest: bun exited with non-zero status: no exit status
+
+npm:dev3000@latest: bun exited with non-zero status: no exit status
+
+npm:just-bash@latest: bun exited with non-zero status: no exit status
+
+npm:opencode-ai@latest: bun exited with non-zero status: exit code 1
+mise ERROR Run with --verbose or MISE_VERBOSE=1 for more information
+Congrats! You're already on the latest version of Bun (which is v1.3.10)
+bun update v1.3.10 (30e609e0)
+error: Workspace dependency "awesome-ai-tui" not found
+
+Searched in "./*"
+
+Workspace documentation: https://bun.com/docs/install/workspaces
+
+error: awesome-ai-tui@workspace:* failed to resolve
+/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/scripts/macos-dev-maintenance.sh: line 387: 57606 Killed: 9                  "$cleanup"
+/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/scripts/macos-dev-maintenance.sh: line 395: 57607 Killed: 9                  "$cleanup"
+[2026-03-13 17:56:38] uv is mise-managed; skipping uv self update.
+Modified crewai environment
+ - filelock==3.25.1
+ + filelock==3.25.2
+ - hf-xet==1.3.2
+ + hf-xet==1.4.2
+ - huggingface-hub==1.6.0
+ + huggingface-hub==1.7.1
+ - openai==2.26.0
+ + openai==2.28.0
+ - pyjwt==2.11.0
+ + pyjwt==2.12.1
+ - textual==8.0.2
+ + textual==8.1.1
+Updated deepagents-cli v0.0.31 -> v0.0.32
+ - daytona==0.149.0
+ + daytona==0.151.0
+ - daytona-api-client==0.149.0
+ + daytona-api-client==0.151.0
+ - daytona-api-client-async==0.149.0
+ + daytona-api-client-async==0.151.0
+ - daytona-toolbox-api-client==0.149.0
+ + daytona-toolbox-api-client==0.151.0
+ - daytona-toolbox-api-client-async==0.149.0
+ + daytona-toolbox-api-client-async==0.151.0
+ - deepagents==0.4.7
+ + deepagents==0.4.10
+ - deepagents-cli==0.0.31
+ + deepagents-cli==0.0.32
+ - google-auth==2.49.0
+ + google-auth==2.49.1
+ - google-genai==1.66.0
+ + google-genai==1.67.0
+ - langchain==1.2.10
+ + langchain==1.2.12
+ - langchain-core==1.2.18
+ + langchain-core==1.2.19
+ - langgraph==1.0.10
+ + langgraph==1.1.2
+ - langgraph-sdk==0.3.10
+ + langgraph-sdk==0.3.11
+ - langsmith==0.7.16
+ + langsmith==0.7.17
+ - multipart==1.3.1
+ - openai==2.26.0
+ + openai==2.28.0
+ - pyjwt==2.11.0
+ + pyjwt==2.12.1
+ - rsa==4.9.1
+ - runloop-api-client==1.10.3
+ + runloop-api-client==1.11.0
+ - textual==8.0.2
+ + textual==8.1.1
+Installed 2 executables: deepagents, deepagents-cli
+Modified langchain-cli environment
+ - langchain-core==1.2.18
+ + langchain-core==1.2.19
+ - langsmith==0.7.16
+ + langsmith==0.7.17
+Modified langchain-plugin environment
+ - boto3==1.42.64
+ + boto3==1.42.68
+ - botocore==1.42.64
+ + botocore==1.42.68
+Updated langgraph-cli v0.4.14 -> v0.4.17
+ - langgraph-cli==0.4.14
+ + langgraph-cli==0.4.17
+ - langgraph-sdk==0.3.10
+ + langgraph-sdk==0.3.11
+ + python-dotenv==1.2.2
+Installed 1 executable: langgraph
+Modified langgraph-engineer environment
+ - jupyterlab==4.5.5
+ + jupyterlab==4.5.6
+ - notebook==7.5.4
+ + notebook==7.5.5
+ - tornado==6.5.4
+ + tornado==6.5.5
+Modified langgraph-gen environment
+ - langchain-core==1.2.18
+ + langchain-core==1.2.19
+ - langgraph==1.0.10
+ + langgraph==1.1.2
+ - langgraph-sdk==0.3.10
+ + langgraph-sdk==0.3.11
+ - langsmith==0.7.16
+ + langsmith==0.7.17
+Modified langsmith-data-migration-tool environment
+ - langchain-core==1.2.18
+ + langchain-core==1.2.19
+ - langsmith==0.7.16
+ + langsmith==0.7.17
+ - openai==2.26.0
+ + openai==2.28.0
+ - textual==8.0.2
+ + textual==8.1.1
+Modified langsmith-fetch environment
+ - langsmith==0.7.16
+ + langsmith==0.7.17
+Modified langsmith-mcp-server environment
+ - cyclopts==4.8.0
+ + cyclopts==4.9.0
+ - langchain-core==1.2.18
+ + langchain-core==1.2.19
+ - langsmith==0.7.16
+ + langsmith==0.7.17
+ - pyjwt==2.11.0
+ + pyjwt==2.12.1
+Modified mcp-simple-streamablehttp-stateless environment
+ - pyjwt==2.11.0
+ + pyjwt==2.12.1
+Modified mcpdoc environment
+ - pyjwt==2.11.0
+ + pyjwt==2.12.1
+Modified open-interpreter environment
+ - filelock==3.25.1
+ + filelock==3.25.2
+ - fonttools==4.62.0
+ + fonttools==4.62.1
+ - google-auth==2.49.0
+ + google-auth==2.49.1
+ - hf-xet==1.3.2
+ + hf-xet==1.4.2
+ - huggingface-hub==1.6.0
+ + huggingface-hub==1.7.1
+ - litellm==1.82.0
+ + litellm==1.82.2
+ - openai==2.26.0
+ + openai==2.28.0
+ - rsa==4.9.1
+ - tornado==6.5.4
+ + tornado==6.5.5
+Modified pylon-data-extractor environment
+ - google-auth==2.49.0
+ + google-auth==2.49.1
+ - langchain-core==1.2.18
+ + langchain-core==1.2.19
+ - langsmith==0.7.16
+ + langsmith==0.7.17
+ - openai==2.26.0
+ + openai==2.28.0
+ - rsa==4.9.1
+Modified skypilot environment
+ - awscli==1.44.54
+ + awscli==1.44.58
+ - boto3==1.42.64
+ + boto3==1.42.68
+ - botocore==1.42.64
+ + botocore==1.42.68
+ - filelock==3.25.1
+ + filelock==3.25.2
+ - pyjwt==2.11.0
+ + pyjwt==2.12.1
+ - simpleeval==1.0.3
+ + simpleeval==1.0.6
+    Updated https://github.com/github/spec-kit.git (4a3234496e9f58ce825cc5ca3a3a9c6fd45df222)
+      Built specify-cli @ git+https://github.com/github/spec-kit.git@4a3234496e9f58ce825cc5ca3a3a9c6fd45df222
+Updated specify-cli v0.2.0 -> v0.3.0
+ + pathspec==1.0.4
+ - specify-cli==0.2.0 (from git+https://github.com/github/spec-kit.git@5c0bedb410891650ffb2d651b151eea7cf90f429)
+ + specify-cli==0.3.0 (from git+https://github.com/github/spec-kit.git@4a3234496e9f58ce825cc5ca3a3a9c6fd45df222)
+Installed 1 executable: specify
+error: Failed to upgrade docs-monorepo
+  Caused by: Distribution not found at: file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.HFu9C55Q4J
+error: Failed to upgrade langc
+  Caused by: Distribution not found at: file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.onOWJTPRsi
+error: Failed to upgrade learning-langchain
+  Caused by: Distribution not found at: file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.C6ilrUldXM
+✔ Environment pixi-pack was already up-to-date.                                                                                                                                               [2026-03-13 17:57:03] Updating agent stack tools.
+/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/scripts/macos-dev-maintenance.sh: line 448: 57778 Killed: 9                  INCLUDE_OPTIONAL=1 "$agent_script"
+/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/scripts/macos-dev-maintenance.sh: line 387: 57779 Killed: 9                  "$cleanup"
+/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/scripts/macos-dev-maintenance.sh: line 395: 57780 Killed: 9                  "$cleanup"
+[2026-03-13 17:57:04] Syncing MCP servers.
+/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/scripts/macos-dev-maintenance.sh: line 467: 57783 Killed: 9                  "$mcp_script"
+skipping unmanaged wrapper: /Users/rmanaloto/.local/bin/langsmith-fetch
+Managed configs synced.
+➜  cpp-playground git:(main) mde-update                                                                                                                                                 17:57
+/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/scripts/macos-dev-maintenance.sh: line 528: 57915 Killed: 9                  "$SCRIPT_DIR/secrets-smoke-test.sh"
+[2026-03-13 17:57:46] Homebrew update.
+==> Updating Homebrew...
+Updated 2 taps (homebrew/core and homebrew/cask).
+==> New Formulae
+ffc.h: Single-header C99 accelerated float/double parsing
+garden: Grow and cultivate collections of Git trees
+ipapatch: CLI tool to patch iOS IPA files and their plugins
+nfd2nfc: Convert filesystem entry names from NFD to NFC for cross-platform compatibility
+nono: Capability-based sandbox shell for AI agents with OS-enforced isolation
+powershell: Command-line shell and scripting language
+scala-cli: Scala language runner and build tool
+sem-cli: Semantic version control CLI with entity-level diffs and blame
+topicctl: Declarative Kafka topic management
+tsshd: UDP SSH server for trzsz-ssh (tssh) with roaming support
+upterm: Instant terminal sharing
+zsign: Cross-platform codesigning tool for iOS apps
+zvbi: Vertical Blanking Interval (VBI) decoding library
+zxc: High-performance asymmetric lossless compression library
+==> New Casks
+seamly2d: Pattern making software
+wowup-cf: World of Warcraft addon manager
+x-air-edit: Remote control for the Behringer X AIR series mixers
+==> Outdated Formulae
+cloudflared      crush            curl             docker-agent     giflib           gnupg            harfbuzz         libarchive       llvm             sqlite           xcodegen
+==> Outdated Casks
+git-credential-manager
+
+You have 11 outdated formulae and 1 outdated cask installed.
+You can upgrade them with brew upgrade
+or list them with brew outdated.
+==> Migrating formula cagent to docker-agent
+==> Unlinking cagent
+==> Moving cagent versions to /opt/homebrew/Cellar/docker-agent
+==> Relinking docker-agent
+Warning: docker-agent is outdated!
+To avoid broken installations, as soon as possible please run:
+  brew upgrade
+Or, if you're OK with a less reliable fix:
+  brew upgrade docker-agent
+==> Upgrading 11 outdated packages:
+xcodegen 2.45.2 -> 2.45.3
+harfbuzz 13.0.1 -> 13.1.1
+llvm 22.1.0 -> 22.1.1
+libarchive 3.8.5_1 -> 3.8.6
+sqlite 3.51.2_1 -> 3.52.0
+docker-agent 1.29.0 -> 1.32.3
+curl 8.18.0_2 -> 8.19.0
+giflib 5.2.2 -> 6.1.2
+cloudflared 2026.2.0 -> 2026.3.0
+charmbracelet/tap/crush 0.47.2 -> 0.49.0
+gnupg 2.4.9 -> 2.5.18
+==> Fetching downloads for: libarchive, sqlite, llvm, curl, cloudflared, crush, xcodegen, gnupg, harfbuzz, docker-agent and giflib
+==> Verifying checksum for 'cc60aeacb439f9bae0f8a90ca494d191b6fcad1a021f2c21b9e78abf51538307--giflib--6.1.2.arm64_tahoe.bottle.tar.gz'##                           Downloading   1.3MB/  1.6MB
+✔︎ Bottle giflib (6.1.2)                                                                                                                                            Downloaded  140.4KB/140.4KB
+==> Verifying checksum for '3f615fde6b80c1cdaed7ae36c600382a96d1057d2d175024808ee2d566d9b8a4--libarchive--3.8.6.arm64_tahoe.bottle.tar.gz'#######################  Downloading   1.6MB/  1.6MB
+✔︎ Bottle libarchive (3.8.6)                                                                                                                                        Downloaded    1.6MB/  1.6MB
+==> Verifying checksum for '2a583d14fdea5cfd6f8bb940eb10c1043be54a75b8a7ad45836ccc63e9ce5a68--curl--8.19.0.arm64_tahoe.bottle.tar.gz'################              Downloading   2.2MB/  2.4MB
+✔︎ Bottle curl (8.19.0)                                                                                                                                             Downloaded    1.6MB/  1.6MB
+==> Verifying checksum for '743b6bc432f302a771ef48e10859f07f7ec51a850cfc8f31aefe5700ac55865d--sqlite--3.52.0.arm64_tahoe.bottle.tar.gz'##########################  Downloading   2.4MB/  2.4MB
+✔︎ Bottle sqlite (3.52.0)                                                                                                                                           Downloaded    2.4MB/  2.4MB
+==> Verifying checksum for '229245624655a30e023cc72c06eddf89acb32b0e5d9ccf928f9f598d8c4bd846--xcodegen--2.45.3.arm64_tahoe.bottle.tar.gz'                          Downloading   2.2MB/451.0MB
+✔︎ Bottle xcodegen (2.45.3)                                                                                                                                         Downloaded    2.2MB/  2.2MB
+==> Verifying checksum for '3be997c99e2908620b9ff4b692f33a214e1b7f0c44c216e7dc82cf75f53c2df5--harfbuzz--13.1.1.arm64_tahoe.bottle.tar.gz'                          Downloading   2.6MB/451.0MB
+✔︎ Bottle harfbuzz (13.1.1)                                                                                                                                         Downloaded    3.5MB/  3.5MB
+==> Verifying checksum for '00e1dac13cd4db75e9b3bb02e5b8756c73e4cc9650aaf050a74c29e495ac2fed--gnupg--2.5.18.arm64_tahoe.bottle.tar.gz'                             Downloading   4.3MB/451.0MB
+✔︎ Bottle gnupg (2.5.18)                                                                                                                                            Downloaded    5.6MB/  5.6MB
+==> Verifying checksum for 'f90c419a7b27d1e76b68c6c5cc44c01818fa5cdc0c18c982847e6f5d2b89eb58--crush_0.49.0_Darwin_arm64.tar.gz'                                    Downloading  18.6MB/451.0MB
+✔︎ Formula crush (0.49.0)                                                                                                                                           Verified     19.4MB/ 19.4MB
+==> Verifying checksum for 'fdb88a2975f8b17a37cc50c9766f9e42d02174e149bbecad92a60c367a79be44--cloudflared--2026.3.0.arm64_tahoe.bottle.tar.gz'                     Downloading  19.4MB/451.0MB
+✔︎ Bottle cloudflared (2026.3.0)                                                                                                                                    Downloaded   18.7MB/ 18.7MB
+==> Verifying checksum for 'a74c90d200b9cb885b333c7752da81e85c998daf0f730e67f8f65d28a84b7a01--docker-agent--1.32.3.arm64_tahoe.bottle.tar.gz'                      Downloading  23.0MB/451.0MB
+✔︎ Bottle docker-agent (1.32.3)                                                                                                                                     Downloaded   23.9MB/ 23.9MB
+==> Verifying checksum for 'e5a56852578877f17c8b1a4dda073c4a095abdf597d65eadb31acb8ad95fd581--llvm--22.1.1.arm64_tahoe.bottle.tar.gz'############################# Downloading 451.0MB/451.0M
+✔︎ Bottle llvm (22.1.1)                                                                                                                                             Downloaded  451.0MB/451.0MB
+==> Upgrading libarchive
+  3.8.5_1 -> 3.8.6
+==> Pouring libarchive--3.8.6.arm64_tahoe.bottle.tar.gz
+==> Finishing up
+==> Summary
+🍺  /opt/homebrew/Cellar/libarchive/3.8.6: 65 files, 4MB
+==> Upgrading sqlite
+  3.51.2_1 -> 3.52.0
+==> Pouring sqlite--3.52.0.arm64_tahoe.bottle.tar.gz
+==> Finishing up
+==> Summary
+🍺  /opt/homebrew/Cellar/sqlite/3.52.0: 13 files, 5.3MB
+==> Upgrading llvm
+  22.1.0 -> 22.1.1
+==> Pouring llvm--22.1.1.arm64_tahoe.bottle.tar.gz
+==> Finishing up
+==> Caveats
+CLANG_CONFIG_FILE_SYSTEM_DIR: /opt/homebrew/etc/clang
+CLANG_CONFIG_FILE_USER_DIR:   ~/.config/clang
+
+LLD is now provided in a separate formula:
+  brew install lld
+
+Using `clang`, `clang++`, etc., requires a CLT installation at `/Library/Developer/CommandLineTools`.
+If you don't want to install the CLT, you can write appropriate configuration files pointing to your
+SDK at ~/.config/clang.
+
+To use the bundled libunwind please use the following LDFLAGS:
+  LDFLAGS="-L/opt/homebrew/opt/llvm/lib/unwind -lunwind"
+
+To use the bundled libc++ please use the following LDFLAGS:
+  LDFLAGS="-L/opt/homebrew/opt/llvm/lib/c++ -L/opt/homebrew/opt/llvm/lib/unwind -lunwind"
+Features newer than system libc++ will require the following define to enable
+(support for this may be removed in a future major LLVM release):
+  CPPFLAGS="-D_LIBCPP_DISABLE_AVAILABILITY"
+
+NOTE: You probably want to use the libunwind and libc++ provided by macOS unless you know what you're doing.
+
+llvm is keg-only, which means it was not symlinked into /opt/homebrew,
+because macOS already provides this software and installing another version in
+parallel can cause all kinds of trouble.
+
+If you need to have llvm first in your PATH, run:
+  echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
+
+For compilers to find llvm you may need to set:
+  export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+  export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+==> Summary
+🍺  /opt/homebrew/Cellar/llvm/22.1.1: 9,686 files, 1.9GB
+==> Upgrading curl
+  8.18.0_2 -> 8.19.0
+==> Pouring curl--8.19.0.arm64_tahoe.bottle.tar.gz
+==> Finishing up
+==> Caveats
+curl is keg-only, which means it was not symlinked into /opt/homebrew,
+because macOS already provides this software and installing another version in
+parallel can cause all kinds of trouble.
+
+If you need to have curl first in your PATH, run:
+  echo 'export PATH="/opt/homebrew/opt/curl/bin:$PATH"' >> ~/.zshrc
+
+For compilers to find curl you may need to set:
+  export LDFLAGS="-L/opt/homebrew/opt/curl/lib"
+  export CPPFLAGS="-I/opt/homebrew/opt/curl/include"
+==> Summary
+🍺  /opt/homebrew/Cellar/curl/8.19.0: 551 files, 4.7MB
+==> Upgrading cloudflared
+  2026.2.0 -> 2026.3.0
+rm /opt/homebrew/bin/cloudflared
+rm /opt/homebrew/share/man/man1/cloudflared.1
+==> Pouring cloudflared--2026.3.0.arm64_tahoe.bottle.tar.gz
+==> Finishing up
+ln -s ../Cellar/cloudflared/2026.3.0/bin/cloudflared cloudflared
+ln -s ../../../Cellar/cloudflared/2026.3.0/share/man/man1/cloudflared.1 cloudflared.1
+==> Caveats
+To start cloudflared now and restart at login:
+  brew services start cloudflared
+Or, if you don't want/need a background service you can just run:
+  /opt/homebrew/opt/cloudflared/bin/cloudflared
+==> Summary
+🍺  /opt/homebrew/Cellar/cloudflared/2026.3.0: 10 files, 37.8MB
+==> Upgrading charmbracelet/tap/crush
+  0.47.2 -> 0.49.0
+rm /opt/homebrew/bin/crush
+rm /opt/homebrew/etc/bash_completion.d/crush
+rm /opt/homebrew/share/fish/vendor_completions.d/crush.fish
+rm /opt/homebrew/share/man/man1/crush.1.gz
+rm /opt/homebrew/share/zsh/site-functions/_crush
+mv /private/tmp/homebrew-unpack-20260313-60505-yc9hoo/crush_0.49.0_Darwin_arm64 /private/tmp/crush-20260313-60505-frn0rb/crush_0.49.0_Darwin_arm64
+==> Cleaning
+==> Finishing up
+ln -s ../../Cellar/crush/0.49.0/etc/bash_completion.d/crush crush
+ln -s ../Cellar/crush/0.49.0/bin/crush crush
+ln -s ../../../Cellar/crush/0.49.0/share/fish/vendor_completions.d/crush.fish crush.fish
+ln -s ../../../Cellar/crush/0.49.0/share/man/man1/crush.1.gz crush.1.gz
+ln -s ../../../Cellar/crush/0.49.0/share/zsh/site-functions/_crush _crush
+==> Summary
+🍺  /opt/homebrew/Cellar/crush/0.49.0: 10 files, 63MB, built in 1 second
+==> Upgrading xcodegen
+  2.45.2 -> 2.45.3
+rm /opt/homebrew/bin/xcodegen
+rm /opt/homebrew/share/xcodegen
+==> Pouring xcodegen--2.45.3.arm64_tahoe.bottle.tar.gz
+==> Finishing up
+ln -s ../Cellar/xcodegen/2.45.3/bin/xcodegen xcodegen
+ln -s ../Cellar/xcodegen/2.45.3/share/xcodegen xcodegen
+==> Summary
+🍺  /opt/homebrew/Cellar/xcodegen/2.45.3: 38 files, 7.4MB
+==> Upgrading gnupg
+  2.4.9 -> 2.5.18
+rm /opt/homebrew/bin/dirmngr
+rm /opt/homebrew/bin/dirmngr-client
+rm /opt/homebrew/bin/gpg
+rm /opt/homebrew/bin/gpg-agent
+rm /opt/homebrew/bin/gpg-card
+rm /opt/homebrew/bin/gpg-connect-agent
+rm /opt/homebrew/bin/gpg-mail-tube
+rm /opt/homebrew/bin/gpg-wks-client
+rm /opt/homebrew/bin/gpg-wks-server
+rm /opt/homebrew/bin/gpgconf
+rm /opt/homebrew/bin/gpgparsemail
+rm /opt/homebrew/bin/gpgscm
+rm /opt/homebrew/bin/gpgsm
+rm /opt/homebrew/bin/gpgsplit
+rm /opt/homebrew/bin/gpgtar
+rm /opt/homebrew/bin/gpgv
+rm /opt/homebrew/bin/kbxutil
+rm /opt/homebrew/bin/watchgnupg
+rm /opt/homebrew/sbin/addgnupghome
+rm /opt/homebrew/sbin/applygnupgdefaults
+rm /opt/homebrew/share/doc/gnupg
+rm /opt/homebrew/share/gnupg
+uninfo /opt/homebrew/share/info/gnupg.info
+rm /opt/homebrew/share/info/gnupg.info
+rm /opt/homebrew/share/info/gnupg.info-1
+rm /opt/homebrew/share/info/gnupg.info-2
+rm /opt/homebrew/share/info/gnupg.info-3
+rm /opt/homebrew/share/locale/ca/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/cs/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/da/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/de/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/el/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/en@boldquot/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/en@quot/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/eo/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/es/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/et/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/fi/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/fr/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/gl/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/hu/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/id/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/it/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/ja/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/nb/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/nl/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/pl/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/pt/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/ro/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/ru/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/sk/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/sv/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/tr/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/uk/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/zh_CN/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/locale/zh_TW/LC_MESSAGES/gnupg2.mo
+rm /opt/homebrew/share/man/man1/dirmngr-client.1
+rm /opt/homebrew/share/man/man1/gpg-agent.1
+rm /opt/homebrew/share/man/man1/gpg-card.1
+rm /opt/homebrew/share/man/man1/gpg-check-pattern.1
+rm /opt/homebrew/share/man/man1/gpg-connect-agent.1
+rm /opt/homebrew/share/man/man1/gpg-mail-tube.1
+rm /opt/homebrew/share/man/man1/gpg-preset-passphrase.1
+rm /opt/homebrew/share/man/man1/gpg-wks-client.1
+rm /opt/homebrew/share/man/man1/gpg-wks-server.1
+rm /opt/homebrew/share/man/man1/gpg.1
+rm /opt/homebrew/share/man/man1/gpgconf.1
+rm /opt/homebrew/share/man/man1/gpgparsemail.1
+rm /opt/homebrew/share/man/man1/gpgsm.1
+rm /opt/homebrew/share/man/man1/gpgtar.1
+rm /opt/homebrew/share/man/man1/gpgv.1
+rm /opt/homebrew/share/man/man1/scdaemon.1
+rm /opt/homebrew/share/man/man1/watchgnupg.1
+rm /opt/homebrew/share/man/man7/gnupg.7
+rm /opt/homebrew/share/man/man8/addgnupghome.8
+rm /opt/homebrew/share/man/man8/applygnupgdefaults.8
+rm /opt/homebrew/share/man/man8/dirmngr.8
+==> Pouring gnupg--2.5.18.arm64_tahoe.bottle.tar.gz
+==> Finishing up
+ln -s ../Cellar/gnupg/2.5.18/bin/dirmngr dirmngr
+ln -s ../Cellar/gnupg/2.5.18/bin/dirmngr-client dirmngr-client
+ln -s ../Cellar/gnupg/2.5.18/bin/gpg gpg
+ln -s ../Cellar/gnupg/2.5.18/bin/gpg-agent gpg-agent
+ln -s ../Cellar/gnupg/2.5.18/bin/gpg-authcode-sign.sh gpg-authcode-sign.sh
+ln -s ../Cellar/gnupg/2.5.18/bin/gpg-card gpg-card
+ln -s ../Cellar/gnupg/2.5.18/bin/gpg-connect-agent gpg-connect-agent
+ln -s ../Cellar/gnupg/2.5.18/bin/gpg-mail-tube gpg-mail-tube
+ln -s ../Cellar/gnupg/2.5.18/bin/gpg-wks-client gpg-wks-client
+ln -s ../Cellar/gnupg/2.5.18/bin/gpg-wks-server gpg-wks-server
+ln -s ../Cellar/gnupg/2.5.18/bin/gpgconf gpgconf
+ln -s ../Cellar/gnupg/2.5.18/bin/gpgparsemail gpgparsemail
+ln -s ../Cellar/gnupg/2.5.18/bin/gpgscm gpgscm
+ln -s ../Cellar/gnupg/2.5.18/bin/gpgsm gpgsm
+ln -s ../Cellar/gnupg/2.5.18/bin/gpgsplit gpgsplit
+ln -s ../Cellar/gnupg/2.5.18/bin/gpgtar gpgtar
+ln -s ../Cellar/gnupg/2.5.18/bin/gpgv gpgv
+ln -s ../Cellar/gnupg/2.5.18/bin/kbxutil kbxutil
+ln -s ../Cellar/gnupg/2.5.18/bin/watchgnupg watchgnupg
+ln -s ../Cellar/gnupg/2.5.18/sbin/addgnupghome addgnupghome
+ln -s ../Cellar/gnupg/2.5.18/sbin/applygnupgdefaults applygnupgdefaults
+ln -s ../../Cellar/gnupg/2.5.18/share/doc/gnupg gnupg
+ln -s ../Cellar/gnupg/2.5.18/share/gnupg gnupg
+ln -s ../../Cellar/gnupg/2.5.18/share/info/gnupg.info gnupg.info
+info /opt/homebrew/share/info/gnupg.info
+ln -s ../../Cellar/gnupg/2.5.18/share/info/gnupg.info-1 gnupg.info-1
+ln -s ../../Cellar/gnupg/2.5.18/share/info/gnupg.info-2 gnupg.info-2
+ln -s ../../Cellar/gnupg/2.5.18/share/info/gnupg.info-3 gnupg.info-3
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/ca/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/cs/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/da/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/de/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/el/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/en@boldquot/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/en@quot/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/eo/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/es/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/et/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/fi/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/fr/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/gl/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/hu/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/id/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/it/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/ja/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/ka/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/nb/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/nl/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/pl/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/pt/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/ro/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/ru/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/sk/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/sv/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/tr/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/uk/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/zh_CN/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../../Cellar/gnupg/2.5.18/share/locale/zh_TW/LC_MESSAGES/gnupg2.mo gnupg2.mo
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/dirmngr-client.1 dirmngr-client.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpg-agent.1 gpg-agent.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpg-card.1 gpg-card.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpg-check-pattern.1 gpg-check-pattern.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpg-connect-agent.1 gpg-connect-agent.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpg-mail-tube.1 gpg-mail-tube.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpg-preset-passphrase.1 gpg-preset-passphrase.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpg-wks-client.1 gpg-wks-client.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpg-wks-server.1 gpg-wks-server.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpg.1 gpg.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpgconf.1 gpgconf.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpgparsemail.1 gpgparsemail.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpgsm.1 gpgsm.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpgtar.1 gpgtar.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/gpgv.1 gpgv.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/scdaemon.1 scdaemon.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man1/watchgnupg.1 watchgnupg.1
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man7/gnupg.7 gnupg.7
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man8/addgnupghome.8 addgnupghome.8
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man8/applygnupgdefaults.8 applygnupgdefaults.8
+ln -s ../../../Cellar/gnupg/2.5.18/share/man/man8/dirmngr.8 dirmngr.8
+==> Summary
+🍺  /opt/homebrew/Cellar/gnupg/2.5.18: 149 files, 16.2MB
+==> Upgrading harfbuzz
+  13.0.1 -> 13.1.1
+rm /opt/homebrew/bin/hb-info
+rm /opt/homebrew/bin/hb-shape
+rm /opt/homebrew/bin/hb-subset
+rm /opt/homebrew/bin/hb-vector
+rm /opt/homebrew/bin/hb-view
+rm /opt/homebrew/include/harfbuzz
+rm /opt/homebrew/lib/cmake/harfbuzz
+rm /opt/homebrew/lib/girepository-1.0/HarfBuzz-0.0.typelib
+rm /opt/homebrew/lib/libharfbuzz-cairo.0.dylib
+rm /opt/homebrew/lib/libharfbuzz-cairo.a
+rm /opt/homebrew/lib/libharfbuzz-cairo.dylib
+rm /opt/homebrew/lib/libharfbuzz-gobject.0.dylib
+rm /opt/homebrew/lib/libharfbuzz-gobject.a
+rm /opt/homebrew/lib/libharfbuzz-gobject.dylib
+rm /opt/homebrew/lib/libharfbuzz-icu.0.dylib
+rm /opt/homebrew/lib/libharfbuzz-icu.a
+rm /opt/homebrew/lib/libharfbuzz-icu.dylib
+rm /opt/homebrew/lib/libharfbuzz-raster.0.dylib
+rm /opt/homebrew/lib/libharfbuzz-raster.a
+rm /opt/homebrew/lib/libharfbuzz-raster.dylib
+rm /opt/homebrew/lib/libharfbuzz-subset.0.dylib
+rm /opt/homebrew/lib/libharfbuzz-subset.a
+rm /opt/homebrew/lib/libharfbuzz-subset.dylib
+rm /opt/homebrew/lib/libharfbuzz-vector.0.dylib
+rm /opt/homebrew/lib/libharfbuzz-vector.a
+rm /opt/homebrew/lib/libharfbuzz-vector.dylib
+rm /opt/homebrew/lib/libharfbuzz.0.dylib
+rm /opt/homebrew/lib/libharfbuzz.a
+rm /opt/homebrew/lib/libharfbuzz.dylib
+rm /opt/homebrew/lib/pkgconfig/harfbuzz-cairo.pc
+rm /opt/homebrew/lib/pkgconfig/harfbuzz-gobject.pc
+rm /opt/homebrew/lib/pkgconfig/harfbuzz-icu.pc
+rm /opt/homebrew/lib/pkgconfig/harfbuzz-raster.pc
+rm /opt/homebrew/lib/pkgconfig/harfbuzz-subset.pc
+rm /opt/homebrew/lib/pkgconfig/harfbuzz-vector.pc
+rm /opt/homebrew/lib/pkgconfig/harfbuzz.pc
+rm /opt/homebrew/share/gir-1.0/HarfBuzz-0.0.gir
+==> Pouring harfbuzz--13.1.1.arm64_tahoe.bottle.tar.gz
+==> Finishing up
+ln -s ../Cellar/harfbuzz/13.1.1/bin/hb-info hb-info
+ln -s ../Cellar/harfbuzz/13.1.1/bin/hb-raster hb-raster
+ln -s ../Cellar/harfbuzz/13.1.1/bin/hb-shape hb-shape
+ln -s ../Cellar/harfbuzz/13.1.1/bin/hb-subset hb-subset
+ln -s ../Cellar/harfbuzz/13.1.1/bin/hb-vector hb-vector
+ln -s ../Cellar/harfbuzz/13.1.1/bin/hb-view hb-view
+ln -s ../Cellar/harfbuzz/13.1.1/include/harfbuzz harfbuzz
+ln -s ../../Cellar/harfbuzz/13.1.1/share/gir-1.0/HarfBuzz-0.0.gir HarfBuzz-0.0.gir
+ln -s ../../Cellar/harfbuzz/13.1.1/lib/cmake/harfbuzz harfbuzz
+ln -s ../../Cellar/harfbuzz/13.1.1/lib/girepository-1.0/HarfBuzz-0.0.typelib HarfBuzz-0.0.typelib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-cairo.0.dylib libharfbuzz-cairo.0.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-cairo.a libharfbuzz-cairo.a
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-cairo.dylib libharfbuzz-cairo.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-gobject.0.dylib libharfbuzz-gobject.0.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-gobject.a libharfbuzz-gobject.a
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-gobject.dylib libharfbuzz-gobject.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-icu.0.dylib libharfbuzz-icu.0.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-icu.a libharfbuzz-icu.a
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-icu.dylib libharfbuzz-icu.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-raster.0.dylib libharfbuzz-raster.0.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-raster.a libharfbuzz-raster.a
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-raster.dylib libharfbuzz-raster.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-subset.0.dylib libharfbuzz-subset.0.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-subset.a libharfbuzz-subset.a
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-subset.dylib libharfbuzz-subset.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-vector.0.dylib libharfbuzz-vector.0.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-vector.a libharfbuzz-vector.a
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz-vector.dylib libharfbuzz-vector.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz.0.dylib libharfbuzz.0.dylib
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz.a libharfbuzz.a
+ln -s ../Cellar/harfbuzz/13.1.1/lib/libharfbuzz.dylib libharfbuzz.dylib
+ln -s ../../Cellar/harfbuzz/13.1.1/lib/pkgconfig/harfbuzz-cairo.pc harfbuzz-cairo.pc
+ln -s ../../Cellar/harfbuzz/13.1.1/lib/pkgconfig/harfbuzz-gobject.pc harfbuzz-gobject.pc
+ln -s ../../Cellar/harfbuzz/13.1.1/lib/pkgconfig/harfbuzz-icu.pc harfbuzz-icu.pc
+ln -s ../../Cellar/harfbuzz/13.1.1/lib/pkgconfig/harfbuzz-raster.pc harfbuzz-raster.pc
+ln -s ../../Cellar/harfbuzz/13.1.1/lib/pkgconfig/harfbuzz-subset.pc harfbuzz-subset.pc
+ln -s ../../Cellar/harfbuzz/13.1.1/lib/pkgconfig/harfbuzz-vector.pc harfbuzz-vector.pc
+ln -s ../../Cellar/harfbuzz/13.1.1/lib/pkgconfig/harfbuzz.pc harfbuzz.pc
+==> Summary
+🍺  /opt/homebrew/Cellar/harfbuzz/13.1.1: 89 files, 12.8MB
+==> Upgrading docker-agent
+  1.29.0 -> 1.32.3
+rm /opt/homebrew/bin/cagent
+rm /opt/homebrew/etc/bash_completion.d/cagent
+rm /opt/homebrew/share/fish/vendor_completions.d/cagent.fish
+rm /opt/homebrew/share/pwsh/completions/_cagent.ps1
+rm /opt/homebrew/share/zsh/site-functions/_cagent
+==> Pouring docker-agent--1.32.3.arm64_tahoe.bottle.tar.gz
+==> Finishing up
+ln -s ../../Cellar/docker-agent/1.32.3/etc/bash_completion.d/docker-agent docker-agent
+ln -s ../Cellar/docker-agent/1.32.3/bin/docker-agent docker-agent
+ln -s ../../../Cellar/docker-agent/1.32.3/share/fish/vendor_completions.d/docker-agent.fish docker-agent.fish
+ln -s ../../../Cellar/docker-agent/1.32.3/share/pwsh/completions/_docker-agent.ps1 _docker-agent.ps1
+ln -s ../../../Cellar/docker-agent/1.32.3/share/zsh/site-functions/_docker-agent _docker-agent
+==> Summary
+🍺  /opt/homebrew/Cellar/docker-agent/1.32.3: 11 files, 75MB
+==> Upgrading giflib
+  5.2.2 -> 6.1.2
+rm /opt/homebrew/bin/gif2rgb
+rm /opt/homebrew/bin/gifbuild
+rm /opt/homebrew/bin/gifclrmp
+rm /opt/homebrew/bin/giffix
+rm /opt/homebrew/bin/giftext
+rm /opt/homebrew/bin/giftool
+rm /opt/homebrew/include/gif_lib.h
+rm /opt/homebrew/lib/libgif.7.2.0.dylib
+rm /opt/homebrew/lib/libgif.7.dylib
+rm /opt/homebrew/lib/libgif.a
+rm /opt/homebrew/lib/libgif.dylib
+==> Pouring giflib--6.1.2.arm64_tahoe.bottle.tar.gz
+==> Finishing up
+ln -s ../Cellar/giflib/6.1.2/bin/gifbuild gifbuild
+ln -s ../Cellar/giflib/6.1.2/bin/gifclrmp gifclrmp
+ln -s ../Cellar/giflib/6.1.2/bin/giffix giffix
+ln -s ../Cellar/giflib/6.1.2/bin/giftext giftext
+ln -s ../Cellar/giflib/6.1.2/bin/giftool giftool
+ln -s ../Cellar/giflib/6.1.2/include/gif_lib.h gif_lib.h
+ln -s ../Cellar/giflib/6.1.2/lib/libgif.7.2.0.dylib libgif.7.2.0.dylib
+ln -s ../Cellar/giflib/6.1.2/lib/libgif.7.dylib libgif.7.dylib
+ln -s ../Cellar/giflib/6.1.2/lib/libgif.a libgif.a
+ln -s ../Cellar/giflib/6.1.2/lib/libgif.dylib libgif.dylib
+==> Summary
+🍺  /opt/homebrew/Cellar/giflib/6.1.2: 19 files, 512.3KB
+==> Caveats
+zsh completions have been installed to:
+  /opt/homebrew/opt/curl/share/zsh/site-functions
+zsh completions have been installed to:
+  /opt/homebrew/share/zsh/site-functions
+==> llvm
+CLANG_CONFIG_FILE_SYSTEM_DIR: /opt/homebrew/etc/clang
+CLANG_CONFIG_FILE_USER_DIR:   ~/.config/clang
+
+LLD is now provided in a separate formula:
+  brew install lld
+
+Using `clang`, `clang++`, etc., requires a CLT installation at `/Library/Developer/CommandLineTools`.
+If you don't want to install the CLT, you can write appropriate configuration files pointing to your
+SDK at ~/.config/clang.
+
+To use the bundled libunwind please use the following LDFLAGS:
+  LDFLAGS="-L/opt/homebrew/opt/llvm/lib/unwind -lunwind"
+
+To use the bundled libc++ please use the following LDFLAGS:
+  LDFLAGS="-L/opt/homebrew/opt/llvm/lib/c++ -L/opt/homebrew/opt/llvm/lib/unwind -lunwind"
+Features newer than system libc++ will require the following define to enable
+(support for this may be removed in a future major LLVM release):
+  CPPFLAGS="-D_LIBCPP_DISABLE_AVAILABILITY"
+
+NOTE: You probably want to use the libunwind and libc++ provided by macOS unless you know what you're doing.
+
+llvm is keg-only, which means it was not symlinked into /opt/homebrew,
+because macOS already provides this software and installing another version in
+parallel can cause all kinds of trouble.
+
+If you need to have llvm first in your PATH, run:
+  echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
+
+For compilers to find llvm you may need to set:
+  export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+  export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+==> curl
+curl is keg-only, which means it was not symlinked into /opt/homebrew,
+because macOS already provides this software and installing another version in
+parallel can cause all kinds of trouble.
+
+If you need to have curl first in your PATH, run:
+  echo 'export PATH="/opt/homebrew/opt/curl/bin:$PATH"' >> ~/.zshrc
+
+For compilers to find curl you may need to set:
+  export LDFLAGS="-L/opt/homebrew/opt/curl/lib"
+  export CPPFLAGS="-I/opt/homebrew/opt/curl/include"
+==> cloudflared
+To start cloudflared now and restart at login:
+  brew services start cloudflared
+Or, if you don't want/need a background service you can just run:
+  /opt/homebrew/opt/cloudflared/bin/cloudflared
+==> Fetching downloads for: git-credential-manager
+==> Verifying checksum for '61f006c180f0e4511bef7599b0c95ad5731ae4589030a0ffd4b2c57d83a49d5d--gcm-osx-arm64-2.7.3.pkg'                                             Downloaded   41.9MB/ 41.9M
+✔︎ Cask git-credential-manager (2.7.3)                                                                                                                              Verified     41.9MB/ 41.9MB
+==> Upgrading 1 outdated package:
+git-credential-manager 2.7.0 -> 2.7.3
+==> Upgrading git-credential-manager
+==> Verifying checksum for '61f006c180f0e4511bef7599b0c95ad5731ae4589030a0ffd4b2c57d83a49d5d--gcm-osx-arm64-2.7.3.pkg'
+==> Running uninstall script /usr/local/share/gcm-core/uninstall.sh
+Password:
+Unconfiguring credential helper...
+Unconfiguring component 'Git Credential Manager'...
+Unconfiguring component 'Azure Repos provider'...
+Deleting symlink...
+No legacy symlink found.
+Removing installation receipt...
+Forgot package 'com.microsoft.gitcredentialmanager' on '/'.
+Deleting application files...
+==> Uninstalling packages with `sudo` (which may request your password)...
+cp -p /Users/rmanaloto/Library/Caches/Homebrew/downloads/61f006c180f0e4511bef7599b0c95ad5731ae4589030a0ffd4b2c57d83a49d5d--gcm-osx-arm64-2.7.3.pkg /opt/homebrew/Caskroom/git-credential-manager/2.7.3/gcm-osx-arm64-2.7.3.pkg
+==> Running installer for git-credential-manager with `sudo` (which may request your password)...
+installer: Package name is Git Credential Manager
+installer: Installing at base path /
+installer:PHASE:Preparing for installation…
+installer:PHASE:Preparing the disk…
+installer:PHASE:Preparing Git Credential Manager…
+installer:PHASE:Waiting for other installations to complete…
+installer:PHASE:Configuring the installation…
+installer:STATUS:
+installer:%60.900268
+installer:PHASE:Moving items into place…
+installer:%90.429937
+installer:PHASE:Running package scripts…
+installer:%91.844944
+installer:PHASE:Running package scripts…
+installer:%91.909277
+installer:PHASE:Running package scripts…
+installer:PHASE:Validating packages…
+installer:%97.750000
+installer:STATUS:Running installer actions…
+installer:STATUS:
+installer:PHASE:Finishing the Installation…
+installer:STATUS:
+installer:%100.000000
+installer:PHASE:The software was successfully installed.
+installer: The install was successful.
+==> Purging files for version 2.7.0 of Cask git-credential-manager
+🍺  git-credential-manager was successfully upgraded!
+[2026-03-13 18:02:01] mise self-update + upgrade.
+mise is already up to date
+Resolving dependencies
+Resolving dependencies
+Resolving dependencies
+Resolving dependencies
+Resolved, downloaded and extracted [5]
+Resolved, downloaded and extracted [17]
+Resolved, downloaded and extracted [59]
+Resolved, downloaded and extracted [97]
+error: failed to enqueue lifecycle scripts for uuid: ENOENT
+error: failed to enqueue lifecycle scripts for @smithy/fetch-http-handler: ENOENT
+error: Failed to link @babel/parser: EEXIST
+error: Failed to link @googleworkspace/cli: EEXIST
+error: Failed to link @grpc/proto-loader: EEXIST
+error: Failed to link @mapbox/node-pre-gyp: EEXIST
+error: Failed to link @playwright/cli: EEXIST
+error: Failed to link @sentry/cli: EEXIST
+error: Failed to link @workflow/cli: EEXIST
+error: Failed to link @workflow/nest: EEXIST
+error: Failed to link agent-browser: EEXIST
+error: Failed to link agentdb: EEXIST
+error: Failed to link cli-highlight: EEXIST
+error: Failed to link color-support: EEXIST
+error: Failed to link cssesc: EEXIST
+error: Failed to link d3-dsv: EEXIST
+error: Failed to link dev3000: EEXIST
+error: Failed to link edgedriver: EEXIST
+error: Failed to link extract-zip: EEXIST
+error: Failed to link jake: EEXIST
+error: Failed to link json5: EEXIST
+error: Failed to link marked: EEXIST
+error: Failed to link mcp-handler: EEXIST
+error: Failed to link next: EEXIST
+error: Failed to link node-gyp-build: EEXIST
+error: Failed to link node-gyp-build-optional-packages: EEXIST
+error: Failed to link node-liblzma: EEXIST
+error: Failed to link openai: EEXIST
+error: Failed to link pino: EEXIST
+error: Failed to link pixelmatch: EEXIST
+error: Failed to link portless: EEXIST
+error: Failed to link prettier: EEXIST
+error: Failed to link rc: EEXIST
+error: Failed to link rimraf: EEXIST
+error: Failed to link rollup: EEXIST
+error: Failed to link seek-bzip: EEXIST
+error: Failed to link sucrase: EEXIST
+error: Failed to link terser: EEXIST
+error: Failed to link typescript: EEXIST
+error: Failed to link ulid: EEXIST
+error: Failed to link untyped: EEXIST
+error: Failed to link update-browserslist-db: EEXIST
+error: Failed to link uuid: EEXIST
+error: Failed to link wait-port: EEXIST
+error: Failed to link webpack: EEXIST
+error: Failed to link yaml: EEXIST
+error: Failed to link yaml-language-server: EEXIST
+error: Failed to link rimraf: EEXIST
+error: Failed to link vscode-languageserver: EEXIST
+error: Failed to link nanoid: EEXIST
+error: Failed to link which: EEXIST
+error: Failed to link marked: EEXIST
+error: Failed to link is-docker: EEXIST
+error: Failed to link tailwindcss: EEXIST
+error: Failed to link marked: EEXIST
+error: Failed to link which: EEXIST
+error: Failed to link js-yaml: EEXIST
+error: Failed to link fast-xml-parser: EEXIST
+error: Failed to link glob: EEXIST
+error: Failed to link which: EEXIST
+error: Failed to link glob: EEXIST
+error: Failed to link protobufjs: EEXIST
+error: Failed to link semver: EEXIST
+error: Failed to link uuid: EEXIST
+error: Failed to link uuid: EEXIST
+error: Failed to link semver: EEXIST
+mise ERROR bun failed
+bun add v1.3.10 (30e609e0)
+gyp info it worked if it ends with ok
+gyp info using node-gyp@8.4.1
+gyp info using node@25.8.1 | darwin | arm64
+(node:62133) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+gyp info find Python using Python version 3.14.3 found at "/Users/rmanaloto/.local/share/mise/installs/python/3.14.3/bin/python3"
+gyp http GET https://nodejs.org/download/release/v25.8.1/node-v25.8.1-headers.tar.gz
+gyp http 200 https://nodejs.org/download/release/v25.8.1/node-v25.8.1-headers.tar.gz
+gyp http GET https://nodejs.org/download/release/v25.8.1/SHASUMS256.txt
+gyp http 200 https://nodejs.org/download/release/v25.8.1/SHASUMS256.txt
+gyp info spawn /Users/rmanaloto/.local/share/mise/installs/python/3.14.3/bin/python3
+gyp info spawn args [
+gyp info spawn args   '/Users/rmanaloto/node_modules/node-gyp/gyp/gyp_main.py',
+gyp info spawn args   'binding.gyp',
+gyp info spawn args   '-f',
+gyp info spawn args   'make',
+gyp info spawn args   '-I',
+gyp info spawn args   '/Users/rmanaloto/node_modules/tree-sitter-bash/build/config.gypi',
+gyp info spawn args   '-I',
+gyp info spawn args   '/Users/rmanaloto/node_modules/node-gyp/addon.gypi',
+gyp info spawn args   '-I',
+gyp info spawn args   '/Users/rmanaloto/Library/Caches/node-gyp/25.8.1/include/node/common.gypi',
+gyp info spawn args   '-Dlibrary=shared_library',
+gyp info spawn args   '-Dvisibility=default',
+gyp info spawn args   '-Dnode_root_dir=/Users/rmanaloto/Library/Caches/node-gyp/25.8.1',
+gyp info spawn args   '-Dnode_gyp_dir=/Users/rmanaloto/node_modules/node-gyp',
+gyp info spawn args   '-Dnode_lib_file=/Users/rmanaloto/Library/Caches/node-gyp/25.8.1/<(target_arch)/node.lib',
+gyp info spawn args   '-Dmodule_root_dir=/Users/rmanaloto/node_modules/tree-sitter-bash',
+gyp info spawn args   '-Dnode_engine=v8',
+gyp info spawn args   '--depth=.',
+gyp info spawn args   '--no-parallel',
+gyp info spawn args   '--generator-output',
+gyp info spawn args   'build',
+gyp info spawn args   '-Goutput_dir=.'
+gyp info spawn args ]
+Traceback (most recent call last):
+  File "/Users/rmanaloto/node_modules/node-gyp/gyp/gyp_main.py", line 42, in <module>
+    import gyp  # noqa: E402
+    ^^^^^^^^^^
+  File "/Users/rmanaloto/node_modules/node-gyp/gyp/pylib/gyp/__init__.py", line 9, in <module>
+    import gyp.input
+  File "/Users/rmanaloto/node_modules/node-gyp/gyp/pylib/gyp/input.py", line 19, in <module>
+    from distutils.version import StrictVersion
+ModuleNotFoundError: No module named 'distutils'
+gyp ERR! configure error
+gyp ERR! stack Error: `gyp` failed with exit code: 1
+gyp ERR! stack     at ChildProcess.onCpExit (/Users/rmanaloto/node_modules/node-gyp/lib/configure.js:259:16)
+gyp ERR! stack     at ChildProcess.emit (node:events:508:20)
+gyp ERR! stack     at ChildProcess._handle.onexit (node:internal/child_process:294:12)
+gyp ERR! System Darwin 25.3.0
+gyp ERR! command "/Users/rmanaloto/.local/share/mise/installs/node/25.8.1/bin/node" "/Users/rmanaloto/node_modules/node-gyp/bin/node-gyp.js" "rebuild"
+gyp ERR! cwd /Users/rmanaloto/node_modules/tree-sitter-bash
+gyp ERR! node -v v25.8.1
+gyp ERR! node-gyp -v v8.4.1
+gyp ERR! not ok
+error: install script from "tree-sitter-bash" exited with 1
+mise ERROR bun failed
+bun add v1.3.10 (30e609e0)
+error: Failed to link @anthropic-ai/claude-code: EEXIST
+error: Failed to link @babel/parser: EEXIST
+error: Failed to link @biomejs/biome: EEXIST
+error: Failed to link @d3k/darwin-arm64: EEXIST
+error: Failed to link @google/gemini-cli: EEXIST
+error: Failed to link @sentry/cli: EEXIST
+error: Failed to link @workflow/cli: EEXIST
+error: Failed to link acorn: EEXIST
+error: Failed to link browserslist: EEXIST
+error: Failed to link cbor-extract: EEXIST
+error: Failed to link claude-code-templates: EEXIST
+error: Failed to link cli-highlight: EEXIST
+error: Failed to link color-support: EEXIST
+error: Failed to link cross-env: EEXIST
+error: Failed to link ejs: EEXIST
+error: Failed to link escodegen: EEXIST
+error: Failed to link esprima: EEXIST
+error: Failed to link is-in-ci: EEXIST
+error: Failed to link just-bash: EEXIST
+error: Failed to link loose-envify: EEXIST
+error: Failed to link marked: EEXIST
+error: Failed to link mcp-handler: EEXIST
+error: Failed to link mkdirp: EEXIST
+error: Failed to link next: EEXIST
+error: Failed to link node-gyp: EEXIST
+error: Failed to link playwright-core: EEXIST
+error: Failed to link portless: EEXIST
+error: Failed to link ruvector: EEXIST
+error: Failed to link seek-bzip: EEXIST
+error: Failed to link semver: EEXIST
+error: Failed to link skills: EEXIST
+error: Failed to link specli: EEXIST
+error: Failed to link systeminformation: EEXIST
+error: Failed to link typescript: EEXIST
+error: Failed to link untyped: EEXIST
+error: Failed to link playwright-core: EEXIST
+error: Failed to link semver: EEXIST
+error: Failed to link semver: EEXIST
+error: Failed to link fast-xml-parser: EEXIST
+error: Failed to link which: EEXIST
+error: Failed to link rimraf: EEXIST
+mise ERROR bun failed
+bun add v1.3.10 (30e609e0)
+error: Failed to link @biomejs/biome: EEXIST
+error: Failed to link @devcontainers/cli: EEXIST
+error: Failed to link @nuxt/opencollective: EEXIST
+error: Failed to link @swc/cli: EEXIST
+error: Failed to link @workflow/nest: EEXIST
+error: Failed to link agent-browser: EEXIST
+error: Failed to link agentdb: EEXIST
+error: Failed to link astring: EEXIST
+error: Failed to link baseline-browser-mapping: EEXIST
+error: Failed to link bcryptjs: EEXIST
+error: Failed to link browserslist: EEXIST
+error: Failed to link cbor-extract: EEXIST
+error: Failed to link claude-flow: EEXIST
+error: Failed to link compressjs: EEXIST
+error: Failed to link cowsay: EEXIST
+error: Failed to link crc-32: EEXIST
+error: Failed to link cross-env: EEXIST
+error: Failed to link cssesc: EEXIST
+error: Failed to link d3-dsv: EEXIST
+error: Failed to link ejs: EEXIST
+error: Failed to link escodegen: EEXIST
+error: Failed to link esprima: EEXIST
+error: Failed to link fast-xml-parser: EEXIST
+error: Failed to link giget: EEXIST
+error: Failed to link jake: EEXIST
+error: Failed to link js-yaml: EEXIST
+error: Failed to link jsesc: EEXIST
+error: Failed to link just-bash: EEXIST
+error: Failed to link katex: EEXIST
+error: Failed to link loose-envify: EEXIST
+error: Failed to link marked: EEXIST
+error: Failed to link mime: EEXIST
+error: Failed to link mkdirp: EEXIST
+error: Failed to link nanoid: EEXIST
+error: Failed to link node-gyp-build: EEXIST
+error: Failed to link node-gyp-build-optional-packages: EEXIST
+error: Failed to link pino: EEXIST
+error: Failed to link puppeteer: EEXIST
+error: Failed to link rc: EEXIST
+error: Failed to link ruvector: EEXIST
+error: Failed to link seek-bzip: EEXIST
+error: Failed to link semver: EEXIST
+error: Failed to link skills: EEXIST
+error: Failed to link terser: EEXIST
+error: Failed to link ulid: EEXIST
+error: Failed to link vscode-languageserver: EEXIST
+error: Failed to link webpack: EEXIST
+error: Failed to link which: EEXIST
+error: Failed to link yaml: EEXIST
+error: Failed to link vscode-languageserver: EEXIST
+error: Failed to link yaml: EEXIST
+error: Failed to link rimraf: EEXIST
+error: Failed to link marked: EEXIST
+error: Failed to link glob: EEXIST
+error: Failed to link semver: EEXIST
+error: Failed to link glob: EEXIST
+error: Failed to link uuid: EEXIST
+error: Failed to link uuid: EEXIST
+error: Failed to link js-yaml: EEXIST
+error: Failed to link rimraf: EEXIST
+error: Failed to link js-yaml: EEXIST
+error: Failed to link mime: EEXIST
+error: Failed to link semver: EEXIST
+error: Failed to link semver: EEXIST
+error: Failed to link which: EEXIST
+error: Failed to link protobufjs: EEXIST
+error: Failed to link semver: EEXIST
+error: Failed to link semver: EEXIST
+error: Failed to link rimraf: EEXIST
+mise ERROR bun failed
+bun add v1.3.10 (30e609e0)
+error: Failed to link @anthropic-ai/claude-code: EEXIST
+error: Failed to link @babel/parser: EEXIST
+error: Failed to link @mermaid-js/mermaid-cli: EEXIST
+error: Failed to link @openai/codex: EEXIST
+error: Failed to link @playwright/mcp: EEXIST
+error: Failed to link @playwright/test: EEXIST
+error: Failed to link @swc/cli: EEXIST
+error: Failed to link acorn: EEXIST
+error: Failed to link astring: EEXIST
+error: Failed to link baseline-browser-mapping: EEXIST
+error: Failed to link bash-language-server: EEXIST
+error: Failed to link bcryptjs: EEXIST
+error: Failed to link claude-code-templates: EEXIST
+error: Failed to link d3-dsv: EEXIST
+error: Failed to link edgedriver: EEXIST
+error: Failed to link editorconfig: EEXIST
+error: Failed to link escodegen: EEXIST
+error: Failed to link glob: EEXIST
+error: Failed to link is-docker: EEXIST
+error: Failed to link is-inside-container: EEXIST
+error: Failed to link jsesc: EEXIST
+error: Failed to link katex: EEXIST
+error: Failed to link mcp-handler: EEXIST
+error: Failed to link node-gyp-build: EEXIST
+error: Failed to link node-gyp-build-optional-packages: EEXIST
+error: Failed to link node-liblzma: EEXIST
+error: Failed to link nypm: EEXIST
+error: Failed to link opencode-ai: EEXIST
+error: Failed to link opensrc: EEXIST
+error: Failed to link prebuild-install: EEXIST
+error: Failed to link prettier: EEXIST
+error: Failed to link puppeteer: EEXIST
+error: Failed to link resolve: EEXIST
+error: Failed to link rollup: EEXIST
+error: Failed to link specli: EEXIST
+error: Failed to link sucrase: EEXIST
+error: Failed to link typescript: EEXIST
+error: Failed to link update-browserslist-db: EEXIST
+error: Failed to link agent-browser: EEXIST
+error: Failed to link playwright-core: EEXIST
+error: Failed to link yaml: EEXIST
+error: Failed to link rimraf: EEXIST
+error: Failed to link marked: EEXIST
+error: Failed to link mime: EEXIST
+error: Failed to link rimraf: EEXIST
+error: Failed to link which: EEXIST
+error: Failed to link jiti: EEXIST
+error: Failed to link vscode-languageserver: EEXIST
+error: Failed to link rimraf: EEXIST
+mise ERROR bun failed
+bun add v1.3.10 (30e609e0)
+mise 2026.3.9 by @jdx                                                                                                                                                                    [5/5]
+npm:opencode-ai@1.2.26            bun add v1.3.10 (30e609e0)                                                                                                                                 ◜
+gemini-cli@0.33.1                 bun add v1.3.10 (30e609e0)                                                                                                                                 ◜
+npm:@ralph-orchestrator/ralph-cli@2.8.0 bun add v1.3.10 (30e609e0)                                                                                                                           ◜
+npm:dev3000@0.0.171               bun add v1.3.10 (30e609e0)                                                                                                                                 ◜
+npm:just-bash@2.13.0              bun add v1.3.10 (30e609e0)                                                                                                                                 ◜
+mise ERROR Failed to install tools: npm:@google/gemini-cli@latest, npm:@ralph-orchestrator/ralph-cli@latest, npm:dev3000@latest, npm:just-bash@latest, npm:opencode-ai@latest
+
+npm:@google/gemini-cli@latest: bun exited with non-zero status: exit code 1
+
+npm:@ralph-orchestrator/ralph-cli@latest: bun exited with non-zero status: exit code 1
+
+npm:dev3000@latest: bun exited with non-zero status: exit code 1
+
+npm:just-bash@latest: bun exited with non-zero status: exit code 1
+
+npm:opencode-ai@latest: bun exited with non-zero status: exit code 1
+mise ERROR Run with --verbose or MISE_VERBOSE=1 for more information
+Congrats! You're already on the latest version of Bun (which is v1.3.10)
+bun update v1.3.10 (30e609e0)
+error: Workspace dependency "awesome-ai-tui" not found
+
+Searched in "./*"
+
+Workspace documentation: https://bun.com/docs/install/workspaces
+
+error: awesome-ai-tui@workspace:* failed to resolve
+[2026-03-13 18:02:27] uv is mise-managed; skipping uv self update.
+error: Failed to upgrade docs-monorepo
+  Caused by: Distribution not found at: file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.HFu9C55Q4J
+error: Failed to upgrade langc
+  Caused by: Distribution not found at: file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.onOWJTPRsi
+error: Failed to upgrade learning-langchain
+  Caused by: Distribution not found at: file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.C6ilrUldXM
+✔ Environment pixi-pack was already up-to-date.                                                                                                                                               [2026-03-13 18:02:31] Updating agent stack tools.
+mise 2026.3.9 by @jdx                                                                                                                                                                    [5/5]
+bun@1.3.10                                                                                                                                                                                   ◜
+go@1.26.1                                                                                                                                                                                    ◜
+rust@1.94.0                                                                                                                                                                                  ◜
+node@25.8.1                                                                                                                                                                                  ◜
+python@3.14.3                                                                                                                                                                                ◜
+mise ~/.config/mise/config.toml tools: python@3.14.3, node@25.8.1, bun@1.3.10, go@1.26.1, rust@1.94.0
+[python] installing langchain-cli
+Resolved 45 packages in 129ms
+Checked 45 packages in 1ms
+Installed 2 executables: langchain, langchain-cli
+[python] installing langgraph-cli
+Resolved 12 packages in 59ms
+Checked 12 packages in 0.48ms
+Installed 1 executable: langgraph
+[python] installing langsmith-fetch
+Resolved 29 packages in 95ms
+Checked 29 packages in 0.86ms
+Installed 1 executable: langsmith-fetch
+[python] installing skypilot[aws]
+Resolved 105 packages in 158ms
+Checked 105 packages in 2ms
+Installed 1 executable: sky
+[python] installing aider-chat
+Resolved 108 packages in 113ms
+Checked 108 packages in 2ms
+Installed 1 executable: aider
+[python] installing open-interpreter
+Resolved 144 packages in 269ms
+Checked 144 packages in 3ms
+Installed 4 executables: i, interpreter, interpreter-classic, wtf
+[python] installing crewai
+Resolved 131 packages in 195ms
+Checked 131 packages in 2ms
+Installed 1 executable: crewai
+[2026-03-13 18:02:34] Patching skypilot templates for clean provisioning logs.
+[2026-03-13 18:02:34] skypilot patch applied.
+[node] installing @anthropic-ai/claude-code
+bun add v1.3.10 (30e609e0)
+
+installed @anthropic-ai/claude-code@2.1.75 with binaries:
+ - claude
+
+1 package installed [922.00ms]
+[node] installing @openai/codex
+bun add v1.3.10 (30e609e0)
+
+installed @openai/codex@0.114.0 with binaries:
+ - codex
+
+2 packages installed [191.00ms]
+[node] installing @google/gemini-cli
+bun add v1.3.10 (30e609e0)
+
+installed @google/gemini-cli@0.33.1 with binaries:
+ - gemini
+
+32 packages installed [624.00ms]
+[node] installing openwork
+bun add v1.3.10 (30e609e0)
+
+installed openwork@0.2.0 with binaries:
+ - openwork
+
+[200.00ms] done
+[node] installing create-agent-chat-app
+bun add v1.3.10 (30e609e0)
+
+installed create-agent-chat-app@0.1.6 with binaries:
+ - create-agent-chat-app
+
+[160.00ms] done
+[node] installing @modelcontextprotocol/inspector
+bun add v1.3.10 (30e609e0)
+
+installed @modelcontextprotocol/inspector@0.21.1 with binaries:
+ - mcp-inspector
+
+[181.00ms] done
+[go] installing github.com/opencode-ai/opencode@latest
+[INFO] 🚀 Starting Fabric installation...
+[INFO] Detected system: Darwin arm64
+[INFO] Install directory: /Users/rmanaloto/.local/share/mde/bin
+[INFO] Downloading Fabric for Darwin arm64...
+[INFO] URL: https://github.com/danielmiessler/fabric/releases/latest/download/fabric_Darwin_arm64.tar.gz
+[INFO] Extracting Fabric binary...
+[INFO] Installing Fabric to /Users/rmanaloto/.local/share/mde/bin/fabric...
+[SUCCESS] Fabric installed successfully to /Users/rmanaloto/.local/share/mde/bin/fabric
+[INFO] Verifying installation...
+[SUCCESS] Fabric 1.4.434 is working correctly!
+[WARNING] ⚠️  /Users/rmanaloto/.local/share/mde/bin is not in your PATH
+[INFO] To use fabric from anywhere, add the following to your shell profile:
+[INFO]   export PATH="$PATH:/Users/rmanaloto/.local/share/mde/bin"
+[INFO]
+[INFO] For bash, add it to ~/.bashrc or ~/.bash_profile
+[INFO] For zsh, add it to ~/.zshrc
+[INFO] For fish, run: fish_add_path /Users/rmanaloto/.local/share/mde/bin
+[INFO]
+[SUCCESS] 🎉 Installation complete!
+[INFO]
+[INFO] Next steps:
+[INFO]   1. Run 'fabric --setup' to configure Fabric
+[INFO]   2. Add your API keys and preferences
+[INFO]   3. Start using Fabric with 'fabric --help'
+[INFO]
+[INFO] Documentation: https://github.com/danielmiessler/fabric
+
+Agent stack installed/updated.
+[2026-03-13 18:02:43] Updating LangChain CLI tools.
+Congrats! You're already on the latest version of Bun (which is v1.3.10)
+[python] installing langchain-cli
+Resolved 45 packages in 144ms
+Prepared 45 packages in 6ms
+Installed 45 packages in 70ms
+ + annotated-doc==0.0.4
+ + annotated-types==0.7.0
+ + anyio==4.12.1
+ + certifi==2026.2.25
+ + charset-normalizer==3.4.5
+ + click==8.3.1
+ + fastapi==0.135.1
+ + gitdb==4.0.12
+ + gitpython==3.1.46
+ + gritql==0.2.0
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + idna==3.11
+ + jsonpatch==1.33
+ + jsonpointer==3.0.0
+ + langchain-cli==0.0.37
+ + langchain-core==1.2.19
+ + langserve==0.3.3
+ + langsmith==0.7.17
+ + markdown-it-py==4.0.0
+ + mdurl==0.1.2
+ + orjson==3.11.7
+ + packaging==26.0
+ + pydantic==2.12.5
+ + pydantic-core==2.41.5
+ + pygments==2.19.2
+ + pyyaml==6.0.3
+ + requests==2.32.5
+ + requests-toolbelt==1.0.0
+ + rich==14.3.3
+ + shellingham==1.5.4
+ + smmap==5.0.3
+ + sse-starlette==1.8.2
+ + starlette==0.52.1
+ + tenacity==9.1.4
+ + tomlkit==0.14.0
+ + typer==0.24.1
+ + typing-extensions==4.15.0
+ + typing-inspection==0.4.2
+ + urllib3==2.6.3
+ + uuid-utils==0.14.1
+ + uvicorn==0.41.0
+ + xxhash==3.6.0
+ + zstandard==0.25.0
+Installed 2 executables: langchain, langchain-cli
+[python] installing langchain-model-profiles
+Resolved 8 packages in 66ms
+Checked 8 packages in 0.22ms
+Installed 1 executable: langchain-profiles
+[python] installing langgraph-cli
+Resolved 12 packages in 86ms
+Checked 12 packages in 0.29ms
+Installed 1 executable: langgraph
+[python] installing langgraph-gen
+Resolved 34 packages in 103ms
+Checked 34 packages in 0.92ms
+Installed 1 executable: langgraph-gen
+[python] installing langgraph-engineer
+Ignoring existing environment for `langgraph-engineer`: the requested Python interpreter does not match the environment interpreter
+  × No solution found when resolving dependencies:
+  ╰─▶ Because langgraph-engineer was not found in the package registry and you require langgraph-engineer, we can conclude that your requirements are unsatisfiable.
+   Updating https://github.com/langchain-ai/langgraph-engineer.git (HEAD)                                                                                                                     error: Git operation failed
+  Caused by: failed to fetch into: /Users/rmanaloto/Library/Caches/uv/git-v0/db/592fe3f92ee35872
+  Caused by: process didn't exit successfully: `/usr/bin/git fetch --force --update-head-ok 'https://github.com/langchain-ai/langgraph-engineer.git' '+HEAD:refs/remotes/origin/HEAD'` (exit status: 128)
+--- stderr
+remote: Repository not found.
+fatal: repository 'https://github.com/langchain-ai/langgraph-engineer.git/' not found
+[python] installing langsmith-fetch
+Resolved 29 packages in 97ms
+Checked 29 packages in 0.87ms
+Installed 1 executable: langsmith-fetch
+[python] installing langsmith-data-migration-tool
+Resolved 49 packages in 142ms
+Checked 49 packages in 1ms
+Installed 1 executable: langsmith-migrator
+[python] installing langsmith-mcp-server
+Resolved 79 packages in 122ms
+Checked 79 packages in 1ms
+Installed 1 executable: langsmith-mcp-server
+[python] installing mcpdoc
+Resolved 42 packages in 111ms
+Checked 42 packages in 1ms
+Installed 1 executable: mcpdoc
+[python] installing deepagents-cli
+Resolved 146 packages in 195ms
+Checked 146 packages in 3ms
+Installed 2 executables: deepagents, deepagents-cli
+[python] installing pylon-data-extractor
+Resolved 63 packages in 104ms
+Checked 63 packages in 1ms
+Installed 1 executable: pylon-extract
+[python] installing langc
+[python] installing docs-monorepo
+Resolved 70 packages in 149ms
+      Built docs-monorepo @ file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.F1QPizcro1
+Prepared 7 packages in 575ms
+Uninstalled 7 packages in 59ms
+Installed 7 packages in 13ms
+ - docs-monorepo==0.1.0 (from file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.HFu9C55Q4J)
+ + docs-monorepo==0.1.0 (from file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.F1QPizcro1)
+ - langchain==1.2.10
+ + langchain==1.2.12
+ - langchain-core==1.2.18
+ + langchain-core==1.2.19
+ - langgraph==1.0.10
+ + langgraph==1.1.2
+ - langgraph-sdk==0.3.9
+ + langgraph-sdk==0.3.11
+ - langsmith==0.7.16
+ + langsmith==0.7.17
+ - tornado==6.5.4
+ + tornado==6.5.5
+Installed 1 executable: docs
+[python] installing langchain-plugin
+Resolved 44 packages in 226ms
+Checked 44 packages in 1ms
+Installed 1 executable: app
+[python] installing learning-langchain
+Resolved 133 packages in 444ms
+      Built learning-langchain @ file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.4NfdNMoJyv
+Prepared 14 packages in 4.36s
+Uninstalled 14 packages in 287ms
+Installed 14 packages in 74ms
+ - chromadb==1.5.4
+ + chromadb==1.5.5
+ - filelock==3.25.1
+ + filelock==3.25.2
+ - hf-xet==1.3.2
+ + hf-xet==1.4.2
+ - huggingface-hub==1.6.0
+ + huggingface-hub==1.7.1
+ - langchain==1.2.10
+ + langchain==1.2.12
+ - langchain-classic==1.0.2
+ + langchain-classic==1.0.3
+ - langchain-core==1.2.18
+ + langchain-core==1.2.19
+ - langgraph==1.0.10
+ + langgraph==1.1.2
+ - langgraph-cli==0.4.14
+ + langgraph-cli==0.4.17
+ - langgraph-sdk==0.3.9
+ + langgraph-sdk==0.3.11
+ - langsmith==0.7.16
+ + langsmith==0.7.17
+ - learning-langchain==0.0.1 (from file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.C6ilrUldXM)
+ + learning-langchain==0.0.1 (from file:///var/folders/z4/0p475gq56vvczc3y4qlt60f80000gn/T/tmp.4NfdNMoJyv)
+ - openai==2.26.0
+ + openai==2.28.0
+ - primp==1.1.2
+ + primp==1.1.3
+Installed 1 executable: langgraph-dev
+[python] installing mcp-simple-streamablehttp-stateless
+Resolved 30 packages in 222ms
+Checked 30 packages in 1ms
+Installed 1 executable: mcp-simple-streamablehttp-stateless
+[node] installing create-agent-chat-app
+bun add v1.3.10 (30e609e0)
+
+installed create-agent-chat-app@0.1.6 with binaries:
+ - create-agent-chat-app
+
+[111.00ms] done
+[node] installing create-langchain-integration
+bun add v1.3.10 (30e609e0)
+
+installed create-langchain-integration@0.0.12 with binaries:
+ - create-langchain-integration
+
+[170.00ms] done
+[node] installing create-langgraph
+bun add v1.3.10 (30e609e0)
+
+installed create-langgraph@1.1.5 with binaries:
+ - create-langgraph
+
+[179.00ms] done
+[node] installing @langchain/langgraph-checkpoint-validation
+bun add v1.3.10 (30e609e0)
+
+installed @langchain/langgraph-checkpoint-validation@1.0.9 with binaries:
+ - validate-checkpointer
+
+[264.00ms] done
+[node] installing @langchain/langgraph-cli
+bun add v1.3.10 (30e609e0)
+
+installed @langchain/langgraph-cli@1.1.15 with binaries:
+ - langgraphjs
+
+[256.00ms] done
+[node] installing @langchain/langgraph-ui
+bun add v1.3.10 (30e609e0)
+
+installed @langchain/langgraph-ui@1.1.15 with binaries:
+ - langgraphjs-ui
+
+[259.00ms] done
+[node] installing deepagents-cli
+bun add v1.3.10 (30e609e0)
+
+installed deepagents-cli@0.0.16 with binaries:
+ - deepagents
+
+[237.00ms] done
+[node] installing openwork
+bun add v1.3.10 (30e609e0)
+
+installed openwork@0.2.0 with binaries:
+ - openwork
+
+[95.00ms] done
+Install completed with failures:
+  Python: langgraph-engineer langc
+[2026-03-13 18:05:00] Syncing MCP servers.
+Added stdio MCP server github with command: /Users/rmanaloto/.local/bin/mde-mcp-github  to user config
+File modified: /Users/rmanaloto/.claude.json
+Added stdio MCP server langsmith with command: /Users/rmanaloto/.local/bin/mde-mcp-langsmith  to user config
+File modified: /Users/rmanaloto/.claude.json
+Added stdio MCP server notebooklm with command: /Users/rmanaloto/.local/bin/mde-mcp-notebooklm  to user config
+File modified: /Users/rmanaloto/.claude.json
+Added stdio MCP server context7 with command: /Users/rmanaloto/.local/bin/mde-mcp-context7  to user config
+File modified: /Users/rmanaloto/.claude.json
+Added stdio MCP server brave-search with command: /Users/rmanaloto/.local/bin/mde-mcp-brave-search  to user config
+File modified: /Users/rmanaloto/.claude.json
+Added stdio MCP server filesystem with command: /Users/rmanaloto/.local/bin/mde-mcp-filesystem  to user config
+File modified: /Users/rmanaloto/.claude.json
+Added stdio MCP server MCP_DOCKER with command: /Users/rmanaloto/.local/bin/mde-mcp-docker  to user config
+File modified: /Users/rmanaloto/.claude.json
+Added global MCP server 'github'.
+Added global MCP server 'langsmith'.
+Added global MCP server 'notebooklm'.
+Added global MCP server 'context7'.
+Added global MCP server 'brave-search'.
+Added global MCP server 'filesystem'.
+Added global MCP server 'MCP_DOCKER'.
+[2026-03-13 18:05:09] MCP server setup complete.
+Managed configs synced.
+➜  cpp-playground git:(main)

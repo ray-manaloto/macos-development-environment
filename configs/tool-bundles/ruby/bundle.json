@@ -1,0 +1,14 @@
+{
+  "id": "bundle-ruby-starter",
+  "domain_id": "ruby",
+  "name": "Ruby Starter Bundle",
+  "description": "Starter bundle for Ruby runtime, Bundler, and gem packaging conventions.",
+  "preset_ids": ["preset-ruby"],
+  "primary_manifest": "Gemfile",
+  "included_files": ["Gemfile"],
+  "reference_source_ids": ["ruby-docs", "bundler-docs", "rubygems-guides"],
+  "notes": [
+    "Starter bundles are repo-scoped scaffolds, not host-global installers.",
+    "The owning domain team decides when companion manifests or lockfiles are required."
+  ]
+}

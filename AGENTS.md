@@ -330,6 +330,26 @@ Each skill contains step-by-step instructions, templates, and scripts.
   <description>Zustand state management for React and vanilla JavaScript. Use when creating stores, using selectors, persisting state to localStorage, integrating devtools, or managing global state without Redux complexity. Triggers on zustand, create(), createStore, useStore, persist, devtools, immer middleware.</description>
 </skill>
 <skill>
+  <name>skills/mise-enforcement</name>
+  <description>Enforces mise-first toolchain management for this repository. Use when installing/updating CLI tools, configuring devcontainer tooling, or validating that commands run through mise-managed binaries.</description>
+</skill>
+<skill>
+  <name>skills/research-source-discovery</name>
+  <description>Build candidate source pools for implementation research using source-priority MCP stacks (GitHub, Reddit, HN, curated lists, blogs/news, optional X API) with logged query packs and shortlist rationale.</description>
+</skill>
+<skill>
+  <name>skills/github-repo-mining</name>
+  <description>Mine shortlisted repositories for code-level patterns (devcontainer, mise, CI, setup, policy) using strict query qualifiers and evidence-backed PatternRecords.</description>
+</skill>
+<skill>
+  <name>skills/social-signal-mining</name>
+  <description>Extract implementation lessons from Reddit/HN/X/blogs with anti-hype filtering, engagement thresholds, and evidence-linked social pattern records.</description>
+</skill>
+<skill>
+  <name>skills/evidence-synthesis</name>
+  <description>Synthesize discovery, repository, social, and validation evidence into DecisionRecords and AcceptanceRecords, producing a decision-complete implementation spec.</description>
+</skill>
+<skill>
   <name>ui-ux-pro-max</name>
   <description>UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts, 9 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui). Actions: plan, build, create, design, implement, review, fix, improve, optimize, enhance, refactor, check UI/UX code. Projects: website, landing page, dashboard, admin panel, e-commerce, SaaS, portfolio, blog, mobile app, .html, .tsx, .vue, .svelte. Elements: button, modal, navbar, sidebar, card, table, form, chart. Styles: glassmorphism, claymorphism, minimalism, brutalism, neumorphism, bento grid, dark mode, responsive, skeuomorphism, flat design. Topics: color palette, accessibility, animation, layout, typography, font pairing, spacing, hover, shadow, gradient. Integrations: shadcn/ui MCP for component search and examples.</description>
 </skill>
@@ -339,3 +359,28 @@ Each skill contains step-by-step instructions, templates, and scripts.
 </skill>
 </available_skills>
 <!-- SKILLPORT_END -->
+
+## Hierarchical Enforcement
+
+- This repository is the authoritative MacBook host-setup contract for agent-run tooling work.
+- `mise` is the authority for global runtimes, global CLIs, and SDK CLIs.
+- `fnox` is the authority for global secret declarations, loaded through `mise`.
+- Native manifests are the authority for repository libraries and dependencies.
+- Homebrew is exception-only through `configs/mde-install-exceptions.json`.
+- For any setup, installation, migration, automation, or research work, use `skills/mde-agent-runtime-contract` first, then `skills/mise-enforcement`.
+- For Python CLI backend decisions, also use `skills/mde-python-backend-selection`.
+- For Node global CLI declarations, also use `skills/mde-node-cli-declaration`.
+- For validation and static-analysis changes, also use `skills/mde-native-tool-validation`.
+- For cache-aware setup, migration, automation, and verification work, also use `skills/mde-package-cache-policy`.
+- For research/planning tasks on tooling and setup automation, run the ROS skill chain:
+  `skills/research-source-discovery` -> `skills/github-repo-mining` -> `skills/social-signal-mining` -> `skills/evidence-synthesis`.
+- Classify setup and tooling work through `configs/mde-domain-catalog.json` and delegate to the owning domain SDLC team before adopting or remediating guidance.
+- Use `configs/mde-reference-sources.json` plus `.artifacts/reference-mirror/` for mirror-first research instead of defaulting to web search.
+- Treat `configs/mde-preset-catalog.json` and `configs/tool-bundles/` as the repo-scoped preset and starter-bundle contract.
+- Treat `configs/mde-learning-registry.json` as the committed learning writeback surface for accepted findings.
+- Agents must not resolve missing repo libraries with global installs.
+- Agents must not use direct global package managers for repo-managed tools unless the exception registry allows it and break-glass override is explicitly set.
+- Reuse package manager caches by default. Do not force cold installs or clear caches unless an explicit exception or bounded maintenance flow allows it.
+- Scripts and wrappers should consume secrets through `mise`/`fnox` env loading, not direct `security find-generic-password` or ad hoc `op read` startup calls.
+- Read `configs/mde-tool-ownership.json`, `configs/mde-modernization-matrix.json`, `configs/mde-install-exceptions.json`, `configs/mde-skill-registry.json`, `configs/mde-domain-catalog.json`, `configs/mde-reference-sources.json`, `configs/mde-preset-catalog.json`, and `configs/mde-learning-registry.json` before changing ownership, installers, or required skill IDs.
+- Devcontainer automation must run through `mise`-managed binaries.

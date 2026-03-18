@@ -1,0 +1,14 @@
+{
+  "id": "bundle-docker-starter",
+  "domain_id": "docker",
+  "name": "Docker Starter Bundle",
+  "description": "Starter bundle for Dockerfile and Compose-driven local container workflows.",
+  "preset_ids": ["preset-docker"],
+  "primary_manifest": "compose.yaml",
+  "included_files": ["Dockerfile", "compose.yaml"],
+  "reference_source_ids": ["docker-docs", "docker-compose-docs", "docker-buildx-docs"],
+  "notes": [
+    "Starter bundles are repo-scoped scaffolds, not host-global installers.",
+    "The owning domain team decides when companion manifests or lockfiles are required."
+  ]
+}

@@ -1,0 +1,168 @@
+# Mise Global Configuration — managed by chezmoi
+# Source of truth: .chezmoisource/dot_config/mise/config.toml.tmpl
+# Applied by: chezmoi apply → ~/.config/mise/config.toml
+[settings]
+experimental = true
+not_found_auto_install = true
+status = { missing_tools = "if_other_versions_installed" }
+
+[settings.npm]
+package_manager = "bun"
+
+[settings.python]
+uv_venv_auto = true
+
+[plugins]
+fnox-env = "https://github.com/jdx/mise-env-fnox"
+
+[env]
+_.fnox-env = { tools = true }
+GIT_TERMINAL_PROMPT = "0"
+
+[tools]
+# ── Core Runtimes ──
+bun = "latest"
+node = "latest"
+python = "latest"
+go = "latest"
+rust = "latest"
+pixi = "latest"
+uv = "latest"
+chezmoi = "latest"
+usage = "latest"
+pkl = "latest"
+
+# ── Modern Rust-Based Utilities ──
+starship = "latest"
+ripgrep = "latest"
+fd = "latest"
+zoxide = "latest"
+bat = "latest"
+eza = "latest"
+fzf = "latest"
+delta = "latest"
+lsd = "latest"
+hyperfine = "latest"
+glow = "latest"
+atuin = "latest"
+"github:ast-grep/ast-grep" = "latest"
+
+# ── Security & Encryption ──
+"aqua:FiloSottile/age" = "latest"
+"aqua:getsops/sops" = "latest"
+
+# ── Data Processing ──
+jq = "latest"
+yq = "latest"
+
+# ── Code Quality ──
+shellcheck = "latest"
+hadolint = "latest"
+pre-commit = "latest"
+"pipx:mgrep" = "latest"
+
+# ── Infrastructure ──
+{{ if eq .chezmoi.os "darwin" -}}
+"1password-cli" = "latest"
+awscli = { version = "latest", symlink_bins = "true" }
+azure-cli = "latest"
+pitchfork = "latest"
+clang = "latest"
+"aqua:aws/session-manager-plugin" = "latest"
+{{ end -}}
+"github:jdx/fnox" = "latest"
+"aqua:loft-sh/devpod" = "latest"
+github-cli = "latest"
+
+# ── System Utilities (migrated from brew) ──
+cloudflared = "latest"
+direnv = "latest"
+pandoc = "latest"
+tmux = "latest"
+
+# ── Container & Dev Tools ──
+lefthook = "latest"
+devcontainer = "latest"
+{{ if eq .chezmoi.os "darwin" -}}
+docker-cli = "latest"
+docker-compose = "latest"
+"aqua:moby/buildkit" = "latest"
+"github:docker/docker-agent" = "latest"
+xcodegen = "latest"
+{{ end -}}
+
+# ── Test Tools ──
+bats = "latest"
+"github:charmbracelet/gum" = "latest"
+
+# ── AI Agents & CLI Tools ──
+"aqua:anthropics/claude-code" = "latest"
+gemini-cli = "latest"
+"npm:@ralph-orchestrator/ralph-cli" = "latest"
+codex = "latest"
+opencode = "latest"
+"npm:@modelcontextprotocol/inspector" = "latest"
+"npm:@mermaid-js/mermaid-cli" = "latest"
+"npm:jscpd" = "latest"
+"npm:@fission-ai/openspec" = "latest"
+biome = "latest"
+"pipx:notebooklm-mcp-cli" = "latest"
+"npm:@googleworkspace/cli" = "latest"
+"npm:@claude-flow/cli" = "latest"
+
+# ── Migrated from bun/uv globals ──
+"npm:@augmentcode/auggie" = "latest"
+"npm:@tauri-apps/cli" = "latest"
+"npm:awesome-ai" = "0.1.0-beta.7"
+"npm:@playwright/cli" = "latest"
+"npm:yaml-cli" = "latest"
+
+# ── Vercel Labs ──
+"npm:skills" = "latest"
+"npm:agent-browser" = "latest"
+"npm:just-bash" = "latest"
+"npm:dev3000" = "latest"
+"npm:portless" = "latest"
+"npm:opensrc" = "latest"
+
+# ── LangChain Ecosystem (migrated from install-langchain-cli-tools.sh) ──
+"pipx:langchain-cli" = "latest"
+"pipx:langgraph-cli" = "latest"
+"pipx:deepagents-cli" = "latest"
+"pipx:langchain-model-profiles" = "latest"
+"pipx:langgraph-gen" = "latest"
+"pipx:langsmith-fetch" = "latest"
+"pipx:langsmith-mcp-server" = "latest"
+"pipx:mcpdoc" = "latest"
+"npm:create-agent-chat-app" = "latest"
+"npm:create-langchain-integration" = "latest"
+"npm:create-langgraph" = "latest"
+"npm:@langchain/langgraph-checkpoint-validation" = "latest"
+"npm:@langchain/langgraph-cli" = "latest"
+"npm:@langchain/langgraph-ui" = "latest"
+"npm:openwork" = "latest"
+
+# ── Agent Stack (migrated from install-agent-stack.sh) ──
+"pipx:aider-chat" = "latest"
+"pipx:skypilot" = { version = "latest", extras = "aws" }
+"pipx:skillport" = "latest"
+"pipx:specify-cli" = "latest"
+
+# ── TypeScript/LSP Tooling ──
+"npm:pyright" = "latest"
+"npm:typescript" = "latest"
+"npm:typescript-language-server" = "latest"
+
+# ── Kubernetes ──
+kubectl = "latest"
+helm = "latest"
+eksctl = "latest"
+k9s = "latest"
+kubectx = "latest"
+stern = "latest"
+
+[tool_alias]
+devcontainer = "npm:@devcontainers/cli"
+
+[hooks]
+postinstall = "mise lock"

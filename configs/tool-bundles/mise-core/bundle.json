@@ -1,0 +1,14 @@
+{
+  "id": "bundle-mise-core-starter",
+  "domain_id": "mise-core",
+  "name": "Mise Core Starter Bundle",
+  "description": "Starter policy bundle for mise-first global runtime and CLI authority.",
+  "preset_ids": ["preset-mise-core"],
+  "primary_manifest": "mise.toml",
+  "included_files": ["mise.toml"],
+  "reference_source_ids": ["mise-docs", "mise-cookbook", "mise-registry-docs"],
+  "notes": [
+    "Starter bundles are repo-scoped scaffolds, not host-global installers.",
+    "The owning domain team decides when companion manifests or lockfiles are required."
+  ]
+}

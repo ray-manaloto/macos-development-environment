@@ -1,0 +1,598 @@
+{
+  "version": 4,
+  "declarative_registry": {
+    "top_level_authority": "mise",
+    "global_source_of_truth": "/Users/rmanaloto/.config/mise/config.toml",
+    "modernization_matrix": "configs/mde-modernization-matrix.json"
+  },
+  "cache_defaults": {
+    "reuse_caches_by_default": true,
+    "cold_install_guidance_allowed": false,
+    "preferred_environment_contract": [
+      "UV_CACHE_DIR",
+      "PIPX_HOME",
+      "PIPX_BIN_DIR",
+      "BUN_INSTALL",
+      "GOCACHE",
+      "GOMODCACHE",
+      "CARGO_HOME",
+      "RUSTUP_HOME"
+    ]
+  },
+  "ownership_rules": [
+    {
+      "tool_class": "global-runtime",
+      "owner": "mise",
+      "source_of_truth": "/Users/rmanaloto/.config/mise/config.toml"
+    },
+    {
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "source_of_truth": "/Users/rmanaloto/.config/mise/config.toml"
+    },
+    {
+      "tool_class": "repo-js-library",
+      "owner": "native-manifest",
+      "source_of_truth": "package.json / bun.lock"
+    },
+    {
+      "tool_class": "repo-python-library",
+      "owner": "native-manifest",
+      "source_of_truth": "pyproject.toml / uv.lock / pixi"
+    },
+    {
+      "tool_class": "repo-rust-or-go-dependency",
+      "owner": "native-manifest",
+      "source_of_truth": "Cargo.toml / go.mod"
+    },
+    {
+      "tool_class": "devcontainer-package",
+      "owner": "devcontainer-config",
+      "source_of_truth": ".devcontainer / image config"
+    },
+    {
+      "tool_class": "system-exception",
+      "owner": "exception-registry",
+      "source_of_truth": "configs/mde-install-exceptions.json"
+    }
+  ],
+  "tools": [
+    {
+      "id": "python",
+      "command": "python",
+      "tool_class": "global-runtime",
+      "owner": "mise",
+      "preflight_required": true,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "python-pixi-uv",
+      "domain_team_id": "mde-python-pixi-uv-domain-team",
+      "project_authority": "pixi.toml plus pixi.lock, with pyproject.toml [tool.pixi] only when package metadata is required",
+      "global_cli_authority_mode": "domain decision required between repo pixi bundle, pyproject tool.pixi, pixi-global manifest, and mise managed CLIs",
+      "reference_bundle_id": "python-pixi-uv",
+      "preset_bundle_id": "preset-python-pixi-uv",
+      "cache_contract": [
+        "PIXI_HOME",
+        "UV_CACHE_DIR",
+        "PIP_CACHE_DIR"
+      ],
+      "derived_from_authority": "configs/tool-bundles/python-pixi-uv/pixi.toml"
+    },
+    {
+      "id": "node",
+      "command": "node",
+      "tool_class": "global-runtime",
+      "owner": "mise",
+      "preflight_required": true,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "javascript-typescript",
+      "domain_team_id": "mde-javascript-typescript-domain-team",
+      "project_authority": "package.json plus lockfile and mise npm backend declarations for global CLIs",
+      "global_cli_authority_mode": "mise npm backend declarations",
+      "reference_bundle_id": "javascript-typescript",
+      "preset_bundle_id": "preset-javascript-typescript",
+      "cache_contract": [
+        "BUN_INSTALL",
+        "npm cache"
+      ],
+      "derived_from_authority": "configs/tool-bundles/javascript-typescript/package.json"
+    },
+    {
+      "id": "bun",
+      "command": "bun",
+      "tool_class": "global-runtime",
+      "owner": "mise",
+      "preflight_required": true,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "javascript-typescript",
+      "domain_team_id": "mde-javascript-typescript-domain-team",
+      "project_authority": "package.json plus lockfile and mise npm backend declarations for global CLIs",
+      "global_cli_authority_mode": "mise npm backend declarations",
+      "reference_bundle_id": "javascript-typescript",
+      "preset_bundle_id": "preset-javascript-typescript",
+      "cache_contract": [
+        "BUN_INSTALL",
+        "npm cache"
+      ],
+      "derived_from_authority": "configs/tool-bundles/javascript-typescript/package.json"
+    },
+    {
+      "id": "go",
+      "command": "go",
+      "tool_class": "global-runtime",
+      "owner": "mise",
+      "preflight_required": true,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "go",
+      "domain_team_id": "mde-go-domain-team",
+      "project_authority": "go.mod and go.sum with mise runtime declarations for the Go toolchain",
+      "global_cli_authority_mode": "mise go backend declarations or recorded domain decision",
+      "reference_bundle_id": "go",
+      "preset_bundle_id": "preset-go",
+      "cache_contract": [
+        "GOCACHE",
+        "GOMODCACHE"
+      ],
+      "derived_from_authority": "configs/tool-bundles/go/go.mod"
+    },
+    {
+      "id": "rustc",
+      "command": "rustc",
+      "tool_class": "global-runtime",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "rust",
+      "domain_team_id": "mde-rust-domain-team",
+      "project_authority": "Cargo.toml and Cargo.lock with mise runtime declarations for Rust and cargo",
+      "global_cli_authority_mode": "mise cargo backend declarations or recorded domain decision",
+      "reference_bundle_id": "rust",
+      "preset_bundle_id": "preset-rust",
+      "cache_contract": [
+        "CARGO_HOME",
+        "RUSTUP_HOME"
+      ],
+      "derived_from_authority": "configs/tool-bundles/rust/Cargo.toml"
+    },
+    {
+      "id": "uv",
+      "command": "uv",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": true,
+      "cache_profile": "python-uv",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "python-pixi-uv",
+      "domain_team_id": "mde-python-pixi-uv-domain-team",
+      "project_authority": "pixi.toml plus pixi.lock, with pyproject.toml [tool.pixi] only when package metadata is required",
+      "global_cli_authority_mode": "domain decision required between repo pixi bundle, pyproject tool.pixi, pixi-global manifest, and mise managed CLIs",
+      "reference_bundle_id": "python-pixi-uv",
+      "preset_bundle_id": "preset-python-pixi-uv",
+      "cache_contract": [
+        "PIXI_HOME",
+        "UV_CACHE_DIR",
+        "PIP_CACHE_DIR"
+      ],
+      "derived_from_authority": "configs/tool-bundles/python-pixi-uv/pixi.toml"
+    },
+    {
+      "id": "pixi",
+      "command": "pixi",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": true,
+      "cache_profile": "python-uv",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "python-pixi-uv",
+      "domain_team_id": "mde-python-pixi-uv-domain-team",
+      "project_authority": "pixi.toml plus pixi.lock, with pyproject.toml [tool.pixi] only when package metadata is required",
+      "global_cli_authority_mode": "domain decision required between repo pixi bundle, pyproject tool.pixi, pixi-global manifest, and mise managed CLIs",
+      "reference_bundle_id": "python-pixi-uv",
+      "preset_bundle_id": "preset-python-pixi-uv",
+      "cache_contract": [
+        "PIXI_HOME",
+        "UV_CACHE_DIR",
+        "PIP_CACHE_DIR"
+      ],
+      "derived_from_authority": "configs/tool-bundles/python-pixi-uv/pixi.toml"
+    },
+    {
+      "id": "codex",
+      "command": "codex",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": true,
+      "cache_profile": "node-bun-npm",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "javascript-typescript",
+      "domain_team_id": "mde-javascript-typescript-domain-team",
+      "project_authority": "package.json plus lockfile and mise npm backend declarations for global CLIs",
+      "global_cli_authority_mode": "mise npm backend declarations",
+      "reference_bundle_id": "javascript-typescript",
+      "preset_bundle_id": "preset-javascript-typescript",
+      "cache_contract": [
+        "BUN_INSTALL",
+        "npm cache"
+      ],
+      "derived_from_authority": "configs/tool-bundles/javascript-typescript/package.json"
+    },
+    {
+      "id": "devcontainer",
+      "command": "devcontainer",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": true,
+      "cache_profile": "node-bun-npm",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "docker",
+      "domain_team_id": "mde-docker-domain-team",
+      "project_authority": "Dockerfile plus compose and devcontainer config with mise task wrappers",
+      "global_cli_authority_mode": "task oriented authority with Docker and devcontainer runtime declarations",
+      "reference_bundle_id": "docker",
+      "preset_bundle_id": "preset-docker",
+      "cache_contract": [
+        "BUILDKIT_INLINE_CACHE",
+        "docker layer cache"
+      ],
+      "derived_from_authority": "configs/tool-bundles/docker/compose.yaml"
+    },
+    {
+      "id": "gemini",
+      "command": "gemini",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "node-bun-npm",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "javascript-typescript",
+      "domain_team_id": "mde-javascript-typescript-domain-team",
+      "project_authority": "package.json plus lockfile and mise npm backend declarations for global CLIs",
+      "global_cli_authority_mode": "mise npm backend declarations",
+      "reference_bundle_id": "javascript-typescript",
+      "preset_bundle_id": "preset-javascript-typescript",
+      "cache_contract": [
+        "BUN_INSTALL",
+        "npm cache"
+      ],
+      "derived_from_authority": "configs/tool-bundles/javascript-typescript/package.json"
+    },
+    {
+      "id": "claude",
+      "command": "claude",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "node-bun-npm",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "javascript-typescript",
+      "domain_team_id": "mde-javascript-typescript-domain-team",
+      "project_authority": "package.json plus lockfile and mise npm backend declarations for global CLIs",
+      "global_cli_authority_mode": "mise npm backend declarations",
+      "reference_bundle_id": "javascript-typescript",
+      "preset_bundle_id": "preset-javascript-typescript",
+      "cache_contract": [
+        "BUN_INSTALL",
+        "npm cache"
+      ],
+      "derived_from_authority": "configs/tool-bundles/javascript-typescript/package.json"
+    },
+    {
+      "id": "opencode",
+      "command": "opencode",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "node-bun-npm",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "javascript-typescript",
+      "domain_team_id": "mde-javascript-typescript-domain-team",
+      "project_authority": "package.json plus lockfile and mise npm backend declarations for global CLIs",
+      "global_cli_authority_mode": "mise npm backend declarations",
+      "reference_bundle_id": "javascript-typescript",
+      "preset_bundle_id": "preset-javascript-typescript",
+      "cache_contract": [
+        "BUN_INSTALL",
+        "npm cache"
+      ],
+      "derived_from_authority": "configs/tool-bundles/javascript-typescript/package.json"
+    },
+    {
+      "id": "mcp-inspector",
+      "command": "mcp-inspector",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "node-bun-npm",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "javascript-typescript",
+      "domain_team_id": "mde-javascript-typescript-domain-team",
+      "project_authority": "package.json plus lockfile and mise npm backend declarations for global CLIs",
+      "global_cli_authority_mode": "mise npm backend declarations",
+      "reference_bundle_id": "javascript-typescript",
+      "preset_bundle_id": "preset-javascript-typescript",
+      "cache_contract": [
+        "BUN_INSTALL",
+        "npm cache"
+      ],
+      "derived_from_authority": "configs/tool-bundles/javascript-typescript/package.json"
+    },
+    {
+      "id": "langchain-cli",
+      "command": "langchain",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "python-pipx",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "python-pixi-uv",
+      "domain_team_id": "mde-python-pixi-uv-domain-team",
+      "project_authority": "pixi.toml plus pixi.lock, with pyproject.toml [tool.pixi] only when package metadata is required",
+      "global_cli_authority_mode": "domain decision required between repo pixi bundle, pyproject tool.pixi, pixi-global manifest, and mise managed CLIs",
+      "reference_bundle_id": "python-pixi-uv",
+      "preset_bundle_id": "preset-python-pixi-uv",
+      "cache_contract": [
+        "PIXI_HOME",
+        "UV_CACHE_DIR",
+        "PIP_CACHE_DIR"
+      ],
+      "derived_from_authority": "configs/tool-bundles/python-pixi-uv/pixi.toml"
+    },
+    {
+      "id": "langgraph-cli",
+      "command": "langgraph",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "python-pipx",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "python-pixi-uv",
+      "domain_team_id": "mde-python-pixi-uv-domain-team",
+      "project_authority": "pixi.toml plus pixi.lock, with pyproject.toml [tool.pixi] only when package metadata is required",
+      "global_cli_authority_mode": "domain decision required between repo pixi bundle, pyproject tool.pixi, pixi-global manifest, and mise managed CLIs",
+      "reference_bundle_id": "python-pixi-uv",
+      "preset_bundle_id": "preset-python-pixi-uv",
+      "cache_contract": [
+        "PIXI_HOME",
+        "UV_CACHE_DIR",
+        "PIP_CACHE_DIR"
+      ],
+      "derived_from_authority": "configs/tool-bundles/python-pixi-uv/pixi.toml"
+    },
+    {
+      "id": "langsmith-mcp-server",
+      "command": "langsmith-mcp-server",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "python-pipx",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "python-pixi-uv",
+      "domain_team_id": "mde-python-pixi-uv-domain-team",
+      "project_authority": "pixi.toml plus pixi.lock, with pyproject.toml [tool.pixi] only when package metadata is required",
+      "global_cli_authority_mode": "domain decision required between repo pixi bundle, pyproject tool.pixi, pixi-global manifest, and mise managed CLIs",
+      "reference_bundle_id": "python-pixi-uv",
+      "preset_bundle_id": "preset-python-pixi-uv",
+      "cache_contract": [
+        "PIXI_HOME",
+        "UV_CACHE_DIR",
+        "PIP_CACHE_DIR"
+      ],
+      "derived_from_authority": "configs/tool-bundles/python-pixi-uv/pixi.toml"
+    },
+    {
+      "id": "deepagents-cli",
+      "command": "deepagents",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "python-pipx",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "python-pixi-uv",
+      "domain_team_id": "mde-python-pixi-uv-domain-team",
+      "project_authority": "pixi.toml plus pixi.lock, with pyproject.toml [tool.pixi] only when package metadata is required",
+      "global_cli_authority_mode": "domain decision required between repo pixi bundle, pyproject tool.pixi, pixi-global manifest, and mise managed CLIs",
+      "reference_bundle_id": "python-pixi-uv",
+      "preset_bundle_id": "preset-python-pixi-uv",
+      "cache_contract": [
+        "PIXI_HOME",
+        "UV_CACHE_DIR",
+        "PIP_CACHE_DIR"
+      ],
+      "derived_from_authority": "configs/tool-bundles/python-pixi-uv/pixi.toml"
+    },
+    {
+      "id": "fabric",
+      "command": "fabric",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "python-pipx",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "python-pixi-uv",
+      "domain_team_id": "mde-python-pixi-uv-domain-team",
+      "project_authority": "pixi.toml plus pixi.lock, with pyproject.toml [tool.pixi] only when package metadata is required",
+      "global_cli_authority_mode": "domain decision required between repo pixi bundle, pyproject tool.pixi, pixi-global manifest, and mise managed CLIs",
+      "reference_bundle_id": "python-pixi-uv",
+      "preset_bundle_id": "preset-python-pixi-uv",
+      "cache_contract": [
+        "PIXI_HOME",
+        "UV_CACHE_DIR",
+        "PIP_CACHE_DIR"
+      ],
+      "derived_from_authority": "configs/tool-bundles/python-pixi-uv/pixi.toml"
+    },
+    {
+      "id": "pitchfork",
+      "command": "pitchfork",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "mise-core",
+      "domain_team_id": "mde-mise-core-domain-team",
+      "project_authority": "repo .mise.toml tasks, agent runtime contracts, and generated modernization outputs",
+      "global_cli_authority_mode": "mise declarative entry",
+      "reference_bundle_id": "mise-core",
+      "preset_bundle_id": "preset-mise-core",
+      "cache_contract": [
+        "MISE_*",
+        "BUN_INSTALL"
+      ],
+      "derived_from_authority": "scripts/generate_modernization_matrix.py -> configs/mde-modernization-matrix.json"
+    },
+    {
+      "id": "hk",
+      "command": "hk",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "none",
+      "cache_policy_mandatory": false,
+      "ecosystem_domain": "mise-core",
+      "domain_team_id": "mde-mise-core-domain-team",
+      "project_authority": "repo .mise.toml tasks, agent runtime contracts, and generated modernization outputs",
+      "global_cli_authority_mode": "mise declarative entry",
+      "reference_bundle_id": "mise-core",
+      "preset_bundle_id": "preset-mise-core",
+      "cache_contract": [
+        "MISE_*",
+        "BUN_INSTALL"
+      ],
+      "derived_from_authority": "scripts/generate_modernization_matrix.py -> configs/mde-modernization-matrix.json"
+    },
+    {
+      "id": "fnox",
+      "command": "fnox",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": true,
+      "ecosystem_domain": "mise-core",
+      "domain_team_id": "mde-mise-core-domain-team",
+      "project_authority": "global /Users/rmanaloto/.config/mise/config.toml plus global /Users/rmanaloto/.config/fnox/config.toml with optional repo fnox.toml overlays",
+      "global_cli_authority_mode": "mise declarative entry",
+      "reference_bundle_id": "mise-core",
+      "preset_bundle_id": "preset-mise-core",
+      "cache_contract": [
+        "MISE_ENV_CACHE",
+        "FNOX_CONFIG_DIR",
+        "FNOX_AGE_KEY_FILE",
+        "MISE_*"
+      ],
+      "derived_from_authority": "/Users/rmanaloto/.config/mise/config.toml + /Users/rmanaloto/.config/fnox/config.toml"
+    },
+    {
+      "id": "cloudflared",
+      "command": "cloudflared",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "direnv",
+      "command": "direnv",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "pandoc",
+      "command": "pandoc",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "tmux",
+      "command": "tmux",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "xcodegen",
+      "command": "xcodegen",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "clang",
+      "command": "clang",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "docker-cli",
+      "command": "docker",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false,
+      "ecosystem_domain": "docker",
+      "domain_team_id": "mde-docker-domain-team"
+    },
+    {
+      "id": "docker-compose",
+      "command": "docker-compose",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false,
+      "ecosystem_domain": "docker",
+      "domain_team_id": "mde-docker-domain-team"
+    },
+    {
+      "id": "buildkit",
+      "command": "buildctl",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false,
+      "ecosystem_domain": "docker",
+      "domain_team_id": "mde-docker-domain-team"
+    },
+    {
+      "id": "docker-agent",
+      "command": "docker-agent",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false,
+      "ecosystem_domain": "docker",
+      "domain_team_id": "mde-docker-domain-team"
+    },
+    {
+      "id": "session-manager-plugin",
+      "command": "session-manager-plugin",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    }
+  ]
+}

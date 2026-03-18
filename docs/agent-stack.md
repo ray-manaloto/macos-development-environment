@@ -25,7 +25,7 @@ scripts/install-ai-research-skills.sh
 Install AWS + Kubernetes tools:
 
 ```bash
-scripts/install-aws-k8s-tools.sh
+uv run mde-py install aws-k8s
 ```
 
 Maintenance integration:
@@ -79,6 +79,5 @@ Optional tools (when `INCLUDE_OPTIONAL=1`):
 - `gemini` uses the MDE wrapper to run via `bunx` (isolated deps).
 - Wrapper prepends mise shims so extensions that invoke `npx` resolve the managed Node install.
 - Wrapper also sets `GITHUB_MCP_PAT` (Keychain `mde-github-mcp-pat` or `mde-github-token`, or `MDE_OP_GITHUB_TOKEN_REF`).
-- `.env` secrets auto-load from `~/.config/macos-development-environment/secrets.env` when present (set `MDE_ENV_AUTOLOAD=0` to disable).
-- oh-my-zsh auto-exports Keychain secrets when `MDE_AUTOLOAD_SECRETS=1` (default) so CLIs inherit `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `LANGSMITH_API_KEY`, `LANGSMITH_WORKSPACE_ID`, `GITHUB_TOKEN`, and `GITHUB_MCP_PAT`. Keychain values override existing env vars only when `MDE_SECRET_OVERRIDE=1`.
+- Secrets load through `mise` + `fnox`, so CLIs inherit `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `LANGSMITH_API_KEY`, `LANGSMITH_WORKSPACE_ID`, `GITHUB_TOKEN`, and `GITHUB_MCP_PAT` without a plaintext env file.
 - `mcp-toolbox` is skipped when no `tools.yaml` is present unless `MDE_GEMINI_ENABLE_MCP_TOOLBOX=1` or `--extensions` is passed.

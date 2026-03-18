@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "exceptions": [
+    {
+      "id": "docker-desktop",
+      "targets": ["docker-desktop"],
+      "allowed_installers": ["brew"],
+      "reason": "macOS desktop virtualization stack is outside mise's normal CLI ownership model",
+      "cache_policy": {
+        "cache_mechanism": "installer-managed download and image caches",
+        "cache_pruning_allowed": false
+      },
+      "review_by": "2026-06-30"
+    },
+    {
+      "id": "google-cloud-sdk",
+      "targets": ["google-cloud-sdk"],
+      "allowed_installers": ["brew"],
+      "reason": "OS-level SDK distribution still commonly relies on system installers on macOS",
+      "cache_policy": {
+        "cache_mechanism": "installer-managed download cache",
+        "cache_pruning_allowed": false
+      },
+      "review_by": "2026-06-30"
+    },
+    {
+      "id": "1password",
+      "targets": ["1password", "1password-cli"],
+      "allowed_installers": ["brew"],
+      "reason": "Desktop app and OS integration remain exception-managed on macOS",
+      "cache_policy": {
+        "cache_mechanism": "installer-managed download cache",
+        "cache_pruning_allowed": false
+      },
+      "review_by": "2026-06-30"
+    }
+  ]
+}

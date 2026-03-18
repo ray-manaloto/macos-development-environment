@@ -1,0 +1,47 @@
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+distributor:
+  ring:
+    kvstore:
+      store: inmemory
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+  chunk_idle_period: 1h
+  chunk_retain_period: 30s
+  max_transfer_retries: 0
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: s3
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+storage_config:
+  aws:
+    s3: s3://${LOKI_S3_BUCKET}
+    region: ${AWS_REGION}
+  boltdb_shipper:
+    shared_store: s3
+    active_index_directory: /loki/index
+    cache_location: /loki/cache
+    cache_ttl: 24h
+limits_config:
+  ingestion_rate_mb: 4
+  ingestion_burst_size_mb: 6
+  max_query_length: 720h
+  max_query_parallelism: 32
+  max_streams_per_user: 0
+  max_global_streams_per_user: 0
+compactor:
+  retention_enabled: true
+  retention_delete_delay: 24h
+  retention_delete_worker_count: 150
+  delete_request_cancel_period: 24h
+  working_directory: /loki/retention

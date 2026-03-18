@@ -1,0 +1,16 @@
+[workspace]
+name = "python-pixi-uv-starter"
+version = "0.1.0"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64"]
+
+[tasks]
+python-version = "python --version"
+pip-version = "pip --version"
+uv-version = "uv --version"
+check-toolchain = { depends-on = ["python-version", "pip-version", "uv-version"] }
+
+[dependencies]
+python = "3.12.*"
+uv = ">=0.10,<0.11"
+pip = ">=26,<27"

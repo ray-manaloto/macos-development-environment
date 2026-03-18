@@ -1,6 +1,6 @@
 # SkillPort Configuration
 # See: https://github.com/gotalab/skillport
 
-skills_dir: .claude/skills
+skills_dir: .agents/skills
 instructions:
   - AGENTS.md

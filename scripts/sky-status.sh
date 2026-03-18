@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/mde-secrets.sh
+source "$SCRIPT_DIR/lib/mde-secrets.sh"
+
 usage() {
   cat <<'USAGE'
-Usage: sky-status.sh [--no-aws] [--refresh] [--ttl SECONDS] [--strict]
+Usage: sky-status.sh [--no-aws] [--sky-only] [--refresh] [--ttl SECONDS] [--strict]
 
 Runs `sky status` and augments output with AWS account + EC2 details.
 
 Options:
   --no-aws    Skip AWS queries.
+  --sky-only  Show only SkyPilot-managed instances.
   --refresh   Force refresh of AWS cached output.
   --ttl       Cache TTL for AWS queries (default: 60 seconds).
   --strict    Exit non-zero when sky/aws commands fail.
@@ -16,14 +21,19 @@ USAGE
 }
 
 no_aws=0
+sky_only=0
 force_refresh=0
 strict=0
 cache_ttl="${MDE_SKY_AWS_TTL:-60}"
+MDE_SKY_KILL_STALE="${MDE_SKY_KILL_STALE:-0}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-aws)
       no_aws=1
+      ;;
+    --sky-only)
+      sky_only=1
       ;;
     --refresh)
       force_refresh=1
@@ -52,47 +62,23 @@ log() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
 }
 
+kill_stale_api_server() {
+  [[ "$MDE_SKY_KILL_STALE" == "1" ]] || return 0
+  local port="${SKY_API_PORT:-46580}"
+  # If a stale SkyPilot API server is holding the port, kill it to allow restart.
+  if lsof -i :"$port" -sTCP:LISTEN -n -P 2>/dev/null | grep -q sky; then
+    local pids
+    pids=$(lsof -i :"$port" -sTCP:LISTEN -n -P 2>/dev/null | awk 'NR>1 {print $2}' | sort -u)
+    if [[ -n "$pids" ]]; then
+      log "Killing stale SkyPilot API server on port $port (PIDs: $pids)"
+      kill $pids 2>/dev/null || true
+    fi
+  fi
+}
+
 setup_path() {
   local home="${HOME:-/Users/rmanaloto}"
   export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-}
-
-load_env_file_secrets() {
-  local env_file="${MDE_ENV_FILE:-$HOME/.config/macos-development-environment/secrets.env}"
-  local override="${MDE_ENV_OVERRIDE:-1}"
-  local line key value
-
-  if [[ "${MDE_ENV_AUTOLOAD:-1}" != "1" ]]; then
-    return 0
-  fi
-
-  if [[ ! -f "$env_file" ]]; then
-    return 0
-  fi
-
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    line="${line#"${line%%[![:space:]]*}"}"
-    line="${line%"${line##*[![:space:]]}"}"
-    [[ -z "$line" ]] && continue
-    [[ "$line" == \#* ]] && continue
-    line="${line#export }"
-    key="${line%%=*}"
-    value="${line#*=}"
-    key="${key%"${key##*[![:space:]]}"}"
-    key="${key#"${key%%[![:space:]]*}"}"
-    [[ -z "$key" ]] && continue
-    if [[ "$override" != "1" && -n "${!key:-}" ]]; then
-      continue
-    fi
-    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
-      value="${value#\"}"
-      value="${value%\"}"
-    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
-      value="${value#\'}"
-      value="${value%\'}"
-    fi
-    export "$key"="$value"
-  done < "$env_file"
 }
 
 file_mtime() {
@@ -127,7 +113,11 @@ sky_status() {
 
 aws_summary() {
   local cache_dir="$HOME/Library/Caches/com.ray-manaloto.macos-dev-maintenance"
-  local cache_file="$cache_dir/sky-aws-status.txt"
+  local cache_suffix="all"
+  if [[ "$sky_only" -eq 1 ]]; then
+    cache_suffix="sky-only"
+  fi
+  local cache_file="$cache_dir/sky-aws-status-${cache_suffix}.txt"
   local now
   local mtime
 
@@ -169,7 +159,7 @@ aws_summary() {
     fi
 
     local identity
-    identity="$(aws sts get-caller-identity --query 'Account,Arn,UserId' --output text 2>/dev/null || true)"
+    identity="$(aws sts get-caller-identity --query '[Account,Arn,UserId]' --output text 2>/dev/null || true)"
     if [[ -n "$identity" ]]; then
       local account arn user
       IFS=$'\t' read -r account arn user <<< "$identity"
@@ -181,12 +171,28 @@ aws_summary() {
       block_status=1
     fi
 
-    log "EC2 instances (pending/running):"
+    local sky_filter=()
+    if [[ "$sky_only" -eq 1 ]]; then
+      sky_filter+=(Name=tag:Name,Values=sky-*)
+      log "EC2 instances (pending/running, SkyPilot only):"
+    else
+      log "EC2 instances (pending/running):"
+    fi
+
     if ! aws ec2 describe-instances \
-      --filters Name=instance-state-name,Values=pending,running \
+      --filters Name=instance-state-name,Values=pending,running "${sky_filter[@]}" \
       --query 'Reservations[].Instances[].{Id:InstanceId,State:State.Name,Type:InstanceType,AZ:Placement.AvailabilityZone,Name:Tags[?Key==`Name`]|[0].Value,Launch:LaunchTime}' \
       --output table 2>/dev/null; then
       log "WARN: EC2 describe-instances failed."
+      block_status=1
+    fi
+
+    log "Large instance warning (size >= xlarge):"
+    if ! aws ec2 describe-instances \
+      --filters Name=instance-state-name,Values=pending,running "${sky_filter[@]}" \
+      --query 'Reservations[].Instances[] | [?contains(InstanceType, `xlarge`) || contains(InstanceType, `metal`)].{Id:InstanceId,State:State.Name,Type:InstanceType,AZ:Placement.AvailabilityZone,Name:Tags[?Key==`Name`]|[0].Value,Launch:LaunchTime,Hint:`large instance; check on-demand price`}' \
+      --output table 2>/dev/null; then
+      log "WARN: EC2 large-instance scan failed."
       block_status=1
     fi
   } > "$tmp_file"
@@ -203,7 +209,8 @@ aws_summary() {
 
 main() {
   setup_path
-  load_env_file_secrets
+  kill_stale_api_server
+  mde_load_secrets
 
   local status=0
 

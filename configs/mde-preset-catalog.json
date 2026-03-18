@@ -1,0 +1,397 @@
+{
+  "version": 1,
+  "generated_at": "2026-03-15",
+  "presets": [
+    {
+      "id": "preset-mde-foundation",
+      "name": "MDE Foundation",
+      "description": "Baseline environment authority, shell/editor conventions, and container workflow scaffolding for this repo.",
+      "domain_ids": [
+        "mise-core",
+        "docker",
+        "shell-editor"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/mise-core",
+        "configs/tool-bundles/docker",
+        "configs/tool-bundles/shell-editor"
+      ],
+      "reference_source_groups": [
+        "mise-core",
+        "docker",
+        "shell-editor"
+      ],
+      "learning_record_ids": [
+        "domain-mise-core",
+        "domain-docker",
+        "domain-shell-editor"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/mise-core",
+      "starter_files": [
+        "README.md",
+        "mise.toml"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/docker.html",
+        "https://mise.jdx.dev/mise-cookbook/neovim.html",
+        "https://mise.jdx.dev/mise-cookbook/presets.html",
+        "https://mise.jdx.dev/mise-cookbook/shell-tricks.html"
+      ]
+    },
+    {
+      "id": "preset-mise-core",
+      "name": "Mise Core Starter",
+      "description": "Starter policy bundle for mise-first runtime and CLI authority.",
+      "domain_ids": [
+        "mise-core"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/mise-core"
+      ],
+      "reference_source_groups": [
+        "mise-core"
+      ],
+      "learning_record_ids": [
+        "domain-mise-core"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/mise-core",
+      "starter_files": [
+        "README.md",
+        "mise.toml"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/presets.html"
+      ]
+    },
+    {
+      "id": "preset-python-pixi-uv",
+      "name": "Python Pixi UV Starter",
+      "description": "Pixi-first Python starter bundle with a committed lockfile and UV companion guidance.",
+      "domain_ids": [
+        "python-pixi-uv"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/python-pixi-uv"
+      ],
+      "reference_source_groups": [
+        "python-pixi-uv"
+      ],
+      "learning_record_ids": [
+        "domain-python-pixi-uv"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/python-pixi-uv",
+      "starter_files": [
+        "README.md",
+        "pixi.lock",
+        "pixi.toml"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/python.html"
+      ]
+    },
+    {
+      "id": "preset-python-maintainer",
+      "name": "Python Maintainer",
+      "description": "Python maintainer preset for packaging, linting, and test ergonomics.",
+      "domain_ids": [
+        "python-pixi-uv",
+        "shell-editor"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/python-pixi-uv",
+        "configs/tool-bundles/shell-editor"
+      ],
+      "reference_source_groups": [
+        "python-pixi-uv",
+        "shell-editor"
+      ],
+      "learning_record_ids": [
+        "domain-python-pixi-uv",
+        "domain-shell-editor"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/python-pixi-uv",
+      "starter_files": [
+        "README.md",
+        "pixi.lock",
+        "pixi.toml"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/neovim.html",
+        "https://mise.jdx.dev/mise-cookbook/python.html",
+        "https://mise.jdx.dev/mise-cookbook/shell-tricks.html"
+      ]
+    },
+    {
+      "id": "preset-javascript-typescript",
+      "name": "JavaScript TypeScript Starter",
+      "description": "Starter bundle for JS/TS repo manifests, compiler settings, and runtime notes.",
+      "domain_ids": [
+        "javascript-typescript"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/javascript-typescript"
+      ],
+      "reference_source_groups": [
+        "javascript-typescript"
+      ],
+      "learning_record_ids": [
+        "domain-javascript-typescript"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/javascript-typescript",
+      "starter_files": [
+        "README.md",
+        "bun.lock",
+        "package.json",
+        "tsconfig.json"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/nodejs.html"
+      ]
+    },
+    {
+      "id": "preset-web-cli-authoring",
+      "name": "Web CLI Authoring",
+      "description": "Combined authoring preset for JS/TS CLIs plus shell/editor scaffolding.",
+      "domain_ids": [
+        "javascript-typescript",
+        "shell-editor"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/javascript-typescript",
+        "configs/tool-bundles/shell-editor"
+      ],
+      "reference_source_groups": [
+        "javascript-typescript",
+        "shell-editor"
+      ],
+      "learning_record_ids": [
+        "domain-javascript-typescript",
+        "domain-shell-editor"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/javascript-typescript",
+      "starter_files": [
+        "README.md",
+        "bun.lock",
+        "package.json",
+        "tsconfig.json"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/neovim.html",
+        "https://mise.jdx.dev/mise-cookbook/nodejs.html",
+        "https://mise.jdx.dev/mise-cookbook/shell-tricks.html"
+      ]
+    },
+    {
+      "id": "preset-ruby",
+      "name": "Ruby Starter",
+      "description": "Starter bundle for Ruby runtime, Bundler, and gem packaging conventions.",
+      "domain_ids": [
+        "ruby"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/ruby"
+      ],
+      "reference_source_groups": [
+        "ruby"
+      ],
+      "learning_record_ids": [
+        "domain-ruby"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/ruby",
+      "starter_files": [
+        "Gemfile",
+        "README.md"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/ruby.html"
+      ]
+    },
+    {
+      "id": "preset-go",
+      "name": "Go Starter",
+      "description": "Starter bundle for Go modules, formatting, and workspace policy.",
+      "domain_ids": [
+        "go"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/go"
+      ],
+      "reference_source_groups": [
+        "go"
+      ],
+      "learning_record_ids": [
+        "domain-go"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/go",
+      "starter_files": [
+        "README.md",
+        "go.mod"
+      ],
+      "cookbook_pages": []
+    },
+    {
+      "id": "preset-rust",
+      "name": "Rust Starter",
+      "description": "Starter bundle for Cargo, fmt/clippy, and Rust toolchain conventions.",
+      "domain_ids": [
+        "rust"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/rust"
+      ],
+      "reference_source_groups": [
+        "rust"
+      ],
+      "learning_record_ids": [
+        "domain-rust"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/rust",
+      "starter_files": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "README.md",
+        "src/main.rs"
+      ],
+      "cookbook_pages": []
+    },
+    {
+      "id": "preset-cpp",
+      "name": "C and C++ Starter",
+      "description": "Starter bundle for CMake-based C/C++ projects with package-manager guidance.",
+      "domain_ids": [
+        "cpp"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/cpp"
+      ],
+      "reference_source_groups": [
+        "cpp"
+      ],
+      "learning_record_ids": [
+        "domain-cpp"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/cpp",
+      "starter_files": [
+        "CMakeLists.txt",
+        "CMakePresets.json",
+        "README.md",
+        "main.cpp",
+        "src/main.cpp"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/cpp.html"
+      ]
+    },
+    {
+      "id": "preset-docker",
+      "name": "Docker Starter",
+      "description": "Starter bundle for Dockerfiles, Compose, and buildx-oriented workflows.",
+      "domain_ids": [
+        "docker"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/docker"
+      ],
+      "reference_source_groups": [
+        "docker"
+      ],
+      "learning_record_ids": [
+        "domain-docker"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/docker",
+      "starter_files": [
+        "Dockerfile",
+        "README.md",
+        "compose.yaml"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/docker.html"
+      ]
+    },
+    {
+      "id": "preset-terraform",
+      "name": "Terraform Starter",
+      "description": "Starter bundle for HCL authoring, provider locking, and validation.",
+      "domain_ids": [
+        "terraform"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/terraform"
+      ],
+      "reference_source_groups": [
+        "terraform"
+      ],
+      "learning_record_ids": [
+        "domain-terraform"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/terraform",
+      "starter_files": [
+        "README.md",
+        "main.tf",
+        "versions.tf"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/terraform.html"
+      ]
+    },
+    {
+      "id": "preset-platform-iac",
+      "name": "Platform IaC",
+      "description": "Combined infrastructure preset for Terraform and Docker-centric workflows.",
+      "domain_ids": [
+        "terraform",
+        "docker"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/terraform",
+        "configs/tool-bundles/docker"
+      ],
+      "reference_source_groups": [
+        "terraform",
+        "docker"
+      ],
+      "learning_record_ids": [
+        "domain-terraform",
+        "domain-docker"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/terraform",
+      "starter_files": [
+        "README.md",
+        "main.tf",
+        "versions.tf"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/docker.html",
+        "https://mise.jdx.dev/mise-cookbook/terraform.html"
+      ]
+    },
+    {
+      "id": "preset-shell-editor",
+      "name": "Shell and Editor Starter",
+      "description": "Starter bundle for shell linting, formatting, and editor-facing repo defaults.",
+      "domain_ids": [
+        "shell-editor"
+      ],
+      "bundle_paths": [
+        "configs/tool-bundles/shell-editor"
+      ],
+      "reference_source_groups": [
+        "shell-editor"
+      ],
+      "learning_record_ids": [
+        "domain-shell-editor"
+      ],
+      "primary_bundle_path": "configs/tool-bundles/shell-editor",
+      "starter_files": [
+        ".editorconfig",
+        ".shellcheckrc",
+        "README.md",
+        "mise.toml"
+      ],
+      "cookbook_pages": [
+        "https://mise.jdx.dev/mise-cookbook/neovim.html",
+        "https://mise.jdx.dev/mise-cookbook/shell-tricks.html"
+      ]
+    }
+  ]
+}

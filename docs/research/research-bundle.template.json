@@ -1,0 +1,13 @@
+{
+  "date": "YYYY-MM-DD",
+  "summary": {
+    "source_classes": ["github", "social", "curated"],
+    "repository_count": 10,
+    "non_repo_artifact_count": 20,
+    "notes": "Populate with measured counts from discovery/mining outputs."
+  },
+  "discovery_records": [],
+  "pattern_records": [],
+  "decision_records": [],
+  "acceptance_records": []
+}

@@ -1,0 +1,32 @@
+team:
+  id: mde-pipeline-fixes-team
+  name: Pipeline Fixes Team
+  goal: Fix mise global config and pass all integration tests.
+  output_dir: reports/pipeline-fixes
+  shared_artifacts_dir: .artifacts/pipeline-fixes
+  repo_root: .
+  workflow_skill: superpowers:subagent-driven-development
+
+subagents:
+  - id: mise-fixer
+    stage: 1
+    objective: Remove broken pipx tools from global mise config, fix includes warning.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, superpowers:systematic-debugging]
+    required_plugins: [superpowers]
+    gate_criteria:
+      - "mise doctor exits with zero WARN lines"
+    output_files: []
+    prompt_file: prompts/agent-team/pipeline-fixes/mise-fixer.md
+
+  - id: integration-tester
+    stage: 2
+    objective: Run all integration tests, fix any failures.
+    required_skills: [skills/mde-agent-runtime-contract, superpowers:test-driven-development, superpowers:verification-before-completion]
+    required_plugins: [superpowers]
+    gate_criteria:
+      - "uv run pytest tests/mde/test_mise_tasks.py passes"
+      - "uv run pytest tests/mde/test_chezmoi.py passes"
+      - "uv run pytest tests/mde/test_type_check.py passes"
+    output_files:
+      - "reports/pipeline-fixes/{{date}}-integration-results.md"
+    prompt_file: prompts/agent-team/pipeline-fixes/integration-tester.md

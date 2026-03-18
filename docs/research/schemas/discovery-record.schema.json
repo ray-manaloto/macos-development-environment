@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DiscoveryRecord",
+  "type": "object",
+  "required": ["source", "source_class", "query", "url", "hit_count", "shortlist_reason"],
+  "properties": {
+    "source": {"type": "string"},
+    "source_class": {"type": "string", "enum": ["github", "social", "curated", "blog", "news", "x"]},
+    "query": {"type": "string"},
+    "url": {"type": "string"},
+    "hit_count": {"type": "integer", "minimum": 0},
+    "shortlist_reason": {"type": "string"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+  },
+  "additionalProperties": false
+}

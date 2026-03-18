@@ -1,0 +1,16 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+# Brewfile hash: {{ include "Brewfile.tmpl" | sha256sum }}
+set -euo pipefail
+
+if ! command -v brew >/dev/null 2>&1; then
+  echo "brew not found; skipping Brewfile install" >&2
+  exit 0
+fi
+
+export HOMEBREW_NO_AUTO_UPDATE=1
+
+brew bundle --file=/dev/stdin <<'EOF'
+{{ include "Brewfile.tmpl" }}
+EOF
+{{ end -}}

@@ -6,17 +6,16 @@ run heavy agent tasks in the cloud.
 ## Install / Update
 
 ```bash
-scripts/optimize-tmux.sh
+uv run mde-py install tmux
 ```
 
 Notes:
 - On macOS, Homebrew tmux is recommended for clipboard integration.
-- Force pixi with `TMUX_INSTALL=pixi scripts/optimize-tmux.sh`.
 - TPM plugins are installed automatically (no prefix + I needed).
 - Verification: `scripts/verify-tmux-setup.sh` (runs in weekly validation).
 
 ## Tmux Config
-The script writes `~/.tmux.conf` from `templates/tmux.conf`. It only replaces
+Chezmoi manages `~/.tmux.conf` from `.chezmoisource/dot_tmux.conf`. It only replaces
 files that are already managed (contain the managed header). Use
 `TMUX_FORCE_CONF=1` to override. A timestamped backup is created when
 overwriting. Highlights:
@@ -31,10 +30,16 @@ overwriting. Highlights:
 Template:
 - `templates/agent_cloud.yaml`
 
-Setup (AWS credentials from secrets.env):
+Setup (AWS credentials from `fnox`):
 - `scripts/setup-skypilot-aws.sh --init-config`
   - Creates `agent_cloud.yaml` in the repo root (copy of template).
   - Runs `sky check aws` to validate credentials.
+
+Required keys in `fnox`:
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `AWS_DEFAULT_REGION`
 
 Example commands:
 - `sky launch -d -c agent-cluster agent_cloud.yaml`

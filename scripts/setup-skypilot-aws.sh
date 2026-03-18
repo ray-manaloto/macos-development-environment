@@ -7,7 +7,7 @@ usage() {
   cat <<'USAGE'
 Usage: setup-skypilot-aws.sh [--no-check] [--init-config] [--force]
 
-Loads AWS credentials from the MDE secrets env file and validates SkyPilot
+Loads AWS credentials from the mise + fnox environment and validates SkyPilot
 access to AWS.
 
 Options:
@@ -56,6 +56,9 @@ setup_path() {
 
 setup_path
 
+# shellcheck source=scripts/lib/mde-secrets.sh
+source "$SCRIPT_DIR/lib/mde-secrets.sh"
+
 ensure_aws_credentials() {
   local access_key="${AWS_ACCESS_KEY_ID:-}"
   local secret_key="${AWS_SECRET_ACCESS_KEY:-}"
@@ -102,53 +105,17 @@ ensure_aws_credentials() {
   log "AWS credentials written to $creds_file"
 }
 
-load_env_file() {
-  local env_file="$1"
-  local line key value
-
-  if [[ ! -f "$env_file" ]]; then
-    return 1
-  fi
-
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    line="${line#"${line%%[![:space:]]*}"}"
-    line="${line%"${line##*[![:space:]]}"}"
-    [[ -z "$line" ]] && continue
-    [[ "$line" == \#* ]] && continue
-    line="${line#export }"
-    key="${line%%=*}"
-    value="${line#*=}"
-    key="${key%"${key##*[![:space:]]}"}"
-    key="${key#"${key%%[![:space:]]*}"}"
-    [[ -z "$key" ]] && continue
-    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
-      value="${value#\"}"
-      value="${value%\"}"
-    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
-      value="${value#\'}"
-      value="${value%\'}"
-    fi
-    export "$key"="$value"
-  done < "$env_file"
-}
-
 require_env() {
   local key="$1"
   if [[ -z "${!key:-}" ]]; then
-    log "Missing $key (set it in secrets.env)."
+    log "Missing $key in the mise + fnox environment."
     return 1
   fi
   return 0
 }
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-export MDE_ENV_FILE="${MDE_ENV_FILE:-$HOME/.config/macos-development-environment/secrets.env}"
-
-if ! load_env_file "$MDE_ENV_FILE"; then
-  log "Missing secrets file: $MDE_ENV_FILE"
-  log "Run: $repo_root/scripts/setup-secrets-env.sh --open"
-  exit 1
-fi
+mde_load_secrets
 
 failures=0
 require_env AWS_ACCESS_KEY_ID || failures=1

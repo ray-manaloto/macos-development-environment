@@ -20,14 +20,13 @@ Actions (Kubernetes):
   k8s-update    Re-apply OpenLIT manifest
   k8s-status    Show OpenLIT pods/services
   k8s-down      Delete OpenLIT manifest
-  k8s-env       Write env vars (requires --endpoint)
+  k8s-env       Persist env vars into fnox (requires --endpoint)
 
 Options:
   --cluster NAME        SkyPilot cluster name (default: openlit-cluster)
   --config PATH         SkyPilot config path (default: configs/openlit-skypilot.yaml)
-  --env-file PATH       Env file to update (default: ~/.config/macos-development-environment/secrets.env)
   --endpoint URL        Override endpoint for env output
-  --write-env           Write env vars to the env file
+  --write-env           Persist env vars into fnox keychain
   --k8s-manifest PATH   Kubernetes manifest for OpenLIT
   --namespace NAME      Kubernetes namespace (default: openlit)
 USAGE
@@ -44,7 +43,6 @@ cluster="${OPENLIT_CLUSTER:-openlit-cluster}"
 config_path=""
 write_env=0
 endpoint_override=""
-env_file="${MDE_ENV_FILE:-$HOME/.config/macos-development-environment/secrets.env}"
 
 k8s_manifest="${OPENLIT_K8S_MANIFEST:-}"
 namespace="${OPENLIT_K8S_NAMESPACE:-openlit}"
@@ -57,10 +55,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --config)
       config_path="$2"
-      shift
-      ;;
-    --env-file)
-      env_file="$2"
       shift
       ;;
     --endpoint)
@@ -100,29 +94,14 @@ setup_path() {
   export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 }
 
-set_env_line() {
-  local file="$1"
-  local key="$2"
-  local value="$3"
-  local tmp
+# shellcheck source=scripts/lib/mde-secrets.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/mde-secrets.sh"
 
-  [[ -z "$value" ]] && return 1
-
-  tmp="$(mktemp)"
-  if [[ -f "$file" ]]; then
-    grep -v "^${key}=" "$file" > "$tmp" || true
-  fi
-  printf '%s=%s\n' "$key" "$value" >> "$tmp"
-  mv "$tmp" "$file"
-  chmod 600 "$file" 2>/dev/null || true
-}
-
-get_env_value() {
-  local file="$1"
-  local key="$2"
-  if [[ -f "$file" ]]; then
-    grep -E "^${key}=" "$file" 2>/dev/null | tail -n1 | sed -e "s/^${key}=//" || true
-  fi
+persist_fnox_value() {
+  local key="$1"
+  local value="$2"
+  [[ -z "$value" ]] && return 0
+  fnox set "$key" "$value" --provider keychain >/dev/null
 }
 
 ensure_config() {
@@ -265,8 +244,8 @@ sky_env() {
     return 1
   fi
 
-  ui_user="${OPENLIT_UI_USER:-$(get_env_value "$env_file" "OPENLIT_UI_USER")}"
-  ui_pass="${OPENLIT_UI_PASSWORD:-$(get_env_value "$env_file" "OPENLIT_UI_PASSWORD")}"
+  ui_user="${OPENLIT_UI_USER:-}"
+  ui_pass="${OPENLIT_UI_PASSWORD:-}"
   if [[ -z "$ui_user" ]]; then
     ui_user="admin@example.com"
   fi
@@ -276,22 +255,21 @@ sky_env() {
     else
       ui_pass="changeme-openlit"
     fi
-    log "Generated OpenLIT UI password; stored in $env_file."
+    log "Generated OpenLIT UI password."
   fi
 
   if [[ "$write_env" -eq 1 ]]; then
-    mkdir -p "$(dirname "$env_file")" 2>/dev/null || true
-    set_env_line "$env_file" "OPENLIT_ENDPOINT" "$endpoint"
-    set_env_line "$env_file" "OTEL_EXPORTER_OTLP_ENDPOINT" "$endpoint"
-    set_env_line "$env_file" "OTEL_EXPORTER_OTLP_PROTOCOL" "$otlp_protocol"
-    set_env_line "$env_file" "GEMINI_TELEMETRY_ENABLED" "1"
-    set_env_line "$env_file" "GEMINI_TELEMETRY_TARGET" "local"
-    set_env_line "$env_file" "GEMINI_TELEMETRY_OTLP_ENDPOINT" "$endpoint"
-    set_env_line "$env_file" "GEMINI_TELEMETRY_OTLP_PROTOCOL" "http"
-    set_env_line "$env_file" "GEMINI_TELEMETRY_LOG_PROMPTS" "1"
-    set_env_line "$env_file" "OPENLIT_UI_USER" "$ui_user"
-    set_env_line "$env_file" "OPENLIT_UI_PASSWORD" "$ui_pass"
-    log "Updated $env_file with OpenLIT OTLP settings."
+    persist_fnox_value OPENLIT_ENDPOINT "$endpoint"
+    persist_fnox_value OTEL_EXPORTER_OTLP_ENDPOINT "$endpoint"
+    persist_fnox_value OTEL_EXPORTER_OTLP_PROTOCOL "$otlp_protocol"
+    persist_fnox_value GEMINI_TELEMETRY_ENABLED "1"
+    persist_fnox_value GEMINI_TELEMETRY_TARGET "local"
+    persist_fnox_value GEMINI_TELEMETRY_OTLP_ENDPOINT "$endpoint"
+    persist_fnox_value GEMINI_TELEMETRY_OTLP_PROTOCOL "http"
+    persist_fnox_value GEMINI_TELEMETRY_LOG_PROMPTS "1"
+    persist_fnox_value OPENLIT_UI_USER "$ui_user"
+    persist_fnox_value OPENLIT_UI_PASSWORD "$ui_pass"
+    log "Persisted OpenLIT OTLP settings into fnox."
     return 0
   fi
 
@@ -311,7 +289,7 @@ EOF_ENV
 
 k8s_requirements() {
   if ! command -v kubectl >/dev/null 2>&1; then
-    log "kubectl not found. Install with scripts/install-aws-k8s-tools.sh"
+    log "kubectl not found. Install with: uv run mde-py install aws-k8s"
     exit 1
   fi
 
@@ -356,6 +334,7 @@ k8s_env() {
 
 main() {
   setup_path
+  mde_load_secrets
 
   case "$action" in
     deploy)

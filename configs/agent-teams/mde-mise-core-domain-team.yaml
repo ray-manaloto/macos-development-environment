@@ -1,0 +1,77 @@
+team:
+  id: mde-mise-core-domain-team
+  name: MDE Mise Core Domain Team
+  domain_id: mise-core
+  goal: Maintain mirror-first research, authority policy, starter bundles, presets, and learning writeback for the mise-core domain.
+  output_dir: reports/mde-domain-sdlc/mise-core
+  shared_artifacts_dir: .artifacts/mde-domain-sdlc/mise-core
+  repo_root: /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment
+  bundle_path: configs/tool-bundles/mise-core
+  preset_ids: ["preset-mise-core", "preset-mde-foundation"]
+  reference_source_group: mise-core
+  learning_record_id: domain-mise-core
+
+subagents:
+  - id: mirror-refresh-agent
+    stage: 1
+    objective: Refresh mirror-first sources and capture freshness gaps for the mise-core domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/research-source-discovery]
+    output_files:
+      - reports/mde-domain-sdlc/mise-core/{{date}}-01-mirror-refresh.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/mirror-refresh-agent.md
+
+  - id: docs-tutorial-agent
+    stage: 2
+    objective: Extract practical documentation and tutorial guidance for the mise-core domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/research-source-discovery]
+    output_files:
+      - reports/mde-domain-sdlc/mise-core/{{date}}-02-docs-tutorial.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/docs-tutorial-agent.md
+
+  - id: repo-mining-agent
+    stage: 2
+    objective: Mine upstream repositories and exemplars for portable patterns in the mise-core domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/github-repo-mining]
+    output_files:
+      - reports/mde-domain-sdlc/mise-core/{{date}}-03-repo-mining.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/repo-mining-agent.md
+
+  - id: social-signal-agent
+    stage: 2
+    objective: Gather grounded social and discussion signals for the mise-core domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/social-signal-mining]
+    output_files:
+      - reports/mde-domain-sdlc/mise-core/{{date}}-04-social-signal.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/social-signal-agent.md
+
+  - id: authority-agent
+    stage: 3
+    objective: Define the authority model, companion manifests, and exception boundaries for the mise-core domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/evidence-synthesis]
+    output_files:
+      - reports/mde-domain-sdlc/mise-core/{{date}}-05-authority.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/authority-agent.md
+
+  - id: implementation-agent
+    stage: 3
+    objective: Turn accepted domain decisions into starter-bundle and preset recommendations for mise-core.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/writing-plans]
+    output_files:
+      - reports/mde-domain-sdlc/mise-core/{{date}}-06-implementation.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/implementation-agent.md
+
+  - id: validation-agent
+    stage: 4
+    objective: Define validation commands and acceptance rules for the mise-core domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/evidence-synthesis]
+    output_files:
+      - reports/mde-domain-sdlc/mise-core/{{date}}-07-validation.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/validation-agent.md
+
+  - id: learning-consolidator-agent
+    stage: 5
+    objective: Consolidate accepted findings into the domain-mise-core learning record.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/evidence-synthesis, skills/writing-plans]
+    output_files:
+      - reports/mde-domain-sdlc/mise-core/{{date}}-08-learning-consolidator.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/learning-consolidator-agent.md

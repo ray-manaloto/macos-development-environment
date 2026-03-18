@@ -1,0 +1,136 @@
+{
+  "description": "Skill triggering evaluation suite for superpowers plugin",
+  "version": "1.0.0",
+  "evals": [
+    {
+      "id": "eval-001-using-superpowers",
+      "skill": "using-superpowers",
+      "prompt": "help me add a new feature to this codebase",
+      "expected_behavior": "Agent checks for relevant skills BEFORE any response. Should invoke brainstorming or TDD skill.",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-002-test-driven-development",
+      "skill": "test-driven-development",
+      "prompt": "implement a new function that validates email addresses",
+      "expected_behavior": "Agent writes a FAILING test first, runs it, then writes minimal code to pass.",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-003-systematic-debugging",
+      "skill": "systematic-debugging",
+      "prompt": "fix this bug: mise doctor shows warnings about unknown field",
+      "expected_behavior": "Agent follows 4-phase process: root cause investigation, pattern analysis, hypothesis, implementation. No fixes before investigation.",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-004-verification-before-completion",
+      "skill": "verification-before-completion",
+      "prompt": "the implementation is complete and all tests pass",
+      "expected_behavior": "Agent runs FRESH verification commands before claiming success. No 'should work' language.",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-005-brainstorming",
+      "skill": "brainstorming",
+      "prompt": "I want to add observability to our CLI tool",
+      "expected_behavior": "Agent asks clarifying questions, explores design space, presents options before jumping to code.",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-006-writing-plans",
+      "skill": "writing-plans",
+      "prompt": "write an implementation plan for migrating shell scripts to Python",
+      "expected_behavior": "Agent creates plan with TDD steps, checkbox syntax, exact file paths, bite-sized tasks (2-5 min each).",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-007-executing-plans",
+      "skill": "executing-plans",
+      "prompt": "execute the implementation plan at docs/superpowers/plans/migration.md",
+      "expected_behavior": "Agent follows plan steps with review checkpoints, runs verification at each checkpoint.",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-008-dispatching-parallel-agents",
+      "skill": "dispatching-parallel-agents",
+      "prompt": "we have 4 failing test files in different subsystems, fix them all",
+      "expected_behavior": "Agent dispatches one subagent per independent problem domain, reviews and integrates results.",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-009-requesting-code-review",
+      "skill": "requesting-code-review",
+      "prompt": "I just finished implementing the auth system, review it before I merge",
+      "expected_behavior": "Agent dispatches superpowers:code-reviewer subagent with BASE_SHA/HEAD_SHA, not self-review.",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-010-receiving-code-review",
+      "skill": "receiving-code-review",
+      "prompt": "the code reviewer found 3 issues, here is the feedback",
+      "expected_behavior": "Agent categorizes by severity, fixes Critical/Important before proceeding, pushes back if wrong with reasoning.",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-011-using-git-worktrees",
+      "skill": "using-git-worktrees",
+      "prompt": "I need to start implementing this feature in isolation",
+      "expected_behavior": "Agent creates git worktree for isolated development, sets up branch.",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-012-finishing-a-development-branch",
+      "skill": "finishing-a-development-branch",
+      "prompt": "all tests pass and the feature is complete, how do I integrate this work",
+      "expected_behavior": "Agent runs final verification, then guides merge/PR/keep/discard decision.",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    },
+    {
+      "id": "eval-013-subagent-driven-development",
+      "skill": "subagent-driven-development",
+      "prompt": "execute this 5-task implementation plan using subagents",
+      "expected_behavior": "Agent dispatches fresh subagent per task with two-stage review (spec compliance then code quality).",
+      "result": null,
+      "skills_triggered": [],
+      "timestamp": null,
+      "notes": ""
+    }
+  ]
+}

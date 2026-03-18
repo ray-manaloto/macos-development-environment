@@ -1,0 +1,14 @@
+{
+  "id": "bundle-python-pixi-uv-starter",
+  "domain_id": "python-pixi-uv",
+  "name": "Python Pixi UV Starter Bundle",
+  "description": "Starter bundle for a Pixi-first Python project with UV companion tooling.",
+  "preset_ids": ["preset-python-pixi-uv"],
+  "primary_manifest": "pixi.toml",
+  "included_files": ["pixi.toml", "pixi.lock"],
+  "reference_source_ids": ["pixi-docs", "uv-docs", "python-packaging-guide"],
+  "notes": [
+    "Starter bundles are repo-scoped scaffolds, not host-global installers.",
+    "The owning domain team decides when companion manifests or lockfiles are required."
+  ]
+}

@@ -1,0 +1,8 @@
+
+[tasks.fmt]
+description = "Check shell and editor defaults"
+run = "echo shell-editor preset ok"
+
+[tasks.verify]
+description = "Verify shell and editor defaults"
+run = "echo verify shell-editor preset"

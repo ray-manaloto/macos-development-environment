@@ -1,0 +1,110 @@
+team:
+  id: mde-autoresearch-team
+  name: MDE Autoresearch Team
+  goal: Continuously improve the MacBook setup, mise ownership model, devcontainer workflow, telemetry, and agent runtime contract through bounded multi-agent research that classifies work through configs/mde-domain-catalog.json and delegates to the owning domain SDLC team before synthesis or guidance updates are accepted.
+  output_dir: reports/mde-autoresearch
+  shared_artifacts_dir: .artifacts/mde-autoresearch
+  repo_root: /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment
+
+subagents:
+  - id: scout-agent
+    stage: 1
+    objective: Discover and shortlist tools, SDKs, libraries, tutorials, blogs, and upstream repos.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/mise-enforcement, skills/research-source-discovery]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-01-scout.md
+      - reports/mde-autoresearch/{{date}}-discovery-records.jsonl
+    prompt_file: prompts/agent-team/mde-autoresearch/scout-agent.md
+
+  - id: repo-mining-agent
+    stage: 2
+    objective: Mine shortlisted repositories for portable patterns and evidence.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/github-repo-mining]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-02-repo-mining.md
+      - reports/mde-autoresearch/{{date}}-pattern-records.jsonl
+    prompt_file: prompts/agent-team/mde-autoresearch/repo-mining-agent.md
+
+  - id: docs-tutorial-agent
+    stage: 2
+    objective: Extract practical lessons from docs, blogs, tutorials, and release notes.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/research-source-discovery]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-03-docs-tutorials.md
+    prompt_file: prompts/agent-team/mde-autoresearch/docs-tutorial-agent.md
+
+  - id: social-signal-agent
+    stage: 2
+    objective: Mine social and discussion sources for grounded implementation lessons.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/social-signal-mining]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-04-social-signals.md
+      - reports/mde-autoresearch/{{date}}-social-pattern-records.jsonl
+    prompt_file: prompts/agent-team/mde-autoresearch/social-signal-agent.md
+
+  - id: tooling-eval-agent
+    stage: 3
+    objective: Score adopt/adapt/reject decisions for discovered tools and techniques.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/mde-package-cache-policy, skills/evidence-synthesis]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-05-tooling-eval.md
+    prompt_file: prompts/agent-team/mde-autoresearch/tooling-eval-agent.md
+
+  - id: tool-ownership-agent
+    stage: 3
+    objective: Classify discovered tools into mise-owned, native-manifest-owned, exception, or removed.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-global-tool-migration, skills/mise-enforcement, skills/mde-python-backend-selection, skills/mde-node-cli-declaration]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-06-tool-ownership.md
+    prompt_file: prompts/agent-team/mde-autoresearch/tool-ownership-agent.md
+
+  - id: runner-enforcement-agent
+    stage: 3
+    objective: Review agent runners, prompts, and automation surfaces for enforceable contract coverage.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/mise-enforcement, skills/mde-package-cache-policy]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-07-runner-enforcement.md
+    prompt_file: prompts/agent-team/mde-autoresearch/runner-enforcement-agent.md
+
+  - id: migration-agent
+    stage: 4
+    objective: Convert accepted ownership decisions into migration candidates and operational steps.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-global-tool-migration, skills/mise-enforcement]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-08-migration.md
+    prompt_file: prompts/agent-team/mde-autoresearch/migration-agent.md
+
+  - id: validation-agent
+    stage: 4
+    objective: Map accepted findings to explicit verification and acceptance signals.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/mde-native-tool-validation, skills/evidence-synthesis]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-09-validation.md
+      - reports/mde-autoresearch/{{date}}-acceptance-records.jsonl
+    prompt_file: prompts/agent-team/mde-autoresearch/validation-agent.md
+
+  - id: synthesis-agent
+    stage: 5
+    objective: Produce final decision records and the implementation-ready auto-improvement summary.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/evidence-synthesis, skills/writing-plans]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-10-synthesis.md
+      - reports/mde-autoresearch/{{date}}-decision-records.jsonl
+      - reports/mde-autoresearch/{{date}}-summary.md
+    prompt_file: prompts/agent-team/mde-autoresearch/synthesis-agent.md
+
+  - id: telemetry-agent
+    stage: 5
+    objective: Review observability coverage and ensure provenance and policy events are represented.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/mise-enforcement]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-11-telemetry.md
+    prompt_file: prompts/agent-team/mde-autoresearch/telemetry-agent.md
+
+  - id: guidance-consolidator-agent
+    stage: 6
+    objective: Update AGENTS, skills, and guidance recommendations from accepted findings.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/mise-enforcement, skills/mde-package-cache-policy]
+    output_files:
+      - reports/mde-autoresearch/{{date}}-12-guidance.md
+    prompt_file: prompts/agent-team/mde-autoresearch/guidance-consolidator-agent.md

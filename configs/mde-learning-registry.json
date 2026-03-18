@@ -1,0 +1,712 @@
+{
+  "version": 1,
+  "generated_at": "2026-03-15",
+  "registry_policy": {
+    "writeback_mode": "committed-json",
+    "owner": "domain-team learning-consolidator",
+    "accepted_findings_only": true,
+    "mirror_dependency": "configs/mde-reference-sources.json"
+  },
+  "records": [
+    {
+      "id": "domain-mise-core",
+      "domain_id": "mise-core",
+      "status": "seeded",
+      "seeded_on": "2026-03-15",
+      "owning_team_id": "mde-mise-core-domain-team",
+      "bundle_path": "configs/tool-bundles/mise-core",
+      "preset_ids": [
+        "preset-mise-core",
+        "preset-mde-foundation"
+      ],
+      "authoritative_source_ids": [
+        "mise-docs",
+        "mise-cookbook",
+        "mise-registry-docs"
+      ],
+      "accepted_learnings": [
+        "mise remains the top-level authority for global runtimes and developer-facing CLIs in this repo.",
+        "Backend selection and registry decisions belong in the mise-core domain before they become automation defaults."
+      ],
+      "open_questions": [
+        "Which additional backend-native manifests should be treated as first-class companion sources under mise?"
+      ],
+      "next_refresh_due": "2026-06-15",
+      "domain": "mise-core",
+      "title": "mise-core learning record",
+      "disposition": "adopted",
+      "source_snapshots": [
+        {
+          "bundle_id": "mise-core",
+          "source_ids": [
+            "mise-docs",
+            "mise-cookbook",
+            "mise-registry-docs",
+            "mise-releases",
+            "mise-repo"
+          ]
+        }
+      ],
+      "affected_prompts": [
+        "prompts/agent-team/mde-domain-sdlc/*.md"
+      ],
+      "affected_skills": [
+        "skills/mise-enforcement",
+        "skills/research-source-discovery",
+        "skills/github-repo-mining",
+        "skills/social-signal-mining",
+        "skills/evidence-synthesis"
+      ],
+      "affected_docs": [
+        "docs/mise-config.md",
+        "docs/toolchain-precedence.md",
+        "docs/decision-log.md"
+      ],
+      "affected_tasks": [
+        "mde:team:domain",
+        "mde:refs:refresh",
+        "mde:refs:verify",
+        "mde:preset:verify",
+        "mde:domain:verify",
+        "mde:learn:verify"
+      ],
+      "required_verification": [
+        "mise run mde:team:domain -- --domain mise-core",
+        "mise run mde:refs:verify",
+        "mise run mde:preset:verify",
+        "mise run mde:domain:verify",
+        "mise run mde:learn:verify"
+      ],
+      "last_reviewed_at": "2026-03-15"
+    },
+    {
+      "id": "domain-python-pixi-uv",
+      "domain_id": "python-pixi-uv",
+      "status": "seeded",
+      "seeded_on": "2026-03-15",
+      "owning_team_id": "mde-python-pixi-uv-domain-team",
+      "bundle_path": "configs/tool-bundles/python-pixi-uv",
+      "preset_ids": [
+        "preset-python-pixi-uv",
+        "preset-python-maintainer"
+      ],
+      "authoritative_source_ids": [
+        "pixi-docs",
+        "uv-docs",
+        "python-packaging-guide"
+      ],
+      "accepted_learnings": [
+        "The starter bundle for this domain is a committed pixi.toml plus pixi.lock.",
+        "The domain must explicitly record when pyproject.toml, uv.lock, or Pixi global manifests become part of the supported realization path."
+      ],
+      "open_questions": [
+        "What is the default split between pixi-managed project dependencies and uv-managed publishing or tool surfaces?"
+      ],
+      "next_refresh_due": "2026-06-15",
+      "domain": "python-pixi-uv",
+      "title": "python-pixi-uv learning record",
+      "disposition": "adopted",
+      "source_snapshots": [
+        {
+          "bundle_id": "python-pixi-uv",
+          "source_ids": [
+            "pixi-docs",
+            "pixi-repo",
+            "uv-docs",
+            "uv-repo",
+            "python-packaging-guide"
+          ]
+        }
+      ],
+      "affected_prompts": [
+        "prompts/agent-team/mde-domain-sdlc/*.md"
+      ],
+      "affected_skills": [
+        "skills/mise-enforcement",
+        "skills/research-source-discovery",
+        "skills/github-repo-mining",
+        "skills/social-signal-mining",
+        "skills/evidence-synthesis"
+      ],
+      "affected_docs": [
+        "docs/mise-config.md",
+        "docs/toolchain-precedence.md",
+        "docs/decision-log.md"
+      ],
+      "affected_tasks": [
+        "mde:team:domain",
+        "mde:refs:refresh",
+        "mde:refs:verify",
+        "mde:preset:verify",
+        "mde:domain:verify",
+        "mde:learn:verify"
+      ],
+      "required_verification": [
+        "mise run mde:team:domain -- --domain python-pixi-uv",
+        "mise run mde:refs:verify",
+        "mise run mde:preset:verify",
+        "mise run mde:domain:verify",
+        "mise run mde:learn:verify"
+      ],
+      "last_reviewed_at": "2026-03-15"
+    },
+    {
+      "id": "domain-javascript-typescript",
+      "domain_id": "javascript-typescript",
+      "status": "seeded",
+      "seeded_on": "2026-03-15",
+      "owning_team_id": "mde-javascript-typescript-domain-team",
+      "bundle_path": "configs/tool-bundles/javascript-typescript",
+      "preset_ids": [
+        "preset-javascript-typescript",
+        "preset-web-cli-authoring"
+      ],
+      "authoritative_source_ids": [
+        "node-docs",
+        "bun-docs",
+        "typescript-docs"
+      ],
+      "accepted_learnings": [
+        "Node and Bun stay under mise authority globally while repository libraries stay in native manifests.",
+        "TypeScript compiler and package-manager guidance must be recorded before changing JS/TS automation defaults."
+      ],
+      "open_questions": [
+        "Which package manager contract should be preferred for repo-local JS/TS starter bundles when bun and npm differ?"
+      ],
+      "next_refresh_due": "2026-06-15",
+      "domain": "javascript-typescript",
+      "title": "javascript-typescript learning record",
+      "disposition": "adopted",
+      "source_snapshots": [
+        {
+          "bundle_id": "javascript-typescript",
+          "source_ids": [
+            "node-docs",
+            "bun-docs",
+            "typescript-docs",
+            "typescript-repo",
+            "npm-docs"
+          ]
+        }
+      ],
+      "affected_prompts": [
+        "prompts/agent-team/mde-domain-sdlc/*.md"
+      ],
+      "affected_skills": [
+        "skills/mise-enforcement",
+        "skills/research-source-discovery",
+        "skills/github-repo-mining",
+        "skills/social-signal-mining",
+        "skills/evidence-synthesis"
+      ],
+      "affected_docs": [
+        "docs/mise-config.md",
+        "docs/toolchain-precedence.md",
+        "docs/decision-log.md"
+      ],
+      "affected_tasks": [
+        "mde:team:domain",
+        "mde:refs:refresh",
+        "mde:refs:verify",
+        "mde:preset:verify",
+        "mde:domain:verify",
+        "mde:learn:verify"
+      ],
+      "required_verification": [
+        "mise run mde:team:domain -- --domain javascript-typescript",
+        "mise run mde:refs:verify",
+        "mise run mde:preset:verify",
+        "mise run mde:domain:verify",
+        "mise run mde:learn:verify"
+      ],
+      "last_reviewed_at": "2026-03-15"
+    },
+    {
+      "id": "domain-ruby",
+      "domain_id": "ruby",
+      "status": "seeded",
+      "seeded_on": "2026-03-15",
+      "owning_team_id": "mde-ruby-domain-team",
+      "bundle_path": "configs/tool-bundles/ruby",
+      "preset_ids": [
+        "preset-ruby"
+      ],
+      "authoritative_source_ids": [
+        "ruby-docs",
+        "bundler-docs",
+        "rubygems-guides"
+      ],
+      "accepted_learnings": [
+        "Ruby runtime and CLI ownership stay under mise while Gem and Bundler remain the repo-local manifest surface.",
+        "The Ruby domain owns version-file and bundler policy before shell automation starts installing gems."
+      ],
+      "open_questions": [
+        "Should ruby-version files be generated by bundles or delegated to downstream repos?"
+      ],
+      "next_refresh_due": "2026-06-15",
+      "domain": "ruby",
+      "title": "ruby learning record",
+      "disposition": "adopted",
+      "source_snapshots": [
+        {
+          "bundle_id": "ruby",
+          "source_ids": [
+            "ruby-docs",
+            "bundler-docs",
+            "rubygems-guides",
+            "ruby-repo"
+          ]
+        }
+      ],
+      "affected_prompts": [
+        "prompts/agent-team/mde-domain-sdlc/*.md"
+      ],
+      "affected_skills": [
+        "skills/mise-enforcement",
+        "skills/research-source-discovery",
+        "skills/github-repo-mining",
+        "skills/social-signal-mining",
+        "skills/evidence-synthesis"
+      ],
+      "affected_docs": [
+        "docs/mise-config.md",
+        "docs/toolchain-precedence.md",
+        "docs/decision-log.md"
+      ],
+      "affected_tasks": [
+        "mde:team:domain",
+        "mde:refs:refresh",
+        "mde:refs:verify",
+        "mde:preset:verify",
+        "mde:domain:verify",
+        "mde:learn:verify"
+      ],
+      "required_verification": [
+        "mise run mde:team:domain -- --domain ruby",
+        "mise run mde:refs:verify",
+        "mise run mde:preset:verify",
+        "mise run mde:domain:verify",
+        "mise run mde:learn:verify"
+      ],
+      "last_reviewed_at": "2026-03-15"
+    },
+    {
+      "id": "domain-go",
+      "domain_id": "go",
+      "status": "seeded",
+      "seeded_on": "2026-03-15",
+      "owning_team_id": "mde-go-domain-team",
+      "bundle_path": "configs/tool-bundles/go",
+      "preset_ids": [
+        "preset-go"
+      ],
+      "authoritative_source_ids": [
+        "go-docs",
+        "go-modules-reference",
+        "go-release-notes"
+      ],
+      "accepted_learnings": [
+        "Go runtime stays mise-managed while go.mod and go.work remain the source of truth for repo dependencies.",
+        "The Go domain owns module-cache and toolchain policy for starter bundles and validation rules."
+      ],
+      "open_questions": [
+        "When should go.work be included in repo starter bundles versus left to multi-module repos only?"
+      ],
+      "next_refresh_due": "2026-06-15",
+      "domain": "go",
+      "title": "go learning record",
+      "disposition": "adopted",
+      "source_snapshots": [
+        {
+          "bundle_id": "go",
+          "source_ids": [
+            "go-docs",
+            "go-modules-reference",
+            "go-release-notes",
+            "go-repo"
+          ]
+        }
+      ],
+      "affected_prompts": [
+        "prompts/agent-team/mde-domain-sdlc/*.md"
+      ],
+      "affected_skills": [
+        "skills/mise-enforcement",
+        "skills/research-source-discovery",
+        "skills/github-repo-mining",
+        "skills/social-signal-mining",
+        "skills/evidence-synthesis"
+      ],
+      "affected_docs": [
+        "docs/mise-config.md",
+        "docs/toolchain-precedence.md",
+        "docs/decision-log.md"
+      ],
+      "affected_tasks": [
+        "mde:team:domain",
+        "mde:refs:refresh",
+        "mde:refs:verify",
+        "mde:preset:verify",
+        "mde:domain:verify",
+        "mde:learn:verify"
+      ],
+      "required_verification": [
+        "mise run mde:team:domain -- --domain go",
+        "mise run mde:refs:verify",
+        "mise run mde:preset:verify",
+        "mise run mde:domain:verify",
+        "mise run mde:learn:verify"
+      ],
+      "last_reviewed_at": "2026-03-15"
+    },
+    {
+      "id": "domain-rust",
+      "domain_id": "rust",
+      "status": "seeded",
+      "seeded_on": "2026-03-15",
+      "owning_team_id": "mde-rust-domain-team",
+      "bundle_path": "configs/tool-bundles/rust",
+      "preset_ids": [
+        "preset-rust"
+      ],
+      "authoritative_source_ids": [
+        "rust-book",
+        "cargo-book",
+        "rustup-book"
+      ],
+      "accepted_learnings": [
+        "Rust toolchain selection stays under mise while Cargo.toml and Cargo.lock remain the repo dependency contract.",
+        "The Rust domain owns cargo cache, fmt/clippy defaults, and crate starter recommendations."
+      ],
+      "open_questions": [
+        "Which cargo install patterns, if any, should remain acceptable inside a mise-first environment?"
+      ],
+      "next_refresh_due": "2026-06-15",
+      "domain": "rust",
+      "title": "rust learning record",
+      "disposition": "adopted",
+      "source_snapshots": [
+        {
+          "bundle_id": "rust",
+          "source_ids": [
+            "rust-book",
+            "cargo-book",
+            "rustup-book",
+            "rust-releases"
+          ]
+        }
+      ],
+      "affected_prompts": [
+        "prompts/agent-team/mde-domain-sdlc/*.md"
+      ],
+      "affected_skills": [
+        "skills/mise-enforcement",
+        "skills/research-source-discovery",
+        "skills/github-repo-mining",
+        "skills/social-signal-mining",
+        "skills/evidence-synthesis"
+      ],
+      "affected_docs": [
+        "docs/mise-config.md",
+        "docs/toolchain-precedence.md",
+        "docs/decision-log.md"
+      ],
+      "affected_tasks": [
+        "mde:team:domain",
+        "mde:refs:refresh",
+        "mde:refs:verify",
+        "mde:preset:verify",
+        "mde:domain:verify",
+        "mde:learn:verify"
+      ],
+      "required_verification": [
+        "mise run mde:team:domain -- --domain rust",
+        "mise run mde:refs:verify",
+        "mise run mde:preset:verify",
+        "mise run mde:domain:verify",
+        "mise run mde:learn:verify"
+      ],
+      "last_reviewed_at": "2026-03-15"
+    },
+    {
+      "id": "domain-cpp",
+      "domain_id": "cpp",
+      "status": "seeded",
+      "seeded_on": "2026-03-15",
+      "owning_team_id": "mde-cpp-domain-team",
+      "bundle_path": "configs/tool-bundles/cpp",
+      "preset_ids": [
+        "preset-cpp"
+      ],
+      "authoritative_source_ids": [
+        "cmake-docs",
+        "conan-docs",
+        "vcpkg-docs"
+      ],
+      "accepted_learnings": [
+        "C/C++ starter policy should center on a declared build system and package-manager contract rather than ad hoc compiler commands.",
+        "The C/C++ domain owns compiler, generator, and dependency-manager guidance for repo scaffolds."
+      ],
+      "open_questions": [
+        "Should Conan or vcpkg be the default package-manager reference in the starter bundle metadata?"
+      ],
+      "next_refresh_due": "2026-06-15",
+      "domain": "cpp",
+      "title": "cpp learning record",
+      "disposition": "adopted",
+      "source_snapshots": [
+        {
+          "bundle_id": "cpp",
+          "source_ids": [
+            "cmake-docs",
+            "conan-docs",
+            "vcpkg-docs",
+            "cppreference"
+          ]
+        }
+      ],
+      "affected_prompts": [
+        "prompts/agent-team/mde-domain-sdlc/*.md"
+      ],
+      "affected_skills": [
+        "skills/mise-enforcement",
+        "skills/research-source-discovery",
+        "skills/github-repo-mining",
+        "skills/social-signal-mining",
+        "skills/evidence-synthesis"
+      ],
+      "affected_docs": [
+        "docs/mise-config.md",
+        "docs/toolchain-precedence.md",
+        "docs/decision-log.md"
+      ],
+      "affected_tasks": [
+        "mde:team:domain",
+        "mde:refs:refresh",
+        "mde:refs:verify",
+        "mde:preset:verify",
+        "mde:domain:verify",
+        "mde:learn:verify"
+      ],
+      "required_verification": [
+        "mise run mde:team:domain -- --domain cpp",
+        "mise run mde:refs:verify",
+        "mise run mde:preset:verify",
+        "mise run mde:domain:verify",
+        "mise run mde:learn:verify"
+      ],
+      "last_reviewed_at": "2026-03-15"
+    },
+    {
+      "id": "domain-docker",
+      "domain_id": "docker",
+      "status": "seeded",
+      "seeded_on": "2026-03-15",
+      "owning_team_id": "mde-docker-domain-team",
+      "bundle_path": "configs/tool-bundles/docker",
+      "preset_ids": [
+        "preset-docker",
+        "preset-mde-foundation"
+      ],
+      "authoritative_source_ids": [
+        "docker-docs",
+        "docker-compose-docs",
+        "docker-buildx-docs"
+      ],
+      "accepted_learnings": [
+        "Container workflow policy should be documented separately from host-package ownership exceptions.",
+        "The Docker domain owns Compose, buildx, and starter image conventions for repo-scoped bundles."
+      ],
+      "open_questions": [
+        "Which container base image and build cache defaults should be recommended for multi-platform starter bundles?"
+      ],
+      "next_refresh_due": "2026-06-15",
+      "domain": "docker",
+      "title": "docker learning record",
+      "disposition": "adopted",
+      "source_snapshots": [
+        {
+          "bundle_id": "docker",
+          "source_ids": [
+            "docker-docs",
+            "docker-compose-docs",
+            "docker-buildx-docs",
+            "docker-repo"
+          ]
+        }
+      ],
+      "affected_prompts": [
+        "prompts/agent-team/mde-domain-sdlc/*.md"
+      ],
+      "affected_skills": [
+        "skills/mise-enforcement",
+        "skills/research-source-discovery",
+        "skills/github-repo-mining",
+        "skills/social-signal-mining",
+        "skills/evidence-synthesis"
+      ],
+      "affected_docs": [
+        "docs/mise-config.md",
+        "docs/toolchain-precedence.md",
+        "docs/decision-log.md"
+      ],
+      "affected_tasks": [
+        "mde:team:domain",
+        "mde:refs:refresh",
+        "mde:refs:verify",
+        "mde:preset:verify",
+        "mde:domain:verify",
+        "mde:learn:verify"
+      ],
+      "required_verification": [
+        "mise run mde:team:domain -- --domain docker",
+        "mise run mde:refs:verify",
+        "mise run mde:preset:verify",
+        "mise run mde:domain:verify",
+        "mise run mde:learn:verify"
+      ],
+      "last_reviewed_at": "2026-03-15"
+    },
+    {
+      "id": "domain-terraform",
+      "domain_id": "terraform",
+      "status": "seeded",
+      "seeded_on": "2026-03-15",
+      "owning_team_id": "mde-terraform-domain-team",
+      "bundle_path": "configs/tool-bundles/terraform",
+      "preset_ids": [
+        "preset-terraform",
+        "preset-platform-iac"
+      ],
+      "authoritative_source_ids": [
+        "terraform-docs",
+        "terraform-language-docs",
+        "terraform-registry-docs"
+      ],
+      "accepted_learnings": [
+        "Terraform CLI ownership and repo-local HCL authoring are separate concerns and need an explicit starter contract.",
+        "The Terraform domain owns provider locking, validation, and module starter guidance."
+      ],
+      "open_questions": [
+        "Should OpenTofu compatibility be tracked as a first-class companion authority in this domain?"
+      ],
+      "next_refresh_due": "2026-06-15",
+      "domain": "terraform",
+      "title": "terraform learning record",
+      "disposition": "adopted",
+      "source_snapshots": [
+        {
+          "bundle_id": "terraform",
+          "source_ids": [
+            "terraform-docs",
+            "terraform-language-docs",
+            "terraform-registry-docs",
+            "terraform-repo"
+          ]
+        }
+      ],
+      "affected_prompts": [
+        "prompts/agent-team/mde-domain-sdlc/*.md"
+      ],
+      "affected_skills": [
+        "skills/mise-enforcement",
+        "skills/research-source-discovery",
+        "skills/github-repo-mining",
+        "skills/social-signal-mining",
+        "skills/evidence-synthesis"
+      ],
+      "affected_docs": [
+        "docs/mise-config.md",
+        "docs/toolchain-precedence.md",
+        "docs/decision-log.md"
+      ],
+      "affected_tasks": [
+        "mde:team:domain",
+        "mde:refs:refresh",
+        "mde:refs:verify",
+        "mde:preset:verify",
+        "mde:domain:verify",
+        "mde:learn:verify"
+      ],
+      "required_verification": [
+        "mise run mde:team:domain -- --domain terraform",
+        "mise run mde:refs:verify",
+        "mise run mde:preset:verify",
+        "mise run mde:domain:verify",
+        "mise run mde:learn:verify"
+      ],
+      "last_reviewed_at": "2026-03-15"
+    },
+    {
+      "id": "domain-shell-editor",
+      "domain_id": "shell-editor",
+      "status": "seeded",
+      "seeded_on": "2026-03-15",
+      "owning_team_id": "mde-shell-editor-domain-team",
+      "bundle_path": "configs/tool-bundles/shell-editor",
+      "preset_ids": [
+        "preset-shell-editor",
+        "preset-mde-foundation"
+      ],
+      "authoritative_source_ids": [
+        "bash-manual",
+        "shellcheck-docs",
+        "editorconfig-docs"
+      ],
+      "accepted_learnings": [
+        "Shell and editor scaffolding should encode authoring and linting conventions rather than machine-specific editor state.",
+        "The shell-editor domain owns ShellCheck, shfmt, EditorConfig, and shell ergonomics guidance for bundles."
+      ],
+      "open_questions": [
+        "Which editor defaults belong in a repo-scoped starter bundle versus user-local editor config?"
+      ],
+      "next_refresh_due": "2026-06-15",
+      "domain": "shell-editor",
+      "title": "shell-editor learning record",
+      "disposition": "adopted",
+      "source_snapshots": [
+        {
+          "bundle_id": "shell-editor",
+          "source_ids": [
+            "bash-manual",
+            "zsh-docs",
+            "shellcheck-docs",
+            "editorconfig-docs",
+            "neovim-docs"
+          ]
+        }
+      ],
+      "affected_prompts": [
+        "prompts/agent-team/mde-domain-sdlc/*.md"
+      ],
+      "affected_skills": [
+        "skills/mise-enforcement",
+        "skills/research-source-discovery",
+        "skills/github-repo-mining",
+        "skills/social-signal-mining",
+        "skills/evidence-synthesis"
+      ],
+      "affected_docs": [
+        "docs/mise-config.md",
+        "docs/toolchain-precedence.md",
+        "docs/decision-log.md"
+      ],
+      "affected_tasks": [
+        "mde:team:domain",
+        "mde:refs:refresh",
+        "mde:refs:verify",
+        "mde:preset:verify",
+        "mde:domain:verify",
+        "mde:learn:verify"
+      ],
+      "required_verification": [
+        "mise run mde:team:domain -- --domain shell-editor",
+        "mise run mde:refs:verify",
+        "mise run mde:preset:verify",
+        "mise run mde:domain:verify",
+        "mise run mde:learn:verify"
+      ],
+      "last_reviewed_at": "2026-03-15"
+    }
+  ]
+}

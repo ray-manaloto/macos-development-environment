@@ -1,0 +1,27 @@
+name: rm-rmanaloto-mde-graf-prod-use1
+resources:
+  cloud: aws
+  region: us-east-1
+  instance_type: t3.large
+  disk_size: 100
+  ports:
+    - 3000  # Grafana
+    - 3200  # Loki
+    - 9009  # Tempo (gRPC)
+    - 3100  # Loki HTTP
+    - 8080  # Mimir/Prom (if using single binary)
+setup: |
+  sudo apt-get update -y
+  sudo apt-get install -y docker.io docker-compose-plugin
+  sudo systemctl enable --now docker
+  mkdir -p ~/grafana-stack
+run: |
+  cd ~/grafana-stack
+  docker compose up -d
+  docker compose ps
+file_mounts:
+  ~/grafana-stack/docker-compose.yaml: configs/grafana-stack/docker-compose.yaml
+  ~/grafana-stack/tempo.yaml: configs/grafana-stack/tempo.yaml
+  ~/grafana-stack/loki.yaml: configs/grafana-stack/loki.yaml
+  ~/grafana-stack/mimir.yaml: configs/grafana-stack/mimir.yaml
+  # optional override files can be added here later

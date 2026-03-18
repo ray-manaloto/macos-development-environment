@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PatternRecord",
+  "type": "object",
+  "required": ["repo_or_url", "pattern_category", "proof", "confidence", "portability_risk", "recommendation"],
+  "properties": {
+    "repo_or_url": {"type": "string"},
+    "pattern_category": {"type": "string"},
+    "proof": {"type": "string"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "portability_risk": {"type": "string", "enum": ["low", "medium", "high"]},
+    "recommendation": {"type": "string", "enum": ["adopt", "adapt", "reject"]},
+    "notes": {"type": "string"},
+    "artifact_type": {"type": "string", "enum": ["repo", "issue", "pr", "discussion", "blog", "video", "post", "other"]}
+  },
+  "additionalProperties": false
+}

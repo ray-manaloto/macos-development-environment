@@ -4,6 +4,22 @@ This document tracks the macOS development environment automation for this
 machine. It focuses on launchd-driven maintenance and auto-fix routines for
 our preferred toolchain order (mise > pixi > uv > pip; bun > node).
 
+## Dual-Target Operation (`macOS` + `devcontainer`)
+- Canonical runbook/checklist: `docs/operational-checklist.md`.
+- Host remediation sequence: `docs/operational-checklist.md` ("Host Remediation Workflow").
+- Run `mise trust` before first `mise run` in a fresh clone.
+- Profile resolution:
+  - `MDE_PLATFORM=...` override wins.
+  - `DEVCONTAINER`/`CODESPACES` => `devcontainer`.
+  - `/.dockerenv` without those markers => `linux`.
+  - `uname` fallback => `macos` or `linux`.
+- Config sync is always-on in maintenance (`sync_managed_configs` runs before
+  autofix gating) and uses `chezmoi` first, then legacy fallback when
+  `chezmoi` is unavailable due to trust/parsing/bootstrap conditions.
+- Log roots by platform:
+  - `macos`: `~/Library/Logs/com.ray-manaloto.macos-dev-maintenance`
+  - `devcontainer`/`linux`: `~/.local/state/macos-dev-maintenance`
+
 ## Launchd Auto-Updates
 
 ### Job definition
@@ -12,6 +28,7 @@ our preferred toolchain order (mise > pixi > uv > pip; bun > node).
 - Script: `~/Library/Application Support/com.ray-manaloto.macos-dev-maintenance/macos_dev_maintenance`
 - Interval: 43200 seconds (12 hours)
 - Logs: `~/Library/Logs/com.ray-manaloto.macos-dev-maintenance/macos-dev-maintenance.out`
+ - Runbook: `docs/launchd-automation-runbook.md`
 
 ### Script behavior (current)
 - Homebrew:
@@ -113,13 +130,12 @@ Possible issues:
 
 
 
-## Claude Code Wrapper
-- Managed wrapper: `scripts/claude-wrapper.sh` (alias: `claude`).
-- Installed to `~/.local/bin/claude` for non-interactive shells.
-- Loads `GITHUB_PERSONAL_ACCESS_TOKEN` from the same GitHub token used elsewhere.
-- Removes `~/.bun/bin/claude` so there is only one `claude` on PATH.
-- Wrapper runs `@anthropic-ai/claude-code` (override with `MDE_CLAUDE_CLI`).
-- Use `\claude` to bypass the alias when needed.
+## Claude Code (Mise-managed)
+- `claude` is installed and resolved directly by `mise` (registry + npm backend).
+- Expected shell resolution is the `mise` shim: `~/.local/share/mise/shims/claude`.
+- Runtime target is `mise which claude` under `~/.local/share/mise/installs/...`.
+- `npm.package_manager = "bun"` keeps npm-backend installs on Bun.
+- Do not alias `claude` in shell config.
 
 ## Gemini CLI Wrapper
 - Managed wrapper: `scripts/gemini-wrapper.sh` (alias: `gemini`).
@@ -172,6 +188,8 @@ Possible issues:
   - `scripts/verify-langchain-tools.sh`
 - Verify all (health + tmux + tooling + dashboard JSON):
   - `scripts/verify-all.sh`
+  - JSON mode exits non-zero on hard failures or hard skips that are not
+    explicitly allowed in `scripts/config/mde-verify.conf`.
 - One-time post-setup run with summary log:
   - `scripts/post-setup-run.sh`
   - Summary log: `~/Library/Logs/com.ray-manaloto.macos-dev-maintenance/post-setup-summary.log`
@@ -210,8 +228,8 @@ Possible issues:
 - When a `.env` file is loaded, keychain overrides are disabled by default (`MDE_SECRET_OVERRIDE=0`). Set `MDE_SECRET_OVERRIDE=1` to force keychain/1Password to win.
 
 ## LLVM (opt-in)
-- Install/upgrade via Homebrew:
-  - `brew install llvm` or `brew upgrade llvm`
+- LLVM is an exception-owned host tool. Agents must not install it directly.
+- If a human needs LLVM on the host, use the explicit Homebrew exception workflow documented in `configs/mde-install-exceptions.json`.
 - Keep Apple clang as default; opt into brewed LLVM per shell/project.
 - Enabled by default via oh-my-zsh (managed). Set `MDE_USE_LLVM=0` before
   loading zsh to disable.
@@ -222,52 +240,56 @@ Possible issues:
   - `export PKG_CONFIG_PATH="/opt/homebrew/opt/llvm/lib/pkgconfig"`
 
 ## Secrets and Automation (non-interactive)
-- Preferred: `.env` file loaded by both shells and launchd runs:
-  - Default path: `~/.config/macos-development-environment/secrets.env`
-  - Template: `templates/secrets.env.example`
-  - Helper: `scripts/setup-secrets-env.sh --open`
-  - Lock permissions: `chmod 600 ~/.config/macos-development-environment/secrets.env`
-  - AWS (SkyPilot): add `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION`
-  - Override path: `MDE_ENV_FILE=/path/to/secrets.env`
-  - Disable autoload: `MDE_ENV_AUTOLOAD=0`
-  - Override existing env: `MDE_ENV_OVERRIDE=1` (default)
-  - Keychain/1Password override: `MDE_SECRET_OVERRIDE=1` (default is `0` when env file is loaded)
-- Use a 1Password service account for unattended runs when available (no login prompts).
-- Store the service account token in Keychain:
-  - `security add-generic-password -a "$USER" -s mde-op-sa -w`
+- Preferred and supported: `fnox` loaded through `mise` for both shells and launchd runs:
+  - Global mise authority: `~/.config/mise/config.toml`
+  - Global fnox authority: `~/.config/fnox/config.toml`
+  - Global runtime secret file: `~/.config/mise/secrets.sops.json`
+  - Export before activation: `MISE_ENV_CACHE=1`
+  - Shared bootstrap exports: `FNOX_CONFIG_DIR`, `FNOX_AGE_KEY_FILE`, and `SOPS_AGE_KEY_FILE`
+  - Do not enable `fnox activate zsh`; use `mise` integration instead
+- Runtime authority is the encrypted SOPS file loaded by `mise`; `fnox` is the refresh/restore layer behind it.
+- Refresh the runtime file from the merged `fnox` secret set:
+  - `scripts/mde-sops-secrets-refresh.sh`
+- Restore the SOPS file back into local Keychain-backed `fnox` secrets:
+  - `scripts/mde-sops-secrets-import-keychain.sh`
+- Back up the encrypted SOPS file into 1Password as a Document item:
+  - `scripts/mde-sops-secrets-backup-1password.sh`
+- Use the providers deliberately:
+  - `keychain` for machine-local personal secrets
+  - `1password` for shared/team-managed secrets using a service account token
+  - `age` for bootstrap or offline/headless-safe encrypted secrets
 - Install the 1Password CLI (`op`) and ensure it is on `PATH`.
-- Configure secret references in the launchd plist (references are not secrets):
-  - `MDE_OP_GITHUB_TOKEN_REF=op://Vault/GitHub/token`
-  - `MDE_OP_OPENAI_API_KEY_REF=op://Vault/OpenAI/api_key`
-  - `MDE_OP_ANTHROPIC_API_KEY_REF=op://Vault/Anthropic/api_key`
-  - `MDE_OP_LANGSMITH_API_KEY_REF=op://Vault/LangSmith/api_key`
-  - `MDE_OP_LANGSMITH_WORKSPACE_ID_REF=op://Vault/LangSmith/workspace_id`
-  - `MDE_OP_GEMINI_API_KEY_REF=op://Vault/Gemini/api_key`
-  - `MDE_OP_BRAVE_API_KEY_REF=op://Vault/Brave/api_key` (optional)
-- The maintenance script loads these into the environment when available.
-- Gemini CLI reads `GEMINI_API_KEY` for unattended auth.
-- Keychain fallback (local-only, no 1Password service account):
-  - `security add-generic-password -a "$USER" -s mde-github-token -w`
-  - `security add-generic-password -a "$USER" -s mde-openai-api-key -w`
-  - `security add-generic-password -a "$USER" -s mde-anthropic-api-key -w` (optional)
-  - `security add-generic-password -a "$USER" -s mde-langsmith-api-key -w` (optional)
-  - `security add-generic-password -a "$USER" -s mde-langsmith-workspace-id -w` (service keys)
-  - `security add-generic-password -a "$USER" -s mde-gemini-api-key -w` (optional)
-  - `security add-generic-password -a "$USER" -s mde-brave-api-key -w` (optional)
-- Keychain values are used only when `.env` and 1Password do not provide a value.
+- Store the service account token in fnox using the age provider:
+  - `fnox set OP_SERVICE_ACCOUNT_TOKEN "ops_..." --provider age`
+- Store local personal secrets in fnox using the keychain provider:
+  - `fnox set OPENAI_API_KEY "..." --provider keychain`
+  - `fnox set ANTHROPIC_API_KEY "..." --provider keychain`
+  - `fnox set GEMINI_API_KEY "..." --provider keychain`
+  - `fnox set LANGSMITH_API_KEY "..." --provider keychain`
+  - `fnox set LANGSMITH_WORKSPACE_ID "..." --provider keychain`
+  - `fnox set GITHUB_TOKEN "..." --provider keychain`
+  - `fnox set GITHUB_MCP_PAT "..." --provider keychain`
+- Use repo or local overlays for shared 1Password-backed secrets with explicit `op://...` URIs.
+- Optional fnox tools:
+  - `fnox tui` for inspection
+  - `fnox sync` for local encrypted caching of remote secrets
+  - `fnox mcp` for allowlisted secret brokering to agents
 - For LangSmith personal keys, omit `LANGSMITH_WORKSPACE_ID` (service keys require it).
-- `.gitignore` includes `.env` and `secrets.env` to prevent accidental check-in.
-- Keep secrets out of `~/.oh-my-zsh/custom/*`; use `op run -- <cmd>` for ad-hoc work.
+- `.gitignore` includes `.env` and `fnox.local.toml` to prevent accidental check-in.
+- Keep secrets out of `~/.oh-my-zsh/custom/*`; scripts should rely on `mise` env loading of the SOPS file instead of direct keychain or `op read` shellouts.
 - For tmux, avoid global exports; prefer `op run -- tmux new-session ...` or per-session `setenv`.
 
 ## SkyPilot (AWS)
-- Install with `scripts/install-agent-stack.sh` or `scripts/optimize-tmux.sh` (includes `skypilot[aws]`).
+- Install with `scripts/install-agent-stack.sh` or `uv run mde-py install tmux` (includes `skypilot[aws]`).
 - Optional: install AWS CLI for richer status output (`mise use -g awscli@latest`).
-- Add AWS keys to `~/.config/macos-development-environment/secrets.env`.
+- Add AWS keys to `fnox` using the `keychain` provider.
+  Example: `fnox set AWS_ACCESS_KEY_ID "..." --provider keychain`
+  Example: `fnox set AWS_SECRET_ACCESS_KEY "..." --provider keychain`
+  Example: `fnox set AWS_REGION "us-east-1" --provider keychain`
 
 ## AWS + Kubernetes Tooling
 - Install core AWS + Kubernetes CLIs:
-  - `scripts/install-aws-k8s-tools.sh`
+  - `uv run mde-py install aws-k8s`
 - Verification:
   - `scripts/verify-aws-k8s-tools.sh`
 - Optional tools include `eksctl`, `k9s`, `kubectx`, `kubens`, `stern`, and `session-manager-plugin` (requires sudo; install with `--allow-sudo` after caching credentials).
@@ -295,7 +317,7 @@ Possible issues:
   - `scripts/openlit-control.sh deploy`
   - `scripts/openlit-control.sh update`
   - `scripts/openlit-control.sh status`
-- Write OTLP env vars to secrets file:
+- Persist OTLP env vars into `fnox`:
   - `scripts/openlit-control.sh env --write-env`
 - Docs: `docs/openlit-telemetry.md`
 
@@ -344,9 +366,9 @@ Possible issues:
 - Set a global default (stable or latest):
   - `mise use -g python@3.12` or `mise use -g python@latest`
 - Pin per-project versions in `mise.toml` (recommended for reproducibility).
-- Use `uv` or `pixi` for tools/venvs; avoid global `pip install --user`.
+- Use `uv` or `pixi` for tools and venvs; do not repair this repo with user-scoped global pip installs.
 - Prevent uv-managed Python duplicates:
-  - `export UV_NO_MANAGED_PYTHON=1`
+  - `export UV_PYTHON_DOWNLOADS=never`
 - If Homebrew Python is required by other formulae, keep it installed but
   ensure mise shims are first in `PATH`. Optionally `brew unlink python@3.x`.
 
@@ -376,7 +398,7 @@ Possible issues:
 
 ## Tmux + Cloud Workflow
 - Overview: `docs/tmux-cloud-workflow.md`
-- Install/update script: `scripts/optimize-tmux.sh`
+- Install/update: `uv run mde-py install tmux`
 - Layout helper: `scripts/agent-hud`
 
 ## Decision Log
