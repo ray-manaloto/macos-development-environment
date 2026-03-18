@@ -110,7 +110,7 @@ and troubleshoot runs.
 - `scripts/install-ai-research-skills.sh`
 - `scripts/macos-dev-maintenance.sh`
 - `scripts/ensure-managed-configs.sh`
-- `scripts/optimize-tmux.sh`
+- ~~`scripts/optimize-tmux.sh`~~ → migrated to `uv run mde-py install tmux`
 - `scripts/status-dashboard.sh`
 - `scripts/health-check.sh`
 - `scripts/verify-tmux-setup.sh`
@@ -125,7 +125,7 @@ and troubleshoot runs.
 - `scripts/sky-status.sh`
 - `scripts/openlit-control.sh`
 - `scripts/verify-openlit.sh`
-- `scripts/install-aws-k8s-tools.sh`
+- ~~`scripts/install-aws-k8s-tools.sh`~~ → migrated to `uv run mde-py install aws-k8s`
 - `scripts/verify-aws-k8s-tools.sh`
 - `scripts/verify-ai-research-skills.sh`
 - `scripts/post-setup-run.sh`

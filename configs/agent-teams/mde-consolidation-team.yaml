@@ -13,7 +13,8 @@ subagents:
     objective: Read ALL team reports, extract patterns, merge similar findings, flag contradictions.
     required_skills: [skills/mde-agent-runtime-contract, skills/evidence-synthesis]
     required_plugins: [superpowers]
-    output_files: [reports/consolidation/{{date}}-consolidated-findings.md]
+    output_files:
+      - "reports/consolidation/{{date}}-consolidated-findings.md"
     prompt_file: prompts/agent-team/consolidation/findings-consolidator.md
 
   - id: learning-writer
@@ -33,5 +34,6 @@ subagents:
       - "All HIGH priority findings have been applied"
       - "Learning registry updated with timestamped entries"
       - "No contradictions remain unresolved"
-    output_files: [reports/consolidation/{{date}}-process-review.md]
+    output_files:
+      - "reports/consolidation/{{date}}-process-review.md"
     prompt_file: prompts/agent-team/consolidation/process-reviewer.md

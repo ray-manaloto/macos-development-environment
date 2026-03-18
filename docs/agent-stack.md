@@ -25,7 +25,7 @@ scripts/install-ai-research-skills.sh
 Install AWS + Kubernetes tools:
 
 ```bash
-scripts/install-aws-k8s-tools.sh
+uv run mde-py install aws-k8s
 ```
 
 Maintenance integration:

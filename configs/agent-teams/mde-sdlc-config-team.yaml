@@ -34,5 +34,6 @@ subagents:
       - "Every prompt has Mandatory skill activation steps section"
       - "Review stages (2, 6, 7) have gate_criteria with measurable pass/fail"
       - "No prompt allows skipping verification"
-    output_files: [reports/sdlc-config/{{date}}-review.md]
+    output_files:
+      - "reports/sdlc-config/{{date}}-review.md"
     prompt_file: prompts/agent-team/sdlc-config/config-reviewer.md

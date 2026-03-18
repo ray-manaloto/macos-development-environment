@@ -280,7 +280,7 @@ Possible issues:
 - For tmux, avoid global exports; prefer `op run -- tmux new-session ...` or per-session `setenv`.
 
 ## SkyPilot (AWS)
-- Install with `scripts/install-agent-stack.sh` or `scripts/optimize-tmux.sh` (includes `skypilot[aws]`).
+- Install with `scripts/install-agent-stack.sh` or `uv run mde-py install tmux` (includes `skypilot[aws]`).
 - Optional: install AWS CLI for richer status output (`mise use -g awscli@latest`).
 - Add AWS keys to `fnox` using the `keychain` provider.
   Example: `fnox set AWS_ACCESS_KEY_ID "..." --provider keychain`
@@ -289,7 +289,7 @@ Possible issues:
 
 ## AWS + Kubernetes Tooling
 - Install core AWS + Kubernetes CLIs:
-  - `scripts/install-aws-k8s-tools.sh`
+  - `uv run mde-py install aws-k8s`
 - Verification:
   - `scripts/verify-aws-k8s-tools.sh`
 - Optional tools include `eksctl`, `k9s`, `kubectx`, `kubens`, `stern`, and `session-manager-plugin` (requires sudo; install with `--allow-sudo` after caching credentials).
@@ -398,7 +398,7 @@ Possible issues:
 
 ## Tmux + Cloud Workflow
 - Overview: `docs/tmux-cloud-workflow.md`
-- Install/update script: `scripts/optimize-tmux.sh`
+- Install/update: `uv run mde-py install tmux`
 - Layout helper: `scripts/agent-hud`
 
 ## Decision Log

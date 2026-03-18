@@ -41,5 +41,6 @@ subagents:
       - "TaskCompleted hook exits 0 on normal completion"
       - "PostToolUse hook writes valid JSONL"
       - ".claude/settings.json has hooks section + reverted plugin disabling"
-    output_files: [reports/hooks-learning/{{date}}-review.md]
+    output_files:
+      - "reports/hooks-learning/{{date}}-review.md"
     prompt_file: prompts/agent-team/hooks-learning/hooks-reviewer.md

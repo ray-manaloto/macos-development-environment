@@ -4164,11 +4164,11 @@
         "brew",
         "mise"
       ],
-      "declaration_mode": "transition-exception",
+      "declaration_mode": "mise-declared",
       "backend_native_declarative_config_exists": null,
       "backend_native_config_path": null,
       "mise_linkage_method": null,
-      "recommended_target_state": "reconcile-declared-config",
+      "recommended_target_state": "migrated",
       "current_validation_coverage": "partial",
       "owning_team": "mde-update-remediation-team",
       "owning_implementation_language": "shell",
@@ -4176,7 +4176,7 @@
         "shellcheck",
         "bash -n"
       ],
-      "proof_command": "bash scripts/install-aws-k8s-tools.sh",
+      "proof_command": "uv run mde-py install aws-k8s",
       "decision_record_path": "docs/research/ecosystem-decisions/2026-03-14-sdk-mcp-mise-cache.md",
       "allowed_wrapper_status": "transition-exception",
       "cache_policy": {
@@ -6468,11 +6468,11 @@
         "pixi",
         "uv"
       ],
-      "declaration_mode": "review-and-classify",
+      "declaration_mode": "mise-declared",
       "backend_native_declarative_config_exists": null,
       "backend_native_config_path": null,
       "mise_linkage_method": null,
-      "recommended_target_state": "review-and-classify",
+      "recommended_target_state": "migrated",
       "current_validation_coverage": "partial",
       "owning_team": "mde-update-remediation-team",
       "owning_implementation_language": "shell",
@@ -6480,7 +6480,7 @@
         "shellcheck",
         "bash -n"
       ],
-      "proof_command": "bash scripts/optimize-tmux.sh",
+      "proof_command": "uv run mde-py install tmux",
       "decision_record_path": null,
       "allowed_wrapper_status": "transition-exception",
       "cache_policy": {

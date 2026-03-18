@@ -27,5 +27,6 @@ subagents:
       - "uv run pytest tests/mde/test_mise_tasks.py passes"
       - "uv run pytest tests/mde/test_chezmoi.py passes"
       - "uv run pytest tests/mde/test_type_check.py passes"
-    output_files: [reports/pipeline-fixes/{{date}}-integration-results.md]
+    output_files:
+      - "reports/pipeline-fixes/{{date}}-integration-results.md"
     prompt_file: prompts/agent-team/pipeline-fixes/integration-tester.md

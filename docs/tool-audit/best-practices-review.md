@@ -347,7 +347,7 @@ Scripts to update (grep found 20+ with duplicated functions):
 - `verify-skypilot-aws.sh`
 - `status-dashboard.sh`
 - `sky-status.sh`
-- `install-aws-k8s-tools.sh`
+- ~~`install-aws-k8s-tools.sh`~~ (migrated to `uv run mde-py install aws-k8s`)
 - `install-ai-research-skills.sh`
 - `setup-mcp-servers.sh`
 - `openlit-control.sh`

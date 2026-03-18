@@ -36,5 +36,6 @@ subagents:
       - "ruff format --check exits 0"
       - "uv run ty check src/mde/ exits 0"
       - "uv run pytest tests/mde/ -v all pass"
-    output_files: [reports/python-api/{{date}}-qa.md]
+    output_files:
+      - "reports/python-api/{{date}}-qa.md"
     prompt_file: prompts/agent-team/python-api/qa-verifier.md
