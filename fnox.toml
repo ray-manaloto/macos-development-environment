@@ -1,0 +1,43 @@
+# Repo-level fnox overlay.
+# Global personal secrets live in ~/.config/fnox/config.toml.
+# Local 1Password-backed overlays belong in fnox.local.toml.
+
+if_missing = "warn"
+
+[secrets]
+AWS_ACCESS_KEY_ID= { provider = "keychain", value = "AWS_ACCESS_KEY_ID", if_missing = "ignore" }
+AWS_SECRET_ACCESS_KEY= { provider = "keychain", value = "AWS_SECRET_ACCESS_KEY", if_missing = "ignore" }
+AWS_DEFAULT_REGION= { provider = "keychain", value = "AWS_DEFAULT_REGION", if_missing = "ignore" }
+AWS_REGION= { provider = "keychain", value = "AWS_REGION", if_missing = "ignore" }
+BRAVE_API_KEY= { provider = "keychain", value = "BRAVE_API_KEY", if_missing = "ignore" }
+DB_PASSWORD= { provider = "keychain", value = "DB_PASSWORD", if_missing = "ignore" }
+GEMINI_TELEMETRY_ENABLED= { provider = "keychain", value = "GEMINI_TELEMETRY_ENABLED", if_missing = "ignore" }
+GEMINI_TELEMETRY_LOG_PROMPTS= { provider = "keychain", value = "GEMINI_TELEMETRY_LOG_PROMPTS", if_missing = "ignore" }
+GEMINI_TELEMETRY_OTLP_ENDPOINT= { provider = "keychain", value = "GEMINI_TELEMETRY_OTLP_ENDPOINT", if_missing = "ignore" }
+GEMINI_TELEMETRY_OTLP_PROTOCOL= { provider = "keychain", value = "GEMINI_TELEMETRY_OTLP_PROTOCOL", if_missing = "ignore" }
+GEMINI_TELEMETRY_TARGET= { provider = "keychain", value = "GEMINI_TELEMETRY_TARGET", if_missing = "ignore" }
+GOOGLE_CLIENT_ID= { provider = "keychain", value = "GOOGLE_CLIENT_ID", if_missing = "ignore" }
+GOOGLE_CLIENT_SECRET= { provider = "keychain", value = "GOOGLE_CLIENT_SECRET", if_missing = "ignore" }
+GRAFANA_PASSWORD= { provider = "keychain", value = "GRAFANA_PASSWORD", if_missing = "ignore" }
+LOKI_S3_ACCESS_KEY= { provider = "keychain", value = "LOKI_S3_ACCESS_KEY", if_missing = "ignore" }
+LOKI_S3_BUCKET= { provider = "keychain", value = "LOKI_S3_BUCKET", if_missing = "ignore" }
+LOKI_S3_SECRET_KEY= { provider = "keychain", value = "LOKI_S3_SECRET_KEY", if_missing = "ignore" }
+MIMIR_S3_ACCESS_KEY= { provider = "keychain", value = "MIMIR_S3_ACCESS_KEY", if_missing = "ignore" }
+MIMIR_S3_BUCKET= { provider = "keychain", value = "MIMIR_S3_BUCKET", if_missing = "ignore" }
+MIMIR_S3_SECRET_KEY= { provider = "keychain", value = "MIMIR_S3_SECRET_KEY", if_missing = "ignore" }
+NEXTAUTH_SECRET= { provider = "keychain", value = "NEXTAUTH_SECRET", if_missing = "ignore" }
+NEXTAUTH_URL= { provider = "keychain", value = "NEXTAUTH_URL", if_missing = "ignore" }
+OPENLIT_ENDPOINT= { provider = "keychain", value = "OPENLIT_ENDPOINT", if_missing = "ignore" }
+OPENLIT_UI_PASSWORD= { provider = "keychain", value = "OPENLIT_UI_PASSWORD", if_missing = "ignore" }
+OPENLIT_UI_USER= { provider = "keychain", value = "OPENLIT_UI_USER", if_missing = "ignore" }
+OTEL_EXPORTER_OTLP_ENDPOINT= { provider = "keychain", value = "OTEL_EXPORTER_OTLP_ENDPOINT", if_missing = "ignore" }
+OTEL_EXPORTER_OTLP_PROTOCOL= { provider = "keychain", value = "OTEL_EXPORTER_OTLP_PROTOCOL", if_missing = "ignore" }
+TEMPO_S3_ACCESS_KEY= { provider = "keychain", value = "TEMPO_S3_ACCESS_KEY", if_missing = "ignore" }
+TEMPO_S3_BUCKET= { provider = "keychain", value = "TEMPO_S3_BUCKET", if_missing = "ignore" }
+TEMPO_S3_SECRET_KEY= { provider = "keychain", value = "TEMPO_S3_SECRET_KEY", if_missing = "ignore" }
+OPENAI_API_KEY= { provider = "keychain", value = "OPENAI_API_KEY", if_missing = "ignore" }
+ANTHROPIC_API_KEY= { provider = "keychain", value = "ANTHROPIC_API_KEY", if_missing = "ignore" }
+GEMINI_API_KEY= { provider = "keychain", value = "GEMINI_API_KEY", if_missing = "ignore" }
+LANGSMITH_API_KEY= { provider = "keychain", value = "LANGSMITH_API_KEY", if_missing = "ignore" }
+GITHUB_TOKEN= { provider = "keychain", value = "GITHUB_TOKEN", if_missing = "ignore" }
+GITHUB_MCP_PAT= { provider = "keychain", value = "GITHUB_MCP_PAT", if_missing = "ignore" }

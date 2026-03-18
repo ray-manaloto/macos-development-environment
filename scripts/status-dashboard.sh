@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LOG_DIR="$HOME/Library/Logs/com.ray-manaloto.macos-dev-maintenance"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/mde-platform.sh
+source "$SCRIPT_DIR/lib/mde-platform.sh"
+# shellcheck source=scripts/lib/mde-json.sh
+source "$SCRIPT_DIR/lib/mde-json.sh"
+
+MDE_PLATFORM="${MDE_PLATFORM:-$(mde_detect_platform)}"
+LOG_DIR="$(mde_default_log_dir)"
 MAINT_LOG="$LOG_DIR/macos-dev-maintenance.out"
 VALID_LOG="$LOG_DIR/macos-dev-validation.out"
 SUMMARY_LOG="$LOG_DIR/post-setup-summary.log"
@@ -22,11 +29,18 @@ log() {
 
 setup_path() {
   local home="${HOME:-/Users/rmanaloto}"
-  export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  local base="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin"
+  if mde_is_macos; then
+    export PATH="$base:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  else
+    export PATH="$base:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  fi
 }
 
 json_escape() {
-  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+  local s="${1:-}"
+  s="${s//$'\033'/}"
+  _json_esc "$s"
 }
 json_array() {
   local first=1
@@ -202,6 +216,9 @@ tmux_verification_status() {
 
 launchd_status_code() {
   local label="$1"
+  if ! mde_is_macos || ! command -v launchctl >/dev/null 2>&1; then
+    return 0
+  fi
   launchctl list 2>/dev/null | awk -v label="$label" '$3==label {print $2}' || true
 }
 
@@ -224,7 +241,13 @@ launchd_state() {
 log_size() {
   local file="$1"
   if [[ -f "$file" ]]; then
-    stat -f '%z bytes' "$file" 2>/dev/null || echo "unknown"
+    if stat -f '%z bytes' "$file" >/dev/null 2>&1; then
+      stat -f '%z bytes' "$file"
+    elif stat -c '%s bytes' "$file" >/dev/null 2>&1; then
+      stat -c '%s bytes' "$file"
+    else
+      echo "unknown"
+    fi
   else
     echo "missing"
   fi
@@ -285,15 +308,16 @@ openlit_status_line() {
     printf 'sky missing'
     return 0
   fi
-  sky status openlit-cluster 2>/dev/null | awk 'NR>=3 && $1=="openlit-cluster"{print; exit}' || printf 'not found'
+  NO_COLOR=1 CLICOLOR=0 CLICOLOR_FORCE=0 TERM=dumb \
+    sky status openlit-cluster 2>/dev/null | awk 'NR>=3 && $1=="openlit-cluster"{print; exit}' || printf 'not found'
 }
 
 openlit_endpoints() {
   local script="./scripts/openlit-control.sh"
   local out=""
   if [[ -x "$script" ]]; then
-    out=$("$script" endpoints 2>/dev/null || true)
-    printf '%s' "$out" | paste -sd' ' -
+    out="$(NO_COLOR=1 CLICOLOR=0 CLICOLOR_FORCE=0 TERM=dumb "$script" endpoints 2>/dev/null || true)"
+    printf '%s' "$out" | tr '\r\t' '  ' | paste -sd' ' - | awk '{$1=$1; print}'
   fi
 }
 
@@ -352,27 +376,31 @@ output_json() {
   local gemini_status="${19}"
   local tmux_status="${20}"
   local tmux_line="${21}"
-  local claude_expected="$HOME/.local/bin/claude"
+  local claude_expected="$HOME/.local/share/mise/shims/claude"
+  local claude_target=""
+  local claude_resolved=""
   local claude_status="missing"
   local claude_paths=""
   local claude_paths_json="[]"
+  local claude_target_json=""
   local inventory
 
   claude_paths="$(claude_paths || true)"
-  if [[ -n "$claude_paths" ]]; then
-    local claude_count
-    local claude_first
-    claude_count="$(printf '%s\n' "$claude_paths" | sed '/^$/d' | wc -l | tr -d ' ')"
-    claude_first="$(printf '%s\n' "$claude_paths" | sed -n '1p')"
-    if [[ "$claude_count" -gt 1 ]]; then
-      claude_status="multiple"
-    elif [[ "$claude_first" != "$claude_expected" ]]; then
+  claude_resolved="$(command -v claude 2>/dev/null || true)"
+  claude_target="$(mise which claude 2>/dev/null || true)"
+  if [[ -n "$claude_resolved" ]]; then
+    if [[ -z "$claude_target" ]]; then
+      claude_status="no-mise-target"
+    elif [[ "$claude_resolved" != "$claude_expected" ]]; then
       claude_status="mismatch"
+    elif [[ ! "$claude_target" == "$HOME/.local/share/mise/installs/"* ]]; then
+      claude_status="invalid-mise-target"
     else
       claude_status="ok"
     fi
   fi
   claude_paths_json="$(printf '%s\n' "$claude_paths" | json_array)"
+  claude_target_json="$(json_escape "$claude_target")"
 
   inventory="$(inventory_json)"
 
@@ -391,8 +419,8 @@ output_json() {
     "$(json_escape "$tmux_status")" "$(json_escape "$tmux_line")"
   printf '  "tools": {"gcloud": "%s", "mise": "%s", "uv": "%s", "pixi": "%s", "bun": "%s"},\n' \
     "$(json_escape "$gcloud_bin")" "$(json_escape "$mise_bin")" "$(json_escape "$uv_bin")" "$(json_escape "$pixi_bin")" "$(json_escape "$bun_bin")"
-  printf '  "claude": {"status": "%s", "expected": "%s", "paths": %s},\n' \
-    "$(json_escape "$claude_status")" "$(json_escape "$claude_expected")" "$claude_paths_json"
+  printf '  "claude": {"status": "%s", "expected_shim": "%s", "mise_target": "%s", "paths": %s},\n' \
+    "$(json_escape "$claude_status")" "$(json_escape "$claude_expected")" "$claude_target_json" "$claude_paths_json"
   printf '  "openlit": {"status_line": "%s", "endpoints": "%s"},\n' \
     "$(json_escape "$openlit_status")" "$(json_escape "$openlit_eps")"
   printf '  "gemini_telemetry": "%s",\n' "$(json_escape "$gemini_status")"

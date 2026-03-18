@@ -1,0 +1,72 @@
+team:
+  id: devcontainer-setup-sdlc-team
+  name: Devcontainer Setup SDLC Team
+  goal: Deliver a production-ready devcontainer setup workflow with evidence-backed research, adopted vs rejected reference patterns, real smoke evidence, explicit role sign-offs, and release docs.
+  output_dir: reports/devcontainer-sdlc
+  shared_artifacts_dir: .artifacts/devcontainer-sdlc
+  repo_root: /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment
+
+subagents:
+  - id: sdlc-product-manager
+    stage: 1
+    objective: Define product requirements, scope, constraints, and acceptance outcomes.
+    required_skills: [skills/mde-agent-runtime-contract, writing-plans, brainstorming]
+    output_files:
+      - reports/devcontainer-sdlc/{{date}}-01-product-requirements.md
+    prompt_file: prompts/agent-team/devcontainer-setup-sdlc/sdlc-product-manager.md
+
+  - id: sdlc-architect
+    stage: 2
+    objective: Produce architecture and technical decision set for implementation.
+    required_skills: [skills/mde-agent-runtime-contract, software-architecture, evidence-synthesis]
+    output_files:
+      - reports/devcontainer-sdlc/{{date}}-02-architecture-design.md
+    prompt_file: prompts/agent-team/devcontainer-setup-sdlc/sdlc-architect.md
+
+  - id: sdlc-implementation
+    stage: 3
+    objective: Produce concrete implementation plan and execution checklist with verification commands.
+    required_skills: [skills/mde-agent-runtime-contract, test-driven-development, verification-before-completion]
+    output_files:
+      - reports/devcontainer-sdlc/{{date}}-03-implementation-plan.md
+    prompt_file: prompts/agent-team/devcontainer-setup-sdlc/sdlc-implementation.md
+
+  - id: sdlc-functional-qa
+    stage: 4
+    objective: Validate functional behavior against acceptance criteria.
+    required_skills: [skills/mde-agent-runtime-contract, systematic-debugging, test-driven-development]
+    output_files:
+      - reports/devcontainer-sdlc/{{date}}-04-functional-qa.md
+    prompt_file: prompts/agent-team/devcontainer-setup-sdlc/sdlc-functional-qa.md
+
+  - id: sdlc-nonfunctional-qa
+    stage: 4
+    objective: Validate reliability, performance, and operability risks.
+    required_skills: [skills/mde-agent-runtime-contract, verification-before-completion]
+    output_files:
+      - reports/devcontainer-sdlc/{{date}}-05-nonfunctional-qa.md
+    prompt_file: prompts/agent-team/devcontainer-setup-sdlc/sdlc-nonfunctional-qa.md
+
+  - id: sdlc-security
+    stage: 5
+    objective: Assess security controls and policy enforcement points.
+    required_skills: [skills/mde-agent-runtime-contract, security-review, review-verification-protocol]
+    output_files:
+      - reports/devcontainer-sdlc/{{date}}-06-security-review.md
+    prompt_file: prompts/agent-team/devcontainer-setup-sdlc/sdlc-security.md
+
+  - id: sdlc-devops
+    stage: 6
+    objective: Define CI/CD and operational release runbook with hard gates.
+    required_skills: [skills/mde-agent-runtime-contract, deployment-procedures, verification-before-completion]
+    output_files:
+      - reports/devcontainer-sdlc/{{date}}-07-devops-release.md
+    prompt_file: prompts/agent-team/devcontainer-setup-sdlc/sdlc-devops.md
+
+  - id: sdlc-docs
+    stage: 7
+    objective: Produce final handoff docs and execution order for team adoption.
+    required_skills: [skills/mde-agent-runtime-contract, doc-coauthoring, documentation-templates]
+    output_files:
+      - reports/devcontainer-sdlc/{{date}}-08-docs-handoff.md
+    prompt_file: prompts/agent-team/devcontainer-setup-sdlc/sdlc-docs.md

@@ -1,162 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Tools migrated to mise declarative config (~/.config/mise/config.toml).
+# This script now only handles: fabric install, gh-copilot extension, fabric env config.
 
-export UV_NO_MANAGED_PYTHON="${UV_NO_MANAGED_PYTHON:-1}"
-export UV_CACHE_DIR="${UV_CACHE_DIR:-$HOME/Library/Caches/uv}"
-mkdir -p "$UV_CACHE_DIR" 2>/dev/null || true
-export GOBIN="${GOBIN:-$HOME/.local/bin}"
-mkdir -p "$GOBIN" 2>/dev/null || true
-
+export GIT_TERMINAL_PROMPT=0
 export PYO3_USE_ABI3_FORWARD_COMPATIBILITY="${PYO3_USE_ABI3_FORWARD_COMPATIBILITY:-1}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/mde-agent-policy.sh
+source "$SCRIPT_DIR/lib/mde-agent-policy.sh"
+# shellcheck source=scripts/lib/mde-cache-policy.sh
+source "$SCRIPT_DIR/lib/mde-cache-policy.sh"
+# shellcheck source=scripts/lib/mde-secrets.sh
+source "$SCRIPT_DIR/lib/mde-secrets.sh"
 
-PIXI_ENV="${PIXI_ENV:-agent-stack}"
+mde_policy_init
+mde_setup_managed_path
+mde_disable_mise_auto_install
+mde_prepare_cache_dirs
+mde_block_legacy_installer_in_agent_context "$(basename "$0")" "mise run mde:migrate:global-tools -- --dry-run"
+
 INCLUDE_OPTIONAL="${INCLUDE_OPTIONAL:-1}"
-
-TOOL_PYTHON_VERSION="${TOOL_PYTHON_VERSION:-3.12}"
-
-require_cmd() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    echo "missing required command: $1" >&2
-    return 1
-  fi
-}
-
-
-cleanup_claude_cli() {
-  local cleanup="$SCRIPT_DIR/cleanup-claude-cli.sh"
-  if [[ -x "$cleanup" ]]; then
-    "$cleanup" >/dev/null 2>&1 || true
-    return 0
-  fi
-
-  local bun_claude="$HOME/.bun/bin/claude"
-  if [[ -e "$bun_claude" ]]; then
-    rm -f "$bun_claude" || true
-  fi
-}
-
-cleanup_gemini_cli() {
-  local cleanup="$SCRIPT_DIR/cleanup-gemini-cli.sh"
-  if [[ -x "$cleanup" ]]; then
-    "$cleanup" >/dev/null 2>&1 || true
-    return 0
-  fi
-
-  local bun_gemini="$HOME/.bun/bin/gemini"
-  if [[ -e "$bun_gemini" ]]; then
-    rm -f "$bun_gemini" || true
-  fi
-}
-
-ensure_mise() {
-  require_cmd mise || {
-    echo "mise is required. Install with: curl https://mise.run | sh" >&2
-    exit 1
-  }
-  eval "$(mise activate bash)"
-}
-
-ensure_runtimes() {
-  mise install -q python@latest python@${TOOL_PYTHON_VERSION} node@latest bun@latest go@latest
-  mise use -g python@latest node@latest bun@latest go@latest
-  mise reshim
-}
-
-ensure_uv() {
-  if command -v uv >/dev/null 2>&1; then
-    uv self update >/dev/null 2>&1 || true
-    return 0
-  fi
-  if command -v curl >/dev/null 2>&1; then
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    return 0
-  fi
-  return 1
-}
-
-ensure_pixi() {
-  if command -v pixi >/dev/null 2>&1; then
-    pixi self-update >/dev/null 2>&1 || true
-    return 0
-  fi
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL https://pixi.sh/install.sh | bash
-    return 0
-  fi
-  return 1
-}
-
-tool_python_path() {
-  if command -v mise >/dev/null 2>&1; then
-    local base=""
-    base="$(mise where python@${TOOL_PYTHON_VERSION} 2>/dev/null || true)"
-    if [[ -n "$base" && -x "$base/bin/python3" ]]; then
-      printf '%s' "$base/bin/python3"
-      return 0
-    fi
-  fi
-  return 1
-}
-
-
-install_python_tool() {
-  local pkg="$1"
-
-  if command -v pixi >/dev/null 2>&1; then
-    if PIXI_NO_PROGRESS=1 pixi global install -e "$PIXI_ENV" \
-      --pinning-strategy no-pin "$pkg" >/dev/null 2>&1; then
-      return 0
-    fi
-  fi
-
-  if command -v uv >/dev/null 2>&1; then
-    local uv_python=""
-    uv_python="$(tool_python_path || true)"
-    if [[ -n "$uv_python" ]]; then
-      if UV_PYTHON="$uv_python" uv tool install --upgrade "$pkg"; then
-        return 0
-      fi
-    else
-      if uv tool install --upgrade "$pkg"; then
-        return 0
-      fi
-    fi
-  fi
-
-  if command -v pip >/dev/null 2>&1; then
-    pip install --upgrade "$pkg"
-    return 0
-  fi
-
-  return 1
-}
-
-install_node_tool() {
-  local pkg="$1"
-  shift
-
-  if bun add -g "${pkg}@latest"; then
-    return 0
-  fi
-
-  for fallback in "$@"; do
-    if bun add -g "${fallback}@latest"; then
-      return 0
-    fi
-  done
-
-  return 1
-}
-
-
-load_keychain_secret() {
-  local label="$1"
-  if command -v security >/dev/null 2>&1; then
-    security find-generic-password -s "$label" -w 2>/dev/null || true
-  fi
-}
 
 set_env_line() {
   local env_file="$1"
@@ -250,20 +114,8 @@ configure_fabric_env() {
   esac
 
   for key in "${keys[@]}"; do
+    mde_load_secrets
     value="${!key:-}"
-    if [[ -z "$value" ]]; then
-      case "$key" in
-        OPENAI_API_KEY)
-          value="$(load_keychain_secret mde-openai-api-key)"
-          ;;
-        ANTHROPIC_API_KEY)
-          value="$(load_keychain_secret mde-anthropic-api-key)"
-          ;;
-        GEMINI_API_KEY)
-          value="$(load_keychain_secret mde-gemini-api-key)"
-          ;;
-      esac
-    fi
     if set_env_line "$env_file" "$key" "$value" "$overwrite"; then
       wrote=1
     fi
@@ -297,6 +149,7 @@ install_fabric() {
   local legacy_bin="$HOME/.local/bin/fabric"
 
   mkdir -p "$bin_dir" 2>/dev/null || true
+  export PATH="$bin_dir:$PATH"
 
   if [[ -f "$legacy_bin" && ! -L "$legacy_bin" ]]; then
     if ! grep -q "Managed by macos-development-environment" "$legacy_bin" 2>/dev/null; then
@@ -306,72 +159,9 @@ install_fabric() {
     fi
   fi
 
-  curl -fsSL https://raw.githubusercontent.com/danielmiessler/fabric/main/scripts/installer/install.sh |     INSTALL_DIR="$bin_dir" bash
+  curl -fsSL https://raw.githubusercontent.com/danielmiessler/fabric/main/scripts/installer/install.sh | \
+    INSTALL_DIR="$bin_dir" bash
 }
-
-ensure_mise
-ensure_runtimes
-ensure_uv
-ensure_pixi
-
-PYTHON_TOOLS=(
-  "langchain-cli"
-  "langgraph-cli"
-  "langsmith-fetch"
-  "skypilot[aws]"
-  "aider-chat"
-  "open-interpreter"
-  "crewai"
-)
-
-NODE_TOOLS=(
-  "@anthropic-ai/claude-code"
-  "@openai/codex"
-  "@google/gemini-cli"
-  "openwork"
-  "create-agent-chat-app"
-  "@modelcontextprotocol/inspector"
-)
-
-GO_TOOLS=(
-  "github.com/opencode-ai/opencode@latest"
-)
-
-python_failures=()
-node_failures=()
-go_failures=()
-
-for pkg in "${PYTHON_TOOLS[@]}"; do
-  echo "[python] installing ${pkg}"
-  if ! install_python_tool "$pkg"; then
-    python_failures+=("$pkg")
-  fi
-done
-
-if command -v sky >/dev/null 2>&1 && [[ -x "$SCRIPT_DIR/patch-skypilot.sh" ]]; then
-  "$SCRIPT_DIR/patch-skypilot.sh"
-fi
-
-for pkg in "${NODE_TOOLS[@]}"; do
-  echo "[node] installing ${pkg}"
-  if ! install_node_tool "$pkg"; then
-    node_failures+=("$pkg")
-  fi
-done
-
-cleanup_claude_cli
-cleanup_gemini_cli
-
-for pkg in "${GO_TOOLS[@]}"; do
-  echo "[go] installing ${pkg}"
-  if command -v go >/dev/null 2>&1; then
-    if ! go install "${pkg}"; then
-      go_failures+=("$pkg")
-    fi
-  else
-    go_failures+=("$pkg")
-  fi
-done
 
 if [[ "$INCLUDE_OPTIONAL" == "1" ]]; then
   if command -v gh >/dev/null 2>&1; then
@@ -383,24 +173,4 @@ if [[ "$INCLUDE_OPTIONAL" == "1" ]]; then
   fi
 fi
 
-if command -v pixi >/dev/null 2>&1; then
-  pixi global update -e "$PIXI_ENV" >/dev/null 2>&1 || true
-fi
-
-mise reshim
-
-if (( ${#python_failures[@]} > 0 || ${#node_failures[@]} > 0 || ${#go_failures[@]} > 0 )); then
-  echo "Install completed with failures:" >&2
-  if (( ${#python_failures[@]} > 0 )); then
-    echo "  Python: ${python_failures[*]}" >&2
-  fi
-  if (( ${#node_failures[@]} > 0 )); then
-    echo "  Node: ${node_failures[*]}" >&2
-  fi
-  if (( ${#go_failures[@]} > 0 )); then
-    echo "  Go: ${go_failures[*]}" >&2
-  fi
-  exit 1
-fi
-
-printf "\nAgent stack installed/updated.\n"
+printf "\nAgent stack non-declarative installs complete.\n"

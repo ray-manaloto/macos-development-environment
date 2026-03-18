@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/mde-secrets.sh
+source "$SCRIPT_DIR/lib/mde-secrets.sh"
+
 log() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
 }
@@ -10,47 +14,9 @@ setup_path() {
   export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 }
 
-load_env_file_secrets() {
-  local env_file="${MDE_ENV_FILE:-$HOME/.config/macos-development-environment/secrets.env}"
-  local override="${MDE_ENV_OVERRIDE:-1}"
-  local line key value
-
-  if [[ "${MDE_ENV_AUTOLOAD:-1}" != "1" ]]; then
-    return 0
-  fi
-
-  if [[ ! -f "$env_file" ]]; then
-    return 0
-  fi
-
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    line="${line#"${line%%[![:space:]]*}"}"
-    line="${line%"${line##*[![:space:]]}"}"
-    [[ -z "$line" ]] && continue
-    [[ "$line" == \#* ]] && continue
-    line="${line#export }"
-    key="${line%%=*}"
-    value="${line#*=}"
-    key="${key%"${key##*[![:space:]]}"}"
-    key="${key#"${key%%[![:space:]]*}"}"
-    [[ -z "$key" ]] && continue
-    if [[ "$override" != "1" && -n "${!key:-}" ]]; then
-      continue
-    fi
-    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
-      value="${value#\"}"
-      value="${value%\"}"
-    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
-      value="${value#\'}"
-      value="${value%\'}"
-    fi
-    export "$key"="$value"
-  done < "$env_file"
-}
-
 main() {
   setup_path
-  load_env_file_secrets
+  mde_load_secrets
 
   local endpoint="${OPENLIT_ENDPOINT:-${OTEL_EXPORTER_OTLP_ENDPOINT:-}}"
   local required="${MDE_OPENLIT_REQUIRED:-0}"

@@ -1,0 +1,77 @@
+team:
+  id: mde-javascript-typescript-domain-team
+  name: MDE JavaScript TypeScript Domain Team
+  domain_id: javascript-typescript
+  goal: Maintain mirror-first research, authority policy, starter bundles, presets, and learning writeback for the javascript-typescript domain.
+  output_dir: reports/mde-domain-sdlc/javascript-typescript
+  shared_artifacts_dir: .artifacts/mde-domain-sdlc/javascript-typescript
+  repo_root: /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment
+  bundle_path: configs/tool-bundles/javascript-typescript
+  preset_ids: ["preset-javascript-typescript", "preset-web-cli-authoring"]
+  reference_source_group: javascript-typescript
+  learning_record_id: domain-javascript-typescript
+
+subagents:
+  - id: mirror-refresh-agent
+    stage: 1
+    objective: Refresh mirror-first sources and capture freshness gaps for the javascript-typescript domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/research-source-discovery]
+    output_files:
+      - reports/mde-domain-sdlc/javascript-typescript/{{date}}-01-mirror-refresh.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/mirror-refresh-agent.md
+
+  - id: docs-tutorial-agent
+    stage: 2
+    objective: Extract practical documentation and tutorial guidance for the javascript-typescript domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/research-source-discovery]
+    output_files:
+      - reports/mde-domain-sdlc/javascript-typescript/{{date}}-02-docs-tutorial.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/docs-tutorial-agent.md
+
+  - id: repo-mining-agent
+    stage: 2
+    objective: Mine upstream repositories and exemplars for portable patterns in the javascript-typescript domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/github-repo-mining]
+    output_files:
+      - reports/mde-domain-sdlc/javascript-typescript/{{date}}-03-repo-mining.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/repo-mining-agent.md
+
+  - id: social-signal-agent
+    stage: 2
+    objective: Gather grounded social and discussion signals for the javascript-typescript domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/social-signal-mining]
+    output_files:
+      - reports/mde-domain-sdlc/javascript-typescript/{{date}}-04-social-signal.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/social-signal-agent.md
+
+  - id: authority-agent
+    stage: 3
+    objective: Define the authority model, companion manifests, and exception boundaries for the javascript-typescript domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/evidence-synthesis]
+    output_files:
+      - reports/mde-domain-sdlc/javascript-typescript/{{date}}-05-authority.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/authority-agent.md
+
+  - id: implementation-agent
+    stage: 3
+    objective: Turn accepted domain decisions into starter-bundle and preset recommendations for javascript-typescript.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/writing-plans]
+    output_files:
+      - reports/mde-domain-sdlc/javascript-typescript/{{date}}-06-implementation.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/implementation-agent.md
+
+  - id: validation-agent
+    stage: 4
+    objective: Define validation commands and acceptance rules for the javascript-typescript domain.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/evidence-synthesis]
+    output_files:
+      - reports/mde-domain-sdlc/javascript-typescript/{{date}}-07-validation.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/validation-agent.md
+
+  - id: learning-consolidator-agent
+    stage: 5
+    objective: Consolidate accepted findings into the domain-javascript-typescript learning record.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mise-enforcement, skills/evidence-synthesis, skills/writing-plans]
+    output_files:
+      - reports/mde-domain-sdlc/javascript-typescript/{{date}}-08-learning-consolidator.md
+    prompt_file: prompts/agent-team/mde-domain-sdlc/learning-consolidator-agent.md

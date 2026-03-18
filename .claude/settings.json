@@ -3,5 +3,40 @@
     "code-simplifier@claude-plugins-official": true,
     "slack@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true
+  },
+  "hooks": {
+    "TaskCompleted": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks verify-task-completion"
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks check-teammate-work"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks log-edit-outcome"
+          }
+        ]
+      }
+    ]
   }
 }

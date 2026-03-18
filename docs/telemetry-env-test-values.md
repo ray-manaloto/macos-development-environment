@@ -13,13 +13,13 @@ Use these temporary values for dry runs only; replace with real endpoints/creds 
 ## Grafana Stack
 - GRAFANA_PASSWORD: TestGrafana!123
 - S3 buckets (create or replace):
-  - TEMPO_S3_BUCKET: mde-tempo-test-bucket
-  - LOKI_S3_BUCKET: mde-loki-test-bucket
-  - MIMIR_S3_BUCKET: mde-mimir-test-bucket
+  - TEMPO_S3_BUCKET: rm-rmanaloto-mde-tempo-prod-use1
+  - LOKI_S3_BUCKET: rm-rmanaloto-mde-loki-prod-use1
+  - MIMIR_S3_BUCKET: rm-rmanaloto-mde-mimir-prod-use1
 - S3 creds: TEMPO_S3_ACCESS_KEY/SECRET_KEY, LOKI_S3_ACCESS_KEY/SECRET_KEY, MIMIR_S3_ACCESS_KEY/SECRET_KEY (placeholders).
 
 ## RDS Postgres
-- DB_INSTANCE_ID: mde-openlit-pg
+- DB_INSTANCE_ID: rm-rmanaloto-mde-rds-prod-use1
 - DB_USERNAME: mdeadmin
 - DB_PASSWORD: TestDbPass!123
 - DB_INSTANCE_CLASS: db.t4g.medium (sample)
@@ -38,4 +38,4 @@ Use these temporary values for dry runs only; replace with real endpoints/creds 
 Notes:
 - Replace all test values before real deployment.
 - Restrict SGs/ports to trusted CIDRs; prefer TLS on OTLP/Grafana.
-- Store real secrets in `~/.config/macos-development-environment/secrets.env` (not committed).
+- Store real secrets in `fnox` (not committed to the repo).

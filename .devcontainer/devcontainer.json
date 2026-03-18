@@ -1,0 +1,11 @@
+{
+  "name": "mde-devcontainer",
+  "image": "${localEnv:MDE_DEVCONTAINER_IMAGE:ghcr.io/ray-manaloto/macos-development-environment/devcontainer:main}",
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "MDE_PLATFORM": "devcontainer",
+    "MDE_ENV_AUTOLOAD": "0",
+    "MDE_AUTOLOAD_SECRETS": "0"
+  },
+  "postCreateCommand": "bash ${containerWorkspaceFolder}/.devcontainer/post-create.sh"
+}

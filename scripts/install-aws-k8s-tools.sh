@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# MDE_POLICY_TRANSITION_EXCEPTION=1
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/mde-agent-policy.sh
+source "$SCRIPT_DIR/lib/mde-agent-policy.sh"
+
+mde_policy_init
+mde_setup_managed_path
+mde_disable_mise_auto_install
+mde_block_legacy_installer_in_agent_context "$(basename "$0")" "update configs/mde-install-exceptions.json and use a human-run exception workflow for AWS/Kubernetes host tools"
+
 
 usage() {
   cat <<'USAGE'
@@ -108,7 +119,7 @@ install_tool() {
     return 0
   fi
 
-  if [[ "$requires_sudo" == "1" && ! sudo_ready ]]; then
+  if [[ "$requires_sudo" == "1" ]] && ! sudo_ready; then
     log "skip: $tool requires sudo but no cached credentials"
     return 0
   fi

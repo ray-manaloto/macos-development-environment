@@ -1,0 +1,13 @@
+{
+  "date": "2026-03-10",
+  "summary": {
+    "source_classes": ["github", "social", "curated", "blog"],
+    "repository_count": 12,
+    "non_repo_artifact_count": 24,
+    "notes": "Counts reflect ROS phase outputs and shortlist rollups."
+  },
+  "discovery_records": [{"source":"github"}],
+  "pattern_records": [{"pattern_category":"devcontainer-ci-execution"}],
+  "decision_records": [{"decision":"adopt"}],
+  "acceptance_records": [{"criterion":"Mise authority"}]
+}

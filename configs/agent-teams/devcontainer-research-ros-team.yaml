@@ -1,0 +1,80 @@
+team:
+  id: devcontainer-research-ros-team
+  name: Devcontainer Research ROS Team
+  goal: Build an evidence-first implementation spec for devcontainer + mise + validation automation.
+  output_dir: reports/research-ros
+  shared_artifacts_dir: .artifacts/research-ros
+  repo_root: /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment
+
+subagents:
+  - id: scout-agent
+    stage: A
+    objective: Discover and shortlist candidate sources using priority stack and query logging.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - research-source-discovery
+      - mise-enforcement
+    required_plugins:
+      - skillport
+    output_files:
+      - reports/research-ros/{{date}}-phase-a-candidates.md
+      - reports/research-ros/{{date}}-discovery-records.jsonl
+    prompt_file: prompts/agent-team/devcontainer-research-ros/scout-agent.md
+
+  - id: repo-mining-agent
+    stage: B
+    objective: Mine shortlisted repositories and extract code/workflow patterns with scoring.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - github-repo-mining
+      - mise-enforcement
+    required_plugins:
+      - skillport
+    output_files:
+      - reports/research-ros/{{date}}-phase-b-repo-mining.md
+      - reports/research-ros/{{date}}-pattern-records.jsonl
+    prompt_file: prompts/agent-team/devcontainer-research-ros/repo-mining-agent.md
+
+  - id: social-signal-agent
+    stage: C
+    objective: Extract practical lessons from social/blog sources and remove hype/noise.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - social-signal-mining
+      - mise-enforcement
+    required_plugins:
+      - skillport
+    output_files:
+      - reports/research-ros/{{date}}-phase-c-social-signals.md
+      - reports/research-ros/{{date}}-social-pattern-records.jsonl
+    prompt_file: prompts/agent-team/devcontainer-research-ros/social-signal-agent.md
+
+  - id: validation-agent
+    stage: D
+    objective: Map mined patterns to local acceptance contract and produce executable gates.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - evidence-synthesis
+      - mise-enforcement
+    required_plugins:
+      - skillport
+    output_files:
+      - reports/research-ros/{{date}}-phase-d-validation-mapping.md
+      - reports/research-ros/{{date}}-acceptance-records.jsonl
+    prompt_file: prompts/agent-team/devcontainer-research-ros/validation-agent.md
+
+  - id: synthesis-agent
+    stage: E
+    objective: Produce adopt/adapt/reject decisions and final decision-complete spec.
+    required_skills:
+      - skills/mde-agent-runtime-contract
+      - evidence-synthesis
+      - writing-plans
+      - mise-enforcement
+    required_plugins:
+      - skillport
+    output_files:
+      - reports/research-ros/{{date}}-decision-records.jsonl
+      - reports/research-ros/{{date}}-research-bundle.json
+      - docs/plans/{{date}}-devcontainer-research-ros-spec.md
+    prompt_file: prompts/agent-team/devcontainer-research-ros/synthesis-agent.md

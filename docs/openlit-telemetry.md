@@ -34,7 +34,7 @@ scripts/openlit-control.sh status
 scripts/openlit-control.sh endpoints
 ```
 
-3) Write telemetry env to your secrets file (sets OTEL_* and Gemini CLI GEMINI_TELEMETRY_* for OpenLIT):
+3) Persist telemetry env into `fnox` (sets OTEL_* and Gemini CLI GEMINI_TELEMETRY_* for OpenLIT):
 
 ```bash
 scripts/openlit-control.sh env --write-env
@@ -52,8 +52,8 @@ source ~/.zshrc
 - LangChain/LangSmith + other OTEL-aware CLIs/SDKs: inherit OTEL_* env for traces/metrics to OpenLIT.
 - Status dashboard: `scripts/status-dashboard.sh --json` includes `openlit` and `gemini_telemetry` entries.
 
-## Required secrets.env keys
-Store these in `~/.config/macos-development-environment/secrets.env` before installing/validating the AWS stack:
+## Required fnox keys
+Store these in `fnox` before installing or validating the AWS stack:
 
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
@@ -62,13 +62,13 @@ Store these in `~/.config/macos-development-environment/secrets.env` before inst
 - `GRAFANA_PASSWORD`
 - `DB_PASSWORD`
 
-`scripts/openlit-control.sh env --write-env` will add the OTEL_* and GEMINI_TELEMETRY_* entries.
+`scripts/openlit-control.sh env --write-env` persists the OTEL_* and GEMINI_TELEMETRY_* entries into `fnox`.
 
 ## UI Access
 - URL: http://<OPENLIT_IP>:3000 (OpenLIT UI served directly; no Caddy layer).
 - Preseeded user: `admin@example.com`
 - Preseeded password: `OpenlitTemp!123`
-- You can change the password after login from the OpenLIT UI. Keep the value in `~/.config/macos-development-environment/secrets.env` if you want it documented locally (not required for runtime).
+- You can change the password after login from the OpenLIT UI. Keep the value in `fnox` if you want it available to local tooling.
 
 
 ## OAuth (Google)
@@ -76,7 +76,7 @@ Store these in `~/.config/macos-development-environment/secrets.env` before inst
 - Configure the Google OAuth app with:
   - Authorized redirect URI: `http://44.220.132.99:3000/api/auth/callback/google`
   - Authorized JavaScript origin: `http://44.220.132.99:3000`
-- Required env (kept in `~/.config/macos-development-environment/secrets.env` and pushed to the server): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `AUTH_TRUST_HOST=true`.
+- Required env (kept in `fnox` and pushed to the server): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `AUTH_TRUST_HOST=true`.
 - GitHub OAuth: planned; not enabled yet.
 
 
@@ -136,7 +136,7 @@ scripts/validate-otel-stack.sh
 ```
 
   - Uses clusters: rm-rmanaloto-mde-otel-gw-prod-use1 and rm-rmanaloto-mde-graf-prod-use1.
-  - Requires AWS CLI creds + GRAFANA_PASSWORD and DB_PASSWORD in secrets.env.
+  - Requires AWS CLI creds + `GRAFANA_PASSWORD` and `DB_PASSWORD` in `fnox`.
   - Checks collector service, Grafana API health/login, Tempo/Loki/Mimir health, and RDS describe.
   - If using SkyPilot to provision RDS, ensure the instance role (e.g., `skypilot-v1`) has `rds:DescribeDBInstances` and `rds:CreateDBInstance`.
 
@@ -157,14 +157,13 @@ Set `MDE_OPENLIT_REQUIRED=1` to fail when the endpoint is missing, and
 
 ## Notes / Best Practices
 - OTLP HTTP (4318) is easiest to use from CLIs and SDKs.
-- Keep the endpoint in `secrets.env` so shells + launchd jobs share it.
+- Keep the endpoint in `fnox` so shells + launchd jobs share it.
 - Use stable `OTEL_SERVICE_NAME` values so telemetry groups consistently.
-- Avoid exporting secrets in shell files; keep them in `secrets.env` or
-  1Password when service accounts are available.
+- Avoid exporting secrets in shell files; keep them in `fnox` or 1Password when service accounts are available.
 
 
 ## Security Considerations
 - Restrict inbound ports (3000/4317/4318) to trusted IPs via AWS security groups.
 - Prefer HTTPS/TLS for OTLP and UI endpoints when exposing them publicly.
-- Avoid exporting API keys or secrets via shell files; keep them in `secrets.env`.
+- Avoid exporting API keys or secrets via shell files; keep them in `fnox`.
 - Be mindful of PII in telemetry (filter or scrub before export).

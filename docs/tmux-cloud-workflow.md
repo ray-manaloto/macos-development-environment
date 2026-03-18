@@ -31,12 +31,12 @@ overwriting. Highlights:
 Template:
 - `templates/agent_cloud.yaml`
 
-Setup (AWS credentials from secrets.env):
+Setup (AWS credentials from `fnox`):
 - `scripts/setup-skypilot-aws.sh --init-config`
   - Creates `agent_cloud.yaml` in the repo root (copy of template).
   - Runs `sky check aws` to validate credentials.
 
-Required secrets in `~/.config/macos-development-environment/secrets.env`:
+Required keys in `fnox`:
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_REGION`

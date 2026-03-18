@@ -1,0 +1,48 @@
+team:
+  id: devcontainer-image-release-team
+  name: Devcontainer Image Release Team
+  goal: Deliver and validate the GHCR-backed devcontainer image release workflow, update automation, and handoff docs.
+  output_dir: reports/devcontainer-image-release
+  shared_artifacts_dir: .artifacts/devcontainer-image-release
+  repo_root: /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment
+
+subagents:
+  - id: image-authoring-agent
+    stage: 1
+    objective: Define image authoring and base-image update strategy.
+    required_skills: [skills/mde-agent-runtime-contract, docker-expert, verification-before-completion]
+    output_files:
+      - reports/devcontainer-image-release/{{date}}-01-image-authoring.md
+    prompt_file: prompts/agent-team/devcontainer-image-release/image-authoring-agent.md
+
+  - id: gha-publish-agent
+    stage: 2
+    objective: Define CI and GHCR publication contract with hard gates.
+    required_skills: [skills/mde-agent-runtime-contract, github-actions-templates, deployment-procedures]
+    output_files:
+      - reports/devcontainer-image-release/{{date}}-02-gha-publish.md
+    prompt_file: prompts/agent-team/devcontainer-image-release/gha-publish-agent.md
+
+  - id: dependency-bot-agent
+    stage: 2
+    objective: Define automated dependency update policy for base image and actions pins.
+    required_skills: [skills/mde-agent-runtime-contract, dependency-upgrade]
+    output_files:
+      - reports/devcontainer-image-release/{{date}}-03-dependency-bot.md
+    prompt_file: prompts/agent-team/devcontainer-image-release/dependency-bot-agent.md
+
+  - id: validation-agent
+    stage: 3
+    objective: Validate build, smoke, and hard-gate verification coverage.
+    required_skills: [skills/mde-agent-runtime-contract, test-driven-development, verification-before-completion]
+    output_files:
+      - reports/devcontainer-image-release/{{date}}-04-validation.md
+    prompt_file: prompts/agent-team/devcontainer-image-release/validation-agent.md
+
+  - id: docs-agent
+    stage: 4
+    objective: Produce final operator handoff and execution order.
+    required_skills: [skills/mde-agent-runtime-contract, doc-coauthoring, documentation-templates]
+    output_files:
+      - reports/devcontainer-image-release/{{date}}-05-docs-handoff.md
+    prompt_file: prompts/agent-team/devcontainer-image-release/docs-agent.md

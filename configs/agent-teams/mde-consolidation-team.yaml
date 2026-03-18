@@ -1,0 +1,37 @@
+team:
+  id: mde-consolidation-team
+  name: Consolidation + Learning Team
+  goal: Synthesize findings from all parallel teams into learning registry updates.
+  output_dir: reports/consolidation
+  shared_artifacts_dir: .artifacts/consolidation
+  repo_root: .
+  depends_on: [mde-sdlc-config-team, mde-hooks-learning-team, mde-pipeline-fixes-team, mde-python-api-team]
+
+subagents:
+  - id: findings-consolidator
+    stage: 1
+    objective: Read ALL team reports, extract patterns, merge similar findings, flag contradictions.
+    required_skills: [skills/mde-agent-runtime-contract, skills/evidence-synthesis]
+    required_plugins: [superpowers]
+    output_files: [reports/consolidation/{{date}}-consolidated-findings.md]
+    prompt_file: prompts/agent-team/consolidation/findings-consolidator.md
+
+  - id: learning-writer
+    stage: 2
+    objective: Update learning registry, skill registry, and agent prompts with accepted findings.
+    required_skills: [skills/mde-agent-runtime-contract, skills/evidence-synthesis]
+    required_plugins: [superpowers]
+    output_files: [configs/mde-learning-registry.json, configs/mde-skill-registry.json]
+    prompt_file: prompts/agent-team/consolidation/learning-writer.md
+
+  - id: process-reviewer
+    stage: 3
+    objective: Review the entire process for improvements and update team configs accordingly.
+    required_skills: [skills/mde-agent-runtime-contract, superpowers:requesting-code-review]
+    required_plugins: [superpowers]
+    gate_criteria:
+      - "All HIGH priority findings have been applied"
+      - "Learning registry updated with timestamped entries"
+      - "No contradictions remain unresolved"
+    output_files: [reports/consolidation/{{date}}-process-review.md]
+    prompt_file: prompts/agent-team/consolidation/process-reviewer.md

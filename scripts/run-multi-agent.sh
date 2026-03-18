@@ -4,6 +4,18 @@ set -euo pipefail
 RUNNER="${MULTI_AGENT_RUNNER:-}"
 EXTRA_ARGS=()
 PARALLEL="${MULTI_AGENT_PARALLEL:-0}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=scripts/lib/mde-agent-policy.sh
+source "$SCRIPT_DIR/lib/mde-agent-policy.sh"
+
+mde_policy_init
+mde_setup_managed_path
+mde_disable_mise_auto_install
+"$REPO_ROOT/scripts/mde-agent-preflight.sh" --quiet >/dev/null
+export MDE_AGENT_PREFLIGHT_PASSED=1
+export MDE_AGENT_CONTEXT=1
+mde_prepare_guard_dir >/dev/null
 
 if [[ -z "$RUNNER" ]]; then
   echo "MULTI_AGENT_RUNNER is not set. See docs/multi-agent-runner.md" >&2

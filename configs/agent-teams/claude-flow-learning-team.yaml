@@ -1,0 +1,51 @@
+team:
+  id: claude-flow-learning-team
+  name: Claude-Flow Self-Learning Team
+  goal: Continuously improve the claude-flow memory DB, neural patterns, and learning pipeline by scouting external agent frameworks, analyzing current memory quality, synthesizing actionable patterns, and applying optimizations.
+  output_dir: reports/claude-flow-learning
+  shared_artifacts_dir: .artifacts/claude-flow-learning
+  repo_root: /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment
+
+subagents:
+  - id: learning-scout
+    stage: 1
+    objective: Discover new patterns, tools, and approaches from cloned repos (.artifacts/reference-mirror/agent-learning-frameworks/) and online sources.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/research-source-discovery, skills/github-repo-mining]
+    output_files:
+      - reports/claude-flow-learning/{{date}}-01-scout-discovery.md
+      - reports/claude-flow-learning/{{date}}-01-pattern-candidates.jsonl
+    prompt_file: prompts/agent-team/claude-flow-learning/learning-scout.md
+
+  - id: memory-analyst
+    stage: 2
+    objective: Analyze current memory DB contents via `npx @claude-flow/cli@latest memory list/search`, find gaps, duplicates, and stale patterns.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/evidence-synthesis]
+    output_files:
+      - reports/claude-flow-learning/{{date}}-02-memory-analysis.md
+    prompt_file: prompts/agent-team/claude-flow-learning/memory-analyst.md
+
+  - id: framework-comparator
+    stage: 2
+    objective: Compare claude-flow's learning features against other agent frameworks found in the cloned repos.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/research-source-discovery, skills/evidence-synthesis]
+    output_files:
+      - reports/claude-flow-learning/{{date}}-02-framework-comparison.md
+    prompt_file: prompts/agent-team/claude-flow-learning/framework-comparator.md
+
+  - id: pattern-synthesizer
+    stage: 3
+    objective: Distill findings from stages 1-2 into actionable pattern records for the memory DB.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/evidence-synthesis]
+    output_files:
+      - reports/claude-flow-learning/{{date}}-03-synthesized-patterns.md
+      - reports/claude-flow-learning/{{date}}-03-pattern-records.jsonl
+    prompt_file: prompts/agent-team/claude-flow-learning/pattern-synthesizer.md
+
+  - id: learning-optimizer
+    stage: 4
+    objective: Apply improvements - store new patterns via `npx @claude-flow/cli@latest memory store`, prune stale ones, tune neural config.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-autoresearch, skills/evidence-synthesis]
+    output_files:
+      - reports/claude-flow-learning/{{date}}-04-optimization-report.md
+      - reports/claude-flow-learning/{{date}}-04-applied-changes.jsonl
+    prompt_file: prompts/agent-team/claude-flow-learning/learning-optimizer.md

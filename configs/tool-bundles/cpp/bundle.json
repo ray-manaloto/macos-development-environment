@@ -1,0 +1,14 @@
+{
+  "id": "bundle-cpp-starter",
+  "domain_id": "cpp",
+  "name": "C and C++ Starter Bundle",
+  "description": "Starter bundle for CMake-based C/C++ projects with a declared build surface.",
+  "preset_ids": ["preset-cpp"],
+  "primary_manifest": "CMakeLists.txt",
+  "included_files": ["CMakeLists.txt", "src/main.cpp"],
+  "reference_source_ids": ["cmake-docs", "conan-docs", "vcpkg-docs"],
+  "notes": [
+    "Starter bundles are repo-scoped scaffolds, not host-global installers.",
+    "The owning domain team decides when companion manifests or lockfiles are required."
+  ]
+}

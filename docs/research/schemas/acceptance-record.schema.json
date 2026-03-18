@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AcceptanceRecord",
+  "type": "object",
+  "required": ["criterion", "proof_command", "expected_signal", "status"],
+  "properties": {
+    "criterion": {"type": "string"},
+    "proof_command": {"type": "string"},
+    "expected_signal": {"type": "string"},
+    "status": {"type": "string", "enum": ["pass", "warn", "fail"]},
+    "details": {"type": "string"}
+  },
+  "additionalProperties": false
+}

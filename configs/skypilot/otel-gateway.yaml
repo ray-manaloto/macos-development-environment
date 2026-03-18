@@ -1,9 +1,9 @@
-name: otel-gateway
+name: rm-rmanaloto-mde-otel-gw-prod-use1
 resources:
   cloud: aws
   region: us-east-1
   # small instance is fine for ingress; adjust later if needed
-  instance_type: m5.large
+  instance_type: t3.small
   disk_size: 50
   ports:
     - 4317
@@ -26,22 +26,6 @@ setup: |
     rm otelcol.tar.gz
   fi
   sudo mkdir -p /etc/otelcol
-  cat <<'CONF' | sudo tee /etc/otelcol/config.yaml
-${COLLECTOR_CONFIG}
-CONF
-  sudo tee /etc/systemd/system/otelcol.service >/dev/null <<'SERVICE'
-[Unit]
-Description=OpenTelemetry Collector
-After=network.target
-
-[Service]
-ExecStart=/usr/local/bin/otelcol --config=/etc/otelcol/config.yaml
-Restart=on-failure
-RestartSec=5s
-
-[Install]
-WantedBy=multi-user.target
-SERVICE
   sudo systemctl daemon-reload
   sudo systemctl enable otelcol
 run: |
@@ -50,4 +34,5 @@ run: |
 file_mounts:
   /etc/otelcol/config.yaml: configs/otel/collector-gateway.yaml
   /etc/otelcol/env.sh: configs/otel/collector-env.sample
+  /etc/systemd/system/otelcol.service: configs/otel/otelcol.service
   # Certs can be mounted here when available

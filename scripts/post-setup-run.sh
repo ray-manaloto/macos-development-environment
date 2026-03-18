@@ -6,6 +6,7 @@ LOG_DIR="$HOME/Library/Logs/com.ray-manaloto.macos-dev-maintenance"
 SUMMARY_LOG="$LOG_DIR/post-setup-summary.log"
 RUN_LOG="$LOG_DIR/post-setup-run.log"
 WRAPPER="$HOME/Library/Application Support/com.ray-manaloto.macos-dev-maintenance/macos_dev_maintenance"
+LOCK_HELD_EXIT_CODE=75
 
 log() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
@@ -30,6 +31,8 @@ fi
 
 if [[ "$run_status" -eq 0 ]]; then
   log "Maintenance run OK." | tee -a "$SUMMARY_LOG"
+elif [[ "$run_status" -eq "$LOCK_HELD_EXIT_CODE" ]]; then
+  log "Maintenance run SKIPPED (lock held)." | tee -a "$SUMMARY_LOG"
 else
   log "Maintenance run FAILED (exit $run_status)." | tee -a "$SUMMARY_LOG"
 fi
@@ -37,7 +40,9 @@ fi
 health_status=0
 tmux_status=0
 tooling_status=0
-if [[ -x "$SCRIPT_DIR/health-check.sh" ]]; then
+if [[ "$run_status" -eq "$LOCK_HELD_EXIT_CODE" ]]; then
+  log "Skipping verification checks because maintenance was skipped." | tee -a "$SUMMARY_LOG"
+elif [[ -x "$SCRIPT_DIR/health-check.sh" ]]; then
   log "Running health check." | tee -a "$SUMMARY_LOG"
   if ! "$SCRIPT_DIR/health-check.sh" | tee -a "$SUMMARY_LOG"; then
     health_status=1
@@ -47,7 +52,9 @@ else
   health_status=1
 fi
 
-if [[ -x "$SCRIPT_DIR/verify-tmux-setup.sh" ]]; then
+if [[ "$run_status" -eq "$LOCK_HELD_EXIT_CODE" ]]; then
+  :
+elif [[ -x "$SCRIPT_DIR/verify-tmux-setup.sh" ]]; then
   log "Running tmux verification." | tee -a "$SUMMARY_LOG"
   if ! "$SCRIPT_DIR/verify-tmux-setup.sh" | tee -a "$SUMMARY_LOG"; then
     tmux_status=1
@@ -57,7 +64,9 @@ else
   tmux_status=1
 fi
 
-if [[ -x "$SCRIPT_DIR/verify-tooling.sh" ]]; then
+if [[ "$run_status" -eq "$LOCK_HELD_EXIT_CODE" ]]; then
+  :
+elif [[ -x "$SCRIPT_DIR/verify-tooling.sh" ]]; then
   log "Running tooling verification." | tee -a "$SUMMARY_LOG"
   if ! "$SCRIPT_DIR/verify-tooling.sh" | tee -a "$SUMMARY_LOG"; then
     tooling_status=1
@@ -65,6 +74,11 @@ if [[ -x "$SCRIPT_DIR/verify-tooling.sh" ]]; then
 else
   log "Tooling verification script missing." | tee -a "$SUMMARY_LOG"
   tooling_status=1
+fi
+
+if [[ "$run_status" -eq "$LOCK_HELD_EXIT_CODE" ]]; then
+  log "Post-setup summary: SKIPPED" | tee -a "$SUMMARY_LOG"
+  exit 0
 fi
 
 if [[ "$run_status" -eq 0 && "$health_status" -eq 0 && "$tmux_status" -eq 0 && "$tooling_status" -eq 0 ]]; then

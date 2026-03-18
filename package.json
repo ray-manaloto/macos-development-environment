@@ -30,7 +30,9 @@
     "agent-browser": "agent-browser",
     "json-render": "json-render",
     "add-skill": "add-skill",
-    "cct": "cct"
+    "cct": "cct",
+    "octokit:discover": "node scripts/octokit/find-bootstrap-repos.mjs",
+    "test:octokit-discovery": "node --test tests/octokit-repo-discovery.bdd.test.mjs"
   },
   "trustedDependencies": [
     "@parcel/watcher",
@@ -45,6 +47,7 @@
     "sharp"
   ],
   "dependencies": {
+    "@octokit/rest": "^22.0.1",
     "ai": "^6.0.0-beta.169",
     "diff": "^8.0.3",
     "zod": "^4.3.5"

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DecisionRecord",
+  "type": "object",
+  "required": ["decision", "rationale", "migration_cost", "enforcement_impact", "evidence"],
+  "properties": {
+    "decision": {"type": "string", "enum": ["adopt", "adapt", "reject"]},
+    "rationale": {"type": "string"},
+    "migration_cost": {"type": "string", "enum": ["low", "medium", "high"]},
+    "enforcement_impact": {"type": "string"},
+    "evidence": {"type": "array", "items": {"type": "string"}, "minItems": 1}
+  },
+  "additionalProperties": false
+}

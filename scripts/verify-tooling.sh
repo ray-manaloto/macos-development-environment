@@ -7,7 +7,14 @@ log() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
 }
 
+setup_path() {
+  local home="${HOME:-/Users/rmanaloto}"
+  export PATH="$home/.local/share/mise/shims:$home/.local/share/mise/bin:$home/.local/bin:$home/.bun/bin:$home/.pixi/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+}
+
 run_status=0
+
+setup_path
 
 if [[ -x "$SCRIPT_DIR/verify-agent-tools.sh" ]]; then
   log "Running agent tool verification."
@@ -29,23 +36,13 @@ else
   run_status=1
 fi
 
-if [[ -x "$SCRIPT_DIR/verify-ai-research-skills.sh" ]]; then
-  log "Running AI research skills verification."
-  if ! "$SCRIPT_DIR/verify-ai-research-skills.sh"; then
-    run_status=1
-  fi
-else
-  log "AI research skills verification script missing."
-  run_status=1
-fi
-
-if [[ -x "$SCRIPT_DIR/setup-skypilot-aws.sh" ]]; then
+if [[ -x "$SCRIPT_DIR/verify-skypilot-aws.sh" ]]; then
   log "Running SkyPilot AWS verification."
-  if ! "$SCRIPT_DIR/setup-skypilot-aws.sh"; then
+  if ! "$SCRIPT_DIR/verify-skypilot-aws.sh"; then
     run_status=1
   fi
 else
-  log "SkyPilot setup script missing."
+  log "SkyPilot AWS verification script missing."
   run_status=1
 fi
 

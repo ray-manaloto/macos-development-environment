@@ -1,0 +1,40 @@
+team:
+  id: mde-python-api-team
+  name: Python API Quality Team
+  goal: Enforce typed returns, fix ty errors, audit module APIs.
+  output_dir: reports/python-api
+  shared_artifacts_dir: .artifacts/python-api
+  repo_root: .
+  workflow_skill: superpowers:subagent-driven-development
+
+subagents:
+  - id: type-safety-agent
+    stage: 1
+    objective: Fix all ty type errors, add return type annotations.
+    required_skills: [skills/mde-agent-runtime-contract, superpowers:verification-before-completion]
+    required_plugins: [superpowers]
+    gate_criteria:
+      - "uv run ty check src/mde/ exits 0"
+    output_files: [src/mde/**/*.py]
+    prompt_file: prompts/agent-team/python-api/type-safety-agent.md
+
+  - id: api-auditor
+    stage: 2
+    objective: Add __all__ exports, verify Pydantic models, audit public APIs.
+    required_skills: [skills/mde-agent-runtime-contract]
+    required_plugins: [superpowers]
+    output_files: [src/mde/**/*.py]
+    prompt_file: prompts/agent-team/python-api/api-auditor.md
+
+  - id: qa-verifier
+    stage: 3
+    objective: Run full verification suite.
+    required_skills: [skills/mde-agent-runtime-contract, superpowers:verification-before-completion]
+    required_plugins: [superpowers]
+    gate_criteria:
+      - "ruff check src/mde/ tests/mde/ exits 0"
+      - "ruff format --check exits 0"
+      - "uv run ty check src/mde/ exits 0"
+      - "uv run pytest tests/mde/ -v all pass"
+    output_files: [reports/python-api/{{date}}-qa.md]
+    prompt_file: prompts/agent-team/python-api/qa-verifier.md

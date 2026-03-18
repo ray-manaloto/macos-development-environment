@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -66,6 +67,23 @@ class ValidationResult(BaseModel):
     def warning_count(self) -> int:
         """Count of warning-severity findings."""
         return sum(1 for f in self.findings if f.severity == Severity.WARNING)
+
+    def add_error(self, path: str, message: str, **kwargs: Any) -> None:
+        """Add an error finding."""
+        self.add(path, message, severity=Severity.ERROR, **kwargs)
+
+    def add_warning(self, path: str, message: str, **kwargs: Any) -> None:
+        """Add a warning finding."""
+        self.add(path, message, severity=Severity.WARNING, **kwargs)
+
+    def add_info(self, path: str, message: str, **kwargs: Any) -> None:
+        """Add an info finding."""
+        self.add(path, message, severity=Severity.INFO, **kwargs)
+
+    @property
+    def has_warnings(self) -> bool:
+        """Whether any warning-severity findings exist."""
+        return self.warning_count > 0
 
     def merge(self, other: ValidationResult) -> None:
         """Merge another result into this one."""

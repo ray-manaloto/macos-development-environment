@@ -1,0 +1,14 @@
+{
+  "id": "bundle-shell-editor-starter",
+  "domain_id": "shell-editor",
+  "name": "Shell and Editor Starter Bundle",
+  "description": "Starter bundle for shell linting, formatting, and editor-facing repo defaults.",
+  "preset_ids": ["preset-shell-editor"],
+  "primary_manifest": ".editorconfig",
+  "included_files": [".editorconfig", ".shellcheckrc"],
+  "reference_source_ids": ["bash-manual", "shellcheck-docs", "editorconfig-docs"],
+  "notes": [
+    "Starter bundles are repo-scoped scaffolds, not host-global installers.",
+    "The owning domain team decides when companion manifests or lockfiles are required."
+  ]
+}

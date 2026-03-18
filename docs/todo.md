@@ -28,6 +28,7 @@ This is the consolidated task list.
 - [x] Deploy Grafana stack (Grafana/Tempo/Loki/Mimir) via SkyPilot.
 - [x] Provision RDS instance `rm-rmanaloto-mde-rds-prod-use1` for telemetry validation.
 - [x] Re-run `scripts/validate-otel-stack.sh` after RDS is online to reach full green.
+- [x] Validate SkyPilot instance types against configs (expected vs actual).
 
 
 ## Vercel Labs tools & skills (project scope only)

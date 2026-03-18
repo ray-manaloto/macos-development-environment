@@ -1,0 +1,56 @@
+team:
+  id: mde-update-remediation-team
+  name: MDE Update Remediation Team
+  goal: Review one supplied remediation target at a time, classify it through configs/mde-domain-catalog.json, delegate to the owning domain SDLC team, then use the modernization matrix plus supplied evidence to produce a spec plus next-step plan and only rerun proof commands that belong to the active target.
+  output_dir: reports/mde-update-remediation
+  shared_artifacts_dir: .artifacts/mde-update-remediation
+  repo_root: /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment
+
+subagents:
+  - id: log-triage-agent
+    stage: 1
+    objective: Classify the active remediation target and its evidence into concrete issue buckets.
+    required_skills: [skills/mde-agent-runtime-contract, systematic-debugging, verification-before-completion]
+    output_files:
+      - reports/mde-update-remediation/{{date}}-01-log-triage.md
+    prompt_file: prompts/agent-team/mde-update-remediation/log-triage-agent.md
+
+  - id: maintenance-remediation-agent
+    stage: 2
+    objective: Review the owning scripts, tasks, registries, and docs for grounded declarative remediation.
+    required_skills: [skills/mde-agent-runtime-contract, skills/mde-package-cache-policy, skills/mde-native-tool-validation, test-driven-development, bash-defensive-patterns]
+    output_files:
+      - reports/mde-update-remediation/{{date}}-02-maintenance-remediation.md
+    prompt_file: prompts/agent-team/mde-update-remediation/maintenance-remediation-agent.md
+
+  - id: parity-sync-agent
+    stage: 2
+    objective: Audit native macOS and devcontainer parity only where the active target crosses both surfaces.
+    required_skills: [skills/mde-agent-runtime-contract, software-architecture, verification-before-completion]
+    output_files:
+      - reports/mde-update-remediation/{{date}}-03-parity-sync.md
+    prompt_file: prompts/agent-team/mde-update-remediation/parity-sync-agent.md
+
+  - id: validation-agent
+    stage: 3
+    objective: Define acceptance checks and proof commands for the active remediation target.
+    required_skills: [skills/mde-agent-runtime-contract, test-driven-development, verification-before-completion]
+    output_files:
+      - reports/mde-update-remediation/{{date}}-04-validation.md
+    prompt_file: prompts/agent-team/mde-update-remediation/validation-agent.md
+
+  - id: spec-agent
+    stage: 4
+    objective: Write the remediation spec grounded in the active target, evidence, and current repository behavior.
+    required_skills: [skills/mde-agent-runtime-contract, doc-coauthoring, documentation-templates]
+    output_files:
+      - docs/plans/{{date}}-mde-update-remediation-spec.md
+    prompt_file: prompts/agent-team/mde-update-remediation/spec-agent.md
+
+  - id: plan-agent
+    stage: 5
+    objective: Write the sequenced next-step plan grounded in the accepted remediation scope for the active target.
+    required_skills: [skills/mde-agent-runtime-contract, writing-plans, documentation-templates]
+    output_files:
+      - docs/plans/{{date}}-mde-update-remediation-plan.md
+    prompt_file: prompts/agent-team/mde-update-remediation/plan-agent.md

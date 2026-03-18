@@ -1,0 +1,100 @@
+{
+  "swarm": {
+    "id": "claude-flow-learning",
+    "topology": "hierarchical",
+    "maxAgents": 8,
+    "strategy": "specialized",
+    "consensus": "raft"
+  },
+  "agents": [
+    {
+      "id": "learning-scout",
+      "type": "researcher",
+      "role": "Scout external repos and online sources for memory/learning patterns",
+      "capabilities": ["repo-mining", "web-search", "pattern-extraction"],
+      "stage": 1
+    },
+    {
+      "id": "memory-analyst",
+      "type": "researcher",
+      "role": "Audit the claude-flow memory DB for gaps, staleness, and quality",
+      "capabilities": ["memory-query", "gap-analysis", "quality-assessment"],
+      "stage": 2
+    },
+    {
+      "id": "framework-comparator",
+      "type": "researcher",
+      "role": "Compare claude-flow learning features against competing agent frameworks",
+      "capabilities": ["repo-mining", "comparative-analysis", "documentation-review"],
+      "stage": 2
+    },
+    {
+      "id": "pattern-synthesizer",
+      "type": "coder",
+      "role": "Merge findings into prioritized actionable pattern records",
+      "capabilities": ["evidence-synthesis", "pattern-scoring", "deduplication"],
+      "stage": 3
+    },
+    {
+      "id": "learning-optimizer",
+      "type": "coder",
+      "role": "Apply improvements to the memory DB and neural config",
+      "capabilities": ["memory-store", "memory-prune", "neural-training", "verification"],
+      "stage": 4
+    }
+  ],
+  "tasks": [
+    {
+      "id": "scout-discovery",
+      "stage": 1,
+      "assignee": "learning-scout",
+      "description": "Scan cloned repos and online sources for memory/learning patterns",
+      "outputs": [
+        "reports/claude-flow-learning/{{date}}-01-scout-discovery.md",
+        "reports/claude-flow-learning/{{date}}-01-pattern-candidates.jsonl"
+      ]
+    },
+    {
+      "id": "memory-audit",
+      "stage": 2,
+      "assignee": "memory-analyst",
+      "description": "Analyze current memory DB for gaps, duplicates, and staleness",
+      "depends_on": ["scout-discovery"],
+      "outputs": [
+        "reports/claude-flow-learning/{{date}}-02-memory-analysis.md"
+      ]
+    },
+    {
+      "id": "framework-comparison",
+      "stage": 2,
+      "assignee": "framework-comparator",
+      "description": "Compare claude-flow against LangGraph, CrewAI, AutoGen, DSPy, Letta, etc.",
+      "depends_on": ["scout-discovery"],
+      "outputs": [
+        "reports/claude-flow-learning/{{date}}-02-framework-comparison.md"
+      ]
+    },
+    {
+      "id": "pattern-synthesis",
+      "stage": 3,
+      "assignee": "pattern-synthesizer",
+      "description": "Synthesize stage 1-2 findings into prioritized pattern records",
+      "depends_on": ["memory-audit", "framework-comparison"],
+      "outputs": [
+        "reports/claude-flow-learning/{{date}}-03-synthesized-patterns.md",
+        "reports/claude-flow-learning/{{date}}-03-pattern-records.jsonl"
+      ]
+    },
+    {
+      "id": "apply-optimizations",
+      "stage": 4,
+      "assignee": "learning-optimizer",
+      "description": "Store new patterns, prune stale entries, tune neural config",
+      "depends_on": ["pattern-synthesis"],
+      "outputs": [
+        "reports/claude-flow-learning/{{date}}-04-optimization-report.md",
+        "reports/claude-flow-learning/{{date}}-04-applied-changes.jsonl"
+      ]
+    }
+  ]
+}

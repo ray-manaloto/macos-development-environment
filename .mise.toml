@@ -205,3 +205,6 @@ run = "scripts/teams/run-claude-flow-learning-team.sh \"$@\""
 [tasks."mde:refs:clone-frameworks"]
 description = "Clone agent framework repos for offline research"
 run = "scripts/clone-agent-framework-repos.sh"
+
+[tools]
+hk = "latest"

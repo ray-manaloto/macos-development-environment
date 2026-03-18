@@ -1,0 +1,14 @@
+{
+  "id": "bundle-javascript-typescript-starter",
+  "domain_id": "javascript-typescript",
+  "name": "JavaScript TypeScript Starter Bundle",
+  "description": "Starter bundle for JS/TS manifests, compiler settings, and repo-local tooling.",
+  "preset_ids": ["preset-javascript-typescript"],
+  "primary_manifest": "package.json",
+  "included_files": ["package.json", "tsconfig.json"],
+  "reference_source_ids": ["node-docs", "bun-docs", "typescript-docs"],
+  "notes": [
+    "Starter bundles are repo-scoped scaffolds, not host-global installers.",
+    "The owning domain team decides when companion manifests or lockfiles are required."
+  ]
+}

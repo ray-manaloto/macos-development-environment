@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# config hash: {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}
+set -euo pipefail
+
+MISE_BIN="{{ if $m := lookPath "mise" }}{{ $m }}{{ else }}{{ joinPath .chezmoi.homeDir ".local/bin/mise" }}{{ end }}"
+
+if [[ ! -x "$MISE_BIN" ]]; then
+  echo "mise not found; skipping post-install" >&2
+  exit 0
+fi
+
+"$MISE_BIN" trust ~/.config/mise
+"$MISE_BIN" install --yes
+"$MISE_BIN" reshim

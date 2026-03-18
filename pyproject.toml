@@ -38,11 +38,24 @@ ignore = [
     "UP042",    # ditto
     "TC003",    # false positive: Path used at runtime for method calls
     "PLR0913",  # convenience methods with keyword-only args are readable
+    "ANN401",   # Any in **kwargs is idiomatic for pass-through signatures
+    "S105",     # false positive: enum member named PASS is not a password
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"scripts/**/*.py" = [
+    "ARG001",   # utility functions may have unused args for interface consistency
+    "D100",     # scripts don't need module docstrings
+    "D103",     # scripts don't need function docstrings
+    "E501",     # generated matrix script has long data literals
+    "INP001",   # scripts/ is not a package
+    "PIE810",   # endswith tuple merge is a style nit
+    "PLW2901",  # loop var reassignment is intentional in text processing
+]
 "tests/**/*.py" = [
     "S101",     # assert is expected in tests
+    "S108",     # temp file paths in test fixtures are fine
+    "D102",     # test methods don't need docstrings
     "INP001",   # test files don't need __init__.py
     "PLR2004",  # magic values in test assertions are readable
     "ARG002",   # unused fixture args are fine in tests
@@ -76,4 +89,5 @@ python_files = ["test_*.py"]
 dev = [
     "pytest>=9.0.2",
     "ruff>=0.15.6",
+    "ty>=0.0.1a12",
 ]

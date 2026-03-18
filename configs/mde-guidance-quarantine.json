@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "policy": {
+    "status": "active",
+    "intent": "Historical docs and reports that capture legacy installer guidance must be explicitly excluded from active setup authority.",
+    "active_guidance_roots": [
+      "AGENTS.md",
+      ".agents/AGENTS.md",
+      "docs/toolchain-precedence.md",
+      "docs/decision-log.md",
+      "configs/mde-modernization-matrix.json",
+      "configs/mde-tool-ownership.json"
+    ]
+  },
+  "quarantined_paths": [
+    {
+      "path": "docs/tool-audit/uv-report.md",
+      "disposition": "exclude-from-active-guidance",
+      "reason": "Historical audit captures uv-first transition details and imperative install flows that no longer define repo authority.",
+      "replacement_guidance": "docs/toolchain-precedence.md"
+    },
+    {
+      "path": "docs/tool-audit/bun-report.md",
+      "disposition": "exclude-from-active-guidance",
+      "reason": "Historical audit documents bun global install behavior during the migration period.",
+      "replacement_guidance": "docs/toolchain-precedence.md"
+    },
+    {
+      "path": "docs/tool-audit/handoff-for-next-team.md",
+      "disposition": "historical-only",
+      "reason": "Handoff notes describe transitional bun and uv global installation patterns that are no longer authoritative.",
+      "replacement_guidance": "docs/decision-log.md"
+    },
+    {
+      "path": "docs/tool-audit/integration-report.md",
+      "disposition": "historical-only",
+      "reason": "Integration audit contains legacy global package manager callouts that should not be reused as current setup guidance.",
+      "replacement_guidance": "docs/toolchain-precedence.md"
+    },
+    {
+      "path": "docs/tool-audit/mise-report.md",
+      "disposition": "exclude-from-active-guidance",
+      "reason": "Historical mise audit recommends curl installer paths and auto-install settings that conflict with the current agent contract.",
+      "replacement_guidance": "docs/toolchain-precedence.md"
+    },
+    {
+      "path": "reports/mise-parallel-2026-03-09/wave1-install-review.md",
+      "disposition": "quarantined",
+      "reason": "Parallel research report recommends Homebrew and curl installer paths for mise.",
+      "replacement_guidance": "docs/toolchain-precedence.md"
+    },
+    {
+      "path": "reports/mise-parallel-2026-03-09/wave1-modern-config-review.md",
+      "disposition": "quarantined",
+      "reason": "Parallel research report preserves legacy auto-install recommendations that are no longer allowed in agent contexts.",
+      "replacement_guidance": "docs/decision-log.md"
+    },
+    {
+      "path": "reports/mise-parallel-2026-03-09/wave2-recommended-runbook.md",
+      "disposition": "quarantined",
+      "reason": "Parallel runbook recommends deprecated brew and auto-install flows for mise.",
+      "replacement_guidance": "docs/toolchain-precedence.md"
+    }
+  ]
+}

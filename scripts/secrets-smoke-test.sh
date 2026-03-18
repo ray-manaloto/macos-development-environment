@@ -1,42 +1,35 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/mde-secrets.sh
+source "$SCRIPT_DIR/lib/mde-secrets.sh"
+
 log() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
 }
 
-have_cmd() {
-  command -v "$1" >/dev/null 2>&1
-}
-
 check_secret() {
-  local label="$1"
-  local env_var="$2"
+  local env_var="$1"
 
   if [[ -n "${!env_var:-}" ]]; then
     log "secret ok (env): $env_var"
     return 0
   fi
 
-  if have_cmd security; then
-    if security find-generic-password -s "$label" -w >/dev/null 2>&1; then
-      log "secret ok (keychain): $label"
-      return 0
-    fi
-  fi
-
-  log "secret missing: $env_var ($label)"
+  log "secret missing: $env_var"
   return 1
 }
 
 main() {
   local failures=0
+  mde_load_secrets
 
-  check_secret "mde-github-token" GITHUB_TOKEN || failures=1
-  check_secret "mde-openai-api-key" OPENAI_API_KEY || failures=1
-  check_secret "mde-anthropic-api-key" ANTHROPIC_API_KEY || failures=1
-  check_secret "mde-langsmith-api-key" LANGSMITH_API_KEY || failures=1
-  check_secret "mde-gemini-api-key" GEMINI_API_KEY || failures=1
+  check_secret GITHUB_TOKEN || failures=1
+  check_secret OPENAI_API_KEY || failures=1
+  check_secret ANTHROPIC_API_KEY || failures=1
+  check_secret LANGSMITH_API_KEY || failures=1
+  check_secret GEMINI_API_KEY || failures=1
 
   if [[ "$failures" -ne 0 ]]; then
     return 1

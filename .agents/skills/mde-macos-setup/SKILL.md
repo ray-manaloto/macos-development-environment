@@ -1,51 +1,48 @@
 ---
 name: mde-macos-setup
-description: MacBook dev-environment runbook for this repo (mise/bun/uv-first installs, secrets, tmux/oh-my-zsh, SkyPilot/OpenLIT, validation + maintenance).
+description: MacBook dev-environment runbook for this repo with mise-managed global tools, repo-native dependency ownership, secrets handling, telemetry, and verification.
 ---
 
-# MacOS Development Environment (MDE) Skill
+# MDE macOS Setup
 
-Use when installing, repairing, or validating the MacBook dev setup maintained in this repo.
+Use this skill when installing, repairing, or validating the MacBook dev setup maintained by this repo.
 
-## Tooling priority
-- Runtime managers: mise → bun (node) → uv (python tools) → pixi (python env) → pip (last resort).
-- Avoid npm/yarn global installs; prefer bun global or project deps.
-- Keep PATH from templates/oh-my-zsh/aliases.zsh (mise shims, bun, pixi, mde bin).
+## Ownership Model
 
-## One-shot install
-- `scripts/install-agent-stack.sh` (uses mise runtimes, installs langchain/langgraph/langsmith tools, sky, claude/codex/gemini CLIs, fabric). Respect TOOL_PYTHON_VERSION/PIXI_ENV if set.
-- Secrets: run `scripts/setup-secrets-env.sh --open` (fills ~/.config/macos-development-environment/secrets.env); reload shell.
-- Managed configs: `scripts/ensure-managed-configs.sh` (oh-my-zsh aliases, launchd plist, etc.).
+- `mise` owns global runtimes, global CLIs, SDK CLIs, and developer tooling commands.
+- Bun and uv are ecosystem package managers under `mise`-managed runtimes; they are not alternative global authorities.
+- Bun and uv are ecosystem package managers under mise-managed runtimes; they are not alternative global authorities.
+- Repository libraries stay in `package.json`, `pyproject.toml`, `uv.lock`, `pixi`, `Cargo.toml`, `go.mod`, or devcontainer/image manifests.
+- Homebrew is exception-only and must be justified through `configs/mde-install-exceptions.json`.
+- Reuse backend-native caches by default through declared cache directories such as `UV_CACHE_DIR`, `BUN_INSTALL`, `GOCACHE`, `GOMODCACHE`, `CARGO_HOME`, and `RUSTUP_HOME`.
 
-## Validation (run often)
-- `scripts/verify-tooling.sh` – checks runtimes, key CLIs, SkyPilot install.
-- `scripts/verify-langchain-tools.sh` – langchain/langgraph/langsmith CLI smoke + API key check.
-- `scripts/verify-openai-key.py` / `verify-anthropic-key.py` – confirm keys.
-- `scripts/verify-openlit.sh` – ensure OpenLIT endpoint set and reachable.
-- `scripts/status-dashboard.sh --json` – consolidated health (includes openlit/gemini/tmux, etc.).
-- `scripts/sky-status.sh` – SkyPilot status + AWS EC2 snapshot; kills stale API servers automatically.
+## Canonical Entry Points
 
-## SkyPilot / OpenLIT
-- Install via our stack scripts only (no ad-hoc uv). Use `scripts/setup-skypilot-aws.sh --init-config` after AWS creds are in secrets.env.
-- Deploy/manage OpenLIT: `scripts/openlit-control.sh deploy|status|endpoints|env --write-env` (uses configs/openlit-skypilot.yaml and docker-compose overrides).
-- If Sky API port is stuck (46580), rerun `scripts/sky-status.sh` to kill stale PID then restart API server.
+- Preflight: `mise run mde:agent:preflight`
+- Verification: `mise run mde:verify` and `mise run mde:drift`
+- Migration: `mise run mde:migrate:global-tools -- --dry-run|--apply|--verify|--report`
+- Research: `mise run mde:research:autoimprove -- --incremental|--full|--report`
 
-## Shell / tmux
-- oh-my-zsh aliases: reload after managed configs; key aliases include `openlit`, `openlit-status`, maintenance.
-- tmux: run `scripts/optimize-tmux.sh` via install-agent-stack; verification hook in `scripts/status-dashboard.sh`.
+## Setup Rules
 
-## Secrets & env
-- Primary source: `~/.config/macos-development-environment/secrets.env` (created by setup-secrets-env.sh). Avoid checking in secrets; MDE_SECRET_OVERRIDE=0 forces reading env over keychain.
-- Key labels in Keychain: mde-openai-api-key, mde-anthropic-api-key, mde-github-token, mde-langsmith-api-key, mde-gemini-api-key, etc.
+- Keep PATH ordered with `mise` shims first.
+- Keep `mise` as the source of truth for global tools, with `/Users/rmanaloto/.config/mise/config.toml` plus `configs/mde-modernization-matrix.json` defining whether each tool uses a direct `mise` declaration or a backend-native declarative config.
+- Do not use direct global package-manager installs to fix missing tools for this repo.
+- Do not force cold installs or clear package-manager caches unless an explicit maintenance flow allows it.
+- Treat legacy installer scripts as transitional wrappers only; they are not the authority.
 
-## Maintenance
-- Launchd job com.ray-manaloto.macos-dev-maintenance handles updates (brew/mise/bun/uv/pixi) and log rotation; config under ~/Library/Application Support/com.ray-manaloto.macos-dev-maintenance.
-- Manual trigger: `launchctl start com.ray-manaloto.macos-dev-maintenance`.
+## Validation
 
-## Enforcement tips
-- After changes, run: verify-tooling.sh → sky-status.sh → status-dashboard.sh --json.
-- Keep bun.lock/package.json committed for JS tools; avoid stray global npm installs.
-- Keep SkyPilot install managed by install-agent-stack and patch-skypilot.sh (no manual uv tool installs).
+Run these after any setup or policy change:
 
-## OTLP test values
-- See docs/telemetry-env-test-values.md for placeholder endpoints/tokens/buckets/passwords. Replace with real values before deployment.
+```bash
+mise run mde:agent:preflight
+mise run mde:verify
+mise run mde:drift
+mise run mde:status
+```
+
+## Telemetry
+
+- Policy, migration, and research events are written under `reports/agent-policy/`.
+- OpenLIT and LangSmith integration remain the higher-level observability targets, but local event logs are the minimum proof surface.

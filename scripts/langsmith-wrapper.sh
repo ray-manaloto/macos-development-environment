@@ -2,65 +2,12 @@
 # Managed by macos-development-environment.
 set -euo pipefail
 
-have_cmd() {
-  command -v "$1" >/dev/null 2>&1
-}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/mde-secrets.sh
+source "$SCRIPT_DIR/lib/mde-secrets.sh"
 
-load_op_secret() {
-  local ref_var="$1"
-  local env_var="$2"
-  local ref
-  local value
-  local token=""
-
-  ref="${!ref_var:-}"
-  if [[ -z "$ref" || -n "${!env_var:-}" ]]; then
-    return 0
-  fi
-
-  if [[ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]]; then
-    token="$OP_SERVICE_ACCOUNT_TOKEN"
-  elif have_cmd security; then
-    token="$(security find-generic-password -s mde-op-sa -w 2>/dev/null || true)"
-  fi
-
-  if [[ -z "$token" ]] || ! have_cmd op; then
-    return 0
-  fi
-
-  export OP_SERVICE_ACCOUNT_TOKEN="$token"
-  value="$(op read "$ref" 2>/dev/null || true)"
-  if [[ -n "$value" ]]; then
-    printf -v "$env_var" '%s' "$value"
-    export "$env_var"
-  fi
-}
-
-load_keychain_secret() {
-  local label="$1"
-  local env_var="$2"
-  local value
-
-  if [[ -n "${!env_var:-}" || ! $(command -v security 2>/dev/null) ]]; then
-    return 0
-  fi
-
-  value="$(security find-generic-password -s "$label" -w 2>/dev/null || true)"
-  if [[ -n "$value" ]]; then
-    printf -v "$env_var" '%s' "$value"
-    export "$env_var"
-  fi
-}
-
-if [[ -z "${LANGSMITH_API_KEY:-}" ]]; then
-  load_op_secret MDE_OP_LANGSMITH_API_KEY_REF LANGSMITH_API_KEY
-  load_keychain_secret "mde-langsmith-api-key" LANGSMITH_API_KEY
-fi
-
-if [[ -z "${LANGSMITH_WORKSPACE_ID:-}" && -z "${LANGCHAIN_WORKSPACE_ID:-}" ]]; then
-  load_op_secret MDE_OP_LANGSMITH_WORKSPACE_ID_REF LANGSMITH_WORKSPACE_ID
-  load_keychain_secret "mde-langsmith-workspace-id" LANGSMITH_WORKSPACE_ID
-fi
+mde_load_secrets
+mde_export_alias_if_unset LANGCHAIN_WORKSPACE_ID LANGSMITH_WORKSPACE_ID
 
 self_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 cmd_name="$(basename "$0")"
@@ -92,7 +39,7 @@ resolve_uv_cmd() {
   local tool_dir=""
   local candidate=""
 
-  if ! have_cmd uv; then
+  if ! mde_have_cmd uv; then
     return 1
   fi
 

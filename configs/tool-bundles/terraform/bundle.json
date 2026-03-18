@@ -1,0 +1,14 @@
+{
+  "id": "bundle-terraform-starter",
+  "domain_id": "terraform",
+  "name": "Terraform Starter Bundle",
+  "description": "Starter bundle for Terraform modules and provider-version policy.",
+  "preset_ids": ["preset-terraform"],
+  "primary_manifest": "versions.tf",
+  "included_files": ["versions.tf", "main.tf"],
+  "reference_source_ids": ["terraform-docs", "terraform-language-docs", "terraform-registry-docs"],
+  "notes": [
+    "Starter bundles are repo-scoped scaffolds, not host-global installers.",
+    "The owning domain team decides when companion manifests or lockfiles are required."
+  ]
+}

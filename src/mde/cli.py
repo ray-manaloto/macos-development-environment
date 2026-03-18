@@ -70,6 +70,13 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     refs_p.add_argument("--dry-run", action="store_true", help="Dry run mode")
 
+    # hooks
+    hooks_p = sub.add_parser("hooks", help="Claude Code hook handlers")
+    hooks_sub = hooks_p.add_subparsers(dest="hooks_action")
+    hooks_sub.add_parser("verify-task-completion", help="TaskCompleted gate")
+    hooks_sub.add_parser("check-teammate-work", help="TeammateIdle gate")
+    hooks_sub.add_parser("log-edit-outcome", help="PostToolUse logger")
+
     return parser
 
 
@@ -167,6 +174,24 @@ def _cmd_refs(args: argparse.Namespace) -> int:
     return dispatch_refs(args.action, dry_run=args.dry_run)
 
 
+def _cmd_hooks(args: argparse.Namespace) -> int:
+    action = args.hooks_action
+    if action == "verify-task-completion":
+        from mde.hooks.verify_task import verify_task_completion
+
+        return verify_task_completion()
+    if action == "check-teammate-work":
+        from mde.hooks.check_teammate import check_teammate_work
+
+        return check_teammate_work()
+    if action == "log-edit-outcome":
+        from mde.hooks.log_outcome import log_edit_outcome
+
+        return log_edit_outcome()
+    print(f"Unknown hooks action: {action}", file=sys.stderr)
+    return 1
+
+
 _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "validate": _cmd_validate,
     "update": _cmd_update,
@@ -180,4 +205,5 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "remediate": _cmd_remediate,
     "team": _cmd_team,
     "refs": _cmd_refs,
+    "hooks": _cmd_hooks,
 }

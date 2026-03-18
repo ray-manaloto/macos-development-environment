@@ -1,0 +1,37 @@
+version: "3.8"
+services:
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    depends_on:
+      - tempo
+      - loki
+    restart: unless-stopped
+  tempo:
+    image: grafana/tempo:2.5.0
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "3200:3200"
+      - "4317:4317" # OTLP gRPC (optional)
+    restart: unless-stopped
+  loki:
+    image: grafana/loki:2.9.8
+    command: ["-config.file=/etc/loki.yaml"]
+    volumes:
+      - ./loki.yaml:/etc/loki.yaml
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+  mimir:
+    image: grafana/mimir:2.12.0
+    command: ["-config.file=/etc/mimir.yaml"]
+    volumes:
+      - ./mimir.yaml:/etc/mimir.yaml
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

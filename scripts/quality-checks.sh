@@ -4,7 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 list_scripts() {
-  find "$ROOT_DIR/scripts" -type f -maxdepth 1 -print
+  find "$ROOT_DIR/scripts" "$ROOT_DIR/scripts/lib" "$ROOT_DIR/scripts/tests" \
+    -maxdepth 1 -type f -print
 }
 
 run_bash_syntax() {
@@ -30,7 +31,14 @@ run_shellcheck() {
   shellcheck -x "${scripts[@]}"
 }
 
+run_tests() {
+  if [[ -x "$ROOT_DIR/scripts/tests/run-all.sh" ]]; then
+    "$ROOT_DIR/scripts/tests/run-all.sh"
+  fi
+}
+
 run_bash_syntax
 run_shellcheck
+run_tests
 
 echo "Quality checks completed."

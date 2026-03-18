@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# MDE_POLICY_TRANSITION_EXCEPTION=1
 
-export UV_NO_MANAGED_PYTHON="${UV_NO_MANAGED_PYTHON:-1}"
+export UV_PYTHON_DOWNLOADS="${UV_PYTHON_DOWNLOADS:-never}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/mde-agent-policy.sh
+source "$SCRIPT_DIR/lib/mde-agent-policy.sh"
+
+mde_policy_init
+mde_setup_managed_path
+mde_disable_mise_auto_install
+mde_block_legacy_installer_in_agent_context "$(basename "$0")" "mise run mde:migrate:global-tools -- --dry-run"
+
 TEMPLATE_CONF="$SCRIPT_DIR/../templates/tmux.conf"
 TMUX_FORCE_CONF="${TMUX_FORCE_CONF:-0}"
 MANAGED_MARKER="Managed by macos-development-environment"
