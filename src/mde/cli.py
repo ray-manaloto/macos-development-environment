@@ -23,6 +23,11 @@ def _build_parser() -> argparse.ArgumentParser:
     validate_p.add_argument("--fix", action="store_true", help="Auto-fix known issues")
     validate_p.add_argument("--configs", action="store_true", help="Validate config files only")
     validate_p.add_argument("--json", action="store_true", help="Output JSON")
+    validate_p.add_argument("--all", action="store_true", help="Run all validators")
+    validate_p.add_argument("--brew", action="store_true", help="Brew validation only")
+    validate_p.add_argument("--docker", action="store_true", help="Docker validation only")
+    validate_p.add_argument("--package-managers", action="store_true", help="Dedup check only")
+    validate_p.add_argument("--skills", action="store_true", help="Skill frontmatter only")
 
     # update
     sub.add_parser("update", help="Run maintenance cycle")
@@ -70,6 +75,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     refs_p.add_argument("--dry-run", action="store_true", help="Dry run mode")
 
+    # install
+    install_p = sub.add_parser("install", help="Install tool stacks")
+    install_sub = install_p.add_subparsers(dest="install_target")
+    install_sub.add_parser("tmux", help="Install tmux + TPM + managed config")
+    install_sub.add_parser("aws-k8s", help="Install AWS and Kubernetes tools")
+
     # hooks
     hooks_p = sub.add_parser("hooks", help="Claude Code hook handlers")
     hooks_sub = hooks_p.add_subparsers(dest="hooks_action")
@@ -105,7 +116,15 @@ def _dispatch(args: argparse.Namespace) -> int:
 def _cmd_validate(args: argparse.Namespace) -> int:
     from mde.validate import validate_all
 
-    return validate_all(fix=args.fix, configs_only=args.configs, json_output=args.json)
+    return validate_all(
+        fix=args.fix,
+        configs_only=args.configs,
+        json_output=args.json,
+        brew_only=args.brew,
+        docker_only=args.docker,
+        package_managers_only=getattr(args, "package_managers", False),
+        skills_only=args.skills,
+    )
 
 
 def _cmd_update(_args: argparse.Namespace) -> int:
@@ -174,6 +193,20 @@ def _cmd_refs(args: argparse.Namespace) -> int:
     return dispatch_refs(args.action, dry_run=args.dry_run)
 
 
+def _cmd_install(args: argparse.Namespace) -> int:
+    target = args.install_target
+    if target == "tmux":
+        from mde.install.tmux import install_tmux
+
+        return install_tmux()
+    if target == "aws-k8s":
+        from mde.install.aws_k8s import install_aws_k8s_tools
+
+        return install_aws_k8s_tools()
+    print(f"Unknown install target: {target}", file=sys.stderr)
+    return 1
+
+
 def _cmd_hooks(args: argparse.Namespace) -> int:
     action = args.hooks_action
     if action == "verify-task-completion":
@@ -203,6 +236,7 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "learn": _cmd_learn,
     "prune": _cmd_prune,
     "remediate": _cmd_remediate,
+    "install": _cmd_install,
     "team": _cmd_team,
     "refs": _cmd_refs,
     "hooks": _cmd_hooks,

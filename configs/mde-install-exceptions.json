@@ -13,17 +13,6 @@
       "review_by": "2026-06-30"
     },
     {
-      "id": "orbstack",
-      "targets": ["orbstack"],
-      "allowed_installers": ["brew"],
-      "reason": "macOS desktop virtualization stack is outside mise's normal CLI ownership model",
-      "cache_policy": {
-        "cache_mechanism": "installer-managed download and image caches",
-        "cache_pruning_allowed": false
-      },
-      "review_by": "2026-06-30"
-    },
-    {
       "id": "google-cloud-sdk",
       "targets": ["google-cloud-sdk"],
       "allowed_installers": ["brew"],

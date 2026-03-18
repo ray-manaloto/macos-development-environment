@@ -8,11 +8,17 @@ local linters = new Mapping<String, Step> {
     ["shellcheck"] = Builtins.shellcheck
 }
 
+local validators = new Mapping<String, Step> {
+    ["mde-validate"] {
+        check = "uv run mde-py validate --all"
+    }
+}
+
 hooks {
     ["pre-commit"] {
         fix = true
         stash = "git"
-        steps = linters
+        steps = new Mapping { ...linters ...validators }
     }
     ["fix"] {
         fix = true

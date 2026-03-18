@@ -47,7 +47,7 @@ On macOS, new Terminal and iTerm sessions commonly create login, interactive she
 
 This matters because many “startup is slow” complaints come from work split across both `.zprofile` and `.zshrc`.
 
-- Use `.zprofile` for login-shell environment bootstrapping such as Homebrew, OrbStack, and PATH setup.
+- Use `.zprofile` for login-shell environment bootstrapping such as Homebrew and PATH setup.
 - Use `.zshrc` for interactive shell features such as Oh My Zsh, prompt init, completion, plugins, aliases, and secret autoload.
 
 Official reference: [zsh startup files](https://zsh.sourceforge.io/Doc/Release/Files.html).
@@ -136,8 +136,6 @@ This is the best repo-owned method for finding external commands that `zprof` ca
 - `security find-generic-password`
 - `brew shellenv`
 - `. ~/.sky/.sky-complete.zsh`
-- `source ~/.orbstack/shell/init.zsh`
-
 ### Optional: Syscall and file tracing
 
 Use only when the other layers are insufficient:
@@ -199,7 +197,6 @@ These often live in `.zprofile` and are invisible if you only inspect `.zshrc`.
 Examples:
 
 - `eval "$(/opt/homebrew/bin/brew shellenv)"`
-- `source ~/.orbstack/shell/init.zsh`
 - version-manager activation in login context
 
 ### Update checks
@@ -229,9 +226,9 @@ Current local findings point to these specific suspects:
    - `. ~/.sky/.sky-complete.zsh` is sourced directly in `.zshrc`.
    - This should be traced as a potential external completion cost.
 
-5. OrbStack and Homebrew
-   - `.zprofile` currently runs `brew shellenv` and OrbStack init.
-   - These are login-shell costs, so include `.zprofile` in any startup investigation.
+5. Homebrew
+   - `.zprofile` currently runs `brew shellenv`.
+   - This is a login-shell cost, so include `.zprofile` in any startup investigation.
 
 6. Secret autoload
    - `~/.oh-my-zsh/custom/15-mde-platform.zsh` loads secrets from Keychain unless disabled.
@@ -257,8 +254,7 @@ flowchart TD
     B --> C[".zprofile"]
     C --> C1["brew shellenv"]
     C1 --> C2[".zprofile.d/macos-dev-env.zsh"]
-    C2 --> C3["~/.orbstack/shell/init.zsh"]
-    C3 --> D[".zshrc"]
+    C2 --> D[".zshrc"]
     D --> D1["set fpath, OMZ vars, plugins, update mode"]
     D1 --> E["source ~/.oh-my-zsh/oh-my-zsh.sh"]
     E --> E1["compaudit -> compinit -> compdump -> zrecompile"]
@@ -278,8 +274,7 @@ flowchart TD
     A["1773683613.909959<br/>source ~/.zprofile"] --> B["1773683613.910653<br/>run /opt/homebrew/bin/brew shellenv"]
     B --> C["1773683613.931857<br/>eval brew shellenv output"]
     C --> D["1773683613.936575<br/>source ~/.zprofile.d/macos-dev-env.zsh"]
-    D --> E["1773683613.939176<br/>source ~/.orbstack/shell/init.zsh"]
-    E --> F["1773683613.945320<br/>source ~/.zshrc"]
+    D --> F["1773683613.945320<br/>source ~/.zshrc"]
     F --> G["set fpath, ZSH, theme, OMZ update mode, plugins"]
     G --> H["source ~/.oh-my-zsh/oh-my-zsh.sh"]
     H --> I["1773683568.541178 -> 1773683569.315873<br/>completion bootstrap"]

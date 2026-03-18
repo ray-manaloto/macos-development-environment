@@ -486,6 +486,113 @@
         "MISE_*"
       ],
       "derived_from_authority": "/Users/rmanaloto/.config/mise/config.toml + /Users/rmanaloto/.config/fnox/config.toml"
+    },
+    {
+      "id": "cloudflared",
+      "command": "cloudflared",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "direnv",
+      "command": "direnv",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "pandoc",
+      "command": "pandoc",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "tmux",
+      "command": "tmux",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "xcodegen",
+      "command": "xcodegen",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "clang",
+      "command": "clang",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
+    },
+    {
+      "id": "docker-cli",
+      "command": "docker",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false,
+      "ecosystem_domain": "docker",
+      "domain_team_id": "mde-docker-domain-team"
+    },
+    {
+      "id": "docker-compose",
+      "command": "docker-compose",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false,
+      "ecosystem_domain": "docker",
+      "domain_team_id": "mde-docker-domain-team"
+    },
+    {
+      "id": "buildkit",
+      "command": "buildctl",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false,
+      "ecosystem_domain": "docker",
+      "domain_team_id": "mde-docker-domain-team"
+    },
+    {
+      "id": "docker-agent",
+      "command": "docker-agent",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false,
+      "ecosystem_domain": "docker",
+      "domain_team_id": "mde-docker-domain-team"
+    },
+    {
+      "id": "session-manager-plugin",
+      "command": "session-manager-plugin",
+      "tool_class": "global-cli",
+      "owner": "mise",
+      "preflight_required": false,
+      "cache_profile": "mise-runtime",
+      "cache_policy_mandatory": false
     }
   ]
 }

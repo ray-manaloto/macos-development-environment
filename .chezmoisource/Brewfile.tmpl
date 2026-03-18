@@ -1,0 +1,55 @@
+# Brewfile — managed by chezmoi
+# Only formulae without mise backends + all casks + vscode extensions.
+# CLI tools are managed by mise (see dot_config/mise/config.toml.tmpl).
+
+# ── Taps ──
+tap "homebrew/autoupdate"
+
+# ── Formulae (no mise backend available) ──
+brew "gnupg"
+brew "curl"
+brew "chafa"
+brew "tree"
+
+# ── Casks (GUI applications) ──
+cask "gemini"
+cask "ghostty"
+cask "git-credential-manager"
+cask "iterm2"
+cask "jordanbaird-ice"
+cask "mactex"
+cask "opencode-desktop"
+cask "osquery"
+cask "sublime-text"
+cask "swiftbar"
+cask "wezterm"
+
+# ── VS Code Extensions ──
+vscode "anthropic.claude-code"
+vscode "anysphere.cpptools"
+vscode "anysphere.cursorpyright"
+vscode "anysphere.remote-containers"
+vscode "anysphere.remote-ssh"
+vscode "astral-sh.ty"
+vscode "charliermarsh.ruff"
+vscode "davidanson.vscode-markdownlint"
+vscode "docker.docker"
+vscode "github.vscode-codeql"
+vscode "github.vscode-github-actions"
+vscode "github.vscode-pull-request-github"
+vscode "golang.go"
+vscode "kilocode.kilo-code"
+vscode "llvm-vs-code-extensions.vscode-clangd"
+vscode "meta.pyrefly"
+vscode "ms-azuretools.vscode-containers"
+vscode "ms-azuretools.vscode-docker"
+vscode "ms-python.debugpy"
+vscode "ms-python.python"
+vscode "ms-vscode.cmake-tools"
+vscode "ms-vscode.vscode-github-issue-notebooks"
+vscode "ms-vscode.vscode-typescript-tslint-plugin"
+vscode "openai.chatgpt"
+vscode "rust-lang.rust-analyzer"
+vscode "semgrep.semgrep"
+vscode "sourcegraph.amp"
+vscode "vadimcn.vscode-lldb"

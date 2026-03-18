@@ -4,7 +4,7 @@ run = "scripts/ensure-managed-configs.sh"
 
 [tasks."mde:update"]
 description = "Run maintenance update lifecycle"
-run = "uv run python -m mde update"
+run = "uv run mde-py update"
 
 [tasks."mde:update:fast"]
 description = "Run maintenance with agent/mcp updates disabled"
@@ -12,7 +12,7 @@ run = "MDE_UPDATE_MCP=0 scripts/macos-dev-maintenance.sh"
 
 [tasks."mde:verify"]
 description = "Run verification checks"
-run = "uv run python -m mde verify"
+run = "uv run mde-py verify"
 
 [tasks."mde:agent:preflight"]
 description = "Verify the agent runtime contract before any agent run"
@@ -64,11 +64,11 @@ run = "scripts/mde-learn.sh consolidate"
 
 [tasks."mde:learn:status"]
 description = "Show learning stats (memory + neural)"
-run = "uv run python -m mde learn status"
+run = "uv run mde-py learn status"
 
 [tasks."mde:learn:verify"]
 description = "Verify learning registry coverage and writeback requirements"
-run = "uv run python -m mde learn verify"
+run = "uv run mde-py learn verify"
 
 [tasks."mde:agent:report"]
 description = "Print the current agent runtime policy report"
@@ -80,7 +80,7 @@ run = "scripts/tests/run-all.sh"
 
 [tasks."mde:drift"]
 description = "Run runtime/tool ownership drift checks"
-run = "uv run python -m mde drift check"
+run = "uv run mde-py drift check"
 
 [tasks."mde:migrate:global-tools"]
 description = "Classify and migrate legacy global tool installs into the mise ownership model"
@@ -92,7 +92,7 @@ run = "scripts/mde-research-autoimprove.sh"
 
 [tasks."mde:status"]
 description = "Show status dashboard JSON"
-run = "uv run python -m mde status"
+run = "uv run mde-py status"
 
 [tasks."mde:mcp:sync"]
 description = "Sync managed MCP server configuration"
@@ -104,7 +104,7 @@ run = "scripts/mde-agents-review.sh"
 
 [tasks."mde:secrets:refresh"]
 description = "Refresh the global SOPS runtime secret file from the merged fnox secret set"
-run = "uv run python -m mde secrets refresh"
+run = "uv run mde-py secrets refresh"
 
 [tasks."mde:secrets:restore:keychain"]
 description = "Restore the global SOPS runtime secret file into keychain-backed fnox entries"
@@ -116,7 +116,7 @@ run = "scripts/mde-sops-secrets-backup-1password.sh"
 
 [tasks."mde:remediate"]
 description = "Run deterministic host remediation workflow"
-run = "uv run python -m mde remediate"
+run = "uv run mde-py remediate"
 
 [tasks."mde:bootstrap:devcontainer"]
 description = "Bootstrap devcontainer profile with mise + chezmoi"
@@ -164,19 +164,19 @@ run = "scripts/profile-zsh-startup.sh syscalls"
 
 [tasks."mde:prune"]
 description = "Prune stale uv/bun globals migrated to mise + orphan mise versions"
-run = "uv run python -m mde prune"
+run = "uv run mde-py prune"
 
 [tasks."mde:validate"]
 description = "Run declarative tools validation + mise doctor"
-run = "uv run python -m mde validate"
+run = "uv run mde-py validate"
 
 [tasks."mde:validate:fix"]
 description = "Run validation with auto-fix for known issues"
-run = "uv run python -m mde validate --fix"
+run = "uv run mde-py validate --fix"
 
 [tasks."mde:validate:configs"]
 description = "Validate config files only"
-run = "uv run python -m mde validate --configs"
+run = "uv run mde-py validate --configs"
 
 [tasks."mde:test:py"]
 description = "Run Python test suite"
@@ -184,7 +184,7 @@ run = "uv run pytest tests/mde/ -v"
 
 [tasks."mde:doctor"]
 description = "System health check"
-run = "uv run python -m mde doctor"
+run = "uv run mde-py doctor"
 
 [tasks."install:fabric"]
 description = "Install fabric AI tool and configure env"

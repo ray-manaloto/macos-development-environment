@@ -1,10 +1,6 @@
 # Mise Global Configuration — managed by chezmoi
 # Source of truth: .chezmoisource/dot_config/mise/config.toml.tmpl
 # Applied by: chezmoi apply → ~/.config/mise/config.toml
-# Tasks are in a separate file included below.
-
-includes = ["tasks.toml"]
-
 [settings]
 experimental = true
 not_found_auto_install = true
@@ -71,14 +67,29 @@ pre-commit = "latest"
 awscli = { version = "latest", symlink_bins = "true" }
 azure-cli = "latest"
 pitchfork = "latest"
+clang = "latest"
+"aqua:aws/session-manager-plugin" = "latest"
 {{ end -}}
 "github:jdx/fnox" = "latest"
 "aqua:loft-sh/devpod" = "latest"
 github-cli = "latest"
 
+# ── System Utilities (migrated from brew) ──
+cloudflared = "latest"
+direnv = "latest"
+pandoc = "latest"
+tmux = "latest"
+
 # ── Container & Dev Tools ──
 lefthook = "latest"
 devcontainer = "latest"
+{{ if eq .chezmoi.os "darwin" -}}
+docker-cli = "latest"
+docker-compose = "latest"
+"aqua:moby/buildkit" = "latest"
+"github:docker/docker-agent" = "latest"
+xcodegen = "latest"
+{{ end -}}
 
 # ── Test Tools ──
 bats = "latest"
@@ -99,6 +110,14 @@ biome = "latest"
 "npm:@googleworkspace/cli" = "latest"
 "npm:@claude-flow/cli" = "latest"
 
+# ── Migrated from bun/uv globals ──
+"npm:@augmentcode/auggie" = "latest"
+"npm:@tauri-apps/cli" = "latest"
+"npm:awesome-ai" = "latest"
+"npm:@playwright/cli" = "latest"
+"npm:yaml-cli" = "latest"
+"pipx:docs-monorepo" = "latest"
+
 # ── Vercel Labs ──
 "npm:skills" = "latest"
 "npm:agent-browser" = "latest"
@@ -114,10 +133,8 @@ biome = "latest"
 "pipx:langchain-model-profiles" = "latest"
 "pipx:langgraph-gen" = "latest"
 "pipx:langsmith-fetch" = "latest"
-"pipx:langsmith-data-migration-tool" = "latest"
 "pipx:langsmith-mcp-server" = "latest"
 "pipx:mcpdoc" = "latest"
-"pipx:pylon-data-extractor" = "latest"
 "npm:create-agent-chat-app" = "latest"
 "npm:create-langchain-integration" = "latest"
 "npm:create-langgraph" = "latest"

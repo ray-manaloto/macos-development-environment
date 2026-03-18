@@ -289,7 +289,7 @@ EOF_ENV
 
 k8s_requirements() {
   if ! command -v kubectl >/dev/null 2>&1; then
-    log "kubectl not found. Install with scripts/install-aws-k8s-tools.sh"
+    log "kubectl not found. Install with: uv run mde-py install aws-k8s"
     exit 1
   fi
 

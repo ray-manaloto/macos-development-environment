@@ -34,6 +34,49 @@ When adding a new tool, choose the backend in this priority order:
 4. Run `chezmoi apply` to deploy config
 5. Run `mise install --yes && mise lock && mise reshim`
 
+## Aqua Backend Discovery
+
+For tools not in the mise registry, check aqua:
+```bash
+# Verify aqua backend availability
+mise ls-remote "aqua:<org>/<repo>"
+
+# Examples of aqua-discovered tools:
+# buildkit:              mise ls-remote "aqua:moby/buildkit"
+# session-manager-plugin: mise ls-remote "aqua:aws/session-manager-plugin"
+# docker CLI:            mise ls-remote "aqua:docker/cli"
+# docker-compose:        mise ls-remote "aqua:docker/compose"
+```
+
+## GitHub Backend Discovery
+
+For tools distributed via GitHub Releases:
+```bash
+# Verify github backend availability
+mise ls-remote "github:<org>/<repo>"
+
+# Examples:
+# docker-agent:  mise ls-remote "github:docker/docker-agent"
+# xcodegen:      mise ls-remote "github:yonaskolb/XcodeGen"
+```
+
+## Bun/uv Global Cleanup
+
+When migrating globals to mise:
+```bash
+# List bun globals that may duplicate mise
+ls ~/.bun/install/global/node_modules/
+
+# Remove specific bun global duplicate
+bun remove -g <package>
+
+# List uv tools that may duplicate mise
+uv tool list
+
+# Remove specific uv tool duplicate
+uv tool uninstall <package>
+```
+
 ## Drift Detection
 
 - `mise outdated` — check version drift

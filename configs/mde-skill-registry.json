@@ -65,6 +65,11 @@
       "id": "skills/mde-package-cache-policy",
       "canonical_path": ".agents/skills/mde-package-cache-policy/SKILL.md",
       "aliases": ["mde-package-cache-policy"]
+    },
+    {
+      "id": "skills/mde-homebrew",
+      "canonical_path": ".agents/skills/mde-homebrew/SKILL.md",
+      "aliases": ["mde-homebrew", "homebrew", "brew"]
     }
   ]
 }

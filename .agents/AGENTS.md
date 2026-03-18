@@ -13,7 +13,7 @@
 - Use `mise` as the authority for global runtimes, global CLIs, and SDK CLIs.
 - Keep repository libraries in native manifests instead of global installers.
 - Prefer `mise run <task>` or `mise x <tool> -- <args>` over directly invoking unmanaged binaries.
-- Treat Homebrew as exception-only through `configs/mde-install-exceptions.json`.
+- Treat Homebrew as exception-only through `configs/mde-install-exceptions.json`. Use `$mde-homebrew` for brew diagnostics, ownership conflicts, and update failures.
 - reuse package manager caches by default and do not clear caches unless a bounded maintenance flow explicitly allows it.
 - Classify setup and tooling work into a domain and delegate to the owning SDLC team before adopting or remediating guidance.
 - Read `configs/mde-tool-ownership.json`, `configs/mde-modernization-matrix.json`, `configs/mde-install-exceptions.json`, `configs/mde-skill-registry.json`, `configs/mde-domain-catalog.json`, `configs/mde-reference-sources.json`, `configs/mde-preset-catalog.json`, and `configs/mde-learning-registry.json` before changing ownership or skill references.

@@ -33,44 +33,33 @@ def run_update() -> int:
 
 
 def _run_brew_update() -> int:
+    """Run brew update then brew upgrade.
+
+    brew update failure is fatal (tap index must refresh).
+    brew upgrade failure is non-fatal — individual package
+    failures (casks needing sudo, removed formulae, transient
+    network errors) should not block the rest of the lifecycle.
+    """
     if not shutil.which("brew"):
         return 0
-    proc = subprocess.run(
-        ["brew", "update"],
-        capture_output=True,
-        text=True,
-        timeout=120,
-    )
+    proc = subprocess.run(["brew", "update"], timeout=120)
     if proc.returncode != 0:
         return 1
-    proc = subprocess.run(
-        ["brew", "upgrade"],
-        capture_output=True,
-        text=True,
-        timeout=300,
-    )
-    return proc.returncode
+    proc = subprocess.run(["brew", "upgrade"], timeout=300)
+    if proc.returncode != 0:
+        print(f"  brew upgrade exited {proc.returncode} (non-fatal)")
+    return 0
 
 
 def _run_mise_install() -> int:
     if not shutil.which("mise"):
         return 1
-    proc = subprocess.run(
-        ["mise", "install", "--yes"],
-        capture_output=True,
-        text=True,
-        timeout=300,
-    )
+    proc = subprocess.run(["mise", "install", "--yes"], timeout=300)
     return proc.returncode
 
 
 def _run_mise_prune() -> int:
     if not shutil.which("mise"):
         return 0
-    proc = subprocess.run(
-        ["mise", "prune", "--yes"],
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
+    proc = subprocess.run(["mise", "prune", "--yes"], timeout=60)
     return proc.returncode
