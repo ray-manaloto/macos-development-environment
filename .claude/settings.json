@@ -1,5 +1,27 @@
 {
   "hooks": {
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks log-agent-event"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks log-agent-event"
+          }
+        ]
+      }
+    ],
     "TaskCompleted": [
       {
         "matcher": "",

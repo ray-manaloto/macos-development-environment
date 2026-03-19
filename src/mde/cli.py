@@ -87,6 +87,14 @@ def _build_parser() -> argparse.ArgumentParser:
     hooks_sub.add_parser("verify-task-completion", help="TaskCompleted gate")
     hooks_sub.add_parser("check-teammate-work", help="TeammateIdle gate")
     hooks_sub.add_parser("log-edit-outcome", help="PostToolUse logger")
+    hooks_sub.add_parser("log-agent-event", help="SubagentStarted/Completed logger")
+
+    # statusline
+    sl_p = sub.add_parser("statusline", help="Multi-agent statusline renderer")
+    sl_sub = sl_p.add_subparsers(dest="statusline_action")
+    sl_sub.add_parser("render", help="Render statusline (reads stdin JSON)")
+    sl_sub.add_parser("toggle", help="Cycle display mode A/B/C")
+    sl_sub.add_parser("show-mode", help="Print current mode")
 
     return parser
 
@@ -221,7 +229,29 @@ def _cmd_hooks(args: argparse.Namespace) -> int:
         from mde.hooks.log_outcome import log_edit_outcome
 
         return log_edit_outcome()
+    if action == "log-agent-event":
+        from mde.hooks.log_agent_event import log_agent_event
+
+        return log_agent_event()
     print(f"Unknown hooks action: {action}", file=sys.stderr)
+    return 1
+
+
+def _cmd_statusline(args: argparse.Namespace) -> int:
+    action = args.statusline_action
+    if action == "render":
+        from mde.statusline.render import render_statusline
+
+        return render_statusline()
+    if action == "toggle":
+        from mde.statusline.toggle import toggle_mode
+
+        return toggle_mode()
+    if action == "show-mode":
+        from mde.statusline.toggle import show_mode
+
+        return show_mode()
+    print(f"Unknown statusline action: {action}", file=sys.stderr)
     return 1
 
 
@@ -240,4 +270,5 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "team": _cmd_team,
     "refs": _cmd_refs,
     "hooks": _cmd_hooks,
+    "statusline": _cmd_statusline,
 }
