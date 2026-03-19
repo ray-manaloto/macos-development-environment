@@ -6,10 +6,11 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from mde.lib.mise_tools import fetch_mise_owned_packages
 from mde.models.result import ValidationResult
 
-# Packages known to be in mise config — bun globals of these are duplicates
-MISE_OWNED_NPM = {
+# Fallback sets used when `mise ls --json` is unavailable.
+_FALLBACK_NPM = {
     "@claude-flow/cli",
     "@langchain/langgraph-cli",
     "@langchain/langgraph-ui",
@@ -23,7 +24,7 @@ MISE_OWNED_NPM = {
     "opencode",
 }
 
-MISE_OWNED_PIPX = {"skillport", "specify-cli", "deepagents-cli"}
+_FALLBACK_PIPX = {"skillport", "specify-cli", "deepagents-cli"}
 
 _SCOPED_PKG_PARTS = 2
 
@@ -41,7 +42,11 @@ def _check_bun_duplicates(result: ValidationResult) -> None:
     if not bun_global_dir.exists():
         return
     result.files_checked += 1
-    for pkg_name in MISE_OWNED_NPM:
+
+    npm_pkgs, _pipx = fetch_mise_owned_packages()
+    owned = npm_pkgs or _FALLBACK_NPM
+
+    for pkg_name in owned:
         parts = pkg_name.split("/")
         if len(parts) == _SCOPED_PKG_PARTS:
             pkg_path = bun_global_dir / parts[0] / parts[1]
@@ -74,7 +79,11 @@ def _check_uv_duplicates(result: ValidationResult) -> None:
             parts = line.strip().split()
             if parts:
                 installed.add(parts[0])
-        for tool in MISE_OWNED_PIPX:
+
+        _npm, pipx_tools = fetch_mise_owned_packages()
+        owned = pipx_tools or _FALLBACK_PIPX
+
+        for tool in owned:
             if tool in installed:
                 result.add_warning(
                     "uv-tools",

@@ -5,6 +5,9 @@ from __future__ import annotations
 import shutil
 import subprocess
 
+from mde.lib.mise_tools import fetch_mise_owned_packages
+
+# Fallback lists used when `mise ls --json` is unavailable.
 _UV_STALE_TOOLS = [
     "langchain-cli",
     "langgraph-cli",
@@ -41,6 +44,10 @@ def _prune_uv_tools() -> None:
     if not shutil.which("uv"):
         return
     print("==> Pruning stale uv tools migrated to mise")
+
+    _npm, pipx_tools = fetch_mise_owned_packages()
+    stale = pipx_tools or set(_UV_STALE_TOOLS)
+
     proc = subprocess.run(
         ["uv", "tool", "list"],
         capture_output=True,
@@ -52,7 +59,7 @@ def _prune_uv_tools() -> None:
         for line in proc.stdout.splitlines()
         if line.strip() and not line.startswith("-")
     }
-    for tool in _UV_STALE_TOOLS:
+    for tool in stale:
         if tool in installed:
             print(f"  Removing uv tool: {tool}")
             subprocess.run(
@@ -66,13 +73,17 @@ def _prune_bun_globals() -> None:
     if not shutil.which("bun"):
         return
     print("==> Pruning stale bun globals migrated to mise")
+
+    npm_pkgs, _pipx = fetch_mise_owned_packages()
+    stale = npm_pkgs or set(_BUN_STALE_PACKAGES)
+
     proc = subprocess.run(
         ["bun", "pm", "ls", "-g"],
         capture_output=True,
         text=True,
         timeout=10,
     )
-    for pkg in _BUN_STALE_PACKAGES:
+    for pkg in stale:
         if pkg in proc.stdout:
             print(f"  Removing bun global: {pkg}")
             subprocess.run(
