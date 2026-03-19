@@ -1,14 +1,27 @@
 {
-  "enabledPlugins": {
-    "python-development@claude-code-workflows": true,
-    "shell-scripting@claude-code-workflows": true,
-    "developer-essentials@claude-code-workflows": true,
-    "conductor@claude-code-workflows": true,
-    "security-guidance@claude-plugins-official": true,
-    "semgrep@claude-plugins-official": false,
-    "data@claude-plugins-official": true
-  },
   "hooks": {
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks log-agent-event"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks log-agent-event"
+          }
+        ]
+      }
+    ],
     "TaskCompleted": [
       {
         "matcher": "",
@@ -42,5 +55,11 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "python-development@claude-code-workflows": true,
+    "shell-scripting@claude-code-workflows": true,
+    "developer-essentials@claude-code-workflows": true,
+    "conductor@claude-code-workflows": true
   }
 }

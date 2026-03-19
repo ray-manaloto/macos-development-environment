@@ -4,6 +4,7 @@ Subcommands:
 - verify-task-completion: TaskCompleted gate (exit 2 blocks)
 - check-teammate-work: TeammateIdle gate (exit 2 keeps working)
 - log-edit-outcome: PostToolUse logger (always exit 0)
+- log-agent-event: SubagentStarted/SubagentCompleted logger (always exit 0)
 """
 
 from __future__ import annotations
@@ -23,6 +24,10 @@ def dispatch_hooks(action: str) -> int:
         from mde.hooks.log_outcome import log_edit_outcome
 
         return log_edit_outcome()
+    if action == "log-agent-event":
+        from mde.hooks.log_agent_event import log_agent_event
+
+        return log_agent_event()
 
     import sys
 
