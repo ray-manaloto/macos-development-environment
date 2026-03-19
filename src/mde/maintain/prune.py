@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+from pathlib import Path
 
 from mde.lib.mise_tools import fetch_mise_owned_packages
+
+# Stale mise backends superseded by native installers or different backends.
+_MISE_STALE_BACKENDS = [
+    "aqua-anthropics-claude-code",
+]
 
 # Fallback lists used when `mise ls --json` is unavailable.
 _UV_STALE_TOOLS = [
@@ -34,10 +40,27 @@ def run_prune() -> int:
     Returns:
         Exit code.
     """
+    _prune_stale_mise_backends()
     _prune_uv_tools()
     _prune_bun_globals()
     _prune_mise_orphans()
     return 0
+
+
+def _prune_stale_mise_backends() -> None:
+    """Remove mise install dirs for backends replaced by native installers."""
+    installs = Path.home() / ".local" / "share" / "mise" / "installs"
+    if not installs.is_dir():
+        return
+    removed = False
+    for backend in _MISE_STALE_BACKENDS:
+        target = installs / backend
+        if target.is_dir():
+            if not removed:
+                print("==> Pruning stale mise backends replaced by native installers")
+                removed = True
+            print(f"  Removing {backend}")
+            shutil.rmtree(target)
 
 
 def _prune_uv_tools() -> None:
