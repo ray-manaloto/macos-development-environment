@@ -777,7 +777,101 @@ The skill is installed at `.claude/skills/notebooklm` → `.agents/skills/notebo
 - X/Twitter content requires `bird` CLI pre-fetch (documented in troubleshooting but not in main skill)
 - The skill should document the CLI vs MCP auth disconnect for this project
 
-## 17. Open Questions
+## 17. Claude Code Native Capabilities Gap Analysis
+
+### 17.1 Critical Finding
+
+Anthropic's official docs and engineering blog reveal that Claude Code now has **native equivalents** for many claude-flow features. The canonical guidance from "Building effective agents" (anthropic.com/engineering): "Most successful implementations use simple, composable patterns rather than frameworks."
+
+### 17.2 Native Features We Should Evaluate Against claude-flow
+
+| Capability | claude-flow | Native Claude Code | Status |
+|-----------|------------|-------------------|--------|
+| Multi-agent coordination | Swarm init + topology | Agent Teams (experimental, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) | Need to evaluate |
+| Parallel work decomposition | Task orchestrate | `/batch` skill (auto-decomposes into 5-30 units, worktree isolation) | Not using |
+| Persistent agent memory | Memory store/search CLI | Native subagent `memory` field (`user`/`project`/`local` scope) → `~/.claude/agent-memory/<name>/` | Not using |
+| Agent lifecycle hooks | Hooks CLI | Native `settings.json` hooks (20+ events including `TaskCompleted`, `SubagentStart/Stop`, `TeammateIdle`) | Partially using |
+| Task locking for parallel agents | Swarm coordination | File-based task locking (from "Building a C compiler" pattern) | Not using |
+| Progress tracking | Swarm status | `claude-progress.txt` pattern (from "Effective harnesses" blog) | Not using |
+
+### 17.3 Official Plugins We Should Install
+
+| Plugin | Source | What It Provides |
+|--------|--------|-----------------|
+| `claude-code-setup` | anthropics/claude-plugins-official | `claude-automation-recommender` skill — analyzes codebase and recommends automations |
+| `claude-md-management` | anthropics/claude-plugins-official | `claude-md-improver` skill, `/revise-claude-md` command |
+| `pyright-lsp` | anthropics/claude-plugins-official | Python type intelligence via LSP |
+| `context7` | anthropics/claude-plugins-official | Library documentation lookup |
+
+### 17.4 Official Marketplaces to Register
+
+```bash
+/plugin marketplace add anthropics/skills
+/plugin marketplace add anthropics/claude-plugins-official
+```
+
+### 17.5 Agent Skills Standard (agentskills.io)
+
+The official `anthropics/skills` repo follows the Agent Skills open standard. Our custom skills should adopt this standard for interoperability. Key requirements:
+- `SKILL.md` with `name` and `description` frontmatter
+- Keep SKILL.md under 500 lines; use supporting files for reference
+- Skills support `context: fork`, `agent`, `model`, `allowed-tools` frontmatter
+
+### 17.6 Python Agent SDK Capabilities We're Not Using
+
+| Feature | What It Enables |
+|---------|----------------|
+| `@tool` decorator + `create_sdk_mcp_server()` | In-process Python tools as MCP servers (no subprocess overhead) |
+| Python hooks via `HookMatcher` | PreToolUse/PostToolUse validation in Python |
+| `permission_mode="plan"` | Review-before-execute workflows |
+| `setting_sources=["project", "local"]` | Load filesystem settings in SDK |
+| Custom `system_prompt` per agent | Specialized agent behavior |
+
+### 17.7 Engineering Blog Patterns to Adopt
+
+| Pattern | Source | What to Do |
+|---------|--------|-----------|
+| File-based task locking | "Building a C compiler with parallel Claudes" | Agents claim tasks via lock files, git handles conflicts |
+| `claude-progress.txt` | "Effective harnesses for long-running agents" | Work history file prevents premature completion claims |
+| One-feature-per-session | Same | Focus discipline for agent sessions |
+| Simple composable patterns | "Building effective agents" | Evaluate if native features can replace claude-flow complexity |
+| Poka-yoke tool design | "Writing effective tools" | Design tools that prevent misuse |
+
+### 17.8 NotebookLM Sources to Add from This Research
+
+| Source | Priority | URL |
+|--------|----------|-----|
+| Claude Code docs index | High | `https://code.claude.com/docs/llms.txt` |
+| Building effective agents | High | `https://www.anthropic.com/engineering/building-effective-agents` |
+| Building C compiler with parallel Claudes | High | `https://www.anthropic.com/engineering/building-c-compiler` |
+| Effective harnesses for long-running agents | High | `https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents` |
+| Agent SDK README | Medium | `https://github.com/anthropics/claude-agent-sdk-python` |
+| Claude plugins official README | Medium | `https://github.com/anthropics/claude-plugins-official` |
+| Skills repo README + spec | Medium | `https://github.com/anthropics/skills` |
+| How Anthropic teams use Claude Code | Medium | `https://claude.com/blog/how-anthropic-teams-use-claude-code` |
+
+### 17.9 Architecture Decision Required
+
+**Open question:** Should the self-improving research system use:
+
+**A) claude-flow** — More features (swarm topologies, neural training, HNSW search), but adds framework complexity and many referenced capabilities (SONA, ReasoningBank) have missing skills
+
+**B) Native Claude Code features** — Agent teams + `/batch` + native subagent memory + hooks. Simpler, officially supported, follows Anthropic's own "simple composable patterns" guidance
+
+**C) Hybrid** — Use native features for orchestration (agent teams, hooks, memory), claude-flow for specialized capabilities (vector search, embeddings, advanced routing)
+
+This decision should itself be a research output of the system — Layer 1 should continuously evaluate both approaches as both evolve.
+
+## 18. Open Questions
+
+1. Best storage backend for Trail Adapter — research should determine this
+2. Cross-model review implementation — which model pairs work best?
+3. Obsidian CLI vs REST API vs filesystem — need capability evaluation
+4. agentskills.io standard — worth adopting for skill interoperability?
+5. Composio Rube MCP — worth the dependency for 500+ service integrations?
+6. **claude-flow vs native Claude Code features** — which orchestration approach is better for this project?
+7. **NotebookLM CLI auth fix** — install playwright extra or bridge auth stores?
+8. **Agent teams (experimental)** — stable enough for production use?
 
 1. **Best storage backend for Trail Adapter** — research should determine this, not premature decision
 2. **Cross-model review implementation** — which model pairs work best for adversarial review?
