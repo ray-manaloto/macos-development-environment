@@ -428,14 +428,27 @@ When a notebook reaches `split_threshold * source_limit`, the system creates a c
 - If GitAgent agents run outside Claude Code, they lose access to the entire skill ecosystem
 - Evaluate: does GitAgent complement Claude Code or replace it?
 
-**Option D: Hybrid — Claude Code primary + Codex adversarial reviewer only**
+**Option D: Gemini CLI non-interactive mode** (https://github.com/google-gemini/gemini-cli — `--non-interactive`)
+- Similar to Codex: headless CLI reviewer, different model family
+- Already installed via mise (`gemini-cli`)
+- Lower precedence than Codex (see fallback chain below)
+
+**Option E: Hybrid with fallback chain (RECOMMENDED)**
 - All work happens in Claude Code (preserving full functionality)
-- Only the review step calls out to Codex non-interactive mode
-- Minimal blast radius — one CLI call, not a framework swap
+- Only the review step calls an external reviewer
+- Fallback chain based on availability and rate limits:
+
+```
+1. Codex non-interactive (preferred — different model family, true adversarial)
+2. Gemini CLI --non-interactive (fallback — also cross-model)
+3. Claude Code adversarial-persona subagent (final fallback — same model but always available)
+```
+
+Each reviewer is tried in order. If rate-limited or unavailable, fall to next. Claude Code persona is always available as the floor.
 
 When implemented, the pattern is:
 - Agent A (Claude Code) produces a recommendation
-- Agent B (Codex non-interactive OR adversarial-persona Claude subagent) critiques: "Find flaws in this recommendation. List specific risks with severity (LOW/MEDIUM/HIGH)."
+- Agent B (first available from fallback chain) critiques: "Find flaws in this recommendation. List specific risks with severity (LOW/MEDIUM/HIGH)."
 - If Agent B identifies any HIGH severity risks, the recommendation is blocked and flagged for human review
 - LOW/MEDIUM risks are logged in the trail but don't block
 

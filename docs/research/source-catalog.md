@@ -209,7 +209,8 @@ These were researched but not ingested into the notebook:
 
 | Status | Source | URL | Notes |
 |--------|--------|-----|-------|
-| [ ] | Codex non-interactive mode | https://developers.openai.com/codex/noninteractive | Cross-model adversarial reviewer — no GUI needed |
+| [ ] | Codex non-interactive mode | https://developers.openai.com/codex/noninteractive | Cross-model adversarial reviewer — preferred, no GUI |
+| [ ] | Gemini CLI non-interactive | https://github.com/google-gemini/gemini-cli/blob/52250c162d10f97cafc12f0fdd57cea88997b36d/README.md#non-interactive-mode-for-scripts | Fallback cross-model reviewer, already in mise |
 
 ## GitHub Repos — Auto-Research Frameworks
 
