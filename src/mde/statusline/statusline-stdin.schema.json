@@ -96,8 +96,28 @@
     },
     "rate_limits": {
       "type": "object",
-      "description": "Rate limit data (v2.1.80). Shape unconfirmed — parsed into claude_agent_sdk.types.RateLimitInfo post-validation.",
+      "description": "Rate limit data (v2.1.80). CONFIRMED shape from live Claude Max session: nested by window with used_percentage (0-100 int) and resets_at (Unix timestamp int). Absent for API-key plans.",
+      "properties": {
+        "five_hour": {
+          "type": "object",
+          "properties": {
+            "used_percentage": { "type": "integer", "description": "0-100 percentage of 5-hour rate limit consumed" },
+            "resets_at": { "type": "integer", "description": "Unix timestamp when the 5-hour window resets" }
+          }
+        },
+        "seven_day": {
+          "type": "object",
+          "properties": {
+            "used_percentage": { "type": "integer", "description": "0-100 percentage of 7-day rate limit consumed" },
+            "resets_at": { "type": "integer", "description": "Unix timestamp when the 7-day window resets" }
+          }
+        }
+      },
       "additionalProperties": true
+    },
+    "session_name": {
+      "type": "string",
+      "description": "Session name (discovered in v2.1.80 capture, not in official docs)"
     },
     "vim": {
       "oneOf": [

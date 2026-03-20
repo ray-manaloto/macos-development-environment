@@ -11,7 +11,11 @@ from __future__ import annotations
 import io
 import json
 import sys
+from typing import TYPE_CHECKING
 from unittest.mock import patch
+
+if TYPE_CHECKING:
+    import pytest
 
 
 def _make_stdin(data: dict[str, object]) -> io.StringIO:
@@ -63,7 +67,9 @@ def _subagent_stop_payload(agent_id: str, agent_type: str) -> dict[str, object]:
 class TestStatuslineRender:
     """Tests for the statusline render modes."""
 
-    def test_mode_a_shows_agent_count_and_cost(self, tmp_path: object, capsys: object) -> None:
+    def test_mode_a_shows_agent_count_and_cost(
+        self, tmp_path: object, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         from mde.statusline import render
 
         state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
@@ -84,11 +90,13 @@ class TestStatuslineRender:
         ):
             assert render.render_statusline() == 0
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         assert "2 agents" in captured.out
         assert "$1.23" in captured.out
 
-    def test_mode_b_shows_per_agent_state(self, tmp_path: object, capsys: object) -> None:
+    def test_mode_b_shows_per_agent_state(
+        self, tmp_path: object, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         from mde.statusline import render
 
         state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
@@ -104,11 +112,13 @@ class TestStatuslineRender:
         ):
             assert render.render_statusline() == 0
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         assert "researcher:" in captured.out
         assert "started" in captured.out
 
-    def test_mode_c_shows_dashboard(self, tmp_path: object, capsys: object) -> None:
+    def test_mode_c_shows_dashboard(
+        self, tmp_path: object, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         from mde.statusline import render
 
         state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
@@ -124,7 +134,7 @@ class TestStatuslineRender:
         ):
             assert render.render_statusline() == 0
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         assert "Opus" in captured.out
         assert "coder" in captured.out
         assert "abc123" in captured.out  # truncated agent_id
@@ -151,7 +161,9 @@ class TestStatuslineRender:
         with patch.object(sys, "stdin", stdin):
             assert render_statusline() == 0
 
-    def test_handles_null_used_percentage(self, tmp_path: object, capsys: object) -> None:
+    def test_handles_null_used_percentage(
+        self, tmp_path: object, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Docs: used_percentage may be null early in session."""
         from mde.statusline import render
 
@@ -172,10 +184,12 @@ class TestStatuslineRender:
         ):
             assert render.render_statusline() == 0
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         assert "0%" in captured.out
 
-    def test_handles_full_official_schema(self, tmp_path: object, capsys: object) -> None:
+    def test_handles_full_official_schema(
+        self, tmp_path: object, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Integration test with the complete official JSON schema from docs."""
         from mde.statusline import render
 
@@ -224,11 +238,11 @@ class TestStatuslineRender:
         ):
             assert render.render_statusline() == 0
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         assert "$2.50" in captured.out
         assert "65%" in captured.out
 
-    def test_handles_no_agents(self, tmp_path: object, capsys: object) -> None:
+    def test_handles_no_agents(self, tmp_path: object, capsys: pytest.CaptureFixture[str]) -> None:
         from mde.statusline import render
 
         state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
@@ -243,12 +257,14 @@ class TestStatuslineRender:
         ):
             assert render.render_statusline() == 0
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         # No "agent" text when count is 0
         assert "agent" not in captured.out
         assert "$1.23" in captured.out
 
-    def test_stopped_agents_filtered_out(self, tmp_path: object, capsys: object) -> None:
+    def test_stopped_agents_filtered_out(
+        self, tmp_path: object, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Agents whose last event is 'stopped' should not appear."""
         from mde.statusline import render
 
@@ -272,10 +288,10 @@ class TestStatuslineRender:
         ):
             render.render_statusline()
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         assert "1 agent" in captured.out  # researcher stopped, only coder remains
 
-    def test_agent_dedup_by_id(self, tmp_path: object, capsys: object) -> None:
+    def test_agent_dedup_by_id(self, tmp_path: object, capsys: pytest.CaptureFixture[str]) -> None:
         """Multiple events for same agent_id should keep latest only."""
         from mde.statusline import render
 
@@ -297,7 +313,7 @@ class TestStatuslineRender:
         ):
             render.render_statusline()
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         assert "1 agent" in captured.out  # deduplicated by agent_id
 
 
@@ -313,7 +329,7 @@ class TestStatuslineToggle:
         with patch.object(toggle, "_MODE_FILE", mode_file):
             assert toggle.toggle_mode() == 0
 
-        assert mode_file.read_text().strip() == "B"  # type: ignore[union-attr]
+        assert mode_file.read_text().strip() == "B"
 
     def test_cycles_b_to_c(self, tmp_path: object) -> None:
         from mde.statusline import toggle
@@ -324,7 +340,7 @@ class TestStatuslineToggle:
         with patch.object(toggle, "_MODE_FILE", mode_file):
             assert toggle.toggle_mode() == 0
 
-        assert mode_file.read_text().strip() == "C"  # type: ignore[union-attr]
+        assert mode_file.read_text().strip() == "C"
 
     def test_cycles_c_to_a(self, tmp_path: object) -> None:
         from mde.statusline import toggle
@@ -335,7 +351,7 @@ class TestStatuslineToggle:
         with patch.object(toggle, "_MODE_FILE", mode_file):
             assert toggle.toggle_mode() == 0
 
-        assert mode_file.read_text().strip() == "A"  # type: ignore[union-attr]
+        assert mode_file.read_text().strip() == "A"
 
     def test_defaults_to_a_when_no_file(self, tmp_path: object) -> None:
         from mde.statusline import toggle
@@ -358,7 +374,9 @@ def _widget_config_json(**overrides: bool) -> str:
 class TestMetricsBarIntegration:
     """Integration tests for metrics bar in the render pipeline."""
 
-    def test_mode_a_with_metrics_bar(self, tmp_path: object, capsys: object) -> None:
+    def test_mode_a_with_metrics_bar(
+        self, tmp_path: object, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         from mde.statusline import render, widget_toggle, widgets
 
         state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
@@ -387,12 +405,14 @@ class TestMetricsBarIntegration:
         ):
             assert render.render_statusline() == 0
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         assert "$1.23" in captured.out
         assert "tok/s" in captured.out
         assert " | " in captured.out
 
-    def test_mode_c_with_metrics_bar(self, tmp_path: object, capsys: object) -> None:
+    def test_mode_c_with_metrics_bar(
+        self, tmp_path: object, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         from mde.statusline import render, widget_toggle, widgets
 
         state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
@@ -421,12 +441,14 @@ class TestMetricsBarIntegration:
         ):
             assert render.render_statusline() == 0
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         lines = captured.out.strip().split("\n")
         assert len(lines) >= 2
         assert "tok/s" in lines[-1]
 
-    def test_mode_a_all_widgets_disabled(self, tmp_path: object, capsys: object) -> None:
+    def test_mode_a_all_widgets_disabled(
+        self, tmp_path: object, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         from mde.statusline import render, widget_toggle, widgets
 
         state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
@@ -451,11 +473,13 @@ class TestMetricsBarIntegration:
         ):
             assert render.render_statusline() == 0
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         assert "$1.23" in captured.out
         assert "tok/s" not in captured.out
 
-    def test_4_tier_color_at_85_pct(self, tmp_path: object, capsys: object) -> None:
+    def test_4_tier_color_at_85_pct(
+        self, tmp_path: object, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         from mde.statusline import render, widget_toggle, widgets
 
         state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
@@ -480,11 +504,13 @@ class TestMetricsBarIntegration:
         ):
             assert render.render_statusline() == 0
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         assert "85%" in captured.out
         assert "\033[38;5;208m" in captured.out  # Orange
 
-    def test_rate_limits_in_full_render(self, tmp_path: object, capsys: object) -> None:
+    def test_rate_limits_in_full_render(
+        self, tmp_path: object, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         from mde.statusline import render, widget_toggle, widgets
 
         state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
@@ -500,9 +526,8 @@ class TestMetricsBarIntegration:
             "context_window": {"used_percentage": 42},
             "rate_limits": {
                 "five_hour": {
-                    "status": "allowed_warning",
-                    "utilization": 0.72,
-                    "resetsAt": 9999999999,
+                    "used_percentage": 72,
+                    "resets_at": 9999999999,
                 }
             },
         }
@@ -516,7 +541,7 @@ class TestMetricsBarIntegration:
         ):
             assert render.render_statusline() == 0
 
-        captured = capsys.readouterr()  # type: ignore[union-attr]
+        captured = capsys.readouterr()
         assert "5h:72%" in captured.out
 
 
@@ -533,7 +558,7 @@ class TestLogAgentEvent:
             with patch.object(sys, "stdin", stdin):
                 assert log_agent_event.log_agent_event() == 0
 
-        lines = outfile.read_text().strip().split("\n")  # type: ignore[union-attr]
+        lines = outfile.read_text().strip().split("\n")
         assert len(lines) == 1
         record = json.loads(lines[0])
         assert record["agent_name"] == "Explore"
@@ -550,7 +575,7 @@ class TestLogAgentEvent:
             with patch.object(sys, "stdin", stdin):
                 assert log_agent_event.log_agent_event() == 0
 
-        lines = outfile.read_text().strip().split("\n")  # type: ignore[union-attr]
+        lines = outfile.read_text().strip().split("\n")
         record = json.loads(lines[0])
         assert record["agent_name"] == "Explore"
         assert record["agent_id"] == "ae145dfb68a7cfee7"

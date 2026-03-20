@@ -173,6 +173,27 @@ class TestParseRateLimits:
         assert info.rate_limit_type == "five_hour"
         assert info.resets_at == 1773273600
 
+    def test_real_stdin_shape_used_percentage(self) -> None:
+        """Confirmed v2.1.80 stdin uses used_percentage (0-100 int), not utilization (0-1 float)."""
+        from mde.statusline.schema import parse_rate_limits
+
+        # Exact shape captured from live Claude Code Max session
+        raw = {
+            "five_hour": {"used_percentage": 16, "resets_at": 1773986400},
+            "seven_day": {"used_percentage": 11, "resets_at": 1774036800},
+        }
+        result = parse_rate_limits(raw)
+
+        five_h = result["five_hour"]
+        assert five_h is not None
+        assert five_h.utilization == 0.16  # Converted from used_percentage 16 → 0.16
+        assert five_h.resets_at == 1773986400
+
+        seven_d = result["seven_day"]
+        assert seven_d is not None
+        assert seven_d.utilization == 0.11  # Converted from used_percentage 11 → 0.11
+        assert seven_d.resets_at == 1774036800
+
     def test_model_specific_normalized(self) -> None:
         from mde.statusline.schema import parse_rate_limits
 

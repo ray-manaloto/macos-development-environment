@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import json
 import sys
-from typing import Any
+from typing import Any, cast
 
-from claude_agent_sdk.types import RateLimitInfo
+from claude_agent_sdk.types import RateLimitInfo, RateLimitType
 
-from mde.statusline.models import StatuslineInput
+from mde.statusline.models import FiveHour, RateLimits, SevenDay, StatuslineInput
 
 _KNOWN_KEYS = frozenset(StatuslineInput.model_fields.keys())
 
@@ -41,12 +41,25 @@ def parse_stdin_raw(raw: str) -> StatuslineInput:
     return parse_stdin(data) if isinstance(data, dict) else StatuslineInput()
 
 
-def parse_rate_limits(raw: Any) -> dict[str, RateLimitInfo | None]:
-    """Parse rate_limits from stdin JSON into SDK RateLimitInfo objects.
+def parse_rate_limits(raw: RateLimits | dict[str, Any] | None) -> dict[str, RateLimitInfo | None]:
+    """Parse rate_limits into SDK RateLimitInfo objects.
 
-    Handles both Shape A (flat with rateLimitType) and Shape B (nested by window).
-    Normalizes camelCase wire format to snake_case SDK fields.
+    Accepts either a typed RateLimits model (from Pydantic validation)
+    or a raw dict (for backward compat/testing). Converts
+    used_percentage (0-100) to utilization (0.0-1.0) for SDK compat.
     """
+    if raw is None:
+        return {"five_hour": None, "seven_day": None, "overage": None}
+
+    # Handle typed Pydantic model (normal path after codegen)
+    if isinstance(raw, RateLimits):
+        return {
+            "five_hour": _window_to_info(raw.five_hour, "five_hour"),
+            "seven_day": _window_to_info(raw.seven_day, "seven_day"),
+            "overage": None,
+        }
+
+    # Handle raw dict (backward compat, Shape A/B from SDK events)
     if not isinstance(raw, dict):
         return {"five_hour": None, "seven_day": None, "overage": None}
 
@@ -56,13 +69,7 @@ def parse_rate_limits(raw: Any) -> dict[str, RateLimitInfo | None]:
     for window_name in ("five_hour", "seven_day", "overage"):
         window = raw.get(window_name)
         if isinstance(window, dict):
-            result[window_name] = RateLimitInfo(
-                status=window.get("status", "allowed"),
-                resets_at=_int_or_none(window.get("resetsAt") or window.get("resets_at")),
-                rate_limit_type=window.get("rateLimitType") or window.get("rate_limit_type"),
-                utilization=_float_or_none(window.get("utilization")),
-                raw=window,
-            )
+            result[window_name] = _dict_to_info(window, window_name)
         else:
             result[window_name] = None
 
@@ -71,15 +78,40 @@ def parse_rate_limits(raw: Any) -> dict[str, RateLimitInfo | None]:
         window_name = raw.get("rateLimitType") or raw.get("rate_limit_type") or "five_hour"
         if window_name in ("seven_day_opus", "seven_day_sonnet"):
             window_name = "seven_day"
-        result[window_name] = RateLimitInfo(
-            status=raw.get("status", "allowed"),
-            resets_at=_int_or_none(raw.get("resetsAt") or raw.get("resets_at")),
-            rate_limit_type=raw.get("rateLimitType") or raw.get("rate_limit_type"),
-            utilization=_float_or_none(raw.get("utilization")),
-            raw=raw,
-        )
+        result[window_name] = _dict_to_info(raw, window_name)
 
     return result
+
+
+def _window_to_info(window: FiveHour | SevenDay | None, name: str) -> RateLimitInfo | None:
+    """Convert a typed Pydantic window model to SDK RateLimitInfo."""
+    if window is None:
+        return None
+    pct = window.used_percentage
+    utilization = pct / 100 if pct is not None else None
+    return RateLimitInfo(
+        status="allowed",
+        resets_at=window.resets_at,
+        rate_limit_type=cast("RateLimitType", name),
+        utilization=utilization,
+        raw=window.model_dump(),
+    )
+
+
+def _dict_to_info(window: dict[str, Any], name: str) -> RateLimitInfo:
+    """Convert a raw dict window to SDK RateLimitInfo."""
+    utilization = _float_or_none(window.get("utilization"))
+    if utilization is None:
+        pct = _float_or_none(window.get("used_percentage"))
+        utilization = pct / 100 if pct is not None else None
+    raw_type = window.get("rateLimitType") or window.get("rate_limit_type") or name
+    return RateLimitInfo(
+        status=window.get("status", "allowed"),
+        resets_at=_int_or_none(window.get("resetsAt") or window.get("resets_at")),
+        rate_limit_type=cast("RateLimitType", raw_type),
+        utilization=utilization,
+        raw=window,
+    )
 
 
 def _warn_unknown_keys(data: dict[str, Any]) -> None:
