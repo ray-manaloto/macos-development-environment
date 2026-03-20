@@ -48,11 +48,41 @@ def _cmd_catalog() -> int:
 
 
 def _cmd_score() -> int:
+    import yaml
+
     from mde.research.score import ScoreCard, calculate_score
 
+    # Try to load the most recent scorecard from the trail
+    scorecards_dir = Path("docs/research/trail/scorecards")
     card = ScoreCard()
+    source = "defaults"
+
+    if scorecards_dir.exists():
+        yamls = sorted(scorecards_dir.glob("*.yaml"), reverse=True)
+        if yamls:
+            try:
+                data = yaml.safe_load(yamls[0].read_text())
+                metrics = data.get("metrics", {})
+                card = ScoreCard(
+                    validation_pass_rate=metrics.get("validation_pass_rate", 0.0),
+                    brew_mise_duplicates=metrics.get("brew_mise_duplicates", 0),
+                    total_tools=metrics.get("total_tools", 1),
+                    chezmoi_reproducible=metrics.get("chezmoi_reproducible", False),
+                    test_coverage=metrics.get("test_coverage", 0.0),
+                    lint_violations=metrics.get("lint_violations", 0),
+                    stale_sources=metrics.get("stale_sources", 0),
+                    total_sources=metrics.get("total_sources", 1),
+                    findings_actionable_rate=metrics.get("findings_actionable_rate", 0.0),
+                    agent_trigger_accuracy=metrics.get("agent_trigger_accuracy", 0.0),
+                    context_efficiency=metrics.get("context_efficiency", 0.0),
+                    rewrite_rate=metrics.get("rewrite_rate", 0.0),
+                )
+                source = yamls[0].name
+            except (yaml.YAMLError, KeyError, TypeError):
+                pass  # Fall back to defaults
+
     score = calculate_score(card)
-    print(f"Improvement Score: {score:.3f}")
+    print(f"Improvement Score: {score:.3f} (from {source})")
     return 0
 
 

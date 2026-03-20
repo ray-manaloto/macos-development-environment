@@ -40,6 +40,12 @@ def check_binary_gates(gates: list[BinaryGate]) -> bool:
 def calculate_score(card: ScoreCard) -> float:
     """Compute a weighted composite score in [0.0, 1.0].
 
+    NOTE: Weights deviate from the original spec (Section 6.2) per the
+    implementation plan. Changes: validation_pass_rate reduced from 0.20
+    to 0.15, brew_mise_duplicates from 0.15 to 0.10, token_cost_normalized
+    replaced by context_efficiency (0.10) + rewrite_rate (0.05).
+    See docs/superpowers/plans/2026-03-20-self-improving-research-system.md.
+
     Formula weights (sum to 1.0):
         validation_pass_rate        0.15
         tool-duplicate ratio        0.10
