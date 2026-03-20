@@ -19,6 +19,9 @@ fnox-env = "https://github.com/jdx/mise-env-fnox"
 _.fnox-env = { tools = true }
 GIT_TERMINAL_PROMPT = "0"
 
+# NotebookLM auth: standardize paths so agents find credentials consistently
+NOTEBOOKLM_HOME = "~/.notebooklm"
+
 [tools]
 # ── Core Runtimes ──
 bun = "latest"
@@ -112,7 +115,7 @@ opencode = "latest"
 "npm:@fission-ai/openspec" = "latest"
 biome = "latest"
 "pipx:notebooklm-mcp-cli" = "latest"
-"pipx:notebooklm-py" = "latest"
+"pipx:notebooklm-py" = { version = "latest", extras = "browser" }
 "npm:@googleworkspace/cli" = "latest"
 "npm:@claude-flow/cli" = "latest"
 

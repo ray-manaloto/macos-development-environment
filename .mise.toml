@@ -224,6 +224,24 @@ run = "scripts/install-langchain-cli-tools.sh"
 description = "Run the claude-flow learning improvement team"
 run = "scripts/teams/run-claude-flow-learning-team.sh \"$@\""
 
+[tasks."mde:notebooklm:login"]
+description = "Interactive NotebookLM login via Playwright (creates long-lived storage_state.json)"
+run = "notebooklm login"
+
+[tasks."mde:notebooklm:refresh"]
+description = "Headless NotebookLM re-auth via Chrome DevTools (requires Chrome running + logged into Google)"
+run = "nlm login"
+
+[tasks."mde:notebooklm:status"]
+description = "Check NotebookLM auth status for both CLI and MCP"
+run = """
+echo "=== CLI (notebooklm-py) ==="
+notebooklm auth check --json 2>&1
+echo ""
+echo "=== MCP (notebooklm-mcp-cli) ==="
+nlm notebook list --json 2>&1 | head -5 && echo "✓ MCP auth OK" || echo "✗ MCP auth expired — run: mise run mde:notebooklm:refresh"
+"""
+
 [tasks."mde:refs:clone-frameworks"]
 description = "Clone agent framework repos for offline research"
 run = "scripts/clone-agent-framework-repos.sh"
