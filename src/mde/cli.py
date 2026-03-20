@@ -81,6 +81,12 @@ def _build_parser() -> argparse.ArgumentParser:
     install_sub.add_parser("tmux", help="Install tmux + TPM + managed config")
     install_sub.add_parser("aws-k8s", help="Install AWS and Kubernetes tools")
 
+    # skill
+    skill_p = sub.add_parser("skill", help="Skill management")
+    skill_sub = skill_p.add_subparsers(dest="skill_action")
+    sync_p = skill_sub.add_parser("sync", help="Sync .agents/skills/ <-> .claude/skills/")
+    sync_p.add_argument("--dry-run", action="store_true", help="Show what would be done")
+
     # hooks
     hooks_p = sub.add_parser("hooks", help="Claude Code hook handlers")
     hooks_sub = hooks_p.add_subparsers(dest="hooks_action")
@@ -88,6 +94,7 @@ def _build_parser() -> argparse.ArgumentParser:
     hooks_sub.add_parser("check-teammate-work", help="TeammateIdle gate")
     hooks_sub.add_parser("log-edit-outcome", help="PostToolUse logger")
     hooks_sub.add_parser("log-agent-event", help="SubagentStarted/Completed logger")
+    hooks_sub.add_parser("guard-install", help="PreToolUse install guard")
 
     # statusline
     _add_statusline_subparsers(sub)
@@ -224,6 +231,25 @@ def _cmd_install(args: argparse.Namespace) -> int:
     return 1
 
 
+def _cmd_skill(args: argparse.Namespace) -> int:
+    action = args.skill_action
+    if action == "sync":
+        from pathlib import Path
+
+        from mde.maintain.skill_sync import sync_skills
+
+        actions = sync_skills(Path.cwd(), dry_run=args.dry_run)
+        if not actions:
+            print("All skills are synced.", file=sys.stderr)
+            return 0
+        prefix = "[dry-run] " if args.dry_run else ""
+        for a in actions:
+            print(f"{prefix}{a}", file=sys.stderr)
+        return 0
+    print(f"Unknown skill action: {action}", file=sys.stderr)
+    return 1
+
+
 def _cmd_hooks(args: argparse.Namespace) -> int:
     action = args.hooks_action
     if action == "verify-task-completion":
@@ -242,6 +268,10 @@ def _cmd_hooks(args: argparse.Namespace) -> int:
         from mde.hooks.log_agent_event import log_agent_event
 
         return log_agent_event()
+    if action == "guard-install":
+        from mde.hooks.guard_install import guard_install
+
+        return guard_install()
     print(f"Unknown hooks action: {action}", file=sys.stderr)
     return 1
 
@@ -283,6 +313,7 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "install": _cmd_install,
     "team": _cmd_team,
     "refs": _cmd_refs,
+    "skill": _cmd_skill,
     "hooks": _cmd_hooks,
     "statusline": _cmd_statusline,
 }
