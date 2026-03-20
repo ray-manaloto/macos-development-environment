@@ -199,10 +199,17 @@ These were researched but not ingested into the notebook:
 
 ---
 
+## GitHub Repos — Auto-Research Frameworks
+
+| Status | Repo | URL | Verdict | In NB |
+|--------|------|-----|---------|-------|
+| [ ] | karpathy/autoresearch | https://github.com/karpathy/autoresearch | HIGH — gold standard for automated research process grading | No |
+
 ## Deep Review Queue (Priority Order)
 
 These sources need `agent-fetch` full review before implementation:
 
+0. https://github.com/karpathy/autoresearch — Gold standard auto-research, scoring methodology (HIGH)
 1. https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep — ARIS overnight loop (VERY HIGH)
 2. https://github.com/EveryInc/compound-engineering-plugin — compound learning cycle (HIGH)
 3. https://github.com/EveryInc/compound-knowledge-plugin — confidence assessment (HIGH)

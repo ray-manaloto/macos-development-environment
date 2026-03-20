@@ -493,19 +493,57 @@ FINDING arrives from Layer 2 (confidence: confirmed)
    └─ Feed back to Layer 1 (what to research next based on gaps)
 ```
 
-### 6.2 Improvement Score — Metrics
+### 6.2 Improvement Scoring — Dual Model
 
-| Metric | How to Measure | Weight |
-|--------|----------------|--------|
-| Validation pass rate | `uv run mde-py validate --all` exit code + warning count | 0.20 |
-| Brew/mise duplicate count | Cross-reference Brewfile vs .mise.toml | 0.15 |
-| Chezmoi reproducibility | `chezmoi apply --dry-run` in clean devcontainer | 0.15 |
-| Test coverage | `uv run pytest --cov` | 0.10 |
-| Lint cleanliness | `uv run ruff check` violation count | 0.05 |
-| Source freshness | Ratio of fresh to total sources across notebooks | 0.10 |
-| Actionable findings rate | Ratio of applied findings to total discoveries | 0.10 |
-| Agent trigger accuracy | Ratio of agent invocations that produced at least 1 actionable finding to total invocations | 0.10 |
-| Token cost efficiency | `token_cost_this_cycle / max(findings_actionable, 1)` — normalized cost per actionable finding | 0.05 |
+Inspired by karpathy/autoresearch: improvements need both a **binary gate** (did it get better at all?) and a **magnitude score** (by how much?). This prevents accepting trivially small improvements that aren't worth the complexity.
+
+#### Binary Gates (pass/fail — must ALL pass for a change to be accepted)
+
+| Gate | Pass Condition | How to Measure |
+|------|---------------|----------------|
+| No regressions | No metric got worse by > 5% | Compare pre/post scorecard |
+| Validation clean | Zero new errors introduced | `uv run mde-py validate --all` |
+| Tests pass | No test failures | `uv run pytest` exit code |
+| Lint clean | No new violations | `uv run ruff check` violation delta |
+| Builds work | No broken imports or syntax | Python import check |
+
+If ANY binary gate fails → revert, no exceptions.
+
+#### Magnitude Metrics (scientific scoring — how much better?)
+
+| Metric | How to Measure | Direction | Unit |
+|--------|----------------|-----------|------|
+| Code speed | `uv run pytest --benchmark` or `hyperfine` on key operations | Lower is better | ms |
+| Token usage | Tokens consumed per research cycle | Lower is better | tokens |
+| Context efficiency | Findings produced per 1K tokens consumed | Higher is better | findings/1K tokens |
+| Rewrite rate | Files modified more than once in a cycle (wasted work) | Lower is better | count |
+| Build time | `time uv run mde-py validate --all` | Lower is better | seconds |
+| Validation pass rate | `uv run mde-py validate --all` warning count | Lower is better | count |
+| Brew/mise duplicates | Cross-reference Brewfile vs .mise.toml | Lower is better | count |
+| Chezmoi reproducibility | `chezmoi apply --dry-run` in clean devcontainer | Binary (pass/fail) | bool |
+| Test coverage | `uv run pytest --cov` | Higher is better | % |
+| Source freshness | Ratio of fresh to total sources | Higher is better | % |
+| Agent trigger accuracy | Invocations producing actionable findings / total invocations | Higher is better | % |
+| Skill trigger rate | Skills invoked when they should have been / opportunities | Higher is better | % |
+
+#### Composite Score (weighted, for trend tracking)
+
+```
+score = (
+  validation_pass_rate * 0.15 +
+  (1 - brew_mise_duplicates/total_tools) * 0.10 +
+  chezmoi_reproducible * 0.15 +
+  test_coverage * 0.10 +
+  (1 - lint_violations/100) * 0.05 +
+  (1 - stale_sources/total_sources) * 0.10 +
+  findings_actionable_rate * 0.10 +
+  agent_trigger_accuracy * 0.10 +
+  context_efficiency_normalized * 0.10 +
+  (1 - rewrite_rate_normalized) * 0.05
+)
+```
+
+**Reference framework:** Study karpathy/autoresearch for how automated research scoring should work. The system should be able to answer: "Is the project measurably better today than it was last week?" with a concrete number, not a feeling.
 
 ### 6.3 Score Card
 
