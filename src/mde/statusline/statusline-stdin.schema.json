@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "statusline-stdin",
   "title": "StatuslineInput",
-  "description": "Claude Code statusline stdin JSON (v2.1.80). Source: https://code.claude.com/docs/en/statusline + claude-agent-sdk types. Pydantic V2 lax mode auto-coerces string numbers.",
+  "description": "DERIVED from https://code.claude.com/docs/en/statusline (canonical source). Cross-referenced with claude-agent-sdk v0.1.49 types and ccstatusline StatusJSON.ts. This file is NOT an official Anthropic schema — it is a project-local transcription of the docs for codegen. Re-verify against the source URL when updating. Regenerate models: mise run mde:codegen:statusline",
   "type": "object",
   "additionalProperties": true,
   "properties": {
