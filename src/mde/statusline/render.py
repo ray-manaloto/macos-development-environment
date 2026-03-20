@@ -216,7 +216,7 @@ def show_last_event() -> int:
         last = json.loads(lines[-1])
         print(json.dumps(last, indent=2))
     except (OSError, json.JSONDecodeError, IndexError):
-        print("No events captured. Set MDE_STATUSLINE_CAPTURE=1 in your environment.")
+        print("No events captured yet. Capture is on by default.")
         return 1
     return 0
 
@@ -226,7 +226,7 @@ def _write_event_log(stdin_data: dict[str, Any], rendered_output: str) -> None:
 
     Uses stdlib RotatingFileHandler for automatic rotation (5MB, 3 backups = 20MB max).
     Each line is a complete input/output pair: {"ts": ..., "stdin": {...}, "output": "..."}
-    Gated by MDE_STATUSLINE_CAPTURE=1 env var — zero overhead when disabled.
+    Enabled by default. Set MDE_STATUSLINE_CAPTURE=0 to disable.
 
     Why stdlib logging instead of structlog/loguru/aiofiles:
     - Zero new dependencies (per library-first policy evaluation)
@@ -239,7 +239,7 @@ def _write_event_log(stdin_data: dict[str, Any], rendered_output: str) -> None:
     import time
     from logging.handlers import RotatingFileHandler
 
-    if not os.environ.get("MDE_STATUSLINE_CAPTURE"):
+    if os.environ.get("MDE_STATUSLINE_CAPTURE", "1") == "0":
         return
     try:
         _EVENT_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
