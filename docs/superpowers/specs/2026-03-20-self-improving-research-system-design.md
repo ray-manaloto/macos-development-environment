@@ -34,12 +34,14 @@ The macos-development-environment project has significant infrastructure (mise, 
 
 **Anti-patterns this mandate prevents:**
 - Writing a custom "trail adapter" when Obsidian + Dataview already does this
-- Building a custom "improvement score" calculator when existing validation tools + a shell script suffice
+- Building a custom "improvement score" calculator when existing validation tools + a Python module suffice
 - Creating custom agent definitions when skills.sh has 4,600+ skills
 - Writing a NotebookLM wrapper when `notebooklm-py` already provides full CLI access
 - Building a scheduling system when ARIS + launchd already solve the problem
 
 **The research system IS the tool that finds better tools.** If it builds code instead of finding tools, it has failed at its primary purpose.
+
+**No shell scripts.** Per project policy, ALL automation and hook logic MUST be Python modules in `src/mde/`. Claude Code hooks MUST call `uv run mde-py <subcommand>`, never `.sh` files. Any new automation for this system (research cycle orchestration, score calculation, source health checks, trail adapter) MUST be implemented as `mde-py` subcommands, not standalone scripts.
 
 ## 3. Goals
 
@@ -235,7 +237,7 @@ Every research agent MUST use these tools — not WebFetch (which truncates) or 
 
 | Tool | When to Use | Why |
 |------|------------|-----|
-| `agent-fetch` (via Bash: `npx agent-fetch "<url>" --json`) | **Primary** — any URL that needs full text | Returns complete article with structure, 7 extraction strategies, browser impersonation. WebFetch truncates. |
+| `agent-fetch` (`npx agent-fetch "<url>" --json`) | **Primary** — any URL that needs full text | Returns complete article with structure, 7 extraction strategies, browser impersonation. WebFetch truncates. |
 | `agent-fetch crawl "<url>" --json` | Documentation sites — crawl all pages | Follows links, depth control, same-origin safety |
 | `notebooklm source add "<url>"` | Adding to NotebookLM for synthesis | NotebookLM indexes full content for cited Q&A |
 | `notebooklm source add-research "query" --mode deep` | Discovery — find sources on a topic | NotebookLM searches web, returns relevant sources |
@@ -360,7 +362,7 @@ Theme-based notebooks that split when approaching capacity:
 | Notebook | Purpose | Source Types |
 |----------|---------|-------------|
 | Research Stack (existing) | Claude Code + Obsidian + NotebookLM integration | YouTube, blogs, GitHub repos |
-| Dotfiles & Dev Env | chezmoi, mise, shell config, reproducibility | Docs, tutorials, reference repos |
+| Dotfiles & Dev Env | chezmoi, mise, zsh config, reproducibility | Docs, tutorials, reference repos |
 | Agent Orchestration | Multi-agent patterns, self-improvement, MCP | Framework repos, papers, tutorials |
 | Tool Updates | Version-specific changelogs, breaking changes | Release notes, GitHub releases |
 | Community Intel | Reddit/X/HN discussions, trending repos | Social sources |
@@ -826,7 +828,7 @@ The skill roster is mutable — research may discover better existing skills or 
 **Core:** Obsidian CLI, Local REST API, Dataview, Obsidian Git, Templater, QuickAdd
 **AI:** Smart Connections, Obsidian Copilot, Text Generator
 **Research:** Readwise, Citation Plugin, Omnisearch
-**Automation:** Advanced URI, Shell Commands
+**Automation:** Advanced URI, Obsidian CLI
 **Structure:** Excalidraw, Kanban, Note Refactor, Metadata Extractor
 
 ### 12.5 Token Optimization
@@ -942,7 +944,7 @@ Per the agreed approach (Approach C, parallel tracks):
 | CLI binary | `notebooklm` |
 | Env var | `NOTEBOOKLM_HOME=~/.notebooklm` (set in mise `[env]`) |
 
-**Previous confusion:** A second package (`notebooklm-mcp-cli` by jacob-bd) was also installed, providing `nlm` CLI and `notebooklm-mcp` MCP server with a separate auth store. This has been **removed** — all NotebookLM access goes through `notebooklm` CLI via Bash.
+**Previous confusion:** A second package (`notebooklm-mcp-cli` by jacob-bd) was also installed, providing `nlm` CLI and `notebooklm-mcp` MCP server with a separate auth store. This has been **removed** — all NotebookLM access goes through `notebooklm` CLI.
 
 ### 16.2 Issues Found and Resolved
 
@@ -956,7 +958,7 @@ Per the agreed approach (Approach C, parallel tracks):
 
 ### 16.3 Access Pattern for Research System
 
-- **All NotebookLM operations** use `notebooklm` CLI via Bash
+- **All NotebookLM operations** use `notebooklm` CLI (invoked via `uv run` or direct CLI call)
 - **Auth refresh:** `mise run mde:notebooklm:login` (interactive, every 2-4 weeks)
 - **Status check:** `mise run mde:notebooklm:status`
 - **Parallel safety:** Always pass notebook IDs explicitly, never rely on `context.json`
