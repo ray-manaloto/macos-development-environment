@@ -7,6 +7,7 @@ dependencies = [
     "pydantic>=2.10",
     "pyyaml>=6.0",
     "tomli>=2.0; python_version < '3.11'",
+    "claude-agent-sdk>=0.1.49",
 ]
 
 [project.scripts]
@@ -52,6 +53,13 @@ ignore = [
     "PIE810",   # endswith tuple merge is a style nit
     "PLW2901",  # loop var reassignment is intentional in text processing
 ]
+"src/mde/statusline/models.py" = [
+    "D100",     # generated file — no module docstring
+    "D101",     # generated file — no class docstrings
+    "ERA001",   # generated file — codegen header comments
+    "E501",     # generated file — long descriptions from schema
+    "COM812",   # generated file — trailing comma style
+]
 "tests/**/*.py" = [
     "S101",     # assert is expected in tests
     "S108",     # temp file paths in test fixtures are fine
@@ -90,4 +98,5 @@ dev = [
     "pytest>=9.0.2",
     "ruff>=0.15.6",
     "ty>=0.0.1a12",
+    "datamodel-code-generator[ruff]>=0.55.0",
 ]

@@ -27,7 +27,7 @@ Additionally, Claude Code v2.1.80 added a `rate_limits` field to statusline stdi
 | Toggle mechanism | Per-widget JSON config | Independent of A/B/C mode |
 | Default state | All widgets enabled | Opt-out, not opt-in |
 | Error handling | Silent defaults, never crash | Matches existing patterns |
-| Schema validation | Explicit type-safe extraction with documented fields | Catches upstream changes early |
+| Schema validation | Pydantic V2 models generated from JSON Schema via `datamodel-code-generator` | 1:1 schema sync, zero hand-coded type definitions |
 | Color tiers | 4-tier: green (<50%), yellow (50-69%), orange (70-89%), red (90%+) | Matches ecosystem consensus |
 | Clickable links | OSC 8 for repo/docs links only | Cannot execute CLI commands |
 
@@ -167,9 +167,19 @@ If all widgets are disabled, no metrics bar is appended — identical to current
 | `rate_limits` | Absent on API-key plans; present on Claude.ai subscription plans |
 | `rate_limits` field structure | **UNCONFIRMED** — the SDK defines `RateLimitInfo` with `utilization` (0.0-1.0 fraction) and `resets_at` (Unix timestamp int). The statusline stdin may use different naming. Implementation must handle both SDK-style and statusline-convention field names. **Capture raw JSON to confirm before finalizing.** |
 
-### Schema Validation Module — Option B: SDK + TypedDicts
+### Schema Validation — Generated Pydantic V2 Models from JSON Schema
 
-**Dependency:** `claude-agent-sdk` (PyPI) — declared in `pyproject.toml` `[project] dependencies`:
+**Architecture:** JSON Schema → `datamodel-code-generator` → Pydantic V2 `BaseModel` classes with Rust-compiled validation.
+
+**Source of truth:** `src/mde/statusline/statusline-stdin.schema.json` — a JSON Schema file derived from the official Claude Code docs and cross-referenced with `claude-agent-sdk` types.
+
+**Generated output:** `src/mde/statusline/models.py` — **never hand-edit this file**. Regenerate with:
+
+```
+mise run mde:codegen:statusline
+```
+
+**Dependencies** (declared in `pyproject.toml`):
 
 ```toml
 # pyproject.toml
@@ -180,137 +190,49 @@ dependencies = [
     "tomli>=2.0; python_version < '3.11'",
     "claude-agent-sdk>=0.1.49",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.15.6",
+    "ty>=0.0.1a12",
+    "datamodel-code-generator[ruff]>=0.55.0",
+]
 ```
 
-Per the declarative configuration policy (`.claude/rules/declarative-config.md`), all dependencies are declared in `pyproject.toml` — never via ad-hoc `uv add` commands. Lock with `uv lock` after editing.
+Per the declarative configuration policy (`.claude/rules/declarative-config.md`), all dependencies are declared in `pyproject.toml`.
 
-New file `src/mde/statusline/schema.py` defines typed structures that **compose with the SDK types** where fields overlap, and hand-code the statusline-specific types that the SDK doesn't cover.
+**Why generated models instead of hand-coded TypedDicts:**
+- **1:1 schema sync** — models are generated from the JSON Schema, not hand-maintained
+- **Pydantic V2 Rust validation** — `model_validate()` handles type coercion, null checks, defaults, and extra field preservation automatically
+- **String→number coercion** — Pydantic V2 lax mode auto-coerces `"1.25"` → `1.25` for `float` fields (no custom `_coerce_float` needed)
+- **Forward-compatible** — `ConfigDict(extra="allow")` preserves unknown fields without crashing
+- **Reproducible** — `mise run mde:codegen:statusline` regenerates from schema in seconds
+- **Ruff ALL clean** — per-file ignores in pyproject.toml handle generated code lint
 
-**Why Option B:**
-- Reuse `BaseHookInput` (session_id, transcript_path, cwd) from the SDK — stays in sync automatically
-- Reuse `RateLimitInfo`, `RateLimitStatus`, `RateLimitType` for rate limit handling — field names match the CLI's wire format
-- The SDK's `RateLimitInfo.raw` dict preserves unmodeled fields for forward compatibility
-- Only hand-code the statusline-specific types (`CostInfo`, `ContextWindow`, `TokenUsage`) that the SDK doesn't define
-- When the SDK adds statusline types in the future, we can drop our hand-coded versions
+**What the generated models provide:**
+- `StatuslineInput` — root model with all stdin fields
+- `Cost` — `total_cost_usd`, `total_duration_ms`, `total_lines_added`, etc.
+- `ContextWindow` — `used_percentage`, `current_usage`, etc.
+- `CurrentUsage` — `input_tokens`, `cache_read_input_tokens`, etc.
+- `Model` — `id`, `display_name`
+- `Workspace`, `Worktree`, `Vim`, `Agent`, `OutputStyle`
 
-**What the SDK provides (importable):**
+**What the SDK provides (imported at runtime for rate limit parsing):**
 
 ```python
 from claude_agent_sdk.types import (
-    BaseHookInput,       # TypedDict: session_id, transcript_path, cwd
-    RateLimitInfo,       # dataclass: status, resets_at (Unix int), utilization (0.0-1.0),
-                         #   rate_limit_type, overage_status, raw
+    RateLimitInfo,       # dataclass: status, resets_at (Unix int), utilization (0.0-1.0)
     RateLimitStatus,     # Literal["allowed", "allowed_warning", "rejected"]
-    RateLimitType,       # Literal["five_hour", "seven_day", "seven_day_opus",
-                         #         "seven_day_sonnet", "overage"]
-    RateLimitEvent,      # dataclass: rate_limit_info, uuid, session_id
-    SubagentStartHookInput,   # TypedDict: hook_event_name, agent_id, agent_type
-    SubagentStopHookInput,    # TypedDict: hook_event_name, agent_id, agent_type, ...
+    RateLimitType,       # Literal["five_hour", "seven_day", "seven_day_opus", ...]
 )
 ```
 
-**What we hand-code (statusline-specific, not in SDK):**
-
-```python
-from __future__ import annotations
-
-from typing import Any, TypedDict
-from typing_extensions import NotRequired
-
-
-class ModelInfo(TypedDict):
-    """Claude Code model info from statusline stdin."""
-    id: NotRequired[str]
-    display_name: NotRequired[str]
-
-
-class CostInfo(TypedDict):
-    """Session cost metrics from statusline stdin."""
-    total_cost_usd: NotRequired[float]
-    total_duration_ms: NotRequired[float]
-    total_api_duration_ms: NotRequired[float]
-    total_lines_added: NotRequired[int]
-    total_lines_removed: NotRequired[int]
-
-
-class TokenUsage(TypedDict):
-    """Per-turn token breakdown from context_window.current_usage."""
-    input_tokens: NotRequired[int]
-    output_tokens: NotRequired[int]
-    cache_creation_input_tokens: NotRequired[int]
-    cache_read_input_tokens: NotRequired[int]
-
-
-class ContextWindow(TypedDict):
-    """Context window metrics from statusline stdin."""
-    context_window_size: NotRequired[int | None]
-    total_input_tokens: NotRequired[int | None]
-    total_output_tokens: NotRequired[int | None]
-    current_usage: NotRequired[TokenUsage | None]
-    used_percentage: NotRequired[float | None]
-    remaining_percentage: NotRequired[float | None]
-
-
-class WorkspaceInfo(TypedDict):
-    """Workspace paths from statusline stdin."""
-    current_dir: NotRequired[str]
-    project_dir: NotRequired[str]
-
-
-class WorktreeInfo(TypedDict):
-    """Worktree info, absent outside --worktree sessions."""
-    name: str
-    path: str
-    branch: NotRequired[str]
-    original_cwd: str
-    original_branch: NotRequired[str]
-
-
-class StatuslineInput(TypedDict):
-    """Complete statusline stdin JSON schema (v2.1.80).
-
-    Extends the pattern from claude_agent_sdk.types.BaseHookInput
-    for the shared session_id/transcript_path/cwd fields.
-    Statusline-specific fields are defined here since the SDK
-    does not type the statusline stdin protocol.
-    """
-    # Shared with BaseHookInput
-    session_id: NotRequired[str]
-    transcript_path: NotRequired[str]
-    cwd: NotRequired[str]
-
-    # Statusline-specific
-    model: NotRequired[str | ModelInfo]
-    workspace: NotRequired[WorkspaceInfo]
-    version: NotRequired[str]
-    output_style: NotRequired[dict[str, str]]
-    cost: NotRequired[CostInfo]
-    context_window: NotRequired[ContextWindow | None]
-    exceeds_200k_tokens: NotRequired[bool]
-    rate_limits: NotRequired[dict[str, Any]]  # Shape unconfirmed, use SDK RateLimitInfo for parsing
-    vim: NotRequired[dict[str, str] | None]
-    agent: NotRequired[dict[str, str]]
-    worktree: NotRequired[WorktreeInfo]
-```
-
-**Schema version detection** — log a warning for unknown top-level keys:
-
-```python
-_KNOWN_KEYS = frozenset(StatuslineInput.__annotations__.keys())
-
-def _warn_unknown_keys(data: dict[str, Any]) -> None:
-    unknown = set(data.keys()) - _KNOWN_KEYS
-    if unknown:
-        import sys
-        print(f"[statusline] unknown keys: {unknown}", file=sys.stderr)
-```
-
-This replaces `_extract_context()` and `_extract_widget_context()` with a single typed extraction point. Benefits:
-- SDK types stay in sync: bump version pin in `pyproject.toml` `[project] dependencies`, then `uv lock`
-- TypedDicts give IDE autocompletion and type checker support
-- `_warn_unknown_keys` alerts us when upstream adds new fields
-- Forward-compatible: `rate_limits` uses `dict[str, Any]` until the stdin shape is confirmed, parsed via SDK's `RateLimitInfo` pattern
-- Numeric string coercion: handles `"1.25"` as `1.25` (ccstatusline pattern)
+**Workflow for schema changes:**
+1. Update `src/mde/statusline/statusline-stdin.schema.json`
+2. Run `mise run mde:codegen:statusline`
+3. Run `uv run pytest tests/mde/ -k statusline -v` to verify
+4. Commit both the schema and regenerated models
 
 ---
 
@@ -694,7 +616,9 @@ Matches existing statusline conventions: silent defaults, return 0 always, never
 
 | File | Purpose |
 |------|---------|
-| `src/mde/statusline/schema.py` | `StatuslineInput` TypedDict, `CostInfo`, `ContextWindow`, `TokenUsage`, `ModelInfo`, `WorkspaceInfo`, `WorktreeInfo` TypedDicts; `extract_all()`, `_parse_rate_limits()`, `_warn_unknown_keys()`, `_coerce_float()`, `_coerce_int()`, `_safe_dict()` |
+| `src/mde/statusline/statusline-stdin.schema.json` | JSON Schema source of truth for statusline stdin protocol |
+| `src/mde/statusline/models.py` | **GENERATED** — Pydantic V2 models from JSON Schema. Never hand-edit. Regenerate: `mise run mde:codegen:statusline` |
+| `src/mde/statusline/schema.py` | `extract_all()`, `_parse_rate_limits()`, `_warn_unknown_keys()` — thin wrapper over generated models + SDK types |
 | `src/mde/statusline/widgets.py` | 7 widget functions + `_render_metrics_bar()` |
 | `src/mde/statusline/widget_toggle.py` | `_read_widget_config()`, `toggle_widget()`, `show_widgets()` |
 | `tests/mde/test_statusline_schema.py` | Schema validation tests (coercion, nulls, absent fields, forward compat) |
