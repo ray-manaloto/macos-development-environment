@@ -205,3 +205,79 @@ class TestDailyTotals:
         with patch.object(widgets, "_DAILY_TOTALS_FILE", totals_file):
             result = daily_totals_widget(data)
         assert "day: $1.00" in result
+
+
+class TestLinesChanged:
+    """Tests for lines_changed_widget."""
+
+    def test_both(self) -> None:
+        from mde.statusline.widgets import lines_changed_widget
+
+        data = _make({"cost": {"total_lines_added": 156, "total_lines_removed": 23}})
+        result = lines_changed_widget(data)
+        assert "+156" in result
+        assert "-23" in result
+
+    def test_add_only(self) -> None:
+        from mde.statusline.widgets import lines_changed_widget
+
+        data = _make({"cost": {"total_lines_added": 156, "total_lines_removed": 0}})
+        result = lines_changed_widget(data)
+        assert "+156" in result
+        assert "-" not in result
+
+    def test_remove_only(self) -> None:
+        from mde.statusline.widgets import lines_changed_widget
+
+        data = _make({"cost": {"total_lines_added": 0, "total_lines_removed": 23}})
+        result = lines_changed_widget(data)
+        assert "-23" in result
+        assert "+" not in result
+
+    def test_both_zero(self) -> None:
+        from mde.statusline.widgets import lines_changed_widget
+
+        assert lines_changed_widget(_make({})) == ""
+
+
+class TestCacheRatio:
+    """Tests for cache_ratio_widget."""
+
+    def test_normal(self) -> None:
+        from mde.statusline.widgets import cache_ratio_widget
+
+        data = _make(
+            {
+                "context_window": {
+                    "current_usage": {
+                        "cache_read_input_tokens": 620,
+                        "cache_creation_input_tokens": 380,
+                        "input_tokens": 0,
+                    },
+                },
+            }
+        )
+        result = cache_ratio_widget(data)
+        assert "cache:62%" in result
+
+    def test_no_usage(self) -> None:
+        from mde.statusline.widgets import cache_ratio_widget
+
+        data = _make({"context_window": {"current_usage": None}})
+        assert cache_ratio_widget(data) == ""
+
+    def test_all_zero(self) -> None:
+        from mde.statusline.widgets import cache_ratio_widget
+
+        data = _make(
+            {
+                "context_window": {
+                    "current_usage": {
+                        "cache_read_input_tokens": 0,
+                        "cache_creation_input_tokens": 0,
+                        "input_tokens": 0,
+                    },
+                },
+            }
+        )
+        assert cache_ratio_widget(data) == ""

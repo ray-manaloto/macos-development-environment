@@ -17,6 +17,14 @@ if TYPE_CHECKING:
 _SECONDS_PER_HOUR = 3600
 _DAILY_TOTALS_FILE = Path(".artifacts/daily-totals.json")
 
+_GREEN = "\033[32m"
+_YELLOW = "\033[33m"
+_RED = "\033[31m"
+_RESET = "\033[0m"
+
+_CACHE_HIGH_THRESHOLD = 60
+_CACHE_LOW_THRESHOLD = 30
+
 
 def token_speed_widget(data: StatuslineInput) -> str:
     """Tokens per second from total tokens and duration."""
@@ -87,3 +95,40 @@ def daily_totals_widget(data: StatuslineInput) -> str:
     _DAILY_TOTALS_FILE.write_text(json.dumps(payload) + "\n")
 
     return f"day: ${total_cost:.2f} {total_tokens // 1000}k tok"
+
+
+def lines_changed_widget(data: StatuslineInput) -> str:
+    """Lines added/removed, color-coded."""
+    cost = data.cost
+    added = cost.total_lines_added if cost else 0
+    removed = cost.total_lines_removed if cost else 0
+    if added == 0 and removed == 0:
+        return ""
+    parts = []
+    if added > 0:
+        parts.append(f"{_GREEN}+{added}{_RESET}")
+    if removed > 0:
+        parts.append(f"{_RED}-{removed}{_RESET}")
+    return "/".join(parts)
+
+
+def cache_ratio_widget(data: StatuslineInput) -> str:
+    """Cache hit ratio from current_usage tokens."""
+    ctx = data.context_window
+    usage = ctx.current_usage if ctx else None
+    if not usage:
+        return ""
+    read = usage.cache_read_input_tokens
+    create = usage.cache_creation_input_tokens
+    inp = usage.input_tokens
+    total = read + create + inp
+    if total <= 0:
+        return ""
+    pct = int(read * 100 / total)
+    if pct > _CACHE_HIGH_THRESHOLD:
+        color = _GREEN
+    elif pct > _CACHE_LOW_THRESHOLD:
+        color = _YELLOW
+    else:
+        color = _RED
+    return f"{color}cache:{pct}%{_RESET}"
