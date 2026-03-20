@@ -23,6 +23,7 @@ Additionally, Claude Code v2.1.80 added a `rate_limits` field to statusline stdi
 | Daily totals persistence | Single JSON file with date key | Simple, auto-resets at midnight |
 | Token speed formula | `(input + output) / (duration / 1000)` | All fields in stdin |
 | Rate limits source | `rate_limits` field from stdin (v2.1.80) | No OAuth API calls needed |
+| SDK dependency | `claude-agent-sdk` (PyPI) | Reuse `BaseHookInput`, `RateLimitInfo`, `RateLimitType` — stays in sync via version bumps |
 | Toggle mechanism | Per-widget JSON config | Independent of A/B/C mode |
 | Default state | All widgets enabled | Opt-out, not opt-in |
 | Error handling | Silent defaults, never crash | Matches existing patterns |
@@ -166,25 +167,141 @@ If all widgets are disabled, no metrics bar is appended — identical to current
 | `rate_limits` | Absent on API-key plans; present on Claude.ai subscription plans |
 | `rate_limits` field structure | **UNCONFIRMED** — the SDK defines `RateLimitInfo` with `utilization` (0.0-1.0 fraction) and `resets_at` (Unix timestamp int). The statusline stdin may use different naming. Implementation must handle both SDK-style and statusline-convention field names. **Capture raw JSON to confirm before finalizing.** |
 
-### Schema Validation Module
+### Schema Validation Module — Option B: SDK + TypedDicts
 
-New file `src/mde/statusline/schema.py`:
+**Dependency:** `claude-agent-sdk` (PyPI) — added as a runtime dependency for type reuse.
 
-```python
-def validate_statusline_data(data: dict[str, Any]) -> dict[str, Any]:
-    """Validate and normalize Claude Code stdin JSON.
-
-    Returns a flat dict with all widget-relevant fields, safely
-    extracted with type checking and defaults. Unknown fields
-    are preserved in a 'raw' key for forward compatibility.
-    """
+```
+uv add claude-agent-sdk
 ```
 
-This replaces `_extract_context()` and `_extract_widget_context()` with a single extraction point. All widgets read from this validated dict. Benefits:
-- Single place to update when upstream schema changes
-- Type-safe: every field is explicitly checked (not just `.get()` with hope)
-- Forward-compatible: unknown fields preserved, never crash on new fields
-- Numeric string coercion: handles `"1.25"` as `1.25` (ccstatusline pattern — Claude Code may send stringified numbers)
+New file `src/mde/statusline/schema.py` defines typed structures that **compose with the SDK types** where fields overlap, and hand-code the statusline-specific types that the SDK doesn't cover.
+
+**Why Option B:**
+- Reuse `BaseHookInput` (session_id, transcript_path, cwd) from the SDK — stays in sync automatically
+- Reuse `RateLimitInfo`, `RateLimitStatus`, `RateLimitType` for rate limit handling — field names match the CLI's wire format
+- The SDK's `RateLimitInfo.raw` dict preserves unmodeled fields for forward compatibility
+- Only hand-code the statusline-specific types (`CostInfo`, `ContextWindow`, `TokenUsage`) that the SDK doesn't define
+- When the SDK adds statusline types in the future, we can drop our hand-coded versions
+
+**What the SDK provides (importable):**
+
+```python
+from claude_agent_sdk.types import (
+    BaseHookInput,       # TypedDict: session_id, transcript_path, cwd
+    RateLimitInfo,       # dataclass: status, resets_at (Unix int), utilization (0.0-1.0),
+                         #   rate_limit_type, overage_status, raw
+    RateLimitStatus,     # Literal["allowed", "allowed_warning", "rejected"]
+    RateLimitType,       # Literal["five_hour", "seven_day", "seven_day_opus",
+                         #         "seven_day_sonnet", "overage"]
+    RateLimitEvent,      # dataclass: rate_limit_info, uuid, session_id
+    SubagentStartHookInput,   # TypedDict: hook_event_name, agent_id, agent_type
+    SubagentStopHookInput,    # TypedDict: hook_event_name, agent_id, agent_type, ...
+)
+```
+
+**What we hand-code (statusline-specific, not in SDK):**
+
+```python
+from __future__ import annotations
+
+from typing import Any, TypedDict
+from typing_extensions import NotRequired
+
+
+class ModelInfo(TypedDict):
+    """Claude Code model info from statusline stdin."""
+    id: NotRequired[str]
+    display_name: NotRequired[str]
+
+
+class CostInfo(TypedDict):
+    """Session cost metrics from statusline stdin."""
+    total_cost_usd: NotRequired[float]
+    total_duration_ms: NotRequired[float]
+    total_api_duration_ms: NotRequired[float]
+    total_lines_added: NotRequired[int]
+    total_lines_removed: NotRequired[int]
+
+
+class TokenUsage(TypedDict):
+    """Per-turn token breakdown from context_window.current_usage."""
+    input_tokens: NotRequired[int]
+    output_tokens: NotRequired[int]
+    cache_creation_input_tokens: NotRequired[int]
+    cache_read_input_tokens: NotRequired[int]
+
+
+class ContextWindow(TypedDict):
+    """Context window metrics from statusline stdin."""
+    context_window_size: NotRequired[int | None]
+    total_input_tokens: NotRequired[int | None]
+    total_output_tokens: NotRequired[int | None]
+    current_usage: NotRequired[TokenUsage | None]
+    used_percentage: NotRequired[float | None]
+    remaining_percentage: NotRequired[float | None]
+
+
+class WorkspaceInfo(TypedDict):
+    """Workspace paths from statusline stdin."""
+    current_dir: NotRequired[str]
+    project_dir: NotRequired[str]
+
+
+class WorktreeInfo(TypedDict):
+    """Worktree info, absent outside --worktree sessions."""
+    name: str
+    path: str
+    branch: NotRequired[str]
+    original_cwd: str
+    original_branch: NotRequired[str]
+
+
+class StatuslineInput(TypedDict):
+    """Complete statusline stdin JSON schema (v2.1.80).
+
+    Extends the pattern from claude_agent_sdk.types.BaseHookInput
+    for the shared session_id/transcript_path/cwd fields.
+    Statusline-specific fields are defined here since the SDK
+    does not type the statusline stdin protocol.
+    """
+    # Shared with BaseHookInput
+    session_id: NotRequired[str]
+    transcript_path: NotRequired[str]
+    cwd: NotRequired[str]
+
+    # Statusline-specific
+    model: NotRequired[str | ModelInfo]
+    workspace: NotRequired[WorkspaceInfo]
+    version: NotRequired[str]
+    output_style: NotRequired[dict[str, str]]
+    cost: NotRequired[CostInfo]
+    context_window: NotRequired[ContextWindow | None]
+    exceeds_200k_tokens: NotRequired[bool]
+    rate_limits: NotRequired[dict[str, Any]]  # Shape unconfirmed, use SDK RateLimitInfo for parsing
+    vim: NotRequired[dict[str, str] | None]
+    agent: NotRequired[dict[str, str]]
+    worktree: NotRequired[WorktreeInfo]
+```
+
+**Schema version detection** — log a warning for unknown top-level keys:
+
+```python
+_KNOWN_KEYS = frozenset(StatuslineInput.__annotations__.keys())
+
+def _warn_unknown_keys(data: dict[str, Any]) -> None:
+    unknown = set(data.keys()) - _KNOWN_KEYS
+    if unknown:
+        import sys
+        print(f"[statusline] unknown keys: {unknown}", file=sys.stderr)
+```
+
+This replaces `_extract_context()` and `_extract_widget_context()` with a single typed extraction point. Benefits:
+- SDK types stay in sync via `uv lock --upgrade-package claude-agent-sdk`
+- TypedDicts give IDE autocompletion and type checker support
+- `_warn_unknown_keys` alerts us when upstream adds new fields
+- Forward-compatible: `rate_limits` uses `dict[str, Any]` until the stdin shape is confirmed, parsed via SDK's `RateLimitInfo` pattern
+- Numeric string coercion: handles `"1.25"` as `1.25` (ccstatusline pattern)
 
 ---
 
@@ -301,20 +418,26 @@ This is a breaking change to the existing function signature (same name, differe
 
 ## Context Extraction (Unified)
 
-Replace both `_extract_context()` and the proposed `_extract_widget_context()` with a single validated extraction in `schema.py`:
+Replace both `_extract_context()` and the proposed `_extract_widget_context()` with a single validated extraction in `schema.py` that uses the SDK types:
 
 ```python
+from claude_agent_sdk.types import RateLimitInfo, RateLimitStatus
+
 def extract_all(data: dict[str, Any]) -> dict[str, Any]:
     """Extract and validate all fields from Claude Code stdin JSON.
 
-    Returns a flat dict consumed by both mode renderers and widgets.
+    Uses StatuslineInput TypedDict for structure, SDK's RateLimitInfo
+    for rate limit parsing. Returns a flat dict consumed by both mode
+    renderers and widgets.
     """
+    _warn_unknown_keys(data)
+
     cost = _safe_dict(data.get("cost"))
     ctx = _safe_dict(data.get("context_window"))
-    usage = _safe_dict(ctx.get("current_usage")) if ctx.get("current_usage") else {}
-    rate = _safe_dict(data.get("rate_limits"))
-    five_h = _safe_dict(rate.get("five_hour"))
-    seven_d = _safe_dict(rate.get("seven_day"))
+    usage = _safe_dict(ctx.get("current_usage")) if isinstance(ctx.get("current_usage"), dict) else {}
+
+    # Parse rate limits using SDK's field naming convention
+    rate_info = _parse_rate_limits(data.get("rate_limits"))
 
     return {
         # Existing mode renderer fields
@@ -336,42 +459,95 @@ def extract_all(data: dict[str, Any]) -> dict[str, Any]:
         "cache_create_tokens": _coerce_float(usage.get("cache_creation_input_tokens")),
         "input_tokens": _coerce_float(usage.get("input_tokens")),
 
-        # Rate limit fields (v2.1.80) — handle SDK-style and statusline-convention names
-        # SDK uses utilization (0.0-1.0), statusline may use used_percentage (0-100)
-        # SDK uses resets_at as Unix timestamp (int), statusline may use ISO 8601 (str)
-        "rate_5h_pct": _normalize_rate_pct(five_h),  # Always returns 0-100
-        "rate_5h_resets_at": five_h.get("resets_at"),  # int or str, handled downstream
-        "rate_5h_status": five_h.get("status", ""),
-        "rate_7d_pct": _normalize_rate_pct(seven_d),
-        "rate_7d_resets_at": seven_d.get("resets_at"),
-        "rate_7d_status": seven_d.get("status", ""),
-        "rate_overage_status": _safe_dict(rate.get("overage", rate)).get("overage_status", ""),
+        # Rate limit fields — parsed via SDK RateLimitInfo pattern
+        "rate_5h": rate_info.get("five_hour"),   # RateLimitInfo | None
+        "rate_7d": rate_info.get("seven_day"),   # RateLimitInfo | None
+        "rate_overage": rate_info.get("overage"), # RateLimitInfo | None
 
         # Metadata
         "exceeds_200k": bool(data.get("exceeds_200k_tokens", False)),
         "agent_name": _safe_str(data, "agent.name", ""),
         "version": str(data.get("version", "")),
     }
+
+
+def _parse_rate_limits(raw: Any) -> dict[str, RateLimitInfo | None]:
+    """Parse rate_limits from stdin JSON into SDK RateLimitInfo objects.
+
+    The CLI sends camelCase on the wire (rateLimitType, resetsAt, isUsingOverage).
+    The SDK's RateLimitInfo expects snake_case. This function handles both,
+    mirroring the SDK's own parser (see claude-agent-sdk commit 2d5c3cb3).
+
+    Confirmed wire format from SDK e2e test:
+        status: "allowed_warning"
+        resets_at / resetsAt: 1773273600 (Unix timestamp int)
+        rate_limit_type / rateLimitType: "seven_day"
+        utilization: 0.62 (0.0-1.0 fraction)
+    """
+    if not isinstance(raw, dict):
+        return {"five_hour": None, "seven_day": None, "overage": None}
+
+    result: dict[str, RateLimitInfo | None] = {}
+
+    # The statusline stdin may deliver rate_limits as:
+    #   Shape A: {"status": "...", "rateLimitType": "five_hour", "utilization": 0.42, ...}
+    #   Shape B: {"five_hour": {"utilization": 0.42, ...}, "seven_day": {...}}
+    # Try Shape B first (nested by window), fall back to Shape A (flat)
+
+    for window_name in ("five_hour", "seven_day", "overage"):
+        window = raw.get(window_name)
+        if isinstance(window, dict):
+            result[window_name] = RateLimitInfo(
+                status=window.get("status", "allowed"),
+                resets_at=_coerce_int_or_none(window.get("resetsAt") or window.get("resets_at")),
+                rate_limit_type=window.get("rateLimitType") or window.get("rate_limit_type"),
+                utilization=_coerce_float_or_none(window.get("utilization")),
+                raw=window,
+            )
+        else:
+            result[window_name] = None
+
+    # Shape A fallback: flat dict with rate_limit_type identifying the window
+    if all(v is None for v in result.values()) and "status" in raw:
+        window_name = raw.get("rateLimitType") or raw.get("rate_limit_type") or "five_hour"
+        # Normalize model-specific types to base window
+        if window_name in ("seven_day_opus", "seven_day_sonnet"):
+            window_name = "seven_day"
+        result[window_name] = RateLimitInfo(
+            status=raw.get("status", "allowed"),
+            resets_at=_coerce_int_or_none(raw.get("resetsAt") or raw.get("resets_at")),
+            rate_limit_type=raw.get("rateLimitType") or raw.get("rate_limit_type"),
+            utilization=_coerce_float_or_none(raw.get("utilization")),
+            raw=raw,
+        )
+
+    return result
+```
+
+**Rate limit display in widgets** uses SDK types directly:
+
+```python
+from claude_agent_sdk.types import RateLimitInfo
+
+def rate_limits_widget(ctx: dict[str, Any]) -> str:
+    parts = []
+    for label, key in [("5h", "rate_5h"), ("7d", "rate_7d")]:
+        info: RateLimitInfo | None = ctx.get(key)
+        if info is None:
+            continue
+        if info.status == "rejected":
+            parts.append(f"{_RED}{label}:LIMIT{_RESET}")
+        elif info.utilization is not None:
+            pct = info.utilization * 100
+            color = _color_for_pct(pct)
+            text = f"{label}:{pct:.0f}%"
+            if pct >= 70 and info.resets_at:
+                text += f" ↻{_format_countdown(info.resets_at)}"
+            parts.append(f"{color}{text}{_RESET}")
+    return " ".join(parts)
 ```
 
 The `_coerce_float` function handles numeric strings (`"1.25"` → `1.25`), `None` → `0.0`, and invalid values → `0.0`. This is the ccstatusline `CoercedNumberSchema` pattern adapted to Python.
-
-The `_normalize_rate_pct` function resolves the schema uncertainty for rate limits:
-```python
-def _normalize_rate_pct(window: dict[str, Any]) -> float:
-    """Extract rate limit percentage, normalizing SDK vs statusline conventions.
-
-    SDK uses 'utilization' (0.0-1.0). Statusline may use 'used_percentage' (0-100).
-    Returns 0-100 always.
-    """
-    # Try used_percentage first (0-100 range)
-    pct = _coerce_float(window.get("used_percentage"))
-    if pct > 0:
-        return pct
-    # Fall back to utilization (0.0-1.0 range) → convert to percentage
-    util = _coerce_float(window.get("utilization"))
-    return util * 100 if util <= 1.0 else util  # Guard against already-percentage values
-```
 
 ---
 
@@ -509,7 +685,7 @@ Matches existing statusline conventions: silent defaults, return 0 always, never
 
 | File | Purpose |
 |------|---------|
-| `src/mde/statusline/schema.py` | `extract_all()`, `_coerce_float()`, `_coerce_int()`, `_safe_dict()` (returns `{}` for `None`, non-dict, or absent values), schema constants |
+| `src/mde/statusline/schema.py` | `StatuslineInput` TypedDict, `CostInfo`, `ContextWindow`, `TokenUsage`, `ModelInfo`, `WorkspaceInfo`, `WorktreeInfo` TypedDicts; `extract_all()`, `_parse_rate_limits()`, `_warn_unknown_keys()`, `_coerce_float()`, `_coerce_int()`, `_safe_dict()` |
 | `src/mde/statusline/widgets.py` | 7 widget functions + `_render_metrics_bar()` |
 | `src/mde/statusline/widget_toggle.py` | `_read_widget_config()`, `toggle_widget()`, `show_widgets()` |
 | `tests/mde/test_statusline_schema.py` | Schema validation tests (coercion, nulls, absent fields, forward compat) |
@@ -547,11 +723,14 @@ The 4-tier color upgrade changes `_color_for_pct` thresholds (50/80 → 50/70/90
 | `test_coerce_float_from_string` | `"1.25"` → `1.25` |
 | `test_coerce_float_from_none` | `None` → `0.0` |
 | `test_coerce_float_from_invalid` | `"not-a-number"` → `0.0` |
-| `test_rate_limits_absent` | Missing `rate_limits` → `rate_5h_pct` = 0.0 |
-| `test_rate_limits_with_utilization_key` | `utilization` (API name) → correctly mapped |
-| `test_rate_limits_with_used_percentage_key` | `used_percentage` (expected name) → correctly mapped |
+| `test_rate_limits_absent` | Missing `rate_limits` → all `None` |
+| `test_rate_limits_shape_b_nested` | `{"five_hour": {"utilization": 0.42, ...}}` → `RateLimitInfo` with correct fields |
+| `test_rate_limits_shape_a_flat` | `{"status": "allowed", "rateLimitType": "five_hour", ...}` → parsed correctly |
+| `test_rate_limits_camel_to_snake` | `resetsAt` → `resets_at`, `rateLimitType` → `rate_limit_type` |
+| `test_rate_limits_model_specific_type` | `seven_day_opus` → normalized to `seven_day` key |
 | `test_current_usage_null` | `current_usage: null` → cache fields default to 0.0 |
-| `test_unknown_fields_preserved` | Extra fields don't crash extraction |
+| `test_unknown_fields_warns_stderr` | Extra top-level keys → warning printed to stderr |
+| `test_unknown_fields_no_crash` | Extra fields don't crash extraction |
 
 ### Unit Tests — `tests/mde/test_statusline_widgets.py`
 
@@ -579,13 +758,13 @@ Per widget: normal case, zero/missing fields, edge cases.
 | `test_cache_ratio_normal` | `cache:62%` for 620 read / 1000 total |
 | `test_cache_ratio_no_usage` | Empty string (suppressed, current_usage null) |
 | `test_cache_ratio_all_zero` | Empty string (suppressed) |
-| `test_rate_limits_normal` | `5h:42% 7d:15%` |
-| `test_rate_limits_high_with_countdown` | `5h:85% ↻2h13m 7d:15%` |
-| `test_rate_limits_absent` | Empty string (suppressed) |
-| `test_rate_limits_utilization_key` | SDK-style `utilization` (0.42) → displays as `42%` |
-| `test_rate_limits_rejected_status` | `status: "rejected"` → shows `5h:LIMIT` in red |
-| `test_rate_limits_resets_at_unix` | Unix timestamp int → correct countdown |
-| `test_rate_limits_resets_at_iso` | ISO 8601 string → correct countdown |
+| `test_rate_limits_normal` | `RateLimitInfo(utilization=0.42)` → `5h:42%` |
+| `test_rate_limits_both_windows` | Both `rate_5h` and `rate_7d` present → `5h:42% 7d:15%` |
+| `test_rate_limits_high_with_countdown` | `utilization=0.85, resets_at=<future>` → `5h:85% ↻2h13m` |
+| `test_rate_limits_absent` | Both `None` → empty string (suppressed) |
+| `test_rate_limits_rejected` | `status="rejected"` → `5h:LIMIT` in red |
+| `test_rate_limits_allowed_warning` | `status="allowed_warning"` → forced orange/red color |
+| `test_rate_limits_countdown_format` | Unix timestamp → `↻Xh Ym` relative format |
 | `test_metrics_bar_all_enabled` | All 7 widgets joined by ` \| ` |
 | `test_metrics_bar_some_disabled` | Only enabled widgets appear |
 | `test_metrics_bar_all_disabled` | Returns empty string |
@@ -650,6 +829,7 @@ uv run pytest tests/mde/ -k statusline -v          # all statusline tests
 
 | Project | Language | Stars | Key Pattern Adopted |
 |---------|----------|-------|-------------------|
+| [claude-agent-sdk](https://github.com/anthropics/claude-agent-sdk-python) | Python | Official | `RateLimitInfo`, `BaseHookInput`, `SubagentStartHookInput` types imported directly |
 | [ccstatusline](https://github.com/sirmalloc/ccstatusline) | TypeScript | 5.5k | Zod schema validation → Python `_coerce_float` pattern |
 | [CCometixLine](https://github.com/Haleclipse/CCometixLine) | Rust | 2.2k | 4-tier color coding |
 | [ClaudeCodeStatusLine](https://github.com/daniel3303/ClaudeCodeStatusLine) | Shell | 330 | Rate limit display with countdown timer |
