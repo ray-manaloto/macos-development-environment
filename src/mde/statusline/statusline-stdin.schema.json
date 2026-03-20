@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "statusline-stdin",
+  "title": "StatuslineInput",
+  "description": "DERIVED from https://code.claude.com/docs/en/statusline (canonical source). Cross-referenced with claude-agent-sdk v0.1.49 types and ccstatusline StatusJSON.ts. This file is NOT an official Anthropic schema — it is a project-local transcription of the docs for codegen. Re-verify against the source URL when updating. Regenerate models: mise run mde:codegen:statusline",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "cwd": { "type": "string", "description": "Current working directory" },
+    "session_id": { "type": "string", "description": "Unique session identifier" },
+    "transcript_path": { "type": "string", "description": "Path to conversation transcript file" },
+    "version": { "type": "string", "description": "Claude Code version" },
+    "exceeds_200k_tokens": {
+      "type": "boolean",
+      "description": "Whether total tokens exceed 200k (fixed threshold regardless of context window size)",
+      "default": false
+    },
+    "model": {
+      "description": "Current model (string or object with id + display_name)",
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "display_name": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "workspace": {
+      "type": "object",
+      "properties": {
+        "current_dir": { "type": "string" },
+        "project_dir": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "output_style": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "cost": {
+      "type": "object",
+      "description": "Session cost and duration metrics. Values may arrive as strings — Pydantic coerces automatically.",
+      "properties": {
+        "total_cost_usd": { "type": "number", "default": 0 },
+        "total_duration_ms": { "type": "number", "default": 0 },
+        "total_api_duration_ms": { "type": "number", "default": 0 },
+        "total_lines_added": { "type": "integer", "default": 0 },
+        "total_lines_removed": { "type": "integer", "default": 0 }
+      },
+      "additionalProperties": true
+    },
+    "context_window": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "description": "Context window usage metrics",
+          "properties": {
+            "total_input_tokens": { "type": "number", "default": 0 },
+            "total_output_tokens": { "type": "number", "default": 0 },
+            "context_window_size": { "type": "integer", "default": 200000 },
+            "used_percentage": {
+              "oneOf": [{ "type": "number" }, { "type": "null" }],
+              "description": "May be null early in session"
+            },
+            "remaining_percentage": {
+              "oneOf": [{ "type": "number" }, { "type": "null" }]
+            },
+            "current_usage": {
+              "oneOf": [
+                { "type": "null" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "input_tokens": { "type": "number", "default": 0 },
+                    "output_tokens": { "type": "number", "default": 0 },
+                    "cache_creation_input_tokens": { "type": "number", "default": 0 },
+                    "cache_read_input_tokens": { "type": "number", "default": 0 }
+                  },
+                  "additionalProperties": true
+                }
+              ],
+              "description": "null before first API call"
+            }
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "rate_limits": {
+      "type": "object",
+      "description": "Rate limit data (v2.1.80). CONFIRMED shape from live Claude Max session: nested by window with used_percentage (0-100 int) and resets_at (Unix timestamp int). Absent for API-key plans.",
+      "properties": {
+        "five_hour": {
+          "type": "object",
+          "properties": {
+            "used_percentage": { "type": "integer", "description": "0-100 percentage of 5-hour rate limit consumed" },
+            "resets_at": { "type": "integer", "description": "Unix timestamp when the 5-hour window resets" }
+          }
+        },
+        "seven_day": {
+          "type": "object",
+          "properties": {
+            "used_percentage": { "type": "integer", "description": "0-100 percentage of 7-day rate limit consumed" },
+            "resets_at": { "type": "integer", "description": "Unix timestamp when the 7-day window resets" }
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "session_name": {
+      "type": "string",
+      "description": "Session name (discovered in v2.1.80 capture, not in official docs)"
+    },
+    "vim": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "properties": {
+            "mode": { "type": "string", "enum": ["NORMAL", "INSERT"] }
+          }
+        }
+      ],
+      "description": "Absent when vim mode disabled"
+    },
+    "agent": {
+      "type": "object",
+      "properties": { "name": { "type": "string" } },
+      "description": "Absent without --agent flag",
+      "additionalProperties": true
+    },
+    "worktree": {
+      "type": "object",
+      "description": "Absent outside --worktree sessions",
+      "properties": {
+        "name": { "type": "string" },
+        "path": { "type": "string" },
+        "branch": { "type": "string" },
+        "original_cwd": { "type": "string" },
+        "original_branch": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  }
+}
