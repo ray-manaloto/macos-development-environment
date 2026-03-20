@@ -8,6 +8,7 @@ reports/
 .swarm/
 .artifacts/
 .artifacts/reference-mirror/
+.worktrees/
 
 # Python
 .venv/
