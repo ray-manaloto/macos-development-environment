@@ -19,7 +19,29 @@ The macos-development-environment project has significant infrastructure (mise, 
 7. **No improvement measurement** — no way to quantify if the project is getting better over time
 8. **Research without continuity** — no tracking of what was researched, when, on what tool versions, or what was applied
 
-## 2. Goals
+## 2. Primary Mandate: Assemble, Don't Build
+
+**The AI/LLM ecosystem in 2026 has tools for nearly everything.** Building new code when a tool, skill, plugin, or CLI already exists is an anti-pattern. The research system's first job is to FIND what exists, not to BUILD replacements.
+
+**Priority order for every capability needed:**
+1. **Use an existing installed tool/skill/plugin** — check what's already in mise, .claude/skills/, plugins
+2. **Install an existing tool** — search skills.sh, npm, PyPI, GitHub, awesome-lists
+3. **Compose existing tools** — chain 2-3 tools together via skills or CLI pipelines
+4. **Extend an existing tool** — fork, PR, or wrap an existing tool with minimal glue
+5. **Build new code** — LAST RESORT, only when 1-4 are genuinely exhausted
+
+**This applies to everything:** research agents, note-taking, consolidation, scheduling, scoring, tracking. Before writing a single line of Python in `src/mde/`, the agent MUST document what it searched for, what it found, and why nothing existing works.
+
+**Anti-patterns this mandate prevents:**
+- Writing a custom "trail adapter" when Obsidian + Dataview already does this
+- Building a custom "improvement score" calculator when existing validation tools + a shell script suffice
+- Creating custom agent definitions when skills.sh has 4,600+ skills
+- Writing a NotebookLM wrapper when `notebooklm-py` already provides full CLI access
+- Building a scheduling system when ARIS + launchd already solve the problem
+
+**The research system IS the tool that finds better tools.** If it builds code instead of finding tools, it has failed at its primary purpose.
+
+## 3. Goals
 
 - Build a **self-improving system** where autonomous agents research, synthesize, and apply improvements
 - **Full autonomy with guardrails** — agents can make any change but must validate before/after and create revertible commits
