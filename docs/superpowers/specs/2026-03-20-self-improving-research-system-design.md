@@ -133,7 +133,8 @@ Weights and metrics are configurable and themselves evolve via research.
 | Category | Sources | Agent Behavior | Frequency |
 |----------|---------|----------------|-----------|
 | YouTube Channels | 14 known channels + discovered ones | Monitor for new uploads, transcribe via yt-dlp, add to NotebookLM | Daily/on-demand |
-| Official Docs | chezmoi, mise, Claude Code, Obsidian | Crawl every page, diff against last crawl, flag changes | Weekly + on version bump |
+| Official Docs | chezmoi, mise, Claude Code (code.claude.com + SDK + plugins + cookbooks), Obsidian, Anthropic engineering blog | Crawl every page, diff against last crawl, flag changes | Weekly + on version bump |
+| Claude Code Releases | anthropics/claude-code, claude-agent-sdk-python, claude-plugins-official, claude.com/blog | Detect version bumps, new features, breaking changes, new skills/plugins | On release |
 | Reddit | r/chezmoi, r/dotfiles, r/ObsidianMD, r/ClaudeAI, r/LocalLLaMA | Scan hot/new posts, extract actionable patterns | Daily |
 | X/Twitter | Key accounts + hashtags | Monitor for tool announcements, technique shares | Daily |
 | GitHub | Awesome lists, trending repos, specific reference repos | Star count trends, new repos, README analysis | Daily |
@@ -152,6 +153,20 @@ Weights and metrics are configurable and themselves evolve via research.
 - @AILABS-393
 - @owainlewis
 - @GregIsenberg
+
+#### Official Anthropic/Claude Code Sources (Exhaustive Coverage)
+
+These are foundational — every page should be crawled and diffed on each Claude Code release:
+
+- https://code.claude.com/docs/en/overview — Claude Code official documentation (all pages)
+- https://github.com/anthropics/claude-code — Claude Code source/issues/releases
+- https://github.com/anthropics/claude-agent-sdk-python — Agent SDK for building custom agents
+- https://github.com/anthropics/claude-plugins-official — Official plugin repository
+- https://github.com/anthropics/claude-cookbooks — Anthropic cookbooks and examples
+- https://github.com/anthropics/skills — Official skills repository
+- https://claude.com/blog — Claude blog (product announcements, capabilities)
+- https://www.anthropic.com/engineering — Anthropic engineering blog (technical deep-dives)
+- https://platform.claude.com/cookbook/ — Platform cookbook recipes
 
 #### Known Reference Repos
 
