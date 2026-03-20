@@ -95,6 +95,9 @@ def _build_parser() -> argparse.ArgumentParser:
     sl_sub.add_parser("render", help="Render statusline (reads stdin JSON)")
     sl_sub.add_parser("toggle", help="Cycle display mode A/B/C")
     sl_sub.add_parser("show-mode", help="Print current mode")
+    tw_p = sl_sub.add_parser("toggle-widget", help="Toggle a metrics widget on/off")
+    tw_p.add_argument("widget_name", help="Widget name to toggle (or 'all')")
+    sl_sub.add_parser("show-widgets", help="Show per-widget toggle states")
 
     return parser
 
@@ -251,6 +254,14 @@ def _cmd_statusline(args: argparse.Namespace) -> int:
         from mde.statusline.toggle import show_mode
 
         return show_mode()
+    if action == "toggle-widget":
+        from mde.statusline.widget_toggle import toggle_widget
+
+        return toggle_widget(args.widget_name)
+    if action == "show-widgets":
+        from mde.statusline.widget_toggle import show_widgets
+
+        return show_widgets()
     print(f"Unknown statusline action: {action}", file=sys.stderr)
     return 1
 
