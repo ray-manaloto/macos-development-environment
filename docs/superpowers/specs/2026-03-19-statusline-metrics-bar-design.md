@@ -169,11 +169,20 @@ If all widgets are disabled, no metrics bar is appended — identical to current
 
 ### Schema Validation Module — Option B: SDK + TypedDicts
 
-**Dependency:** `claude-agent-sdk` (PyPI) — added as a runtime dependency for type reuse.
+**Dependency:** `claude-agent-sdk` (PyPI) — declared in `pyproject.toml` `[project] dependencies`:
 
+```toml
+# pyproject.toml
+[project]
+dependencies = [
+    "pydantic>=2.10",
+    "pyyaml>=6.0",
+    "tomli>=2.0; python_version < '3.11'",
+    "claude-agent-sdk>=0.1.49",
+]
 ```
-uv add claude-agent-sdk
-```
+
+Per the declarative configuration policy (`.claude/rules/declarative-config.md`), all dependencies are declared in `pyproject.toml` — never via ad-hoc `uv add` commands. Lock with `uv lock` after editing.
 
 New file `src/mde/statusline/schema.py` defines typed structures that **compose with the SDK types** where fields overlap, and hand-code the statusline-specific types that the SDK doesn't cover.
 
@@ -297,7 +306,7 @@ def _warn_unknown_keys(data: dict[str, Any]) -> None:
 ```
 
 This replaces `_extract_context()` and `_extract_widget_context()` with a single typed extraction point. Benefits:
-- SDK types stay in sync via `uv lock --upgrade-package claude-agent-sdk`
+- SDK types stay in sync: bump version pin in `pyproject.toml` `[project] dependencies`, then `uv lock`
 - TypedDicts give IDE autocompletion and type checker support
 - `_warn_unknown_keys` alerts us when upstream adds new fields
 - Forward-compatible: `rate_limits` uses `dict[str, Any]` until the stdin shape is confirmed, parsed via SDK's `RateLimitInfo` pattern
