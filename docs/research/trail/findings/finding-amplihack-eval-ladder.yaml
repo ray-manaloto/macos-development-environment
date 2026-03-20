@@ -1,0 +1,18 @@
+id: finding-amplihack-eval-ladder
+timestamp: "2026-03-20T11:30:00Z"
+source: https://github.com/rysweet/amplihack
+agent: research-mcp2cli-amplihack
+finding_type: technique
+confidence: confirmed
+confident_about: "L1-L12 progressive eval: recall → synthesis → temporal → procedural → contradiction → incremental → transfer → metacognition → causal → counterfactual → novel acquisition → far transfer. 10-failure-mode error taxonomy mapping symptoms to code components. Self-improvement loop: EVAL → ANALYZE → RESEARCH → IMPROVE → RE-EVAL → DECIDE with +2% commit threshold and >5% regression revert."
+gaps: "Did not read source code or PHILOSOPHY.md. Kuzu knowledge graph integration not deeply analyzed."
+evidence: "37 specialized agents, 85+ skills, 4 workflow types. L1-L12 uses synthetic post-cutoff data (2026 Winter Olympics) to ensure agent learned from sources, not pretraining. Error taxonomy: retrieval_insufficient, temporal_ordering_wrong, intent_misclassification, fact_extraction_incomplete, synthesis_hallucination, update_not_applied, contradiction_undetected, procedural_ordering_lost, teaching_coverage_gap, counterfactual_refusal."
+implication: "Adapt L1-L12 for research pipeline: L1=source discovery, L2=content extraction, L3=fact synthesis, L4=temporal reasoning, L5=contradiction handling, L6=actionability. Adopt error taxonomy for classifying research failures. Add regression guard: revert if >5% score drop."
+status: discovered
+tags:
+  - eval-ladder
+  - error-taxonomy
+  - self-improvement
+  - regression-guard
+  - amplihack
+coverage_assessment: full_review

@@ -1,0 +1,18 @@
+id: finding-claude-native-redundancy
+timestamp: "2026-03-20T11:30:00Z"
+source: https://code.claude.com/docs/en/overview
+agent: research-claude-docs
+finding_type: architecture
+confidence: confirmed
+confident_about: "Claude Code has native subagents (.claude/agents/ with YAML frontmatter, model routing, persistent memory, worktree isolation), /batch for parallel decomposition, 28 hook events (vs claude-flow's 27), auto memory at ~/.claude/projects/, path-scoped rules, and experimental Agent Teams."
+gaps: "Agent Teams are experimental with 7 documented limitations — not production-ready. Did not test remote control or channels features."
+evidence: "Native subagents replace npx @claude-flow/cli@latest agent spawn. Auto memory replaces memory store/search CLI. /batch replaces swarm spawn-all-at-once. 28 native hooks include SubagentStart/Stop, TeammateIdle, TaskCompleted, WorktreeCreate/Remove that claude-flow lacks."
+implication: "For 80% of daily work, native Claude Code features are sufficient and simpler. claude-flow adds value only for neural pattern training, complex topology control, and background workers. Migrate toward native: create .claude/agents/ files, use auto memory, adopt /batch, configure native hooks. Trim CLAUDE.md significantly (currently very long with claude-flow instructions)."
+status: discovered
+tags:
+  - native-vs-framework
+  - architectural-redundancy
+  - claude-code-features
+  - migration
+  - subagents
+coverage_assessment: full_review

@@ -1,0 +1,17 @@
+id: finding-compound-confidence-taxonomy
+timestamp: "2026-03-20T11:30:00Z"
+source: https://github.com/EveryInc/compound-knowledge-plugin
+agent: research-compound
+finding_type: pattern
+confidence: confirmed
+confident_about: "compound-knowledge /kw:confidence uses prose-based assessment (never numbers). 4 dimensions: task understanding, information sufficiency, approach certainty, risk awareness. compound-engineering saves learnings as docs/solutions/{category}/{slug}.md with YAML frontmatter. Grep-based retrieval on tags/keywords."
+gaps: "Did not test plugin installation. The compound-engineering 5-subagent extraction was described but not tested."
+evidence: "Our ProvenanceRecord has confidence as flat string ('high'/'medium'/'low'). Compound uses prose: 'Confident about: [specific files read]. Less confident about: [specific gaps].' Also uses fixed taxonomy: insight/playbook/correction/pattern."
+implication: "Add confident_about and gaps fields to ProvenanceRecord. Constrain finding_type to enum (insight/playbook/correction/pattern/technique/tool). Add tags list for retrieval. Add duplicate checking before save. Add implication field."
+status: discovered
+tags:
+  - confidence-assessment
+  - learning-taxonomy
+  - provenance-enrichment
+  - compound
+coverage_assessment: full_review

@@ -1,0 +1,17 @@
+id: finding-autoresearch-history-logging
+timestamp: "2026-03-20T11:30:00Z"
+source: https://github.com/karpathy/autoresearch
+agent: research-autoresearch
+finding_type: technique
+confidence: confirmed
+confident_about: "autoresearch logs every experiment in results.tsv with commit hash, val_bpb, peak memory, status (keep/discard/crash), description. Our calculate_score() returns a single float with no history."
+gaps: "autoresearch is for LLM training optimization, not dev env research. The single-metric approach does not apply to our multi-dimensional domain."
+evidence: "autoresearch uses binary keep/discard per experiment + detailed audit trail (results.tsv). Our BinaryGate class exists but check_binary_gates() is never called inside calculate_score(). Score should return 0.0 if any gate fails."
+implication: "Add ScoreHistory dataclass recording each calculation with timestamp, git commit, per-metric breakdown. Wire binary gates to block the score (return 0.0 on failure). Add simplicity/complexity metric."
+status: discovered
+tags:
+  - scoring
+  - experiment-history
+  - binary-gates
+  - autoresearch
+coverage_assessment: full_review

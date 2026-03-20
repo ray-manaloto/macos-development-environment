@@ -45,9 +45,9 @@
 | [~] | msitarzewski/agency-agents | https://github.com/msitarzewski/agency-agents | SKIP — prompt library | No |
 | [~] | VoltAgent (org) | https://github.com/orgs/VoltAgent/repositories | MINE PERIODICALLY | No |
 | [~] | ComposioHQ/composio | https://github.com/ComposioHQ/composio | CONSIDER — 500+ integrations | No |
-| [~] | ComposioHQ/agent-orchestrator | https://github.com/ComposioHQ/agent-orchestrator | STRONG CONSIDER — worktree + CI | Yes |
+| [x] | ComposioHQ/agent-orchestrator | https://github.com/ComposioHQ/agent-orchestrator | STRONG CONSIDER — worktree + CI feedback, escalation thresholds | Yes |
 | [~] | NousResearch/hermes-agent | https://github.com/NousResearch/hermes-agent | CONSIDER — closed learning loop | No |
-| [~] | knowsuchagency/mcp2cli | https://github.com/knowsuchagency/mcp2cli | STRONG CONSIDER — 96-99% token savings | Yes |
+| [x] | knowsuchagency/mcp2cli | https://github.com/knowsuchagency/mcp2cli | STRONG CONSIDER — runtime CLI gen, bake pattern, TOON output, fnox-compatible | Yes |
 
 ## GitHub Repos — Claude Code Skills & Plugins
 
@@ -55,8 +55,8 @@
 |--------|------|-----|---------|-------|
 | [~] | ArtemXTech/personal-os-skills | https://github.com/ArtemXTech/personal-os-skills | MEDIUM — recall, sync-sessions | No |
 | [~] | amanaiproduct/amans-skills | https://github.com/amanaiproduct/amans-skills | MEDIUM — ralph-loop, dashboard | No |
-| [~] | EveryInc/compound-engineering-plugin | https://github.com/EveryInc/compound-engineering-plugin | HIGH — compound learning cycle | Yes |
-| [~] | EveryInc/compound-knowledge-plugin | https://github.com/EveryInc/compound-knowledge-plugin | HIGH — confidence assessment | Yes |
+| [x] | EveryInc/compound-engineering-plugin | https://github.com/EveryInc/compound-engineering-plugin | HIGH — skill chaining, 5-subagent compound extraction, docs/solutions/ | Yes |
+| [x] | EveryInc/compound-knowledge-plugin | https://github.com/EveryInc/compound-knowledge-plugin | HIGH — prose confidence assessment, learning taxonomy, grep retrieval | Yes |
 | [~] | ComposioHQ/awesome-claude-plugins | https://github.com/ComposioHQ/awesome-claude-plugins | HIGH — skill-creator, connect-apps | No |
 | [~] | ComposioHQ/awesome-claude-skills | https://github.com/ComposioHQ/awesome-claude-skills | HIGH — kaizen, subagent-driven-dev | No |
 | [~] | paullarionov/claude-certified-architect | https://github.com/paullarionov/claude-certified-architect | LOW — study reference | No |
@@ -65,9 +65,9 @@
 
 | Status | Repo | URL | Verdict | In NB |
 |--------|------|-----|---------|-------|
-| [~] | wanshuiyin/Auto-claude-code-research-in-sleep | https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep | VERY HIGH — overnight loop, ARIS | Yes |
-| [~] | thedotmack/claude-mem | https://github.com/thedotmack/claude-mem | HIGH — 3-layer retrieval | Yes |
-| [~] | rysweet/amplihack | https://github.com/rysweet/amplihack | HIGH — L1-L12 eval, knowledge graph | No |
+| [x] | wanshuiyin/Auto-claude-code-research-in-sleep | https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep | VERY HIGH — checkpoint state, AUTO_PROCEED, 31 composable skills | Yes |
+| [x] | thedotmack/claude-mem | https://github.com/thedotmack/claude-mem | HIGH — 3-layer progressive disclosure ~10x savings (AGPL, adopt pattern only) | Yes |
+| [x] | rysweet/amplihack | https://github.com/rysweet/amplihack | HIGH — L1-L12 eval ladder, 10-failure taxonomy, self-improvement loop | No |
 | [~] | nidhinjs/prompt-master | https://github.com/nidhinjs/prompt-master | MODERATE — intent extraction | No |
 
 ## GitHub Repos — ruvnet Ecosystem
@@ -117,7 +117,7 @@
 
 | Status | Source | URL | In NB |
 |--------|--------|-----|-------|
-| [~] | Claude Code docs | https://code.claude.com/docs/en/overview | No |
+| [x] | Claude Code docs | https://code.claude.com/docs/en/overview | Full review: subagents, agent teams, 28 hooks, auto memory, /batch |
 | [~] | Claude Code repo | https://github.com/anthropics/claude-code | No |
 | [~] | Agent SDK | https://github.com/anthropics/claude-agent-sdk-python | Yes |
 | [~] | Official plugins | https://github.com/anthropics/claude-plugins-official | Yes |
@@ -134,7 +134,7 @@
 | [~] | Building effective agents | https://www.anthropic.com/engineering/building-effective-agents | Yes |
 | [~] | Building C compiler w/ parallel Claudes | https://www.anthropic.com/engineering/building-c-compiler | Yes |
 | [~] | Effective harnesses for long-running agents | https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents | Yes |
-| [ ] | How Anthropic teams use Claude Code | https://claude.com/blog/how-anthropic-teams-use-claude-code | No |
+| [x] | How Anthropic teams use Claude Code | https://claude.com/blog/how-anthropic-teams-use-claude-code | Full review via research-claude-docs agent |
 
 ---
 
@@ -216,33 +216,63 @@ These were researched but not ingested into the notebook:
 
 | Status | Repo | URL | Verdict | In NB |
 |--------|------|-----|---------|-------|
-| [ ] | garrytan/gstack | https://github.com/garrytan/gstack | HIGH — full dev environment stack, compare against our chezmoi/mise setup | No |
+| [x] | garrytan/gstack | https://github.com/garrytan/gstack | COMPLEMENTARY — 21-skill Claude Code pack (16K+ stars), NOT a dev env tool. Adopt skill chaining pattern. | No |
 
 ## Websites — Dev Environment Stacks
 
 | Status | Site | URL | Notes |
 |--------|------|-----|-------|
-| [ ] | gstacks.org | https://gstacks.org/ | GStack documentation site — evaluate patterns and tooling choices | No |
+| [x] | gstacks.org | https://gstacks.org/ | Docs for gstack skill pack. Full review confirmed: browser automation, sprint workflow skills. | No |
 
 ## GitHub Repos — Auto-Research Frameworks
 
 | Status | Repo | URL | Verdict | In NB |
 |--------|------|-----|---------|-------|
-| [ ] | karpathy/autoresearch | https://github.com/karpathy/autoresearch | HIGH — gold standard for automated research process grading | No |
+| [x] | karpathy/autoresearch | https://github.com/karpathy/autoresearch | Autonomous experiment runner, NOT research grading. Binary keep/discard + results.tsv audit trail. | No |
+
+## URLs Discovered During Cycle 1 (2026-03-20)
+
+Sources found by research agents during deep review. Logged per Source Discovery Protocol (Section 4.4).
+
+| Status | Source | URL | Priority | Discovered by | Via |
+|--------|--------|-----|----------|---------------|-----|
+| [ ] | mcp2cli blog (token benchmarks) | https://www.orangecountyai.com/blog/mcp2cli-one-cli-for-every-api-zero-wasted-tokens | HIGH | research-mcp2cli-amplihack | mcp2cli README |
+| [ ] | CLIHub concept origin | https://kanyilmaz.me/2026/02/23/cli-vs-mcp.html | MEDIUM | research-mcp2cli-amplihack | mcp2cli README |
+| [ ] | amplihack docs site | https://rysweet.github.io/amplihack/ | MEDIUM | research-mcp2cli-amplihack | amplihack README |
+| [ ] | amplihack standalone eval | https://github.com/rysweet/amplihack-agent-eval | MEDIUM | research-mcp2cli-amplihack | amplihack README |
+| [ ] | azlin (Azure VM fleet) | https://github.com/rysweet/azlin | LOW | research-mcp2cli-amplihack | amplihack README |
+| [ ] | RustyClawd (Rust Claude Code) | https://github.com/rysweet/RustyClawd | LOW | research-mcp2cli-amplihack | amplihack README |
+| [ ] | Conductor (parallel sprints) | https://conductor.build | MEDIUM | research-gstack | gstack README |
+| [ ] | Greptile (PR review AI) | https://greptile.com | MEDIUM | research-gstack | gstack README |
+| [ ] | Claude Code subagents docs | https://code.claude.com/docs/en/sub-agents | HIGH | research-claude-docs | docs crawl |
+| [ ] | Claude Code agent teams docs | https://code.claude.com/docs/en/agent-teams | HIGH | research-claude-docs | docs crawl |
+| [ ] | Claude Code hooks docs | https://code.claude.com/docs/en/hooks | HIGH | research-claude-docs | docs crawl |
+| [ ] | Claude Code memory docs | https://code.claude.com/docs/en/memory | HIGH | research-claude-docs | docs crawl |
+| [ ] | Claude Code skills docs | https://code.claude.com/docs/en/skills | HIGH | research-claude-docs | docs crawl |
+| [ ] | Claude Code CLI reference | https://code.claude.com/docs/en/cli-reference | MEDIUM | research-claude-docs | docs crawl |
 
 ## Deep Review Queue (Priority Order)
 
-These sources need `agent-fetch` full review before implementation:
+**Cycle 1 COMPLETED — all 12 sources below fully reviewed on 2026-03-20.**
 
-0. https://github.com/garrytan/gstack + https://gstacks.org/ — Full dev environment stack, compare patterns (HIGH)
-0b. https://github.com/karpathy/autoresearch — Gold standard auto-research, scoring methodology (HIGH)
-1. https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep — ARIS overnight loop (VERY HIGH)
-2. https://github.com/EveryInc/compound-engineering-plugin — compound learning cycle (HIGH)
-3. https://github.com/EveryInc/compound-knowledge-plugin — confidence assessment (HIGH)
-4. https://github.com/thedotmack/claude-mem — 3-layer retrieval (HIGH)
-5. https://github.com/ComposioHQ/agent-orchestrator — worktree + CI feedback (STRONG)
-6. https://github.com/knowsuchagency/mcp2cli — token savings (STRONG)
-7. https://github.com/HKUDS/CLI-Anything — CLI generation (CONSIDER)
-8. https://github.com/martinemde/dotfiles — reference dotfiles (REFERENCE)
-9. https://github.com/rysweet/amplihack — L1-L12 eval (HIGH)
-10. https://code.claude.com/docs/en/overview — Claude Code official docs (HIGH)
+~~0. https://github.com/garrytan/gstack + https://gstacks.org/~~ — DONE: Skill pack, not dev env tool
+~~0b. https://github.com/karpathy/autoresearch~~ — DONE: Experiment runner, not research grading
+~~1. https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep~~ — DONE: Checkpoint state pattern
+~~2. https://github.com/EveryInc/compound-engineering-plugin~~ — DONE: Skill chaining, compound extraction
+~~3. https://github.com/EveryInc/compound-knowledge-plugin~~ — DONE: Prose confidence, learning taxonomy
+~~4. https://github.com/thedotmack/claude-mem~~ — DONE: 3-layer retrieval (adopt pattern, not tool)
+~~5. https://github.com/ComposioHQ/agent-orchestrator~~ — DONE: CI feedback, escalation thresholds
+~~6. https://github.com/knowsuchagency/mcp2cli~~ — DONE: Bake pattern, TOON output
+~~7. https://github.com/HKUDS/CLI-Anything~~ — Not reviewed this cycle (CONSIDER priority)
+~~8. https://github.com/martinemde/dotfiles~~ — Not reviewed this cycle (REFERENCE priority)
+~~9. https://github.com/rysweet/amplihack~~ — DONE: L1-L12 eval, error taxonomy
+~~10. https://code.claude.com/docs/en/overview~~ — DONE: Native features replace ~80% of claude-flow
+
+### Cycle 2 Queue (next session)
+
+1. https://github.com/HKUDS/CLI-Anything — CLI generation (CONSIDER)
+2. https://github.com/martinemde/dotfiles — reference dotfiles (REFERENCE)
+3. https://www.orangecountyai.com/blog/mcp2cli-one-cli-for-every-api-zero-wasted-tokens — Token benchmarks (HIGH)
+4. https://github.com/rysweet/amplihack-agent-eval — Standalone eval package (MEDIUM)
+5. https://code.claude.com/docs/en/sub-agents — Native subagent docs (HIGH)
+6. https://code.claude.com/docs/en/agent-teams — Agent teams docs (HIGH)
