@@ -205,7 +205,83 @@ Phase 1 focuses on GitHub + official docs + YouTube + NotebookLM (all have well-
 5. PASS to Layer 2 for synthesis
 ```
 
-### 4.3 Version Tracking
+### 4.3 Agent Research Toolkit (MANDATORY for all research agents)
+
+Every research agent MUST use these tools — not WebFetch (which truncates) or ad-hoc file writes.
+
+#### Fetching Content
+
+| Tool | When to Use | Why |
+|------|------------|-----|
+| `agent-fetch` (via Bash: `npx agent-fetch "<url>" --json`) | **Primary** — any URL that needs full text | Returns complete article with structure, 7 extraction strategies, browser impersonation. WebFetch truncates. |
+| `agent-fetch crawl "<url>" --json` | Documentation sites — crawl all pages | Follows links, depth control, same-origin safety |
+| `notebooklm source add "<url>"` | Adding to NotebookLM for synthesis | NotebookLM indexes full content for cited Q&A |
+| `notebooklm source add-research "query" --mode deep` | Discovery — find sources on a topic | NotebookLM searches web, returns relevant sources |
+| `yt-dlp` (needs adding to mise) | YouTube transcripts | Extracts captions for full video content |
+
+**Anti-pattern:** Never use WebFetch for research content extraction. It summarizes and truncates, losing the detail that makes findings actionable.
+
+#### Taking Notes (Provenance Records + Second Brain)
+
+Research agents MUST capture findings in TWO forms:
+
+1. **Provenance Records** (machine-readable, for the improvement engine):
+   - Written to `docs/research/trail/findings/` as YAML
+   - Include: source URL, timestamp, tool versions, confidence, finding type
+   - These feed Layer 2 synthesis and Layer 3 improvement scoring
+
+2. **Second Brain capture** (human-readable, for knowledge persistence):
+   - Use the second-brain skill's capture workflow: findings go to the Obsidian vault inbox
+   - Agent calls: "capture this: [finding summary with source URL]"
+   - Processed during inbox triage into Projects/Areas/Resources/Permanent Notes
+   - This ensures findings survive even if the trail adapter backend changes
+
+#### Consolidation Pattern
+
+The consolidation agent receives all findings from a research cycle and:
+
+```
+1. LOAD all new Provenance Records from docs/research/trail/findings/
+2. QUERY NotebookLM notebooks for cross-source synthesis:
+   notebooklm ask "What patterns emerge across these new sources?
+   What contradicts existing knowledge?" --json
+3. CONFIDENCE SCORE each finding (confirmed/probable/speculative)
+4. GAP ANALYSIS: Compare findings against current project state
+   (run `uv run mde-py validate --all` to get current baseline)
+5. SAVE consolidated findings:
+   - Machine-readable: docs/research/trail/synthesis/YYYY-MM-DD.yaml
+   - Human-readable: second-brain capture to vault
+   - NotebookLM: notebooklm ask "..." --save-as-note
+6. PASS confirmed improvements to Layer 3
+```
+
+#### Deep Review Protocol (ensuring full coverage, not skimming)
+
+For sources that need thorough review (not just a README skim):
+
+```
+1. FETCH full content: npx agent-fetch "<url>" --json
+2. CHECK completeness: Does the JSON output contain the full article?
+   If textContent length < 1000 chars for a substantial source → re-fetch with --preset
+3. For GitHub repos: Also fetch key files individually
+   - README.md (already in initial fetch)
+   - SKILL.md or CLAUDE.md (agent-fetch the raw URL)
+   - docs/ directory (agent-fetch crawl "<repo-url>/tree/main/docs")
+4. For YouTube: Extract transcript via yt-dlp, add full transcript to NotebookLM
+5. SUMMARIZE with explicit coverage checklist:
+   - What does it do? (confirmed via actual content, not inferred)
+   - Key features relevant to our use case? (cited from source text)
+   - What we should adopt? (with specific evidence from the content)
+   - What we're missing? (gaps identified by reading, not assumed)
+6. FLAG if content was truncated or incomplete — create a follow-up task
+```
+
+**Quality gate:** Each research agent must include a `coverage_assessment` in its output:
+- `full_review`: Read complete content, all key sections analyzed
+- `partial_review`: Some sections skipped (list which and why)
+- `skim_only`: Only README/summary — needs deep review follow-up
+
+### 4.4 Version Tracking
 
 Every research cycle stamps tool versions:
 
@@ -619,6 +695,8 @@ metrics:
 The skill roster is mutable — research may discover better existing skills or reveal that a skill should be split/merged.
 
 ## 12. Research Findings — Tools Evaluated
+
+**Coverage note:** The research rounds in this brainstorming session used WebFetch (truncating) and skimmed READMEs. A deep review round using `agent-fetch` + `notebooklm source add` should be run for all high-priority sources before implementation begins. Each source should be re-evaluated with `coverage_assessment: full_review`.
 
 ### 12.1 Agent Orchestration
 
