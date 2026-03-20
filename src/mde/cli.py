@@ -95,7 +95,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _add_statusline_subparsers(sub: argparse._SubParsersAction) -> None:  # type: ignore[type-arg]
+def _add_statusline_subparsers(sub: argparse._SubParsersAction) -> None:
     """Register statusline subcommands."""
     sl_p = sub.add_parser("statusline", help="Multi-agent statusline renderer")
     sl_sub = sl_p.add_subparsers(dest="statusline_action")
