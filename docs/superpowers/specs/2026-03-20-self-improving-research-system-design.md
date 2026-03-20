@@ -281,7 +281,38 @@ For sources that need thorough review (not just a README skim):
 - `partial_review`: Some sections skipped (list which and why)
 - `skim_only`: Only README/summary — needs deep review follow-up
 
-### 4.4 Version Tracking
+### 4.4 Source Discovery Protocol (MANDATORY for all agents)
+
+When an agent encounters ANY new URL during research (linked from a README, mentioned in a video transcript, referenced in a blog post, discovered via GitHub trending), it MUST:
+
+```
+1. LOG IMMEDIATELY — append to docs/research/source-catalog.md:
+   | [ ] | <short description> | <url> | <category> | Discovered by <agent-name> via <parent-source> |
+
+2. CLASSIFY priority:
+   - HIGH: Directly relevant to current research domain + actively maintained
+   - MEDIUM: Tangentially relevant or relevant to a different domain
+   - LOW: Interesting but not clearly actionable
+   - SKIP: Irrelevant (log with reason, don't investigate further)
+
+3. For HIGH priority: Add to the Deep Review Queue at bottom of catalog
+4. For MEDIUM: Log only — future research cycles will pick it up
+5. For LOW/SKIP: Log with reason — never silently discard
+
+NEVER skip logging because "it's probably not relevant" or "I'll come
+back to it." The whole point is that future agents can re-evaluate
+what this agent thought was low priority.
+```
+
+**Why this matters:** In this brainstorming session, research agents skimmed 19 repos and found links to dozens more (VoltAgent's awesome-lists alone reference 500+ skills). Without a protocol, those disappear. With it, each research cycle expands the catalog — and the catalog IS the memory of what the system knows about.
+
+**Anti-patterns:**
+- "I found 12 interesting links but only reported 3" — log all 12
+- "This repo links to 5 dependencies but they're just libraries" — log them, classify as LOW
+- "I already evaluated a similar tool" — log it anyway with "see also: <similar tool>"
+- "The video mentioned a tool but I couldn't find the URL" — log the tool name with `[ ] <tool-name> | URL unknown — mentioned in <video-title> at ~<timestamp> | needs-url`
+
+### 4.5 Version Tracking
 
 Every research cycle stamps tool versions:
 
