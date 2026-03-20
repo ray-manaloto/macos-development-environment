@@ -185,18 +185,12 @@ uv run datamodel-codegen \
   --input src/mde/statusline/statusline-stdin.schema.json \
   --input-file-type jsonschema \
   --output src/mde/statusline/models.py \
-  --output-model-type pydantic_v2.BaseModel \
+  --output-model-type typing.TypedDict \
   --target-python-version 3.12 \
-  --use-annotated \
   --use-union-operator \
-  --field-constraints \
-  --use-default-kwarg \
-  --collapse-root-models \
   --strict-nullable \
   --use-one-literal-as-default \
   --enum-field-as-literal all \
-  --capitalise-enum-members \
-  --allow-extra-fields \
   --formatters ruff-format ruff-check
 """
 
