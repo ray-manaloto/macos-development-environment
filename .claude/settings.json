@@ -72,5 +72,8 @@
     "shell-scripting@claude-code-workflows": true,
     "developer-essentials@claude-code-workflows": true,
     "conductor@claude-code-workflows": true
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   }
 }
