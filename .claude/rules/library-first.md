@@ -9,3 +9,5 @@
 - For async file I/O: check if anyio (already a dep) provides what you need before adding aiofiles
 - Document WHY a library was chosen or rejected in commit messages
 - When adding a new dependency, declare it in pyproject.toml per declarative-config policy
+- ALWAYS search skills.sh and awesome-claude-plugins/skills before creating new skills or agents
+- For research: use agent-fetch, notebooklm CLI, second-brain skill — don't build custom tools
