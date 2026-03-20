@@ -2,9 +2,15 @@ amends "package://github.com/jdx/hk/releases/download/v1.38.0/hk@1.38.0#/Config.
 import "package://github.com/jdx/hk/releases/download/v1.38.0/hk@1.38.0#/Builtins.pkl"
 
 local linters = new Mapping<String, Step> {
-    ["ruff"] = Builtins.ruff
-    ["ruff_format"] = Builtins.ruff_format
-    ["ty"] = Builtins.ty
+    ["ruff"] = (Builtins.ruff) {
+        exclude = List(".agents/skills/**")
+    }
+    ["ruff_format"] = (Builtins.ruff_format) {
+        exclude = List(".agents/skills/**")
+    }
+    ["ty"] = (Builtins.ty) {
+        exclude = List(".agents/skills/**")
+    }
     ["shellcheck"] = Builtins.shellcheck
 }
 

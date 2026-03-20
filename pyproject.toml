@@ -22,6 +22,7 @@ build-backend = "uv_build"
 target-version = "py312"
 line-length = 100
 src = ["src"]
+extend-exclude = [".agents/skills"]
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -82,6 +83,7 @@ python-version = "3.12"
 
 [tool.ty.src]
 include = ["src/mde"]
+exclude = [".agents/skills"]
 
 [tool.ty.rules]
 possibly-missing-attribute = "error"

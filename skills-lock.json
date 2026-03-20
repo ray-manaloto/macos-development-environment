@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "skills": {
+    "agent-fetch": {
+      "source": "teng-lin/agent-fetch",
+      "sourceType": "github",
+      "computedHash": "9c237e9231c6009b50887321bd3e3ab602e33402e83c80c5cfdd28af47a91282"
+    },
+    "notebooklm": {
+      "source": "teng-lin/notebooklm-py",
+      "sourceType": "github",
+      "computedHash": "3d924919a5fb5cfe9623297e42f9f99be50ac84938fef360ea2a6b0ca0ce5019"
+    },
+    "second-brain": {
+      "source": "sean-esk/second-brain-gtd",
+      "sourceType": "github",
+      "computedHash": "7eb04b39683bb902ad854dcf1d2685392946ec0f8f51616f38cedb33a92c0084"
+    }
+  }
+}
