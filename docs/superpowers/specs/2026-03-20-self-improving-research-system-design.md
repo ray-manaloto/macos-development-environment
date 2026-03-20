@@ -708,43 +708,41 @@ Per the agreed approach (Approach C, parallel tracks):
 
 ## 16. NotebookLM Integration Issues & Remediation
 
-### 16.1 Current State Diagnosis
+### 16.1 Current State (Resolved)
 
-**Two separate packages with incompatible auth stores:**
+**Single tool: `notebooklm-py` (teng-lin) v0.3.4**
 
-| | CLI (`notebooklm`) | MCP (`nlm` / `notebooklm-mcp`) |
-|---|---|---|
-| Package | `notebooklm-py` v0.3.4 | `notebooklm-mcp-cli` v0.5.2 |
-| Auth location | `~/.notebooklm/storage_state.json` (MISSING) | `~/.notebooklm-mcp-cli/profiles/default/cookies.json` |
-| Auth method | Playwright browser login | Chrome DevTools Protocol |
-| Status | **BROKEN** — Playwright not installed in pipx venv | Works after `nlm login` but sessions expire quickly |
-| Installed via | mise pipx backend (global) | mise pipx backend (global) |
+| Property | Value |
+|----------|-------|
+| Package | `notebooklm-py` with `extras = "browser"` |
+| Auth location | `~/.notebooklm/storage_state.json` |
+| Auth method | Playwright browser login (`notebooklm login`) |
+| Auth TTL | 2-4 weeks (Google cookie expiry), auto CSRF refresh |
+| Installed via | mise pipx backend, declared in global config |
+| CLI binary | `notebooklm` |
+| Env var | `NOTEBOOKLM_HOME=~/.notebooklm` (set in mise `[env]`) |
 
-**Neither package is declared in `.mise.toml`** — violates mise-first policy.
+**Previous confusion:** A second package (`notebooklm-mcp-cli` by jacob-bd) was also installed, providing `nlm` CLI and `notebooklm-mcp` MCP server with a separate auth store. This has been **removed** — all NotebookLM access goes through `notebooklm` CLI via Bash.
 
-### 16.2 Issues Found
+### 16.2 Issues Found and Resolved
 
-1. **CLI auth broken**: `notebooklm login` requires Playwright which is not installed in the CLI's pipx venv. Fix: inject playwright into the venv or use `NOTEBOOKLM_AUTH_JSON` to share auth from MCP
-2. **MCP auth expires rapidly**: `nlm login` works but sessions expire within minutes. `session_id` is empty in metadata, suggesting incomplete session capture
-3. **source_add fails silently**: MCP `source_add` returns "Could not add url source" with no diagnostic details. Need `NOTEBOOKLM_LOG_LEVEL=DEBUG` for root cause
-4. **Auth stores don't share**: CLI expects `~/.notebooklm/storage_state.json`, MCP uses `~/.notebooklm-mcp-cli/profiles/default/cookies.json`. No cross-pollination
-5. **Not project-owned**: Neither tool is in `.mise.toml` — global-only install
-6. **Shared context.json unsafe for parallel agents**: CLI stores notebook context in `~/.notebooklm/context.json` — concurrent agents overwrite each other. Must use explicit `-n <notebook_id>` flags
+| Issue | Root Cause | Resolution |
+|-------|-----------|------------|
+| Two tools with separate auth | `notebooklm-mcp-cli` installed alongside `notebooklm-py` | Removed `notebooklm-mcp-cli` entirely |
+| CLI Playwright missing | `extras = "browser"` not set in mise config | Added `extras = "browser"` to pipx config |
+| MCP auth expired rapidly | `notebooklm-mcp-cli` used Chrome DevTools with short-lived cookies | N/A — removed package |
+| Not project-owned | Tools not in mise config | Added to global mise config via chezmoi |
+| No status check | No way to verify auth | Added `mde:notebooklm:status` mise task |
 
-### 16.3 Remediation Plan
+### 16.3 Access Pattern for Research System
 
-**Immediate fixes:**
-- Install playwright in notebooklm-py's pipx venv: `pipx inject notebooklm-py playwright && pipx runpip notebooklm-py run playwright install chromium`
-- OR: Bridge auth by copying MCP cookies to CLI format (`storage_state.json`)
-- Add both tools to `.mise.toml` per mise-first policy
-- Always use explicit `--notebook <id>` / `-n <id>` flags, never rely on `context.json`
-
-**For our research system:**
-- Prefer MCP tools (`mcp__notebooklm__*`) for programmatic access within Claude Code
-- Use CLI via Bash only for operations MCP doesn't support
-- Add `--retry 3` to all generate commands for rate limit handling
-- Use `--json` output consistently for automation parsing
-- For parallel agent workflows: set unique `NOTEBOOKLM_HOME` per agent OR always pass notebook IDs explicitly
+- **All NotebookLM operations** use `notebooklm` CLI via Bash
+- **Auth refresh:** `mise run mde:notebooklm:login` (interactive, every 2-4 weeks)
+- **Status check:** `mise run mde:notebooklm:status`
+- **Parallel safety:** Always pass notebook IDs explicitly, never rely on `context.json`
+- **Rate limits:** Use `--retry 3` on generate commands
+- **Automation parsing:** Use `--json` output consistently
+- **Token optimization:** `mcp2cli` available for future MCP bridge if needed
 
 ### 16.4 Features We Should Be Using But Aren't
 
@@ -864,17 +862,10 @@ This decision should itself be a research output of the system — Layer 1 shoul
 
 ## 18. Open Questions
 
-1. Best storage backend for Trail Adapter — research should determine this
-2. Cross-model review implementation — which model pairs work best?
-3. Obsidian CLI vs REST API vs filesystem — need capability evaluation
-4. agentskills.io standard — worth adopting for skill interoperability?
-5. Composio Rube MCP — worth the dependency for 500+ service integrations?
-6. **claude-flow vs native Claude Code features** — which orchestration approach is better for this project?
-7. **NotebookLM CLI auth fix** — install playwright extra or bridge auth stores?
-8. **Agent teams (experimental)** — stable enough for production use?
-
 1. **Best storage backend for Trail Adapter** — research should determine this, not premature decision
 2. **Cross-model review implementation** — which model pairs work best for adversarial review?
 3. **Obsidian CLI vs REST API vs filesystem** — need to evaluate CLI capabilities for our specific use cases
 4. **agentskills.io standard** — worth adopting for skill interoperability?
 5. **Composio Rube MCP** — worth the dependency for 500+ service integrations?
+6. **claude-flow vs native Claude Code features** — which orchestration approach is better for this project?
+7. **Agent teams (experimental)** — stable enough for production use?
