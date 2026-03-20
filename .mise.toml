@@ -86,6 +86,18 @@ run = "uv run mde-py drift check"
 description = "Classify and migrate legacy global tool installs into the mise ownership model"
 run = "scripts/mde-migrate-to-mise.sh global-tools"
 
+[tasks."mde:research:catalog"]
+description = "Show research source catalog summary"
+run = "uv run mde-py research catalog"
+
+[tasks."mde:research:score"]
+description = "Calculate current improvement score"
+run = "uv run mde-py research score"
+
+[tasks."mde:research:status"]
+description = "Show research pipeline status"
+run = "uv run mde-py research status"
+
 [tasks."mde:research:autoimprove"]
 description = "Run the bounded multi-agent autoresearch loop for host setup and tooling improvements"
 run = "scripts/mde-research-autoimprove.sh"

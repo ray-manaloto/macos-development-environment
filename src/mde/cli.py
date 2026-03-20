@@ -96,6 +96,11 @@ def _build_parser() -> argparse.ArgumentParser:
     hooks_sub.add_parser("log-agent-event", help="SubagentStarted/Completed logger")
     hooks_sub.add_parser("guard-install", help="PreToolUse install guard")
 
+    # research
+    from mde.research.cli import add_subparsers as _add_research_subparsers
+
+    _add_research_subparsers(sub)
+
     # statusline
     _add_statusline_subparsers(sub)
 
@@ -276,6 +281,12 @@ def _cmd_hooks(args: argparse.Namespace) -> int:
     return 1
 
 
+def _cmd_research(args: argparse.Namespace) -> int:
+    from mde.research.cli import dispatch as research_dispatch
+
+    return research_dispatch(args)
+
+
 def _cmd_statusline(args: argparse.Namespace) -> int:
     action = args.statusline_action
     handlers: dict[str, tuple[str, str]] = {
@@ -315,5 +326,6 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "refs": _cmd_refs,
     "skill": _cmd_skill,
     "hooks": _cmd_hooks,
+    "research": _cmd_research,
     "statusline": _cmd_statusline,
 }

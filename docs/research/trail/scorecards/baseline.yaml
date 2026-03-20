@@ -1,0 +1,21 @@
+cycle_id: "baseline"
+timestamp: "2026-03-20T10:28:32Z"
+metrics:
+  validation_pass_rate: 0.997  # 0 errors, 1 warning out of 299 files
+  validation_warning_count: 1
+  brew_mise_duplicates: 0
+  chezmoi_reproducible: false  # chezmoi verify fails (returncode 1)
+  test_coverage: 0  # no coverage measurement configured yet
+  test_pass_rate: 0.984  # 119 passed, 2 failed, 1 skipped out of 122
+  test_failures: 2  # test_chezmoi_verify, test_claude_code_installed (mise trust)
+  lint_violations: 0  # ruff check: All checks passed
+  total_sources: 0  # catalog not populated yet
+  stale_sources: 0
+  notebooks_active: 1
+  findings_this_cycle: 0
+  findings_actionable: 0
+  findings_applied: 0
+  findings_reverted: 0
+  agents_active: 0
+  token_cost_this_cycle: 0
+improvement_score: 0.300
