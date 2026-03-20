@@ -346,6 +346,180 @@ class TestStatuslineToggle:
             assert toggle.show_mode() == 0
 
 
+def _widget_config_json(**overrides: bool) -> str:
+    """Build widget config JSON with all widgets disabled except overrides."""
+    from mde.statusline.widget_toggle import ALL_WIDGETS
+
+    config = dict.fromkeys(ALL_WIDGETS, False)
+    config.update(overrides)
+    return json.dumps(config)
+
+
+class TestMetricsBarIntegration:
+    """Integration tests for metrics bar in the render pipeline."""
+
+    def test_mode_a_with_metrics_bar(self, tmp_path: object, capsys: object) -> None:
+        from mde.statusline import render, widget_toggle, widgets
+
+        state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
+        mode_file = tmp_path / "statusline-mode"  # type: ignore[operator]
+        mode_file.write_text("A\n")
+        config_file = tmp_path / "statusline-widgets.json"  # type: ignore[operator]
+        config_file.write_text(_widget_config_json(token_speed=True))
+        totals_file = tmp_path / "daily-totals.json"  # type: ignore[operator]
+
+        data: dict[str, object] = {
+            "model": {"display_name": "Opus"},
+            "cost": {"total_cost_usd": 1.23, "total_duration_ms": 60000},
+            "context_window": {
+                "used_percentage": 42,
+                "total_input_tokens": 30000,
+                "total_output_tokens": 0,
+            },
+        }
+        stdin = _make_stdin(data)
+        with (
+            patch.object(render, "_MODE_FILE", mode_file),
+            patch.object(render, "_AGENT_STATE_FILE", state_file),
+            patch.object(widget_toggle, "_WIDGET_CONFIG_FILE", config_file),
+            patch.object(widgets, "_DAILY_TOTALS_FILE", totals_file),
+            patch.object(sys, "stdin", stdin),
+        ):
+            assert render.render_statusline() == 0
+
+        captured = capsys.readouterr()  # type: ignore[union-attr]
+        assert "$1.23" in captured.out
+        assert "tok/s" in captured.out
+        assert " | " in captured.out
+
+    def test_mode_c_with_metrics_bar(self, tmp_path: object, capsys: object) -> None:
+        from mde.statusline import render, widget_toggle, widgets
+
+        state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
+        mode_file = tmp_path / "statusline-mode"  # type: ignore[operator]
+        mode_file.write_text("C\n")
+        config_file = tmp_path / "statusline-widgets.json"  # type: ignore[operator]
+        config_file.write_text(_widget_config_json(token_speed=True))
+        totals_file = tmp_path / "daily-totals.json"  # type: ignore[operator]
+
+        data: dict[str, object] = {
+            "model": {"display_name": "Opus"},
+            "cost": {"total_cost_usd": 2.50, "total_duration_ms": 60000},
+            "context_window": {
+                "used_percentage": 65,
+                "total_input_tokens": 30000,
+                "total_output_tokens": 0,
+            },
+        }
+        stdin = _make_stdin(data)
+        with (
+            patch.object(render, "_MODE_FILE", mode_file),
+            patch.object(render, "_AGENT_STATE_FILE", state_file),
+            patch.object(widget_toggle, "_WIDGET_CONFIG_FILE", config_file),
+            patch.object(widgets, "_DAILY_TOTALS_FILE", totals_file),
+            patch.object(sys, "stdin", stdin),
+        ):
+            assert render.render_statusline() == 0
+
+        captured = capsys.readouterr()  # type: ignore[union-attr]
+        lines = captured.out.strip().split("\n")
+        assert len(lines) >= 2
+        assert "tok/s" in lines[-1]
+
+    def test_mode_a_all_widgets_disabled(self, tmp_path: object, capsys: object) -> None:
+        from mde.statusline import render, widget_toggle, widgets
+
+        state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
+        mode_file = tmp_path / "statusline-mode"  # type: ignore[operator]
+        mode_file.write_text("A\n")
+        config_file = tmp_path / "statusline-widgets.json"  # type: ignore[operator]
+        config_file.write_text(_widget_config_json())
+        totals_file = tmp_path / "daily-totals.json"  # type: ignore[operator]
+
+        data: dict[str, object] = {
+            "model": {"display_name": "Opus"},
+            "cost": {"total_cost_usd": 1.23},
+            "context_window": {"used_percentage": 42},
+        }
+        stdin = _make_stdin(data)
+        with (
+            patch.object(render, "_MODE_FILE", mode_file),
+            patch.object(render, "_AGENT_STATE_FILE", state_file),
+            patch.object(widget_toggle, "_WIDGET_CONFIG_FILE", config_file),
+            patch.object(widgets, "_DAILY_TOTALS_FILE", totals_file),
+            patch.object(sys, "stdin", stdin),
+        ):
+            assert render.render_statusline() == 0
+
+        captured = capsys.readouterr()  # type: ignore[union-attr]
+        assert "$1.23" in captured.out
+        assert "tok/s" not in captured.out
+
+    def test_4_tier_color_at_85_pct(self, tmp_path: object, capsys: object) -> None:
+        from mde.statusline import render, widget_toggle, widgets
+
+        state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
+        mode_file = tmp_path / "statusline-mode"  # type: ignore[operator]
+        mode_file.write_text("A\n")
+        config_file = tmp_path / "statusline-widgets.json"  # type: ignore[operator]
+        config_file.write_text(_widget_config_json())
+        totals_file = tmp_path / "daily-totals.json"  # type: ignore[operator]
+
+        data: dict[str, object] = {
+            "model": {"display_name": "Opus"},
+            "cost": {"total_cost_usd": 0},
+            "context_window": {"used_percentage": 85},
+        }
+        stdin = _make_stdin(data)
+        with (
+            patch.object(render, "_MODE_FILE", mode_file),
+            patch.object(render, "_AGENT_STATE_FILE", state_file),
+            patch.object(widget_toggle, "_WIDGET_CONFIG_FILE", config_file),
+            patch.object(widgets, "_DAILY_TOTALS_FILE", totals_file),
+            patch.object(sys, "stdin", stdin),
+        ):
+            assert render.render_statusline() == 0
+
+        captured = capsys.readouterr()  # type: ignore[union-attr]
+        assert "85%" in captured.out
+        assert "\033[38;5;208m" in captured.out  # Orange
+
+    def test_rate_limits_in_full_render(self, tmp_path: object, capsys: object) -> None:
+        from mde.statusline import render, widget_toggle, widgets
+
+        state_file = tmp_path / "agent-state.jsonl"  # type: ignore[operator]
+        mode_file = tmp_path / "statusline-mode"  # type: ignore[operator]
+        mode_file.write_text("A\n")
+        config_file = tmp_path / "statusline-widgets.json"  # type: ignore[operator]
+        config_file.write_text(_widget_config_json(rate_limits=True))
+        totals_file = tmp_path / "daily-totals.json"  # type: ignore[operator]
+
+        data: dict[str, object] = {
+            "model": {"display_name": "Opus"},
+            "cost": {"total_cost_usd": 1.00},
+            "context_window": {"used_percentage": 42},
+            "rate_limits": {
+                "five_hour": {
+                    "status": "allowed_warning",
+                    "utilization": 0.72,
+                    "resetsAt": 9999999999,
+                }
+            },
+        }
+        stdin = _make_stdin(data)
+        with (
+            patch.object(render, "_MODE_FILE", mode_file),
+            patch.object(render, "_AGENT_STATE_FILE", state_file),
+            patch.object(widget_toggle, "_WIDGET_CONFIG_FILE", config_file),
+            patch.object(widgets, "_DAILY_TOTALS_FILE", totals_file),
+            patch.object(sys, "stdin", stdin),
+        ):
+            assert render.render_statusline() == 0
+
+        captured = capsys.readouterr()  # type: ignore[union-attr]
+        assert "5h:72%" in captured.out
+
+
 class TestLogAgentEvent:
     """Tests for SubagentStart/SubagentStop hook using REAL Claude Code payloads."""
 
