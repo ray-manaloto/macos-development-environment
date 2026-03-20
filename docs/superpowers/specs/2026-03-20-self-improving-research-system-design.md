@@ -408,13 +408,38 @@ When a notebook reaches `split_threshold * source_limit`, the system creates a c
 
 **Not in initial implementation.** Deferred until the basic research pipeline is running and producing findings.
 
+#### Implementation Options (research needed — per Primary Mandate, find existing tools first)
+
+**Option A: Codex non-interactive mode** (https://developers.openai.com/codex/noninteractive)
+- OpenAI Codex can run headless as a CLI reviewer — no GUI needed
+- Claude Code agent produces recommendation → Codex CLI critiques it
+- True cross-model review (different model family = different blind spots)
+- Risk: dependency on OpenAI API + potential Claude Code context loss
+
+**Option B: Claude Code adversarial persona agents**
+- Create a Claude Code subagent with an adversarial system prompt
+- Same model but different persona ("You are a skeptical reviewer. Find flaws...")
+- Simpler setup, no external dependency, stays within Claude Code ecosystem
+- Risk: same-model self-play quality ceiling (the problem this is trying to solve)
+
+**Option C: GitAgent** (https://github.com/open-gitagent/gitagent)
+- Research whether GitAgent supports creating adversarial reviewer agents
+- CRITICAL: must not lose Claude Code native functionality (skills, hooks, memory, worktrees)
+- If GitAgent agents run outside Claude Code, they lose access to the entire skill ecosystem
+- Evaluate: does GitAgent complement Claude Code or replace it?
+
+**Option D: Hybrid — Claude Code primary + Codex adversarial reviewer only**
+- All work happens in Claude Code (preserving full functionality)
+- Only the review step calls out to Codex non-interactive mode
+- Minimal blast radius — one CLI call, not a framework swap
+
 When implemented, the pattern is:
-- Agent A produces a recommendation
-- Agent B is prompted: "Find flaws in this recommendation: [recommendation]. List specific risks with severity (LOW/MEDIUM/HIGH)."
+- Agent A (Claude Code) produces a recommendation
+- Agent B (Codex non-interactive OR adversarial-persona Claude subagent) critiques: "Find flaws in this recommendation. List specific risks with severity (LOW/MEDIUM/HIGH)."
 - If Agent B identifies any HIGH severity risks, the recommendation is blocked and flagged for human review
 - LOW/MEDIUM risks are logged in the trail but don't block
 
-Prevents the self-play quality ceiling where a single model validates its own bad ideas. Adopted from ARIS pattern.
+**IMPORTANT: Claude Code functionality preservation.** Any adversarial review tool MUST NOT replace Claude Code as the primary agent. Claude Code agents have access to skills, hooks, memory, worktrees, and the full plugin ecosystem. An external agent framework that doesn't integrate with these loses the entire infrastructure this project is built on. The adversarial reviewer should be a narrow, focused tool — not a platform swap.
 
 ### 5.4 Source Staleness Detection
 

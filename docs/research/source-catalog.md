@@ -199,6 +199,18 @@ These were researched but not ingested into the notebook:
 
 ---
 
+## GitHub Repos — Agent Frameworks & Adversarial Review
+
+| Status | Repo | URL | Verdict | In NB |
+|--------|------|-----|---------|-------|
+| [ ] | open-gitagent/gitagent | https://github.com/open-gitagent/gitagent | HIGH — agent creation framework, evaluate for Claude Code compatibility | No |
+
+## Docs & APIs — Adversarial Review Tools
+
+| Status | Source | URL | Notes |
+|--------|--------|-----|-------|
+| [ ] | Codex non-interactive mode | https://developers.openai.com/codex/noninteractive | Cross-model adversarial reviewer — no GUI needed |
+
 ## GitHub Repos — Auto-Research Frameworks
 
 | Status | Repo | URL | Verdict | In NB |
