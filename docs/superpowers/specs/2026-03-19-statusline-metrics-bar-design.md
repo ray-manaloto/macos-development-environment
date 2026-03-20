@@ -70,9 +70,18 @@ If all widgets are disabled, no metrics bar is appended — identical to current
 
 ### Schema Reference
 
-Canonical source: `https://code.claude.com/docs/en/statusline` (lags behind releases).
-Cross-referenced with: ccstatusline `StatusJSON.ts` Zod schema, v2.1.80 release notes.
-Track changes via: release notes at `https://github.com/anthropics/claude-code/releases`.
+**Primary sources (in order of authority):**
+
+1. **Official docs**: `https://code.claude.com/docs/en/statusline` — canonical but lags behind releases
+2. **Claude Agent SDK** (Python): `claude-agent-sdk` on PyPI — `claude_agent_sdk.types` defines `RateLimitInfo`, `HookInput`, etc. This is the authoritative type source for rate limits and hook events.
+3. **Claude Agent SDK** (TypeScript): `@anthropic-ai/claude-agent-sdk` on npm — `sdk.d.ts` exports `SDKRateLimitInfo`, `HookEvent`, etc.
+4. **Release notes**: `https://github.com/anthropics/claude-code/releases`
+5. **Docs index**: `https://code.claude.com/docs/llms.txt` (67 pages)
+6. **ccstatusline Zod schema**: `StatusJSON.ts` — community reference, tracks upstream closely
+
+**Important**: The statusline stdin JSON is NOT typed in the SDK — it's a CLI-to-shell pipe interface. The SDK streams `SDKRateLimitEvent` messages via its API; the statusline gets a different `rate_limits` object in its stdin JSON. We define our own Python types for the stdin schema, using the SDK types as reference for shared structures like rate limits.
+
+**SDK was renamed**: "Claude Code SDK" → "Claude Agent SDK". Old packages (`claude-code-sdk`, `@anthropic-ai/claude-code`) are deprecated.
 
 ### Full Schema
 
@@ -121,13 +130,17 @@ Track changes via: release notes at `https://github.com/anthropics/claude-code/r
   },
 
   "rate_limits": {
-    "five_hour": {
-      "used_percentage": "number",
-      "resets_at": "string (ISO 8601)"
+    "type": "object — UNCONFIRMED in stdin, inferred from SDK + release notes",
+    "note": "Field names may differ from SDK RateLimitInfo. Implementation must try multiple field names.",
+    "possible_shape_a (SDK-aligned)": {
+      "status": "allowed|allowed_warning|rejected",
+      "rate_limit_type": "five_hour|seven_day|seven_day_opus|seven_day_sonnet|overage",
+      "utilization": "number (0.0-1.0 fraction)",
+      "resets_at": "number (Unix timestamp)"
     },
-    "seven_day": {
-      "used_percentage": "number",
-      "resets_at": "string (ISO 8601)"
+    "possible_shape_b (statusline convention)": {
+      "five_hour": { "used_percentage": "number (0-100)", "resets_at": "string (ISO 8601)" },
+      "seven_day": { "used_percentage": "number (0-100)", "resets_at": "string (ISO 8601)" }
     }
   },
 
@@ -151,7 +164,7 @@ Track changes via: release notes at `https://github.com/anthropics/claude-code/r
 | `context_window.used_percentage` | May be `null` early in session |
 | `vim`, `agent`, `worktree` | Entirely absent when not applicable |
 | `rate_limits` | Absent on API-key plans; present on Claude.ai subscription plans |
-| `rate_limits` fields may have different names | **UNCONFIRMED** — field names inferred from release notes + ccstatusline API schema. Capture raw JSON to verify. |
+| `rate_limits` field structure | **UNCONFIRMED** — the SDK defines `RateLimitInfo` with `utilization` (0.0-1.0 fraction) and `resets_at` (Unix timestamp int). The statusline stdin may use different naming. Implementation must handle both SDK-style and statusline-convention field names. **Capture raw JSON to confirm before finalizing.** |
 
 ### Schema Validation Module
 
@@ -236,15 +249,26 @@ Each widget is a pure function: `(ctx: dict[str, object]) -> str`
 
 #### 7. rate_limits (NEW — v2.1.80)
 
-- **Input:** `rate_limits.five_hour.used_percentage`, `rate_limits.five_hour.resets_at`, `rate_limits.seven_day.used_percentage`, `rate_limits.seven_day.resets_at`
+- **Input:** Rate limit data from `rate_limits` field in stdin JSON
+- **SDK reference type:** `claude_agent_sdk.types.RateLimitInfo` — uses `utilization` (0.0-1.0), `resets_at` (Unix timestamp int), `rate_limit_type` (Literal), `status` (Literal)
 - **Output:** `"5h:42% 7d:15%"` — each color-coded with 4-tier thresholds
 - **Color tiers:** green (<50%), yellow (50-69%), orange (70-89%), red (90%+)
 - **Reset time:** When either window is >=70%, append relative countdown: `"5h:85% ↻2h13m 7d:15%"`
+- **Rate limit types (from SDK):** `five_hour`, `seven_day`, `seven_day_opus`, `seven_day_sonnet`, `overage`
+  - Display `five_hour` and the most relevant `seven_day*` variant for the current model
+  - Show `overage` status if present and `is_using_overage` is true
+- **Data extraction:** The stdin `rate_limits` field structure is unconfirmed. Implementation must try:
+  1. SDK-aligned: `rate_limits.utilization` (0.0-1.0) → multiply by 100 for display
+  2. Statusline-convention: `rate_limits.five_hour.used_percentage` (0-100)
+  3. Nested: `rate_limits.five_hour.utilization` (0.0-1.0)
+  - For `resets_at`: try `int` (Unix timestamp) first, then `str` (ISO 8601)
 - **Edge cases:**
   - `rate_limits` absent (API-key users) → widget returns empty string (suppressed)
-  - `rate_limits` field names differ from expected → log warning to stderr, suppress widget
+  - `rate_limits.status == "rejected"` → show `"5h:LIMIT"` in red
+  - `rate_limits.status == "allowed_warning"` → force orange/red color regardless of percentage
+  - Unknown rate_limit_type → skip that window
   - `resets_at` parsing failure → omit countdown, show percentage only
-- **Schema uncertainty:** The `rate_limits` field is confirmed in v2.1.80 release notes but NOT yet documented at code.claude.com. Field names (`five_hour`, `seven_day`, `used_percentage`, `resets_at`) are inferred from the Anthropic API response shape (`five_hour.utilization`, `seven_day.utilization`, `five_hour.resets_at`, `seven_day.resets_at`). The actual field may use `utilization` instead of `used_percentage`. **Implementation must handle both names.**
+- **Schema uncertainty:** The `rate_limits` field is confirmed in v2.1.80 release notes but NOT yet documented at code.claude.com. **Capture raw JSON from a live v2.1.80 session to confirm field names before finalizing implementation.** A capture script is prepared at `/tmp/capture-statusline.py`.
 
 ### Widget Suppression
 
@@ -312,11 +336,16 @@ def extract_all(data: dict[str, Any]) -> dict[str, Any]:
         "cache_create_tokens": _coerce_float(usage.get("cache_creation_input_tokens")),
         "input_tokens": _coerce_float(usage.get("input_tokens")),
 
-        # Rate limit fields (v2.1.80) — handle both possible field names
-        "rate_5h_pct": _coerce_float(five_h.get("used_percentage") or five_h.get("utilization")),
-        "rate_5h_resets_at": five_h.get("resets_at", ""),
-        "rate_7d_pct": _coerce_float(seven_d.get("used_percentage") or seven_d.get("utilization")),
-        "rate_7d_resets_at": seven_d.get("resets_at", ""),
+        # Rate limit fields (v2.1.80) — handle SDK-style and statusline-convention names
+        # SDK uses utilization (0.0-1.0), statusline may use used_percentage (0-100)
+        # SDK uses resets_at as Unix timestamp (int), statusline may use ISO 8601 (str)
+        "rate_5h_pct": _normalize_rate_pct(five_h),  # Always returns 0-100
+        "rate_5h_resets_at": five_h.get("resets_at"),  # int or str, handled downstream
+        "rate_5h_status": five_h.get("status", ""),
+        "rate_7d_pct": _normalize_rate_pct(seven_d),
+        "rate_7d_resets_at": seven_d.get("resets_at"),
+        "rate_7d_status": seven_d.get("status", ""),
+        "rate_overage_status": _safe_dict(rate.get("overage", rate)).get("overage_status", ""),
 
         # Metadata
         "exceeds_200k": bool(data.get("exceeds_200k_tokens", False)),
@@ -326,6 +355,23 @@ def extract_all(data: dict[str, Any]) -> dict[str, Any]:
 ```
 
 The `_coerce_float` function handles numeric strings (`"1.25"` → `1.25`), `None` → `0.0`, and invalid values → `0.0`. This is the ccstatusline `CoercedNumberSchema` pattern adapted to Python.
+
+The `_normalize_rate_pct` function resolves the schema uncertainty for rate limits:
+```python
+def _normalize_rate_pct(window: dict[str, Any]) -> float:
+    """Extract rate limit percentage, normalizing SDK vs statusline conventions.
+
+    SDK uses 'utilization' (0.0-1.0). Statusline may use 'used_percentage' (0-100).
+    Returns 0-100 always.
+    """
+    # Try used_percentage first (0-100 range)
+    pct = _coerce_float(window.get("used_percentage"))
+    if pct > 0:
+        return pct
+    # Fall back to utilization (0.0-1.0 range) → convert to percentage
+    util = _coerce_float(window.get("utilization"))
+    return util * 100 if util <= 1.0 else util  # Guard against already-percentage values
+```
 
 ---
 
@@ -536,7 +582,10 @@ Per widget: normal case, zero/missing fields, edge cases.
 | `test_rate_limits_normal` | `5h:42% 7d:15%` |
 | `test_rate_limits_high_with_countdown` | `5h:85% ↻2h13m 7d:15%` |
 | `test_rate_limits_absent` | Empty string (suppressed) |
-| `test_rate_limits_utilization_key` | Handles `utilization` field name |
+| `test_rate_limits_utilization_key` | SDK-style `utilization` (0.42) → displays as `42%` |
+| `test_rate_limits_rejected_status` | `status: "rejected"` → shows `5h:LIMIT` in red |
+| `test_rate_limits_resets_at_unix` | Unix timestamp int → correct countdown |
+| `test_rate_limits_resets_at_iso` | ISO 8601 string → correct countdown |
 | `test_metrics_bar_all_enabled` | All 7 widgets joined by ` \| ` |
 | `test_metrics_bar_some_disabled` | Only enabled widgets appear |
 | `test_metrics_bar_all_disabled` | Returns empty string |
