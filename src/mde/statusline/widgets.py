@@ -8,10 +8,13 @@ from __future__ import annotations
 
 import datetime
 import json
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from claude_agent_sdk.types import RateLimitInfo
+
     from mde.statusline.models import StatuslineInput
 
 _SECONDS_PER_HOUR = 3600
@@ -20,10 +23,16 @@ _DAILY_TOTALS_FILE = Path(".artifacts/daily-totals.json")
 _GREEN = "\033[32m"
 _YELLOW = "\033[33m"
 _RED = "\033[31m"
+_ORANGE = "\033[38;5;208m"
 _RESET = "\033[0m"
 
 _CACHE_HIGH_THRESHOLD = 60
 _CACHE_LOW_THRESHOLD = 30
+
+_RATE_RED_THRESHOLD = 90
+_RATE_ORANGE_THRESHOLD = 70
+_RATE_YELLOW_THRESHOLD = 50
+_RATE_COUNTDOWN_THRESHOLD = 70
 
 
 def token_speed_widget(data: StatuslineInput) -> str:
@@ -132,3 +141,43 @@ def cache_ratio_widget(data: StatuslineInput) -> str:
     else:
         color = _RED
     return f"{color}cache:{pct}%{_RESET}"
+
+
+def _color_for_pct(pct: float) -> str:
+    """4-tier color: green (<50), yellow (50-69), orange (70-89), red (90+)."""
+    if pct >= _RATE_RED_THRESHOLD:
+        return _RED
+    if pct >= _RATE_ORANGE_THRESHOLD:
+        return _ORANGE
+    if pct >= _RATE_YELLOW_THRESHOLD:
+        return _YELLOW
+    return _GREEN
+
+
+def _format_countdown(resets_at: int) -> str:
+    """Format Unix timestamp as relative countdown."""
+    remaining = max(0, resets_at - int(time.time()))
+    hours = remaining // 3600
+    mins = (remaining % 3600) // 60
+    if hours > 0:
+        return f"{hours}h{mins:02d}m"
+    return f"{mins}m"
+
+
+def rate_limits_widget(rate_info: dict[str, RateLimitInfo | None]) -> str:
+    """Rate limit usage for 5h and 7d windows."""
+    parts: list[str] = []
+    for label, key in [("5h", "five_hour"), ("7d", "seven_day")]:
+        info = rate_info.get(key)
+        if info is None:
+            continue
+        if info.status == "rejected":
+            parts.append(f"{_RED}{label}:LIMIT{_RESET}")
+        elif info.utilization is not None:
+            pct = info.utilization * 100
+            color = _color_for_pct(pct)
+            text = f"{label}:{pct:.0f}%"
+            if pct >= _RATE_COUNTDOWN_THRESHOLD and info.resets_at:
+                text += f" \u21bb{_format_countdown(info.resets_at)}"
+            parts.append(f"{color}{text}{_RESET}")
+    return " ".join(parts)

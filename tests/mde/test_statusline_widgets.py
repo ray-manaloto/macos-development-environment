@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+import time
 from unittest.mock import patch
+
+from claude_agent_sdk.types import RateLimitInfo
 
 from mde.statusline.models import StatuslineInput
 
@@ -281,3 +284,83 @@ class TestCacheRatio:
             }
         )
         assert cache_ratio_widget(data) == ""
+
+
+class TestRateLimits:
+    """Tests for rate_limits_widget."""
+
+    def test_normal(self) -> None:
+        from mde.statusline.widgets import rate_limits_widget
+
+        info = {
+            "five_hour": RateLimitInfo(status="allowed", utilization=0.42, raw={}),
+            "seven_day": None,
+            "overage": None,
+        }
+        result = rate_limits_widget(info)
+        assert "5h:42%" in result
+
+    def test_both_windows(self) -> None:
+        from mde.statusline.widgets import rate_limits_widget
+
+        info = {
+            "five_hour": RateLimitInfo(status="allowed", utilization=0.42, raw={}),
+            "seven_day": RateLimitInfo(status="allowed", utilization=0.15, raw={}),
+            "overage": None,
+        }
+        result = rate_limits_widget(info)
+        assert "5h:42%" in result
+        assert "7d:15%" in result
+
+    def test_rejected(self) -> None:
+        from mde.statusline.widgets import rate_limits_widget
+
+        info = {
+            "five_hour": RateLimitInfo(status="rejected", raw={}),
+            "seven_day": None,
+            "overage": None,
+        }
+        result = rate_limits_widget(info)
+        assert "LIMIT" in result
+
+    def test_absent(self) -> None:
+        from mde.statusline.widgets import rate_limits_widget
+
+        info = {"five_hour": None, "seven_day": None, "overage": None}
+        assert rate_limits_widget(info) == ""
+
+    def test_countdown_when_high(self) -> None:
+        from mde.statusline.widgets import rate_limits_widget
+
+        future = int(time.time()) + 7200
+        info = {
+            "five_hour": RateLimitInfo(
+                status="allowed_warning",
+                utilization=0.85,
+                resets_at=future,
+                raw={},
+            ),
+            "seven_day": None,
+            "overage": None,
+        }
+        result = rate_limits_widget(info)
+        assert "\u21bb" in result  # ↻ countdown symbol
+        assert "5h:85%" in result
+        assert "h" in result  # countdown format: XhYYm
+        assert "m" in result
+
+    def test_allowed_warning_shows(self) -> None:
+        from mde.statusline.widgets import rate_limits_widget
+
+        info = {
+            "five_hour": RateLimitInfo(
+                status="allowed_warning",
+                utilization=0.30,
+                raw={},
+            ),
+            "seven_day": None,
+            "overage": None,
+        }
+        result = rate_limits_widget(info)
+        assert "5h:30%" in result
+        assert result != ""
