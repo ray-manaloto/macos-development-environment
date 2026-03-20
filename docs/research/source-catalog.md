@@ -212,6 +212,18 @@ These were researched but not ingested into the notebook:
 | [ ] | Codex non-interactive mode | https://developers.openai.com/codex/noninteractive | Cross-model adversarial reviewer — preferred, no GUI |
 | [ ] | Gemini CLI non-interactive | https://github.com/google-gemini/gemini-cli/blob/52250c162d10f97cafc12f0fdd57cea88997b36d/README.md#non-interactive-mode-for-scripts | Fallback cross-model reviewer, already in mise |
 
+## GitHub Repos — Dev Environment Stacks
+
+| Status | Repo | URL | Verdict | In NB |
+|--------|------|-----|---------|-------|
+| [ ] | garrytan/gstack | https://github.com/garrytan/gstack | HIGH — full dev environment stack, compare against our chezmoi/mise setup | No |
+
+## Websites — Dev Environment Stacks
+
+| Status | Site | URL | Notes |
+|--------|------|-----|-------|
+| [ ] | gstacks.org | https://gstacks.org/ | GStack documentation site — evaluate patterns and tooling choices | No |
+
 ## GitHub Repos — Auto-Research Frameworks
 
 | Status | Repo | URL | Verdict | In NB |
@@ -222,7 +234,8 @@ These were researched but not ingested into the notebook:
 
 These sources need `agent-fetch` full review before implementation:
 
-0. https://github.com/karpathy/autoresearch — Gold standard auto-research, scoring methodology (HIGH)
+0. https://github.com/garrytan/gstack + https://gstacks.org/ — Full dev environment stack, compare patterns (HIGH)
+0b. https://github.com/karpathy/autoresearch — Gold standard auto-research, scoring methodology (HIGH)
 1. https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep — ARIS overnight loop (VERY HIGH)
 2. https://github.com/EveryInc/compound-engineering-plugin — compound learning cycle (HIGH)
 3. https://github.com/EveryInc/compound-knowledge-plugin — confidence assessment (HIGH)
