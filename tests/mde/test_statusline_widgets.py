@@ -364,3 +364,87 @@ class TestRateLimits:
         result = rate_limits_widget(info)
         assert "5h:30%" in result
         assert result != ""
+
+
+class TestMetricsBar:
+    """Tests for render_metrics_bar."""
+
+    def test_all_enabled(self, tmp_path: object) -> None:
+        from mde.statusline import widget_toggle, widgets
+        from mde.statusline.widgets import render_metrics_bar
+
+        totals_file = tmp_path / "daily-totals.json"  # type: ignore[operator]
+        data = _make(
+            {
+                "cost": {
+                    "total_cost_usd": 1.50,
+                    "total_duration_ms": 60000,
+                    "total_lines_added": 10,
+                    "total_lines_removed": 5,
+                },
+                "context_window": {
+                    "total_input_tokens": 30000,
+                    "total_output_tokens": 0,
+                    "current_usage": {
+                        "cache_read_input_tokens": 500,
+                        "cache_creation_input_tokens": 300,
+                        "input_tokens": 200,
+                    },
+                },
+            }
+        )
+        rate_info = {"five_hour": None, "seven_day": None, "overage": None}
+        config = dict.fromkeys(widget_toggle.ALL_WIDGETS, True)
+        with patch.object(widgets, "_DAILY_TOTALS_FILE", totals_file):
+            result = render_metrics_bar(data, rate_info, config)
+        assert "tok/s" in result
+        assert " | " in result
+
+    def test_all_disabled(self) -> None:
+        from mde.statusline.widgets import render_metrics_bar
+
+        data = _make({})
+        rate_info = {"five_hour": None, "seven_day": None, "overage": None}
+        config = dict.fromkeys(
+            [
+                "token_speed",
+                "burn_rate",
+                "block_timer",
+                "daily_totals",
+                "lines_changed",
+                "cache_ratio",
+                "rate_limits",
+            ],
+            False,
+        )
+        assert render_metrics_bar(data, rate_info, config) == ""
+
+    def test_suppresses_empty_widgets(self, tmp_path: object) -> None:
+        from mde.statusline import widgets
+        from mde.statusline.widgets import render_metrics_bar
+
+        totals_file = tmp_path / "daily-totals.json"  # type: ignore[operator]
+        data = _make(
+            {
+                "cost": {"total_cost_usd": 1.50, "total_duration_ms": 60000},
+                "context_window": {"total_input_tokens": 30000},
+            }
+        )
+        rate_info = {"five_hour": None, "seven_day": None, "overage": None}
+        config = dict.fromkeys(
+            [
+                "token_speed",
+                "burn_rate",
+                "block_timer",
+                "daily_totals",
+                "lines_changed",
+                "cache_ratio",
+                "rate_limits",
+            ],
+            True,
+        )
+        with patch.object(widgets, "_DAILY_TOTALS_FILE", totals_file):
+            result = render_metrics_bar(data, rate_info, config)
+        # lines_changed, cache_ratio, rate_limits all suppressed
+        assert "tok/s" in result
+        assert result.count(" | ") <= 3

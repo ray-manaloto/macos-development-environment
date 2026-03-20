@@ -10,7 +10,7 @@ import datetime
 import json
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from claude_agent_sdk.types import RateLimitInfo
@@ -181,3 +181,28 @@ def rate_limits_widget(rate_info: dict[str, RateLimitInfo | None]) -> str:
                 text += f" \u21bb{_format_countdown(info.resets_at)}"
             parts.append(f"{color}{text}{_RESET}")
     return " ".join(parts)
+
+
+def render_metrics_bar(
+    data: StatuslineInput,
+    rate_info: dict[str, RateLimitInfo | None],
+    config: dict[str, bool],
+) -> str:
+    """Compose enabled widgets into a single metrics bar string."""
+    widget_fns: list[tuple[str, Any]] = [
+        ("token_speed", lambda: token_speed_widget(data)),
+        ("burn_rate", lambda: burn_rate_widget(data)),
+        ("block_timer", lambda: block_timer_widget(data)),
+        ("daily_totals", lambda: daily_totals_widget(data)),
+        ("lines_changed", lambda: lines_changed_widget(data)),
+        ("cache_ratio", lambda: cache_ratio_widget(data)),
+        ("rate_limits", lambda: rate_limits_widget(rate_info)),
+    ]
+    parts = []
+    for name, fn in widget_fns:
+        if not config.get(name, True):
+            continue
+        output = fn()
+        if output:
+            parts.append(output)
+    return " | ".join(parts)
