@@ -541,27 +541,56 @@ metrics:
 
 ## 10. Scheduling & Continuity
 
-### 10.1 Loop Integration
+### 10.1 Scheduling Architecture: `/loop` + ARIS + Outer Scheduler
+
+**Three scheduling layers, each for what it does best:**
+
+| Layer | Tool | Purpose | Session Survival |
+|-------|------|---------|-----------------|
+| **Outer** | launchd / GitHub Actions | Start new Claude sessions on schedule | Yes (OS-level) |
+| **Pipeline** | ARIS skills | Autonomous multi-round research with state persistence | Yes (file-based `REVIEW_STATE.json`) |
+| **Monitor** | `/loop` | Intra-session polling and status checks | No (session-scoped, 3-day max) |
+
+**Why not `/loop` alone?** `/loop` dies when the terminal closes or session expires. It cannot run overnight autonomously. ARIS was designed for exactly this — file-based state persistence, cross-model adversarial review, and resume-from-checkpoint after session death.
+
+**Why not ARIS alone?** ARIS has no scheduler — it runs as a long pipeline within a session. An outer scheduler (launchd, GitHub Actions) starts the session; ARIS handles the pipeline; `/loop` monitors within the session.
 
 ```
-/loop 6h research-cycle
-  ├─ Layer 1: Spawn research agents (YouTube, Reddit, GitHub, docs)
-  ├─ Layer 2: Synthesize new findings via NotebookLM queries
-  ├─ Layer 3: Apply confirmed improvements
-  └─ Meta: Evaluate agent performance, evolve registry
-
-/loop 24h deep-research
-  ├─ ARIS-style overnight autonomous deep dive
-  ├─ Cross-model adversarial review on findings
-  └─ Full improvement score recalculation
-
-/loop 7d full-audit
-  ├─ Chezmoi reproducibility test (devcontainer)
-  ├─ Brew/mise duplicate detection
-  ├─ Agent registry health check
-  ├─ Stale docs detection
-  └─ NotebookLM notebook health (approaching source limits?)
+[Outer Scheduler: launchd / GitHub Actions]
+    │
+    ▼
+[Claude Code Session (ephemeral)]
+    │
+    ├── ARIS pipeline (autonomous research, state persisted to filesystem)
+    │     ├── REVIEW_STATE.json (survives session death)
+    │     ├── AUTO_REVIEW.md (cumulative research log)
+    │     └── Cross-model review via Codex MCP (Claude executor + GPT reviewer)
+    │
+    └── /loop (intra-session monitoring only)
+          ├── "check ARIS pipeline status every 15m"
+          └── "alert if pipeline stalled (state timestamp > 1h old)"
 ```
+
+### 10.2 Scheduled Cycles
+
+**Every 6 hours (outer scheduler starts session → ARIS pipeline runs):**
+- Layer 1: Research agents scan GitHub, YouTube, official docs
+- Layer 2: Synthesize via NotebookLM CLI queries
+- Layer 3: Apply confirmed improvements via PR workflow
+- ARIS state files track progress; session death is recoverable
+
+**Every 24 hours (overnight deep research):**
+- ARIS `AUTO_PROCEED: true` for full autonomy
+- Cross-model adversarial review on high-stakes findings
+- Full improvement score recalculation
+- Cumulative log written to `AUTO_REVIEW.md`
+
+**Every 7 days (full audit — can run as `/loop` within active session):**
+- Chezmoi reproducibility test (devcontainer)
+- Brew/mise duplicate detection
+- Agent registry health check
+- Stale docs detection
+- NotebookLM notebook health (approaching source limits?)
 
 ### 10.2 Continuity Guarantees
 
