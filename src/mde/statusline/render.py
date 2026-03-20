@@ -19,6 +19,7 @@ from mde.statusline.models import Model
 
 _MODE_FILE = Path(".artifacts/statusline-mode")
 _AGENT_STATE_FILE = Path(".artifacts/agent-state.jsonl")
+_EVENT_LOG_FILE = Path(".artifacts/statusline-events.jsonl")
 
 # ANSI color codes
 _GREEN = "\033[32m"
@@ -80,6 +81,7 @@ def render_statusline() -> int:
         output = mode_output
 
     print(output)
+    _write_event_log(data, output)
     return 0
 
 
@@ -205,3 +207,61 @@ def _render_mode_c(ctx: dict[str, Any], agents: list[dict[str, Any]]) -> str:
         lines.append(f"  {_DIM}no agents{_RESET}")
 
     return "\n".join(lines)
+
+
+def show_last_event() -> int:
+    """Print the last captured statusline event (stdin + output)."""
+    try:
+        lines = _EVENT_LOG_FILE.read_text().strip().split("\n")
+        last = json.loads(lines[-1])
+        print(json.dumps(last, indent=2))
+    except (OSError, json.JSONDecodeError, IndexError):
+        print("No events captured. Set MDE_STATUSLINE_CAPTURE=1 in your environment.")
+        return 1
+    return 0
+
+
+def _write_event_log(stdin_data: dict[str, Any], rendered_output: str) -> None:
+    """Append a statusline event to a rotating JSONL log for validation and fixtures.
+
+    Uses stdlib RotatingFileHandler for automatic rotation (5MB, 3 backups = 20MB max).
+    Each line is a complete input/output pair: {"ts": ..., "stdin": {...}, "output": "..."}
+    Gated by MDE_STATUSLINE_CAPTURE=1 env var — zero overhead when disabled.
+
+    Why stdlib logging instead of structlog/loguru/aiofiles:
+    - Zero new dependencies (per library-first policy evaluation)
+    - Process is synchronous and short-lived (~300ms), not async
+    - One write per invocation — import cost of third-party loggers not amortized
+    - RotatingFileHandler provides rotation that raw open("a") lacks
+    """
+    import logging
+    import os
+    import time
+    from logging.handlers import RotatingFileHandler
+
+    if not os.environ.get("MDE_STATUSLINE_CAPTURE"):
+        return
+    try:
+        _EVENT_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        logger = logging.getLogger("mde.statusline.events")
+        if not logger.handlers:
+            handler = RotatingFileHandler(
+                str(_EVENT_LOG_FILE),
+                maxBytes=5_000_000,
+                backupCount=3,
+            )
+            handler.setFormatter(logging.Formatter("%(message)s"))
+            logger.addHandler(handler)
+            logger.setLevel(logging.INFO)
+
+        event = json.dumps(
+            {
+                "ts": int(time.time()),
+                "stdin": stdin_data,
+                "output": rendered_output,
+            },
+            separators=(",", ":"),
+        )
+        logger.info(event)
+    except OSError:
+        pass

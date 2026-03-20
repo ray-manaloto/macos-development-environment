@@ -90,6 +90,13 @@ def _build_parser() -> argparse.ArgumentParser:
     hooks_sub.add_parser("log-agent-event", help="SubagentStarted/Completed logger")
 
     # statusline
+    _add_statusline_subparsers(sub)
+
+    return parser
+
+
+def _add_statusline_subparsers(sub: argparse._SubParsersAction) -> None:  # type: ignore[type-arg]
+    """Register statusline subcommands."""
     sl_p = sub.add_parser("statusline", help="Multi-agent statusline renderer")
     sl_sub = sl_p.add_subparsers(dest="statusline_action")
     sl_sub.add_parser("render", help="Render statusline (reads stdin JSON)")
@@ -98,8 +105,7 @@ def _build_parser() -> argparse.ArgumentParser:
     tw_p = sl_sub.add_parser("toggle-widget", help="Toggle a metrics widget on/off")
     tw_p.add_argument("widget_name", help="Widget name to toggle (or 'all')")
     sl_sub.add_parser("show-widgets", help="Show per-widget toggle states")
-
-    return parser
+    sl_sub.add_parser("last-event", help="Show last captured event (MDE_STATUSLINE_CAPTURE=1)")
 
 
 def run(argv: Sequence[str] | None = None) -> int:
@@ -242,26 +248,23 @@ def _cmd_hooks(args: argparse.Namespace) -> int:
 
 def _cmd_statusline(args: argparse.Namespace) -> int:
     action = args.statusline_action
-    if action == "render":
-        from mde.statusline.render import render_statusline
-
-        return render_statusline()
-    if action == "toggle":
-        from mde.statusline.toggle import toggle_mode
-
-        return toggle_mode()
-    if action == "show-mode":
-        from mde.statusline.toggle import show_mode
-
-        return show_mode()
+    handlers: dict[str, tuple[str, str]] = {
+        "render": ("mde.statusline.render", "render_statusline"),
+        "toggle": ("mde.statusline.toggle", "toggle_mode"),
+        "show-mode": ("mde.statusline.toggle", "show_mode"),
+        "show-widgets": ("mde.statusline.widget_toggle", "show_widgets"),
+        "last-event": ("mde.statusline.render", "show_last_event"),
+    }
     if action == "toggle-widget":
         from mde.statusline.widget_toggle import toggle_widget
 
         return toggle_widget(args.widget_name)
-    if action == "show-widgets":
-        from mde.statusline.widget_toggle import show_widgets
+    if action in handlers:
+        import importlib
 
-        return show_widgets()
+        mod_name, fn_name = handlers[action]
+        mod = importlib.import_module(mod_name)
+        return getattr(mod, fn_name)()
     print(f"Unknown statusline action: {action}", file=sys.stderr)
     return 1
 
