@@ -14,6 +14,7 @@ from mde.validate.mise import validate_mise
 from mde.validate.package_managers import validate_package_managers
 from mde.validate.shell import validate_shell_scripts
 from mde.validate.skill_frontmatter import validate_skill_frontmatter
+from mde.validate.skill_sync import validate_skill_sync
 from mde.validate.structural import validate_structural
 from mde.validate.toml import validate_toml_files
 from mde.validate.yaml_validator import validate_yaml_files
@@ -65,6 +66,7 @@ def validate_all(
         result.merge(validate_docker())
         result.merge(validate_package_managers())
         result.merge(validate_skill_frontmatter())
+        result.merge(validate_skill_sync())
 
         if not configs_only:
             result.merge(validate_shell_scripts())
