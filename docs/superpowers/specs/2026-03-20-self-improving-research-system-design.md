@@ -706,7 +706,78 @@ Per the agreed approach (Approach C, parallel tracks):
 
 **Both tracks converge** when research starts informing fixes and the self-improvement loop closes.
 
-## 16. Open Questions
+## 16. NotebookLM Integration Issues & Remediation
+
+### 16.1 Current State Diagnosis
+
+**Two separate packages with incompatible auth stores:**
+
+| | CLI (`notebooklm`) | MCP (`nlm` / `notebooklm-mcp`) |
+|---|---|---|
+| Package | `notebooklm-py` v0.3.4 | `notebooklm-mcp-cli` v0.5.2 |
+| Auth location | `~/.notebooklm/storage_state.json` (MISSING) | `~/.notebooklm-mcp-cli/profiles/default/cookies.json` |
+| Auth method | Playwright browser login | Chrome DevTools Protocol |
+| Status | **BROKEN** — Playwright not installed in pipx venv | Works after `nlm login` but sessions expire quickly |
+| Installed via | mise pipx backend (global) | mise pipx backend (global) |
+
+**Neither package is declared in `.mise.toml`** — violates mise-first policy.
+
+### 16.2 Issues Found
+
+1. **CLI auth broken**: `notebooklm login` requires Playwright which is not installed in the CLI's pipx venv. Fix: inject playwright into the venv or use `NOTEBOOKLM_AUTH_JSON` to share auth from MCP
+2. **MCP auth expires rapidly**: `nlm login` works but sessions expire within minutes. `session_id` is empty in metadata, suggesting incomplete session capture
+3. **source_add fails silently**: MCP `source_add` returns "Could not add url source" with no diagnostic details. Need `NOTEBOOKLM_LOG_LEVEL=DEBUG` for root cause
+4. **Auth stores don't share**: CLI expects `~/.notebooklm/storage_state.json`, MCP uses `~/.notebooklm-mcp-cli/profiles/default/cookies.json`. No cross-pollination
+5. **Not project-owned**: Neither tool is in `.mise.toml` — global-only install
+6. **Shared context.json unsafe for parallel agents**: CLI stores notebook context in `~/.notebooklm/context.json` — concurrent agents overwrite each other. Must use explicit `-n <notebook_id>` flags
+
+### 16.3 Remediation Plan
+
+**Immediate fixes:**
+- Install playwright in notebooklm-py's pipx venv: `pipx inject notebooklm-py playwright && pipx runpip notebooklm-py run playwright install chromium`
+- OR: Bridge auth by copying MCP cookies to CLI format (`storage_state.json`)
+- Add both tools to `.mise.toml` per mise-first policy
+- Always use explicit `--notebook <id>` / `-n <id>` flags, never rely on `context.json`
+
+**For our research system:**
+- Prefer MCP tools (`mcp__notebooklm__*`) for programmatic access within Claude Code
+- Use CLI via Bash only for operations MCP doesn't support
+- Add `--retry 3` to all generate commands for rate limit handling
+- Use `--json` output consistently for automation parsing
+- For parallel agent workflows: set unique `NOTEBOOKLM_HOME` per agent OR always pass notebook IDs explicitly
+
+### 16.4 Features We Should Be Using But Aren't
+
+| Feature | Command/Tool | Why It Matters |
+|---------|-------------|----------------|
+| Web research | `notebooklm source add-research "query" --mode deep` | Discover sources without manually finding URLs |
+| Cross-notebook query | `mcp__notebooklm__cross_notebook_query` | Search across all themed notebooks at once |
+| Save Q&A as notes | `notebooklm ask "..." --save-as-note` | Persist synthesis results inside notebooks |
+| Conversation history | `notebooklm history --save` | Archive research conversations |
+| Source fulltext | `notebooklm source fulltext <id>` | Get indexed content for vault sync |
+| Mind map generation | `notebooklm generate mind-map` | Export hierarchical JSON for Obsidian |
+| Report generation | `notebooklm generate report --format study-guide` | Structured summaries |
+| Retry on rate limit | `--retry N` on generate commands | Automatic exponential backoff |
+| Debug logging | `NOTEBOOKLM_LOG_LEVEL=DEBUG` | Diagnose silent failures |
+| Source waiting | `notebooklm source wait <id>` | Confirm sources are indexed before querying |
+
+### 16.5 NotebookLM Skill Audit
+
+The skill is installed at `.claude/skills/notebooklm` → `.agents/skills/notebooklm` (from `teng-lin/notebooklm-py`).
+
+**What the skill provides that we loaded correctly:**
+- SKILL.md with full CLI reference (loaded at conversation start via `/notebooklm`)
+- Autonomy rules (what to run automatically vs. ask first)
+- Parallel safety warnings about shared context.json
+- Subagent patterns for background artifact waiting
+
+**What needs improvement:**
+- The skill references CLI commands but our CLI auth is broken — need to specify MCP as primary interface
+- The skill's subagent patterns for `artifact wait` and `source wait` should use explicit `-n <notebook_id>` flags for parallel safety
+- X/Twitter content requires `bird` CLI pre-fetch (documented in troubleshooting but not in main skill)
+- The skill should document the CLI vs MCP auth disconnect for this project
+
+## 17. Open Questions
 
 1. **Best storage backend for Trail Adapter** — research should determine this, not premature decision
 2. **Cross-model review implementation** — which model pairs work best for adversarial review?
