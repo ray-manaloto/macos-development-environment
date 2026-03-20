@@ -15,6 +15,7 @@ Uses the **statusline enhancement project** as an applied example throughout.
 |-------|--------------|-------------------|-------------------|
 | **Discovery** | `/brainstorming` | WebSearch, mcptube | Research terminal UI widget patterns |
 | **Planning** | `/writing-plans` | `/brainstorming` output | Plan widget specs, file ownership |
+| **Branch Setup** | `/using-git-worktrees` | — | `git worktree add` for isolated feature branch |
 | **Implementation** | `/subagent-driven-development` | `/dispatching-parallel-agents` | Build widgets, toggle system, renderer |
 | **Testing** | `/test-driven-development` | `/systematic-debugging` | RED-GREEN-REFACTOR per widget |
 | **Debugging** | `/systematic-debugging` | `/verification-before-completion` | Null JSON fields, ANSI escapes |
@@ -24,23 +25,25 @@ Uses the **statusline enhancement project** as an applied example throughout.
 ### Invocation Flow
 
 ```
-Discovery          Planning          Implementation         Testing
-/brainstorming  →  /writing-plans  →  /subagent-driven-  →  /test-driven-
-                                       development           development
-                                              ↑                    |
-                                   /dispatching-parallel-          |
-                                    agents (independent widgets)   ↓
-                                                            Debugging
-                                                         /systematic-debugging
-                                                               |
-                                                               ↓
-                                          Review                     Completion
-                                   /requesting-code-review  →  /finishing-a-
-                                   /receiving-code-review       development-branch
-                                              ↑                       ↑
-                                   /verification-before-    /verification-before-
-                                    completion               completion
+Discovery          Planning          Branch Setup         Implementation         Testing
+/brainstorming  →  /writing-plans  →  /using-git-      →  /subagent-driven-  →  /test-driven-
+                                       worktrees            development           development
+                                       (REQUIRED)                 ↑                    |
+                                                      /dispatching-parallel-          |
+                                                       agents (independent widgets)   ↓
+                                                                               Debugging
+                                                                            /systematic-debugging
+                                                                                  |
+                                                                                  ↓
+                                             Review                     Completion
+                                      /requesting-code-review  →  /finishing-a-
+                                      /receiving-code-review       development-branch
+                                                 ↑                       ↑
+                                      /verification-before-    /verification-before-
+                                       completion               completion
 ```
+
+> **CRITICAL: `/using-git-worktrees` is REQUIRED before implementation.** The `/subagent-driven-development` skill explicitly states: "Never start implementation on main/master branch without explicit user consent." The `/writing-plans` skill states: "This should be run in a dedicated worktree." Skipping this step means all commits go to `main`, requiring manual branch surgery at PR time.
 
 ### All 14 Superpowers Skills
 
@@ -123,7 +126,37 @@ Write an implementation plan for the statusline enhancement. We need:
 
 ---
 
+### Phase 2.5: Branch Setup — `/using-git-worktrees` (REQUIRED)
+
+**Trigger prompt:**
+```
+/using-git-worktrees
+Create a worktree for the statusline enhancement feature.
+```
+
+**What the skill does:**
+- Creates an isolated git worktree with a feature branch
+- Verifies the branch doesn't already exist
+- Switches to the worktree directory
+- Ensures `main` stays clean — all implementation commits go to the feature branch
+
+**Why this is required:**
+- `/subagent-driven-development` says: "Never start implementation on main/master branch without explicit user consent"
+- `/writing-plans` says: "This should be run in a dedicated worktree"
+- Without this step, all commits go to `main`, requiring manual `git branch` / `git reset` surgery to create a PR later
+
+**Expected output:**
+- Feature branch created (e.g., `feat/statusline-metrics-bar`)
+- Worktree directory ready for implementation
+- `main` branch remains untouched
+
+**Statusline example:** `git worktree add .claude/worktrees/statusline-metrics feat/statusline-metrics-bar`
+
+---
+
 ### Phase 3: Implementation — `/subagent-driven-development` or `/executing-plans`
+
+> **Prerequisite:** You MUST be on a feature branch (created by `/using-git-worktrees` above), NOT on `main`.
 
 **Trigger prompt (same session):**
 ```
@@ -695,6 +728,7 @@ Do not claim completion until all three pass with zero errors.
 |--------------|---------------|
 | Explore requirements before coding | `/brainstorming` |
 | Create a multi-step implementation plan | `/writing-plans` |
+| **Set up a feature branch before coding** | **`/using-git-worktrees` (REQUIRED before implementation)** |
 | Execute a plan in a new session | `/executing-plans` |
 | Execute a plan with subagents now | `/subagent-driven-development` |
 | Run independent tasks in parallel | `/dispatching-parallel-agents` |
@@ -706,4 +740,3 @@ Do not claim completion until all three pass with zero errors.
 | Prove work is actually done | `/verification-before-completion` |
 | Create a reusable skill | `/writing-skills` |
 | Start a conversation right | `/using-superpowers` |
-| Isolate work in a worktree | `/using-git-worktrees` |
