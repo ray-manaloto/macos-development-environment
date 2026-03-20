@@ -168,6 +168,20 @@ These are foundational — every page should be crawled and diffed on each Claud
 - https://www.anthropic.com/engineering — Anthropic engineering blog (technical deep-dives)
 - https://platform.claude.com/cookbook/ — Platform cookbook recipes
 
+#### Source Access Methods (Phase 1 vs Phase 2)
+
+| Source | Access Method | Credentials | Phase |
+|--------|--------------|-------------|-------|
+| GitHub repos/releases | `gh` CLI (already in mise) | `GITHUB_TOKEN` (in fnox) | 1 |
+| Official docs | WebFetch / `agent-fetch` skill | None | 1 |
+| YouTube transcripts | `yt-dlp` (needs adding to mise) | None | 1 |
+| NotebookLM sources | `notebooklm source add` CLI | `storage_state.json` | 1 |
+| Reddit | WebFetch on `.json` endpoints or Reddit API | API key (if rate limited) | 2 |
+| X/Twitter | `bird` CLI for content fetch | None (uses browser rendering) | 2 |
+| Awesome lists | GitHub API via `gh` | `GITHUB_TOKEN` | 1 |
+
+Phase 1 focuses on GitHub + official docs + YouTube + NotebookLM (all have well-defined access). Social sources (Reddit, X) are Phase 2.
+
 #### Known Reference Repos
 
 - martinemde/dotfiles
@@ -259,15 +273,17 @@ When a notebook reaches `split_threshold * source_limit`, the system creates a c
 6. PASS confirmed improvements to Layer 3
 ```
 
-### 5.3 Cross-Model Adversarial Review
+### 5.3 Cross-Model Adversarial Review (Phase 2)
 
-For high-stakes synthesis (architecture changes, tool migrations):
+**Not in initial implementation.** Deferred until the basic research pipeline is running and producing findings.
 
+When implemented, the pattern is:
 - Agent A produces a recommendation
-- Agent B (different model or different prompt) critiques it
-- Only recommendations that survive critique proceed
+- Agent B is prompted: "Find flaws in this recommendation: [recommendation]. List specific risks with severity (LOW/MEDIUM/HIGH)."
+- If Agent B identifies any HIGH severity risks, the recommendation is blocked and flagged for human review
+- LOW/MEDIUM risks are logged in the trail but don't block
 
-Prevents the self-play quality ceiling where a single model validates its own bad ideas. Adopted from ARIS (Auto-claude-code-research-in-sleep) pattern.
+Prevents the self-play quality ceiling where a single model validates its own bad ideas. Adopted from ARIS pattern.
 
 ### 5.4 Source Staleness Detection
 
@@ -296,20 +312,11 @@ Staleness cycle (runs as part of `/loop 7d full-audit`):
 5. Stale sources get flagged → agent decides: refresh, replace, or archive
 6. Expired sources (>2x staleness threshold) get removed and replaced
 
-### 5.5 NotebookLM ↔ Obsidian Bidirectional Sync
+### 5.5 NotebookLM → Obsidian Export (Phase 1) / Bidirectional Sync (Phase 2)
 
-```
-NotebookLM notebooks          Obsidian vault
-┌──────────────────┐          ┌──────────────────┐
-│ Research Stack   │◄────────►│ 03-Resources/    │
-│ Dotfiles & Dev   │  sync    │   NotebookLM/    │
-│ Agent Orch.      │  layer   │     indexes/     │
-│ Tool Updates     │          │     findings/    │
-│ Community Intel  │          │     stale/       │
-└──────────────────┘          └──────────────────┘
-```
+**Phase 1:** Unidirectional export only — NotebookLM findings are exported to Obsidian vault notes via `notebooklm ask "..." --save-as-note` and CLI output parsing. No sync back from Obsidian to NotebookLM.
 
-The sync layer tracks: which notebook has which sources, when each was added, source freshness, and cross-notebook links.
+**Phase 2 (future):** Bidirectional sync with conflict resolution, data format mapping, and trigger mechanisms. This is a significant engineering effort deferred until the basic pipeline is proven.
 
 ## 6. Layer 3 — Self-Improvement Engine
 
@@ -346,8 +353,8 @@ FINDING arrives from Layer 2 (confidence: confirmed)
    └─ For config_change: `chezmoi apply --dry-run` in devcontainer
 
 5. DECIDE
-   ├─ Score improved → merge automatically, log evidence
-   ├─ Score unchanged → merge if no regressions, flag for review
+   ├─ Score improved → create PR via /finishing-a-development-branch, flag as auto-approved
+   ├─ Score unchanged → create PR if no regressions, flag for human review
    ├─ Score worse → revert, create GitHub issue with findings
    └─ Validation failed → revert, create GitHub issue
 
@@ -368,8 +375,8 @@ FINDING arrives from Layer 2 (confidence: confirmed)
 | Lint cleanliness | `uv run ruff check` violation count | 0.05 |
 | Source freshness | Ratio of fresh to total sources across notebooks | 0.10 |
 | Actionable findings rate | Ratio of applied findings to total discoveries | 0.10 |
-| Agent trigger accuracy | Do agents fire when they should? | 0.10 |
-| Token cost efficiency | Cost per finding, trending down | 0.05 |
+| Agent trigger accuracy | Ratio of agent invocations that produced at least 1 actionable finding to total invocations | 0.10 |
+| Token cost efficiency | `token_cost_this_cycle / max(findings_actionable, 1)` — normalized cost per actionable finding | 0.05 |
 
 ### 6.3 Score Card
 
@@ -448,7 +455,17 @@ previous_score: 0.68
    └─ Log evolution decision in docs/knowledge/
 ```
 
-### 7.2 Self-Improving Agent Descriptions
+### 7.2 Phase Boundary
+
+**Phase 1 (initial implementation):** The agent registry is human-editable only. Agents produce _recommendations_ for registry changes (stored in the trail) but do NOT modify the registry autonomously. Maximum registry size: 20 agents. Human approval required for agent creation or retirement.
+
+**Phase 2 (after improvement score demonstrates upward trend over 10+ cycles):** Agents may modify the registry autonomously with these guardrails:
+- `max_agents` cap of 30
+- New agents require post-validation (must produce at least 1 actionable finding in first 3 cycles or auto-retire)
+- Retired agents are archived, not deleted, with a 30-day restore window
+- Registry changes go through the same PR workflow as code changes
+
+### 7.3 Self-Improving Agent Descriptions
 
 After each agent run, compare what the agent was asked to do vs. what it actually did well:
 
@@ -676,15 +693,20 @@ Known limitations from notebook:
 
 ## 14. Success Criteria
 
-The system is working when:
+### Phase 1 Targets (after 10 research cycles)
 
-1. **Improvement score trends upward** over consecutive cycles
-2. **Stale source count trends downward** — notebooks stay fresh
-3. **Agent registry evolves** — new agents appear, underperforming ones retire
-4. **Token cost per finding decreases** — efficiency improves
-5. **Known issues decrease** — brew/mise duplicates, chezmoi reproducibility, lint violations
-6. **Skills and CLAUDE.md stay current** — updated within days of tool version changes
-7. **The system discovers improvements humans didn't anticipate** — the true test of autonomy
+1. **Improvement score >= 0.05 above initial baseline** measured at cycle 10
+2. **Stale source ratio < 20%** across all notebooks
+3. **At least 3 actionable findings applied** that improved the improvement score
+4. **Token cost per actionable finding < $0.50** averaged over cycles 5-10
+5. **brew/mise duplicate count reduced by >= 1** from initial state
+6. **CLAUDE.md updated within 7 days** of any Claude Code version bump
+
+### Long-term Indicators (Phase 2+)
+
+7. **Agent registry has been modified** — at least 1 agent added or retired based on performance data
+8. **At least 1 finding per 5 cycles classified as "novel"** by human review (not on the known-issues list at cycle start)
+9. **chezmoi `apply --dry-run` succeeds** in a clean devcontainer
 
 ## 15. Parallel Workstreams
 
@@ -859,6 +881,8 @@ The official `anthropics/skills` repo follows the Agent Skills open standard. Ou
 **C) Hybrid** — Use native features for orchestration (agent teams, hooks, memory), claude-flow for specialized capabilities (vector search, embeddings, advanced routing)
 
 This decision should itself be a research output of the system — Layer 1 should continuously evaluate both approaches as both evolve.
+
+**Blast radius if option B (native) is chosen:** Sections 3.1 (swarm topology references), 7 (Meta Layer orchestration), 9.2 (mcp2cli bake pattern), 10 (loop scheduling via claude-flow), and all claude-flow CLI references would need revision. The following designs are **orchestration-agnostic** and survive any choice: Trail Adapter, Provenance Record, Improvement Score, NotebookLM notebook strategy, source staleness detection, and the research source catalog.
 
 ## 18. Open Questions
 
