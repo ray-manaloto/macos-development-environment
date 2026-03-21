@@ -217,10 +217,10 @@ uv run datamodel-codegen \
 """
 
 [tasks."mde:codegen:skillsmp"]
-description = "Regenerate SkillsMP Pydantic models from JSON Schemas"
+description = "Regenerate SkillsMP Pydantic models from JSON Schema + apply post-gen edits"
 run = """
 uv run datamodel-codegen \
-  --input docs/schemas/skillsmp/ \
+  --input docs/schemas/skillsmp.schema.json \
   --input-file-type jsonschema \
   --output src/mde/research/clients/skillsmp_models.py \
   --output-model-type pydantic_v2.BaseModel \
@@ -234,7 +234,9 @@ uv run datamodel-codegen \
   --use-one-literal-as-default \
   --allow-extra-fields \
   --snake-case-field \
-  --formatters ruff-format ruff-check
+  --formatters ruff-format ruff-check && \
+uv run python -m mde.codegen.postprocess_skillsmp && \
+uv run ruff format src/mde/research/clients/skillsmp_models.py
 """
 
 [tasks."mde:lint"]
