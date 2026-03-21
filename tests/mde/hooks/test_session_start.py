@@ -22,5 +22,4 @@ def test_session_start_cli_dispatch() -> None:
         timeout=10,
     )
     assert proc.returncode == 0
-    # Should contain git log output or context summary
-    assert len(proc.stdout) > 0 or proc.returncode == 0
+    assert len(proc.stdout) > 0, "SessionStart should print git context"

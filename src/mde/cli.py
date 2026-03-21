@@ -96,8 +96,6 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     # hooks
     hooks_p = sub.add_parser("hooks", help="Claude Code hook handlers")
     hooks_sub = hooks_p.add_subparsers(dest="hooks_action")
-    hooks_sub.add_parser("verify-task-completion", help="TaskCompleted gate")
-    hooks_sub.add_parser("check-teammate-work", help="TeammateIdle gate")
     hooks_sub.add_parser("log-edit-outcome", help="PostToolUse logger")
     hooks_sub.add_parser("log-agent-event", help="SubagentStarted/Completed logger")
     hooks_sub.add_parser("guard-install", help="PreToolUse install guard")
@@ -264,8 +262,6 @@ def _cmd_skill(args: argparse.Namespace) -> int:
 
 
 _HOOKS_DISPATCH: dict[str, tuple[str, str]] = {
-    "verify-task-completion": ("mde.hooks.verify_task", "verify_task_completion"),
-    "check-teammate-work": ("mde.hooks.check_teammate", "check_teammate_work"),
     "log-edit-outcome": ("mde.hooks.log_outcome", "log_edit_outcome"),
     "log-agent-event": ("mde.hooks.log_agent_event", "log_agent_event"),
     "guard-install": ("mde.hooks.guard_install", "guard_install"),
