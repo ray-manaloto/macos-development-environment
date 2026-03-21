@@ -98,6 +98,10 @@ run = "uv run mde-py research score"
 description = "Show research pipeline status"
 run = "uv run mde-py research status"
 
+[tasks."mde:research:skill-discover"]
+description = "Search all skill sources (skills.sh + GitHub + SkillsMP)"
+run = "uv run mde-py research skill-discover \"$@\""
+
 [tasks."mde:research:autoimprove"]
 description = "Run the bounded multi-agent autoresearch loop for host setup and tooling improvements"
 run = "scripts/mde-research-autoimprove.sh"
