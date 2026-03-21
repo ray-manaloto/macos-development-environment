@@ -15,6 +15,7 @@ import httpx
 
 from mde.research.clients.skillsmp_models import (
     AISearchResponse,
+    ErrorDetail,
     ErrorResponse,
     SkillSearchResponse,
 )
@@ -78,13 +79,13 @@ class SkillsMPClient:
         if not self.is_configured:
             return ErrorResponse(
                 success=False,
-                error={  # type: ignore[arg-type]
-                    "code": "MISSING_API_KEY",
-                    "message": (
+                error=ErrorDetail(
+                    code="MISSING_API_KEY",
+                    message=(
                         "SKILLSMP_API_KEY not set. Store in keychain: "
                         "security add-generic-password -a $USER -s mde-fnox -D SKILLSMP_API_KEY"
                     ),
-                },
+                ),
             )
 
         try:
@@ -101,7 +102,7 @@ class SkillsMPClient:
         except httpx.HTTPError as e:
             return ErrorResponse(
                 success=False,
-                error={"code": "HTTP_ERROR", "message": str(e)},  # type: ignore[arg-type]
+                error=ErrorDetail(code="HTTP_ERROR", message=str(e)),
             )
 
     def ai_search(self, query: str) -> AISearchResponse | ErrorResponse:
@@ -116,10 +117,7 @@ class SkillsMPClient:
         if not self.is_configured:
             return ErrorResponse(
                 success=False,
-                error={  # type: ignore[arg-type]
-                    "code": "MISSING_API_KEY",
-                    "message": "SKILLSMP_API_KEY not set.",
-                },
+                error=ErrorDetail(code="MISSING_API_KEY", message="SKILLSMP_API_KEY not set."),
             )
 
         try:
@@ -136,5 +134,5 @@ class SkillsMPClient:
         except httpx.HTTPError as e:
             return ErrorResponse(
                 success=False,
-                error={"code": "HTTP_ERROR", "message": str(e)},  # type: ignore[arg-type]
+                error=ErrorDetail(code="HTTP_ERROR", message=str(e)),
             )

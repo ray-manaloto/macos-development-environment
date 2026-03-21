@@ -174,7 +174,9 @@ def discover_skills(query: str) -> DiscoveryResult:
     installed = _get_installed_skills()
     result.installed_matches = [s for s in installed if query.lower() in s.lower()]
 
-    sources: list[tuple[str, object]] = [
+    from collections.abc import Callable
+
+    sources: list[tuple[str, Callable[[str], list[SkillResult]]]] = [
         ("skills.sh", _search_skills_sh),
         ("github", _search_github),
         ("skillsmp", _search_skillsmp),
@@ -182,13 +184,13 @@ def discover_skills(query: str) -> DiscoveryResult:
 
     for source_name, search_fn in sources:
         try:
-            skills = search_fn(query)  # type: ignore[operator]
+            skills = search_fn(query)
             result.sources_searched.append(source_name)
             for skill in skills:
                 skill.installed = skill.name in installed
             result.skills.extend(skills)
-        except Exception:  # noqa: BLE001
-            result.sources_failed.append(source_name)
+        except Exception as exc:  # noqa: BLE001
+            result.sources_failed.append(f"{source_name}: {exc}")
 
     # De-duplicate by (name, author), keeping highest installs/stars
     seen: dict[str, SkillResult] = {}

@@ -10,6 +10,8 @@ Default URL: http://localhost:3737
 
 from __future__ import annotations
 
+from typing import Self
+
 import httpx
 
 from mde.research.clients.skillkit_models import (
@@ -42,6 +44,14 @@ class SkillKitClient:
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
         self._client: httpx.Client | None = None
+
+    def __enter__(self) -> Self:
+        """Enter context manager."""
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        """Exit context manager, close HTTP client."""
+        self.close()
 
     def _get_client(self) -> httpx.Client:
         if self._client is None:
