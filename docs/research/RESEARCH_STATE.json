@@ -1,0 +1,12 @@
+{
+  "round": 2,
+  "status": "abandoned",
+  "last_score": 0.000,
+  "last_verdict": "abandoned",
+  "timestamp": "2026-03-20T20:00:00Z",
+  "pending_sources": [],
+  "completed_findings": [
+    "finding-all-skill-marketplaces",
+    "finding-agent-smoke-test"
+  ]
+}
