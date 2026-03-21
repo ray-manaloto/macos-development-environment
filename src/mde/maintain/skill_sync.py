@@ -109,6 +109,10 @@ def sync_skills(root: Path, *, dry_run: bool = False) -> list[str]:
         link = claude_dir / entry.name
         rel_target = os.path.relpath(entry.path, link.parent)
         verb = "would create" if dry_run else "created"
+        # Remove stale non-symlink files that block symlink creation
+        if not dry_run and link.exists() and not link.is_symlink():
+            link.unlink() if link.is_file() else None
+            actions.append(f"removed stale file {link}")
         actions.append(f"{verb} symlink {link} -> {rel_target}")
         if not dry_run:
             link.symlink_to(rel_target)
@@ -117,6 +121,10 @@ def sync_skills(root: Path, *, dry_run: bool = False) -> list[str]:
         link = agents_dir / entry.name
         rel_target = os.path.relpath(entry.path, link.parent)
         verb = "would create" if dry_run else "created"
+        # Remove stale non-symlink files that block symlink creation
+        if not dry_run and link.exists() and not link.is_symlink():
+            link.unlink() if link.is_file() else None
+            actions.append(f"removed stale file {link}")
         actions.append(f"{verb} symlink {link} -> {rel_target}")
         if not dry_run:
             link.symlink_to(rel_target)

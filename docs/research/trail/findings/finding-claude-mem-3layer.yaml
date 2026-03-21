@@ -1,0 +1,18 @@
+id: finding-claude-mem-3layer
+timestamp: "2026-03-20T11:30:00Z"
+source: https://github.com/thedotmack/claude-mem
+agent: research-claude-mem
+finding_type: technique
+confidence: confirmed
+confident_about: "3-layer progressive disclosure: search index (~100 tokens/result) → timeline context (~500 tokens) → full observation details (~500-1000 tokens). Claims ~10x token savings (3K vs 35K tokens). SQLite + FTS5 + optional ChromaDB. 5 lifecycle hooks (SessionStart, UserPromptSubmit, PostToolUse, Stop, SessionEnd)."
+gaps: "AGPL-3.0 license makes direct adoption impractical. Token savings figure not independently verified. The tool itself is not recommended — only the pattern."
+evidence: "Traditional RAG loads ~35K tokens at ~6% relevance. 3-layer approach loads ~3K tokens at 100% relevance. Filter-before-fetch: never load full text until IDs validated. Token cost visibility: shows token counts alongside results."
+implication: "Adopt the 3-layer pattern natively: add index-only mode to findings retrieval, add PostToolUse auto-capture hook for research actions, annotate search results with token estimates. Do NOT install claude-mem (AGPL + heavy deps)."
+status: discovered
+tags:
+  - token-optimization
+  - progressive-disclosure
+  - filter-before-fetch
+  - auto-capture
+  - claude-mem
+coverage_assessment: full_review

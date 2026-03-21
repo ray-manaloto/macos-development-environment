@@ -1,0 +1,157 @@
+id: finding-additional-web-marketplaces
+timestamp: "2026-03-21T01:30:00Z"
+source: |
+  - https://skillsmp.com
+  - https://awesomeclaude.ai
+  - https://skill.fish
+  - https://lobehub.com/skills
+  - https://skillsllm.com
+  - https://agentskills.in
+  - https://clawhub.ai
+  - https://smithery.ai
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  DISCOVERED 8 ACTIVE WEB-BASED MARKETPLACES FOR CLAUDE CODE SKILLS/PLUGINS:
+
+  1. **SkillsMP** (skillsmp.com)
+     - Type: Web marketplace
+     - Size: 546,932+ skills indexed from GitHub
+     - Format: SKILL.md standard for Claude Code, Codex CLI, ChatGPT
+     - Search: Web-based + structured descriptions
+     - Install: Clone from GitHub or browse curated list
+     - Status: ACTIVE + fully operational
+
+  2. **Awesome Claude** (awesomeclaude.ai)
+     - Type: Directory/resource aggregator
+     - Content: IDE extensions, tools, workflows, resources
+     - Search: Web-based categorization
+     - Format: Links to official tools (VS Code, JetBrains, etc.)
+     - Status: ACTIVE - curated community resource
+
+  3. **Skill.Fish** (skill.fish)
+     - Type: Web-based skill manager/marketplace
+     - Features: Browse, search, interactive skill tables
+     - Format: Supports multiple agent platforms
+     - UI: Custom skill manager interface
+     - Status: ACTIVE - clean UX, fresh deployment
+
+  4. **LobeHub Skills** (lobehub.com/skills)
+     - Type: Marketplace for Claude, Codex, ChatGPT skills
+     - Size: 229,095+ skills
+     - Format: SKILL.md bundles with version control
+     - Features: Most-installed rankings, categorization
+     - Install: Via LobeHub CLI or web interface
+     - Status: ACTIVE - major marketplace
+
+  5. **SkillsLLM** (skillsllm.com)
+     - Type: AI skills marketplace
+     - Features: Trending skills, trending authors
+     - Integrations: MCP servers category visible
+     - Size: Significant skill collection
+     - Status: ACTIVE - enterprise-focused
+
+  6. **Agent Skills** (agentskills.in)
+     - Type: Universal package manager for AI agent skills
+     - CLI: agent-skills-cli (npm global)
+     - Size: 175,000+ skills across 42+ platforms
+     - Supported agents: Claude, Cursor, Copilot, Windsurf, Cline, Gemini CLI, Zed, Codeium, and 34+ more
+     - Features: Interactive browser, multi-select, repo submission via GitHub
+     - API: `npm install -g agent-skills-cli`
+     - Status: ACTIVE - newest major entry, cross-platform focus
+
+  7. **ClawHub** (clawhub.ai)
+     - Type: Decentralized skill registry with vector search
+     - Tagline: "The skill dock for sharp agents"
+     - Features: Version control like npm, vector-based search, "non-suspicious" signal
+     - CLI: `npx clawhub@latest install <skill>`
+     - Format: AgentSkills bundles, rollback-ready
+     - Status: ACTIVE - lightweight, new platform
+
+  8. **Smithery** (smithery.ai)
+     - Type: Hybrid MCP + Skills marketplace
+     - Size: 5,411+ MCPs, skills ecosystem
+     - Features: Both MCP servers AND SKILL.md workflows
+     - Skills visible: anthropics/skill-creator (66k+ installs), anthropics/frontend-design (63k+ installs)
+     - CLI: Smithery CLI for discovery, connection, installation
+     - Status: ACTIVE - primary MCP discovery hub, expanding to skills
+
+gaps: |
+  - No regional marketplaces discovered (only EN-focused platforms)
+  - openskills.ai (cited in GitHub search results) redirects infinitely or is abandoned
+  - ccpi.dev (CCPI package manager) DNS doesn't resolve
+  - No evidence of blockchain/Web3 skill marketplaces
+  - Enterprise marketplace integrations (beyond Smithery) not yet explored
+  - Mobile-first skill marketplaces not discovered
+  - No GitHub Actions marketplace equivalent for skills found
+
+evidence: |
+  Direct fetches confirm all 8 sites operational:
+  - skillsmp.com: 546,932 skill count in schema
+  - awesomeclaude.ai: Resource aggregator launched, IDE integrations listed
+  - skill.fish: Interactive skill tables, browser interface working
+  - lobehub.com/skills: 229,095 skills, versioning UI confirmed
+  - skillsllm.com: Trending, MCP servers category present
+  - agentskills.in: 175,000+ skills claimed, npm package active
+  - clawhub.ai: Vector search, non-suspicious signal filtering present
+  - smithery.ai: 5,411+ MCPs + skills, Anthropic skills featured
+
+  GitHub search results (22 marketplace repos) also show emerging/private implementations:
+  - diegomarino/claude-toolshed (45 ⭐)
+  - cased/claude-code-plugins (5 ⭐)
+  - shopwareLabs/ai-coding-tools (13 ⭐ - Shopware-specific)
+  - ulasbilgen/mcp-skills-plugins (3 ⭐)
+  - trancong12102/ccc (3 ⭐ - archived)
+  - Emasoft/claude-plugins-validation (2 ⭐)
+  - ehudhal/claude-code-marketplace (2 ⭐ - template)
+  - seansoreilly/claude-code-marketplace (0 ⭐)
+  - mkelk/claude-marketplace (0 ⭐)
+  - Helms-AI/claude-marketplace (1 ⭐ - enterprise)
+
+implication: |
+  1. SKILL DISCOVERY LANDSCAPE IS FRAGMENTED:
+     - No single authoritative marketplace
+     - 8 active web marketplaces + 10+ custom GitHub implementations
+     - Each has different indexing strategy (web crawl, GitHub API, manual submission)
+
+  2. CROSS-PLATFORM TREND IS REAL:
+     - Agent Skills (42+ platforms) and Smithery emerging as aggregators
+     - Historical: Skills.sh → SkillsMP → LobeHub (regional variants)
+     - New: ClawHub (decentralized), Agent Skills (universal PM)
+
+  3. INSTALLATION DIVERGENCE:
+     - No universal install command (unlike npm, pip, cargo)
+     - Each marketplace has own CLI: agent-skills-cli, clawhub, smithery-cli
+     - GitHub clone-and-copy still predominant fallback
+
+  4. QUALITY SIGNAL MISSING:
+     - ClawHub explicit: "no gatekeeping, just signal" (vector search + votes)
+     - SkillsLLM: trending authors/downloads as proxy
+     - LobeHub: version history + community validation
+     - No standardized scoring across platforms
+
+  5. MARKETPLACE STRATEGY IMPLICATIONS FOR MDE:
+     - Should catalog marketplaces in skills.sh priority order (already partial)
+     - Agent Skills CLI is likely future standard (42+ platform support)
+     - ClawHub represents "decentralized" future (vector search > gatekeeping)
+     - Smithery shows MCP registry + skills convergence (single discovery point)
+
+  RECOMMENDATION: Update skills.sh to include:
+     a) Primary: Agent Skills (agentskills.in) — cross-platform
+     b) Secondary: LobeHub (lobehub.com/skills) — largest skill count
+     c) Tertiary: SkillsMP (skillsmp.com) — historical standard
+     d) Emerging: ClawHub (clawhub.ai) — quality-first signal
+     e) Enterprise: Smithery (smithery.ai) — MCP integration point
+
+tags:
+  - marketplace-discovery
+  - skill-registry
+  - claude-code-plugins
+  - agent-platforms
+  - skill-management
+  - web-platforms
+  - npm-equivalent
+  - mcp-ecosystem
+  - cross-platform-tools
+status: discovered

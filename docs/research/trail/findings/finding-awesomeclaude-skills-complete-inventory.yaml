@@ -1,0 +1,100 @@
+id: finding-awesomeclaude-skills-complete-inventory
+timestamp: '2026-03-21T01:23:45.977709Z'
+source: https://awesomeclaude.ai/awesome-claude-skills
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: Complete inventory of 105 Claude skills across 13 categories with
+  descriptions, GitHub repositories, and star counts
+gaps: Code agents/code-specific tools page has ~40 additional entries; chezmoi/mise/dotfiles
+  domain has no dedicated skills discovered
+evidence: 'Fetched https://awesomeclaude.ai/awesome-claude-skills with agent-fetch
+  --json
+
+  Parsed 105 unique skills across 13 categories:
+
+  - Document Skills (6): docx, pdf, pptx, xlsx, revealjs-skill, polaris-datainsight-doc-extract
+
+  - Development & Code Tools (27): web-artifacts-builder, test-driven-development,
+  finishing-a-development-branch, using-git-worktrees, aws-skills, etc.
+
+  - Data & Analysis (11): csv-data-summarizer, kaggle-skill, postgres, mysql, mssql,
+  notebooklm, etc.
+
+  - Media & Content (13): Claude Code Video Toolkit, VideoDB, elevenlabs, youtube-transcript,
+  etc.
+
+  - Security & Web Testing (9): Trail of Bits, owasp-security, defense-in-depth, webapp-testing,
+  etc.
+
+  - Collaboration & Project Management (14): linear-claude-skill, kanban-skill, planning
+  tools, etc.
+
+  - Scientific & Research Tools (4): claude-scientific-skills, deep-research, materials-simulation,
+  manus
+
+  - Writing & Research (6): article-extractor, content-research-writer, family-history-research,
+  etc.
+
+  - Health & Life Sciences (2): claude-ally-health, dna-claude-analysis
+
+  - Learning & Knowledge (2): ship-learn-next, tapestry
+
+  - Utility & Automation (8): file-organizer, invoice-organizer, skill-creator, task-observer,
+  etc.
+
+  - Collections (5): @clawfu/mcp-skills, OpenPaw, wondelai/skills, find-skills, devmarketing-skills
+
+  - Articles & Blog Posts (1): Agent Skills
+
+
+  All official Anthropic skills (docx, pdf, pptx, xlsx, web-artifacts-builder) have
+  94.6k stars.
+
+  High-quality community skills: agnix (114), awesomeclaude itself (not in listing),
+  claude-starter (63), aws-skills (209), revealjs-skill (228)'
+implication: "1. **No chezmoi/mise/dotfiles skills exist** \u2014 This is a gap in\
+  \ the awesome-claude catalog. Our dotfiles infrastructure could be packaged as a\
+  \ skill.\n2. **DevOps/Infrastructure gap** \u2014 Only cc-devops-skills (114 stars)\
+  \ covers this domain; aws-skills is available. No dedicated mise/brew/macos-specific\
+  \ skills.\n3. **Python/Pyright not listed** \u2014 No LSP-specific skills; our pyright-lsp\
+  \ enablement work is novel.\n4. **Skill discovery is incomplete** \u2014 awesomeclaude.ai/awesome-claude-code\
+  \ has 40+ additional agent/code entries not in skills page.\n5. **Potential skill\
+  \ creation opportunities**:\n   - chezmoi + mise + homebrew integration skill\n\
+  \   - pyright-lsp setup and configuration skill\n   - macOS development environment\
+  \ skill\n   - Python project scaffolding skill\n"
+tags:
+- skills-inventory
+- awesome-claude
+- claude-code
+- skill-catalog
+- discovery
+- tool-ecosystem
+status: discovered
+metadata:
+  total_skills: 105
+  total_categories: 13
+  fetched_date: '2026-03-21T01:23:45.977847'
+  pages_analyzed:
+  - https://awesomeclaude.ai/awesome-claude-skills
+  - https://awesomeclaude.ai/awesome-claude-code
+  - https://awesomeclaude.ai/code-cheatsheet
+  category_breakdown:
+    Document Skills: 6
+    Development & Code Tools: 24
+    Data & Analysis: 11
+    Scientific & Research Tools: 4
+    Writing & Research: 6
+    Learning & Knowledge: 2
+    Media & Content: 13
+    Health & Life Sciences: 2
+    Collaboration & Project Management: 14
+    Security & Web Testing: 9
+    Utility & Automation: 8
+    Articles & Blog Posts: 1
+    Collections: 5
+  install_methods_discovered:
+  - GitHub repositories (primary)
+  - npm packages
+  - Claude Code plugins/MCP
+  - Direct integration via Claude Code

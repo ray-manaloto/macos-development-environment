@@ -1,0 +1,63 @@
+id: finding-context-budget-crisis
+timestamp: "2026-03-20T22:45:00Z"
+source: investigation
+agent: code-reviewer
+finding_type: critical-issue
+confidence: confirmed
+confident_about: |
+  The current plugin configuration is SEVERE CONTEXT BLOAT:
+  - Project-level: 4 enabled plugins with legacy claude-flow agents (25 total agents)
+  - User-level: 79 enabled plugins loading 1,100+ agent/skill descriptions (~55k tokens at 50 tokens/agent)
+  - Plugin ecosystem is pulling in agents designed for unrelated domains (blockchain, payment-processing, SEO, HR/legal)
+  - Migration spec Section 7.1 explicitly requires `enabledPlugins: {}` (empty) — NOT YET DONE
+  - Current project settings show 4 plugins that migration spec lists for DELETION
+gaps: |
+  1. Unknown: which of the 79 user-level plugins have actually loaded agents into Claude Code routing
+  2. Unknown: exact token cost of the 1,116 cached agent/skill markdown files
+  3. Unknown: whether the 244 agents reported in /reload-plugins output includes project + user-level or only user-level
+  4. Unknown: impact on Haiku routing latency (does 244 agents slow down pre-task hook routing?)
+evidence: |
+  **Spec language (Section 7.1):**
+  "Set `enabledPlugins` to empty `{}` in `.claude/settings.json`. The current enabled plugins are:
+  - `python-development@claude-code-workflows` | DISABLE | Generic Python advice wastes context
+  - `shell-scripting@claude-code-workflows` | DISABLE | We have a no-shell-scripts policy
+  - `developer-essentials@claude-code-workflows` | DISABLE | Generic; our CLAUDE.md + rules provide better guidance
+  - `conductor@claude-code-workflows` | DISABLE | claude-flow ecosystem dependency"
+
+  **Current project .claude/settings.json:**
+  enabledPlugins contains all 4 plugins that should be disabled.
+
+  **User-level settings (~/.claude/settings.json):**
+  - 79 plugins ENABLED (including payment-processing, blockchain, UI-design, SEO, HR-legal)
+  - Caches 1,116 markdown files from 3 marketplaces
+  - Config inheritance: project overrides user, but user plugins still load
+
+  **Token cost estimate:**
+  - 244 agents × 50 tokens/agent = 12,200 tokens
+  - 88 skills × 30 tokens/skill = 2,640 tokens
+  - Total: ~14,840 tokens (~5-7% of Haiku context window)
+
+  **Spec violation:**
+  Migration Phase 4, Step 16: "set enabledPlugins to {}"
+  Status: NOT DONE
+implication: |
+  CRITICAL: Routing accuracy degradation:
+  1. 10 new agents (researcher, coder, tester, reviewer, python-coder, mise-specialist, chezmoi-specialist, brew-specialist, security-auditor, claude-code-specialist) compete with 234 unrelated agents
+  2. Every pre-task routing call wastes cycles re-ranking against 244 agents
+  3. The 4 legacy plugins directly conflict with project rules (library-first, no-shell-scripts, declarative-config)
+  4. Spec goal was "Absolute minimum viable complexity" — this violates that principle
+  5. User-level plugins (79 total) are unfiltered and partially loaded for routing
+
+  **Remediation:**
+  1. Set `.claude/settings.json` enabledPlugins to {} (empty)
+  2. Run /reload-plugins to verify count drops from 244 to ~10
+  3. Verify pre-task routing still works
+tags:
+  - context-budget
+  - plugin-bloat
+  - routing-performance
+  - migration-spec-violation
+  - agent-discovery
+status: discovered
+priority: CRITICAL
+requires_user_action: true

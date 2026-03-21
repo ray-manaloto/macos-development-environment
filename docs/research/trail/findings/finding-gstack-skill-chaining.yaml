@@ -1,0 +1,17 @@
+id: finding-gstack-skill-chaining
+timestamp: "2026-03-20T11:30:00Z"
+source: https://github.com/garrytan/gstack
+agent: research-gstack
+finding_type: pattern
+confidence: confirmed
+confident_about: "gstack is a 21-skill Claude Code pack (16K+ stars, MIT). Skills produce structured artifacts that downstream skills consume. Our skills are standalone."
+gaps: "Did not read gstack source code or test the setup script. Browser automation binary not evaluated."
+evidence: "gstack skills chain: /office-hours writes a design doc that /plan-ceo-review reads. /plan-eng-review writes a test plan that /qa picks up. Our skills (finishing-a-development-branch, writing-plans, systematic-debugging) do not read each other's output."
+implication: "Define a convention where skills produce structured output files (e.g., docs/plans/current.md) that downstream skills auto-read. Also adopt auto-freeze on investigation and regression test auto-generation patterns."
+status: discovered
+tags:
+  - skill-chaining
+  - artifact-handoff
+  - investigation-freeze
+  - gstack
+coverage_assessment: full_review

@@ -1,0 +1,141 @@
+id: finding-marketplace-chezmoi-mise-search
+timestamp: "2026-03-21T01:05:30Z"
+source: |
+  - https://skills.sh (npx skills search)
+  - GitHub code search (gh search code)
+  - GitHub repo analysis (gh repo view)
+agent: researcher
+finding_type: catalog
+confidence: confirmed
+confident_about: |
+  - **Chezmoi Skills (4 primary)**: terrylica/cc-skills@chezmoi-workflows (85 installs, most battle-tested),
+    faintghost/skills@chezmoi-config (28 installs, currently installed in this project),
+    fonnesbeck/shay-mwa@chezmoi-chef (26 installs),
+    gwenwindflower/.charmschool@chezmoi (17 installs)
+  - **Mise Skills (3 primary)**: terrylica/cc-skills@mise-tasks (114 installs, highest adoption),
+    samhvw8/dotfiles@mise-expert (98 installs),
+    terrylica/cc-skills@mise-configuration (63 installs)
+  - **Dev Environment Skills (3 primary)**: patricio0312rev/skills@dev-environment-bootstrapper (36 installs),
+    miles990/claude-software-skills@development-environment (18 installs),
+    panaversity/agentfactory@python-dev-environment (17 installs)
+  - **Homebrew Skills (3 primary)**: bobmatnyc/claude-mpm-skills@homebrew-formula-maintenance (84 installs),
+    connorads/dotfiles@homebrew-cask-authoring (68 installs),
+    arustydev/ai@pkgmgr-homebrew-formula-dev (14 installs)
+  - **terrylica/cc-skills Ecosystem**: Large, well-maintained marketplace with 20 plugins including:
+    - dotfiles-tools (Chezmoi natural language workflows)
+    - devops-tools (credentials, ML pipelines)
+    - plugin-dev (skill architecture validation)
+    - itp (ADR-driven 4-phase development)
+    - gh-tools (GitHub workflow automation)
+  - **GitHub Code Discovery**: Found 15+ SKILL.md files mentioning chezmoi, mise, and dotfiles integration
+    across multiple organizations; chezmoi-sync patterns are well-documented
+
+gaps: |
+  - No web marketplaces (skillsmp.com, awesome-skills.com, lobehub.com) have accessible online directories
+    for searching (no JSON APIs found, HTML search not available)
+  - No information on whether terrylica/cc-skills dotfiles-tools plugin is currently installed in this project
+  - Unclear which mise-expert implementation (samhvw8/dotfiles@mise-expert) is most compatible with current
+    mde architecture
+  - No discovery of comprehensive "macOS configuration as code" skills combining chezmoi + mise + brew in a
+    single unified skill
+  - Integration patterns between chezmoi, mise, and brew-sync not yet documented
+
+evidence: |
+  **skills.sh Search Results Summary:**
+  - Chezmoi: "terrylica/cc-skills@chezmoi-workflows" (85 installs) is the most-installed single chezmoi skill
+  - Mise: "terrylica/cc-skills@mise-tasks" (114 installs) is the highest-adoption mise skill
+  - terrylica/cc-skills repository contains 20 plugins with dedicated dotfiles-tools plugin
+
+  **GitHub Code Search Results:**
+  - majiayu000/claude-skill-registry has both chezmoi and mise-expert SKILL.md files
+  - Multiple dotfiles repositories reference chezmoi-sync patterns and chezmoi-apply workflows
+  - ssiumha/dots has mise-config SKILL.md for project configuration
+  - btuckerc/boilerplate uses both chezmoi and mise in coordinated setup
+
+  **Repository Composition:**
+  - terrylica/cc-skills contains: CLAUDE.md, plugin.json, hooks/, scripts/, multiple skill directories
+  - Confirms plugin-based architecture enabling modular skill composition
+  - GPL/MIT licensed (open source)
+
+implication: |
+  **Recommended Actions:**
+  1. **Immediate**: Install terrylica/cc-skills@mise-tasks (114 installs, highest adoption rate)
+     and terrylica/cc-skills@chezmoi-workflows (85 installs) from skills.sh
+  2. **Priority**: Analyze terrylica/cc-skills ecosystem structure to understand:
+     - How dotfiles-tools plugin integrates chezmoi + mise
+     - Whether plugin-dev provides skill architecture patterns applicable to mde
+     - How itp (ADR-driven) workflow maps to mde's current skill strategy
+  3. **Evaluate**: samhvw8/dotfiles@mise-expert vs terrylica approach for mise expertise
+  4. **Create Unified Skill** (if gap exists): Single "macos-environment-setup" skill that coordinates:
+     - Chezmoi dotfiles sync
+     - Mise tool installation and configuration
+     - Homebrew formula updates
+     - Validation of entire environment post-apply
+  5. **Document Integration**: Create SKILL.md documenting how to trigger chezmoi-workflows + mise-tasks
+     in coordinated sequence with error handling
+  6. **Memory**: Update researcher memory with terrylica/cc-skills as primary reference for:
+     - Plugin-based skill marketplace patterns
+     - Chezmoi + mise integration strategies
+     - dotfiles management best practices
+
+tags:
+  - chezmoi
+  - mise
+  - homebrew
+  - dotfiles
+  - macos-config
+  - dev-environment
+  - skill-marketplace
+  - terrylica-cc-skills
+  - faintghost-chezmoi-config
+  - samhvw8-mise-expert
+  - skills.sh
+  - github-code-search
+  - plugin-architecture
+
+status: discovered
+marketplace_breakdown: |
+  **BREAKDOWN BY INSTALLATION COUNT:**
+
+  Top 10 Skills in Related Categories:
+  1. terrylica/cc-skills@mise-tasks — 114 installs (mise specialist)
+  2. samhvw8/dotfiles@mise-expert — 98 installs (mise expert)
+  3. bobmatnyc/claude-mpm-skills@homebrew-formula-maintenance — 84 installs
+  4. terrylica/cc-skills@chezmoi-workflows — 85 installs (chezmoi specialist)
+  5. connorads/dotfiles@homebrew-cask-authoring — 68 installs
+  6. terrylica/cc-skills@mise-configuration — 63 installs
+  7. patricio0312rev/skills@dev-environment-bootstrapper — 36 installs
+  8. faintghost/skills@chezmoi-config — 28 installs (currently installed in mde)
+  9. fonnesbeck/shay-mwa@chezmoi-chef — 26 installs
+  10. miles990/claude-software-skills@development-environment — 18 installs
+
+  **INSTALLATION TIERS:**
+  - Tier 1 (80+ installs): mise-tasks, chezmoi-workflows, homebrew-formula-maintenance
+  - Tier 2 (50-79 installs): mise-configuration, homebrew-cask-authoring
+  - Tier 3 (25-49 installs): dev-environment-bootstrapper, chezmoi-config, chezmoi-chef
+  - Tier 4 (<25 installs): chezmoi, specialized niche skills
+
+currently_installed: |
+  Based on project git status, currently installed:
+  - faintghost/skills@chezmoi-config (28 installs) — LOW adoption relative to alternatives
+
+  **Recommendation**: Consider upgrading to terrylica/cc-skills@chezmoi-workflows (85 installs)
+  for higher adoption and likely better integration with mise-tasks (same author)
+
+alternative_tools: |
+  **Nix-based alternative** (found in search):
+  - 0xbigboss/claude-code@nix-best-practices (181 installs)
+  - greenheadhq/nixos-config@managing-macos (10 installs)
+
+  **Note**: Nix is NOT recommended as replacement for chezmoi+mise+brew approach per project
+  rules and architecture; discovered for completeness only.
+
+unified_platform_ecosystem: |
+  **terrylica/cc-skills as Unified Platform:**
+  - 20 plugins covering: devops, dotfiles, documentation, code quality, productivity
+  - Implements ITP (Implement-The-Plan) workflow with ADR-driven 4-phase development
+  - dotfiles-tools plugin specifically designed for chezmoi natural language workflows
+  - GitHub tools, link validation, performance profiling all co-located
+
+  **Implication**: This ecosystem could serve as reference architecture for
+  mde's own skill system if additional capabilities needed beyond mise+chezmoi+brew

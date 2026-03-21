@@ -1,0 +1,68 @@
+id: finding-lsp-sources-conflict
+timestamp: "2026-03-21T00:55:00Z"
+source: |
+  Primary: https://www.reddit.com/r/ClaudeAI/comments/1qe239d/the_complete_guide_to_claude_code_v3_lsp_claudemd/
+  Secondary (conflict): https://github.com/tweakcc/tweakcc
+  Secondary (conflict): https://dev.classmethod.jp/en/articles/claude-code-lsp-from-local-marketplace/
+agent: researcher
+finding_type: correction
+confidence: probable
+confident_about: |
+  1. Reddit guide presents LSP as built-in, no tools required (v2.0.74+)
+  2. tweakcc GitHub repository exists (mentioned in source catalog)
+  3. DevelopersIO article discusses marketplace.json setup (mentioned in catalog)
+  4. Conflict exists between "LSP is built-in" and tool-based approaches
+  5. These sources were cataloged in the same session (2026-03-21)
+
+gaps: |
+  1. Did not fetch tweakcc GitHub repo details
+  2. Did not fetch DevelopersIO article content
+  3. Unclear if tweakcc is alternative, optional, or deprecated
+  4. Unclear if marketplace.json is required or optional
+  5. Unclear relationship between three approaches (built-in vs tweakcc vs marketplace)
+  6. No information on which approach is current/recommended
+  7. No timeline showing when each approach was introduced
+
+evidence: |
+  From source catalog (auto-updated during this session):
+
+  Line 355: "tweakcc: Claude Code LSP Patcher | Patches Claude Code, customizes system prompts, enables LSP support"
+
+  Line 356: "DevelopersIO: Local Marketplace LSP Setup | Step-by-step local marketplace configuration, marketplace.json structure, strict:false mode, file extension mapping"
+
+  From Reddit guide analysis:
+  - "LSP is built-in as of v2.0.74"
+  - "No setup required"
+  - No mention of tweakcc, marketplace.json, or patching tools
+
+implication: |
+  1. **Three different LSP setup approaches exist:**
+     - Built-in (v2.0.74+) — automatic, zero config
+     - tweakcc — patches Claude Code, customizes system prompts
+     - Marketplace — uses marketplace.json with file extension mapping
+
+  2. **Reconciliation needed:** Determine if these are:
+     - Sequential evolution (old → new)
+     - Alternative methods for different use cases
+     - Conflicting recommendations
+
+  3. **Research gap identified:** Need to fetch tweakcc and DevelopersIO sources to understand:
+     - When tweakcc approach was relevant
+     - Whether marketplace is for custom/local LSP servers
+     - Current best practice (built-in vs marketplace vs tweakcc)
+
+  4. **Impact on LSP troubleshooting:**
+     - If "0 LSP servers" occurs with built-in approach → use marketplace
+     - If semantic understanding missing → might need tweakcc patches
+     - Need to verify which approach user is using before troubleshooting
+
+tags:
+  - lsp-setup-conflict
+  - lsp-approaches-multiple
+  - tweakcc-vs-builtin
+  - marketplace-configuration
+  - lsp-evolution
+  - needs-deep-review
+  - reconciliation-required
+
+status: discovered

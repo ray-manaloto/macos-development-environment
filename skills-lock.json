@@ -6,10 +6,35 @@
       "sourceType": "github",
       "computedHash": "9c237e9231c6009b50887321bd3e3ab602e33402e83c80c5cfdd28af47a91282"
     },
+    "chezmoi-config": {
+      "source": "faintghost/skills",
+      "sourceType": "github",
+      "computedHash": "90a887ff075b6666167afca70c2dc337b49726ab08ed4ca1ae7e39fefc9e6272"
+    },
+    "chezmoi-workflows": {
+      "source": "terrylica/cc-skills",
+      "sourceType": "github",
+      "computedHash": "832978893b32d9b0d68f959edabc73af3a8bb27cd301533bc488fbcfdc870d05"
+    },
     "dev": {
       "source": "microsoft/playwright-cli",
       "sourceType": "github",
       "computedHash": "2895341c0061c04328444399ca4e375625dc87615bf110d0cf77231232d20f27"
+    },
+    "homebrew-formula-maintenance": {
+      "source": "bobmatnyc/claude-mpm-skills",
+      "sourceType": "github",
+      "computedHash": "eb741693f5754655d6b1ffdd95708871f62bcb4f459738c474b482fdb878ad08"
+    },
+    "lsp-setup": {
+      "source": "rysweet/amplihack",
+      "sourceType": "github",
+      "computedHash": "562dbf9423eeb6d3876b8d304fabb67821bdf411aa8cd147ccbd55dc2278cd18"
+    },
+    "mise-tasks": {
+      "source": "terrylica/cc-skills",
+      "sourceType": "github",
+      "computedHash": "b58dacc3badf02093e2098fed111bed69761d5d1907f9f517511b33d32ab2e0a"
     },
     "notebooklm": {
       "source": "teng-lin/notebooklm-py",

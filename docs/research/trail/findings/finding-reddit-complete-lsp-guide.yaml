@@ -1,0 +1,65 @@
+id: finding-reddit-complete-lsp-guide
+timestamp: "2026-03-21T00:46:00Z"
+source: https://www.reddit.com/r/ClaudeAI/comments/1qe239d/the_complete_guide_to_claude_code_v3_lsp_claudemd/
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: |
+  1. LSP setup is built-in (v2.0.74+) with ENABLE_LSP_TOOL=1 for older versions
+  2. No .lsp.json file is mentioned; configuration is via environment variable only
+  3. No mention of tweakcc; LSP is presented as native/out-of-the-box capability
+  4. No comparison between claude-plugins-official and Piebald approaches
+  5. LSP enables go-to-definition, find-references, hover, diagnostics, document symbols
+  6. Performance improvement: 900x faster (50ms vs 45 seconds) for cross-codebase navigation
+  7. Supported languages: Python, TypeScript, Go, Rust, Java, C/C++, C#, PHP, Kotlin, Ruby, HTML/CSS
+
+gaps: |
+  1. No "0 LSP servers" troubleshooting mentioned; assumes working setup
+  2. No .lsp.json file configuration discussed
+  3. No tweakcc requirement or optional status provided
+  4. No comparison of different LSP implementation approaches
+  5. No advanced debugging steps for LSP failures
+  6. No per-language LSP server specification details
+  7. No settings.json LSP configuration options documented
+
+evidence: |
+  From "Part 8: LSP — IDE-Level Code Intelligence":
+
+  "New in December 2025 (v2.0.74), Claude Code gained native Language Server Protocol support."
+
+  Setup instructions:
+  "LSP is built-in as of v2.0.74. For older versions: export ENABLE_LSP_TOOL=1"
+
+  Capabilities table lists:
+  - Go to Definition: Jump to where any symbol is defined
+  - Find References: See everywhere a function is used
+  - Hover: Get type signatures and docs
+  - Diagnostics: Real-time error detection
+  - Document Symbols: List all symbols in a file
+
+  Performance claim:
+  "Performance: 900x faster (50ms vs 45 seconds for cross-codebase navigation)"
+
+  Supported languages:
+  "Python, TypeScript, Go, Rust, Java, C/C++, C#, PHP, Kotlin, Ruby, HTML/CSS"
+
+implication: |
+  1. LSP setup is simpler than expected—no complex .lsp.json needed
+  2. The "0 LSP servers" issue (from memory) may be a non-issue in current version
+  3. For users on v2.0.74+, LSP requires no configuration—it's automatic
+  4. Older versions need ENABLE_LSP_TOOL=1 environment variable
+  5. LSP is a built-in feature, not an optional plugin or MCP server
+  6. The performance gain (900x) makes semantic navigation dramatically faster than text-based search
+
+tags:
+  - lsp-setup
+  - claude-code-v3
+  - ide-code-intelligence
+  - lsp-built-in
+  - environment-variable
+  - cross-codebase-navigation
+  - semantic-understanding
+  - supported-languages
+  - troubleshooting-gap
+
+status: discovered

@@ -1,0 +1,549 @@
+id: finding-all-skill-marketplaces
+timestamp: "2026-03-21T01:15:30Z"
+source: github.com, npm.im
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  Comprehensive inventory of 60+ publicly available Claude Code skill/plugin marketplaces, registries, directories, and CLIs.
+  Includes categorized sources with installation methods, repository links, and integration capabilities.
+gaps: |
+  - Web UI functionality details (how to search, filter, sort on each marketplace)
+  - Real-time availability/maintenance status of smaller personal marketplaces
+  - Exact skill/plugin counts for some newer registries
+  - API/webhook integration capabilities
+  - Community activity metrics beyond star counts
+evidence: |
+  GitHub search across multiple query patterns:
+  - "claude code marketplace" (20 results)
+  - "claude code registry" (1 result)
+  - "claude skill marketplace" (20 results)
+  - "agent skills marketplace" (15 results)
+  - "skill installer" (15 results)
+  - GitHub topics: claude-code (various)
+  npm registry search for skills packages
+  Direct GitHub API queries for top repositories
+implication: |
+  Users have 60+ options for discovering and installing Claude Code skills.
+  Top tier (10K+ stars): skills.sh, awesome-claude-code, vercel-labs/skills
+  Emerging tier (100+ stars): skillkit, skillfile, various specialized marketplaces
+  Niche tier (<50 stars): domain-specific marketplaces (SAP, Shopware, Smalltalk, etc.)
+tags:
+  - marketplace-directory
+  - claude-code
+  - skill-installation
+  - plugin-registry
+  - agent-tools
+  - skill-discovery
+status: discovered
+
+## MARKETPLACE INVENTORY
+
+### TIER 1: Official & High-Traffic (1000+ stars)
+
+#### Universal Skill Marketplaces
+
+1. **skills.sh (Vercel Labs official)**
+   - Repository: github.com/vercel-labs/skills
+   - Stars: 11,097
+   - Type: CLI marketplace + web UI
+   - Command: `npx skills search` / `npx skills add`
+   - Description: The open agent skills ecosystem
+   - Keywords: cli, agent-skills, skills, ai-agents, claude-code, openclaw, cline, cursor, continue, windsurf, codex
+   - Install method: npm (bin: skills, add-skill)
+   - URL: https://github.com/vercel-labs/skills
+
+2. **awesome-claude-code**
+   - Repository: github.com/hesreallyhim/awesome-claude-code
+   - Stars: 29,439
+   - Type: Curated list (GitHub)
+   - Description: A curated list of awesome skills, hooks, slash-commands, agent orchestrators, applications, and plugins for Claude Code
+   - Install method: Direct repository cloning / manual integration
+   - URL: https://github.com/hesreallyhim/awesome-claude-code
+
+3. **claude-code-plugins-plus-skills (CCPI Package Manager)**
+   - Repository: github.com/jeremylongshore/claude-code-plugins-plus-skills
+   - Stars: 1,670
+   - Type: Marketplace + CCPI package manager
+   - Description: 340 plugins + 1367 agent skills for Claude Code. Open-source marketplace with CCPI package manager, interactive tutorials, and production orchestration patterns.
+   - Install method: Direct + CCPI package manager
+   - URL: https://github.com/jeremylongshore/claude-code-plugins-plus-skills
+
+### TIER 2: High-Value Specialized (100-1000 stars)
+
+#### Specialized Installation Tools & Aggregators
+
+4. **skillkit**
+   - Repository: github.com/rohitg00/skillkit
+   - Stars: 617
+   - Type: Universal skill installer
+   - Description: Supercharge AI coding agents with portable skills. Install, translate & share skills across Claude Code, Cursor, Codex, Copilot & 40+ others
+   - Install method: npm/CLI
+   - Compatibility: 40+ AI tools
+   - URL: https://github.com/rohitg00/skillkit
+
+5. **claude-skills-marketplace (Hattingpete)**
+   - Repository: github.com/mhattingpete/claude-skills-marketplace
+   - Stars: 478
+   - Type: Domain-focused marketplace
+   - Description: Claude Code Skills for software engineering workflows - Git automation, testing, and code review
+   - Install method: Direct cloning / skillsmp integration
+   - URL: https://github.com/mhattingpete/claude-skills-marketplace
+
+6. **gmickel-claude-marketplace (Flow-Next)**
+   - Repository: github.com/gmickel/gmickel-claude-marketplace
+   - Stars: 547
+   - Type: Specialized marketplace
+   - Description: Claude Code plugins for reliable AI coding. Flow-Next: plan-first workflows, Ralph autonomous mode, multi-model review gates, re-anchoring, receipt-based gating
+   - Install method: Direct + custom integration
+   - URL: https://github.com/gmickel/gmickel-claude-marketplace
+
+#### Awesome Lists (Secondary Discovery)
+
+7. **awesome-llm-skills**
+   - Repository: github.com/Prat011/awesome-llm-skills
+   - Stars: 1,019
+   - Type: Curated list
+   - Description: A curated list of awesome LLM and AI Agent Skills, resources and tools for customising AI Agent workflows - that works with Claude Code, Codex, Gemini CLI
+   - Works with: Claude Code, Codex, Gemini CLI, custom AI Agents
+   - URL: https://github.com/Prat011/awesome-llm-skills
+
+#### Official Anthropic Marketplace
+
+8. **anthropics/skills**
+   - Repository: github.com/anthropics/skills
+   - Type: Official Anthropic repository
+   - Description: Public repository for Agent Skills
+   - Maintained by: Anthropic
+   - URL: https://github.com/anthropics/skills
+
+9. **anthropics/life-sciences**
+   - Repository: github.com/anthropics/life-sciences
+   - Stars: 271
+   - Type: Official domain-specific marketplace
+   - Description: Repo for the Claude Code Marketplace to use with the Claude for Life Sciences Launch. Hosts marketplace.json long-term.
+   - URL: https://github.com/anthropics/life-sciences
+
+#### Installation & Registry Tools
+
+10. **skillfile**
+    - Repository: github.com/eljulians/skillfile
+    - Stars: 79
+    - Type: Skills installer + declarative management
+    - Description: One-stop shop for AI skills and agents. Search 110K+ community skills, install and track them declaratively, deploy across all major AI coding tools
+    - Skills indexed: 110K+
+    - Compatibility: Claude Code, Codex, and others
+    - Install method: npm
+    - URL: https://github.com/eljulians/skillfile
+
+11. **agent-skills-cli (Universal Agent Skills CLI)**
+    - Repository: github.com/Karanjot786/agent-skills-cli
+    - Stars: 58
+    - Type: Universal CLI
+    - Description: Universal CLI for Agent Skills. Access 40,000+ skills from SkillsMP and sync to Cursor, Claude Code, GitHub Copilot, OpenAI Codex, Antigravity
+    - Skills indexed: 40,000+
+    - URL: https://github.com/Karanjot786/agent-skills-cli
+
+12. **flins (Universal Skill Installer)**
+    - Repository: github.com/powroom/flins
+    - Stars: 34
+    - Type: Universal skill installer
+    - Description: Universal skill installer for AI coding agents
+    - URL: https://github.com/powroom/flins
+
+13. **plum (Multi-Marketplace TUI)**
+    - Repository: github.com/itsdevcoffee/plum
+    - Stars: 11
+    - Type: Plugin/marketplace aggregator TUI
+    - Description: 🍑 Discover and manage 750+ Claude Code plugins from 12 marketplaces. Fast TUI with fuzzy search, dynamic registry, and zero setup.
+    - Plugins managed: 750+ from 12 marketplaces
+    - UI: Terminal UI with fuzzy search
+    - URL: https://github.com/itsdevcoffee/plum
+
+### TIER 3: Emerging & Niche Marketplaces (10-100 stars)
+
+#### Web-based Marketplace Discovery
+
+14. **claudemarketplaces.com**
+    - Repository: github.com/mertbuilds/claudemarketplaces.com
+    - Stars: 72
+    - Type: Marketplace directory/aggregator
+    - Description: Discover Claude Code Marketplaces
+    - URL: https://github.com/mertbuilds/claudemarketplaces.com
+    - Web: claudemarketplaces.com (implied)
+
+15. **SkillX.sh**
+    - Repository: github.com/nextlevelbuilder/skillx
+    - Stars: 36
+    - Type: Skills marketplace with search/ratings
+    - Description: SkillX.sh — The Only Skill That Your AI Agent Needs. AI agent skills marketplace with semantic search, leaderboard, ratings, and CLI.
+    - Features: Semantic search, leaderboard, ratings, CLI
+    - URL: https://github.com/nextlevelbuilder/skillx
+
+#### General Purpose Marketplaces
+
+16. **Dev-GOM/claude-code-marketplace**
+    - Repository: github.com/Dev-GOM/claude-code-marketplace
+    - Stars: 77
+    - Type: Marketplace
+    - Description: Claude Code plugins & extensions - Hooks, commands, and agents for developer productivity and workflow automation
+    - URL: https://github.com/Dev-GOM/claude-code-marketplace
+
+17. **Claude Emporium**
+    - Repository: github.com/Vvkmnn/claude-emporium
+    - Stars: 145
+    - Type: Marketplace (under construction)
+    - Description: 🏛 [UNDER CONSTRUCTION] A (roman) claude plugin marketplace
+    - Status: Active development
+    - URL: https://github.com/Vvkmnn/claude-emporium
+
+#### Domain-Specific Professional Marketplaces
+
+18. **sap-skills (SAP Development)**
+    - Repository: github.com/secondsky/sap-skills
+    - Stars: 155
+    - Type: Domain marketplace
+    - Description: Production-ready Claude Code skills for SAP development - 35 skills covering BTP, CAP, Fiori, ABAP, HANA, Analytics Cloud
+    - Skills: 35 SAP-focused
+    - URL: https://github.com/secondsky/sap-skills
+
+19. **claude-code-elixir (Elixir Development)**
+    - Repository: github.com/georgeguimaraes/claude-code-elixir
+    - Stars: 130
+    - Type: Domain marketplace
+    - Description: Claude Code plugin marketplace for Elixir development
+    - URL: https://github.com/georgeguimaraes/claude-code-elixir
+
+20. **ai-coding-tools (Shopware Development)**
+    - Repository: github.com/shopwareLabs/ai-coding-tools
+    - Stars: 13
+    - Type: Domain marketplace
+    - Description: Claude Code plugin marketplace for Shopware development. Provides MCP servers, skills, agents, hooks, and commands.
+    - URL: https://github.com/shopwareLabs/ai-coding-tools
+
+21. **dagster-io/skills (Dagster Integration)**
+    - Repository: github.com/dagster-io/skills
+    - Stars: 87
+    - Type: Domain marketplace
+    - Description: A collection of AI skills for working with Dagster
+    - URL: https://github.com/dagster-io/skills
+
+22. **smalltalk-dev-plugin (Pharo/Smalltalk)**
+    - Repository: github.com/mumez/smalltalk-dev-plugin
+    - Stars: 8
+    - Type: Domain marketplace
+    - Description: Claude Code plugin for AI-driven Smalltalk (Pharo) development
+    - URL: https://github.com/mumez/smalltalk-dev-plugin
+
+23. **cpython-skills (CPython Development)**
+    - Repository: github.com/gpshead/cpython-skills
+    - Stars: 12
+    - Type: Domain marketplace
+    - Description: A Claude Code marketplace and skill for working in the cpython repo
+    - URL: https://github.com/gpshead/cpython-skills
+
+#### Community-Driven Multi-Purpose Marketplaces
+
+24. **luxor-claude-marketplace**
+    - Repository: github.com/manutej/luxor-claude-marketplace
+    - Stars: 44
+    - Type: Professional marketplace
+    - Description: Professional Claude Code marketplace with 140 development tools: 67 skills, 28 commands, 30 agents, 15 workflows
+    - Contents: 67 skills, 28 commands, 30 agents, 15 workflows
+    - URL: https://github.com/manutej/luxor-claude-marketplace
+
+25. **glincker/claude-code-marketplace**
+    - Repository: github.com/glincker/claude-code-marketplace
+    - Stars: 18
+    - Type: Community-driven marketplace
+    - Description: Community-driven Claude Code marketplace with specialized AI agents for full SDLC. Features multi-agent coordination, workflow orchestration, 100+ API integrations.
+    - Features: Code review, security scanning, deployment automation, performance optimization
+    - URL: https://github.com/glincker/claude-code-marketplace
+
+26. **awesome-claude-plugins**
+    - Repository: github.com/Chat2AnyLLM/awesome-claude-plugins
+    - Stars: 67
+    - Type: Curated list
+    - Description: A curated list of awesome claude marketplaces and plugins
+    - URL: https://github.com/Chat2AnyLLM/awesome-claude-plugins
+
+27. **cc-thingz (Umputun)**
+    - Repository: github.com/umputun/cc-thingz
+    - Stars: 191
+    - Type: General marketplace
+    - Description: various things for claude code
+    - URL: https://github.com/umputun/cc-thingz
+
+#### Additional Specialized/Personal Marketplaces
+
+28. **audio-plugin-dev-skills**
+    - Repository: github.com/iPlug3/audio-plugin-dev-skills
+    - Stars: 47
+    - Type: Domain marketplace
+    - Description: Claude Code marketplace for audio plugin development skills
+    - URL: https://github.com/iPlug3/audio-plugin-dev-skills
+
+29. **devsforge/marketplace**
+    - Repository: github.com/devsforge/marketplace
+    - Stars: 44
+    - Type: Marketplace
+    - Description: Claude Code marketplace
+    - URL: https://github.com/devsforge/marketplace
+
+30. **skillsforge-marketplace**
+    - Repository: github.com/rawveg/skillsforge-marketplace
+    - Stars: 27
+    - Type: Marketplace
+    - Description: A Claude Code Marketplace
+    - URL: https://github.com/rawveg/skillsforge-marketplace
+
+31. **netresearch/claude-code-marketplace**
+    - Repository: github.com/netresearch/claude-code-marketplace
+    - Stars: 23
+    - Type: Curated marketplace
+    - Description: Curated Agent Skills collection for AI-assisted development | By Netresearch
+    - URL: https://github.com/netresearch/claude-code-marketplace
+
+32. **mwguerra/claude-code-plugins**
+    - Repository: github.com/mwguerra/claude-code-plugins
+    - Stars: 23
+    - Type: Marketplace
+    - Description: MWGuerra Claude Code Marketplace
+    - URL: https://github.com/mwguerra/claude-code-plugins
+
+33. **cc-skills (DevOps & ClickHouse)**
+    - Repository: github.com/terrylica/cc-skills
+    - Stars: 22
+    - Type: Specialized marketplace
+    - Description: Claude Code Skills Marketplace: plugins, skills for ADR-driven development, DevOps automation, ClickHouse management
+    - URL: https://github.com/terrylica/cc-skills
+
+34. **artemnovichkov/skills**
+    - Repository: github.com/artemnovichkov/skills
+    - Stars: 20
+    - Type: Marketplace
+    - Description: Collection of Claude Code plugins for enhanced development workflows
+    - URL: https://github.com/artemnovichkov/skills
+
+35. **swe-marketplace (Software Engineering)**
+    - Repository: github.com/andisab/swe-marketplace
+    - Stars: 17
+    - Type: Domain marketplace
+    - Description: A plugin marketplace focused mostly on software-development with Claude Code
+    - URL: https://github.com/andisab/swe-marketplace
+
+36. **awesome-design-skills**
+    - Repository: github.com/bergside/awesome-design-skills
+    - Stars: 15
+    - Type: Curated list
+    - Description: List of awesome design skill files for agentic tools like Claude, Codex, and Gemini
+    - URL: https://github.com/bergside/awesome-design-skills
+
+37. **notion-skills (Notion Integration)**
+    - Repository: github.com/tommy-ca/notion-skills
+    - Stars: 14
+    - Type: Domain marketplace
+    - Description: Claude Skills marketplace for productive Notion workflows: knowledge capture, meeting intelligence, research documentation
+    - URL: https://github.com/tommy-ca/notion-skills
+
+38. **photon (Intent-based Marketplace)**
+    - Repository: github.com/portel-dev/photon
+    - Stars: 14
+    - Type: Intent framework
+    - Description: Define intent once. Photon turns a single TypeScript file into CLI tools, MCP servers, and web interfaces.
+    - URL: https://github.com/portel-dev/photon
+
+39. **The-Focus-AI/claude-marketplace**
+    - Repository: github.com/The-Focus-AI/claude-marketplace
+    - Stars: 10
+    - Type: Integration marketplace
+    - Description: Claude Code marketplace with skills for Focus.AI integration, theming, and development workflows
+    - URL: https://github.com/The-Focus-AI/claude-marketplace
+
+40. **Casper-Studios/casper-marketplace**
+    - Repository: github.com/Casper-Studios/casper-marketplace
+    - Stars: 10
+    - Type: Marketplace
+    - Description: 👻 Casper Studio Claude Code Marketplace
+    - URL: https://github.com/Casper-Studios/casper-marketplace
+
+41. **takahirom-claude-code-marketplace**
+    - Repository: github.com/takahirom/takahirom-claude-code-marketplace
+    - Stars: 10
+    - Type: Marketplace
+    - Description: Plugins such as Quality Gate and Skill Extractor
+    - URL: https://github.com/takahirom/takahirom-claude-code-marketplace
+
+42. **vibekit-claude-plugins (Productivity)**
+    - Repository: github.com/shrwnsan/vibekit-claude-plugins
+    - Stars: 7
+    - Type: Domain marketplace
+    - Description: VibeKit: Productivity Plus Claude Code Plugin Marketplace. Curated productivity-enhancing plugins for developers
+    - URL: https://github.com/shrwnsan/vibekit-claude-plugins
+
+43. **lazyclaude (Plugin Visualization TUI)**
+    - Repository: github.com/NikiforovAll/lazyclaude
+    - Stars: 28
+    - Type: TUI visualizer
+    - Description: A lazygit-style TUI for visualizing Claude Code customizations
+    - URL: https://github.com/NikiforovAll/lazyclaude
+
+### TIER 4: Agent Skills Marketplaces (Multi-Tool)
+
+44. **SkillX (nextlevelbuilder)**
+    - Repository: github.com/nextlevelbuilder/skillx
+    - Type: Agent skills marketplace
+    - Description: AI agent skills marketplace with semantic search, leaderboard, ratings, and CLI
+    - URL: github.com/nextlevelbuilder/skillx
+
+45. **mcpbundler-agent-skills-marketplace**
+    - Repository: github.com/eugenepyvovarov/mcpbundler-agent-skills-marketplace
+    - Stars: 10
+    - Type: Multi-tool agent skills
+    - Description: agent skills marketplace for mcp bundler (can be used with other AI tools). Includes borrowed and original skills.
+    - URL: https://github.com/eugenepyvovarov/mcpbundler-agent-skills-marketplace
+
+46. **DiversioTeam/agent-skills-marketplace**
+    - Repository: github.com/DiversioTeam/agent-skills-marketplace
+    - Stars: 2
+    - Type: Decentralized agent skills
+    - Description: Diversio Agent Skills marketplace using the open standard; includes Claude marketplace metadata
+    - URL: https://github.com/DiversioTeam/agent-skills-marketplace
+
+47. **squidbay (Decentralized Skills)**
+    - Repository: github.com/squidbay/squidbay
+    - Stars: 2
+    - Type: Decentralized marketplace
+    - Description: 🦑 AI agent skill marketplace - where agents buy and sell capabilities using Bitcoin Lightning
+    - URL: https://github.com/squidbay/squidbay
+
+### TIER 5: Community & Emerging Registries
+
+48. **claude-code-registry (AnobleSCM)**
+    - Repository: github.com/AnobleSCM/claude-code-registry
+    - Stars: 0
+    - Type: Community registry
+    - Description: Community-maintained registry of Claude Code skills, agents, MCPs, tools, and commands
+    - Status: Active
+    - URL: https://github.com/AnobleSCM/claude-code-registry
+
+49. **claude-plugins-registry (CLI Marketplace)**
+    - Repository: github.com/biggora/claude-plugins-registry
+    - Stars: 1
+    - Type: CLI marketplace
+    - Description: CLI marketplace for discovering, installing, and managing Claude Code plugins
+    - URL: https://github.com/biggora/claude-plugins-registry
+
+50. **awesome-rosetta-skills**
+    - Repository: github.com/xjtulyc/awesome-rosetta-skills
+    - Stars: 8
+    - Type: Curated list
+    - Description: Awesome all-in-one research skills for AI agents — covering every academic discipline. Works with Claude Code, Codex, Gemini CLI & Cursor.
+    - URL: https://github.com/xjtulyc/awesome-rosetta-skills
+
+### TIER 6: Additional Community Collections (Stars < 5)
+
+51. **adrianpuiu/claude-skills-marketplace**
+    - Repository: github.com/adrianpuiu/claude-skills-marketplace
+    - Stars: 86
+    - Type: Marketplace
+    - Description: A comprehensive skill that establishes Claude as a Project Architect to generate detailed planning documents
+    - URL: https://github.com/adrianpuiu/claude-skills-marketplace
+
+52. **openclaw-skills-marketplace**
+    - Repository: github.com/dvcrn/openclaw-skills-marketplace
+    - Stars: 2
+    - Type: Converted marketplace
+    - Description: Automatic conversion of openclaw/skills into a Claude Skills marketplace for direct use in Claude
+    - URL: https://github.com/dvcrn/openclaw-skills-marketplace
+
+53. **awesome-llm-skills** (Secondary entry - additional awesome lists)
+    - Repository: github.com/vivy-yi/awesome-skills
+    - Type: Curated list
+    - Description: A curated list of awesome AI agent skills, Claude Skills, and AI agent capabilities - 230+ repositories
+    - URL: https://github.com/vivy-yi/awesome-skills
+
+54. **awesome-agent-skills**
+    - Repository: github.com/megalor1/Awesome-Agent-Skills
+    - Type: Curated list
+    - Description: 🧭 Discover and navigate AI Agent Skills with Awesome-Agent-Skills, your go-to resource for Claude, OpenAI, and MCP Servers.
+    - URL: https://github.com/megalor1/Awesome-Agent-Skills
+
+55. **awesome-agent4edu**
+    - Repository: github.com/xdelin/awesome-agent4edu
+    - Type: Curated list
+    - Description: Awesome Agent4Edu: The ultimate collection of Educational AI Agents, MCP Servers, Claude Skills & LLM Apps for students
+    - URL: https://github.com/xdelin/awesome-agent4edu
+
+### TIER 7: Personal/Smaller Collections (Variable maintenance)
+
+56-60. **Additional personal marketplaces** (0-11 stars each):
+- DustyWalker/claude-code-marketplace
+- getty104/claude-code-marketplace
+- jpoutrin/product-forge
+- Lego4005/foxit-marketplace
+- lfnovo/por-marketplace
+- dapi/claude-code-marketplace
+- And 20+ others with minimal stars
+
+### TIER 8: npm Package Ecosystem
+
+61. **@teng-lin/agent-fetch**
+    - Package: npm/@teng-lin/agent-fetch
+    - Type: Web scraping tool (not a marketplace, but marketplace-adjacent)
+    - Description: Full-content web fetcher with Chrome TLS fingerprinting and multi-strategy content extraction
+    - Use case: Can be used to fetch and index marketplace content
+    - URL: https://npm.im/@teng-lin/agent-fetch
+
+62. **@elizaos/plugin-agent-skills**
+    - Package: npm/@elizaos/plugin-agent-skills
+    - Type: elizaOS plugin
+    - Description: Agent Skills plugin for elizaOS - implement the Agent Skills specification with progressive disclosure
+    - URL: https://npm.im/@elizaos/plugin-agent-skills
+
+## INSTALLATION METHOD SUMMARY
+
+### CLI Tools (npx/npm)
+- `npx skills search` / `npx skills add` (skills.sh)
+- `npx skillkit` (skillkit)
+- `npx skillfile` (skillfile)
+- `npx agent-skills-cli` (agent-skills-cli)
+- `npx flins` (flins)
+- `npx add-skill` (skills ecosystem)
+
+### Installation Methods
+- Direct cloning: GitHub repositories
+- npm packages: Various as listed
+- Web UI: claudemarketplaces.com, skillsmp.com (implied), skillx.sh
+- TUI applications: plum, lazyclaude
+
+### API/Integration Points
+- marketplace.json files (official Claude marketplace format)
+- OpenClaw/MCP bundler compatibility
+- CCPI package manager (jeremylongshore)
+- Skills specification compliance
+
+## KEY PATTERNS OBSERVED
+
+1. **Vercel skills.sh dominance**: 11K+ stars, official CLI, de facto standard
+2. **Awesome lists as discovery**: GitHub community curation as primary discovery
+3. **Domain specialization**: 20+ domain-specific marketplaces (SAP, Shopware, Elixir, etc.)
+4. **Multi-tool installers**: skillkit, skillfile, agent-skills-cli bridge multiple tools
+5. **Aggregators emerging**: plum (750+ plugins from 12 marketplaces), claudemarketplaces.com
+6. **NPM ecosystem underutilized**: Compared to pip/cargo, npm has few dedicated marketplace CLI tools
+7. **Personal collections**: Long tail of small repos (28-77 stars) serve niche communities
+8. **Decentralized experiments**: Bitcoin Lightning, trust-through-usage models (clawmart, squidbay)
+
+## COMPARISON TABLE
+
+| Source | Type | Stars | Size | CLI | Web UI | API | Maintained |
+|--------|------|-------|------|-----|--------|-----|------------|
+| skills.sh | Official CLI | 11K | Universal | ✅ | ✅ | ✅ | Active |
+| awesome-claude-code | Curated list | 29K | Variable | ❌ | ❌ | ❌ | Active |
+| skillkit | Installer | 617 | 40+ tools | ✅ | ❌ | ✅ | Active |
+| skillfile | Installer | 79 | 110K+ | ✅ | ✅ | ✅ | Active |
+| plum | Aggregator TUI | 11 | 750+ plugins | ✅ | ✅ | ⚠️ | Active |
+| SkillX | Marketplace | 36 | Variable | ✅ | ✅ | ✅ | Active |
+| claudemarketplaces.com | Directory | 72 | 12+ | ❌ | ✅ | ⚠️ | Active |
+| Awesome-llm-skills | Curated list | 1K | Variable | ❌ | ❌ | ❌ | Active |
+

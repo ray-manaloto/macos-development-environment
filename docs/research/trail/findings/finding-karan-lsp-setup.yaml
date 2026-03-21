@@ -1,0 +1,102 @@
+id: finding-karan-lsp-setup
+timestamp: "2026-03-21T00:47:00Z"
+source: https://karanbansal.in/blog/claude-code-lsp/
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: |
+  The exact 4-step LSP setup process for Claude Code, including:
+  1. The undocumented ENABLE_LSP_TOOL flag and where to set it
+  2. Language server installation commands for 11 languages
+  3. Plugin installation and enablement commands
+  4. Full restart requirement and verification method
+  5. The critical "installed but disabled" gotcha (#1 issue)
+  6. Debug log location and verification steps
+  7. How to nudge Claude Code to prefer LSP over grep
+gaps: |
+  - Whether .lsp.json configuration file is needed (blog doesn't mention it)
+  - Exact line-by-line format for ~/.claude/settings.json with ENABLE_LSP_TOOL
+  - Whether /reload-plugins command works or full restart is mandatory
+  - Specific debug log format and how to parse it
+evidence: |
+  **Step 1: Enable LSP Tool**
+  Add to ~/.claude/settings.json:
+  "env": { "ENABLE_LSP_TOOL": "1" }
+
+  Also recommended: export ENABLE_LSP_TOOL=1 in ~/.zshrc or ~/.bashrc
+
+  Note: ENABLE_LSP_TOOL is not officially documented as of Feb 2026.
+  Discovered via GitHub Issue #15619 as community workaround.
+  May change or become unnecessary in future versions.
+
+  **Step 2: Install Language Server Binary**
+  Python: npm i -g pyright
+  TypeScript/JS: npm i -g typescript-language-server typescript
+  Go: go install golang.org/x/tools/gopls@latest
+  Rust: rustup component add rust-analyzer
+  Java: brew install jdtls
+  C/C++: brew install llvm
+  C#: dotnet tool install -g csharp-ls
+  PHP: npm i -g intelephense
+  Kotlin: GitHub releases
+  Swift: Included with Xcode
+  Lua: GitHub releases
+
+  **Step 3: Install and Enable Plugin**
+  1. Update marketplace: claude plugin marketplace update claude-plugins-official
+  2. Install plugin: claude plugin install pyright-lsp (for Python)
+     - Also available: typescript-lsp, gopls-lsp, rust-analyzer-lsp, jdtls-lsp,
+       clangd-lsp, csharp-lsp, php-lsp, kotlin-lsp, swift-lsp, lua-lsp
+  3. CRITICAL: Plugin may be installed but disabled by default
+     Enable with: claude plugin enable <name>
+
+  **Step 4: Restart Claude Code**
+  Full restart required (not /reload-plugins). After restart, verify by asking
+  Claude: "What type is [some variable]?" - if it uses LSP hover operation instead
+  of reading file, LSP is working.
+
+  **Debug Log Verification**
+  Check ~/.claude/debug/latest - search for:
+  "Total LSP servers loaded: N" (where N > 0 indicates success)
+
+  Example from Karan's debug logs (4 servers):
+  05:53:56.216  [LSP MANAGER] Starting async initialization
+  05:53:56.573  Total LSP servers loaded: 4
+  05:53:56.757  gopls initialized          (+0.5s)
+  05:53:56.762  typescript initialized     (+0.5s)
+  05:53:56.819  pyright initialized        (+0.6s)
+  05:54:04.791  jdtls initialized          (+8.6s)
+              Index is warm — all LSP operations now ~50ms
+
+  **The #1 Gotcha: "Plugin installed but disabled"**
+  After installation, plugins are NOT automatically enabled.
+  Must explicitly run: claude plugin enable <name>
+  Then restart Claude Code.
+  If "Total LSP servers loaded: 0" appears in debug logs, all plugins are disabled.
+
+implication: |
+  For users setting up Claude Code with LSP:
+
+  1. The ENABLE_LSP_TOOL flag MUST be set in settings.json before plugins
+     will load. This is the single most common failure point.
+
+  2. Plugin installation is two-step: install AND enable. Many users
+     miss the enable step, leading to "plugin installed but disabled" error.
+
+  3. Full restart is required - /reload-plugins does NOT work.
+
+  4. Debug logs at ~/.claude/debug/latest are the source of truth for
+     verifying LSP server initialization. "Total LSP servers loaded: 0"
+     indicates all plugins are disabled.
+
+  5. Even with LSP fully set up, Claude Code may default to grep/glob.
+     Requires explicit instruction in CLAUDE.md or auto-memory to prefer
+     LSP operations (goToDefinition, findReferences, hover, etc).
+
+  6. Performance improvement is dramatic: ~50ms per query with LSP vs
+     30-60 seconds with grep on large codebases (847 matches across 203 files).
+
+tags: [claude-code, lsp, setup, language-servers, pyright, typescript-server,
+       gopls, rust-analyzer, plugin-installation, debug-logs, gotchas,
+       performance-optimization]
+status: discovered

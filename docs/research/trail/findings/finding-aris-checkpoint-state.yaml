@@ -1,0 +1,18 @@
+id: finding-aris-checkpoint-state
+timestamp: "2026-03-20T11:30:00Z"
+source: https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep
+agent: research-aris
+finding_type: technique
+confidence: confirmed
+confident_about: "ARIS uses REVIEW_STATE.json with round, threadId, status, last_score, timestamp. 24-hour staleness window. Cumulative AUTO_REVIEW.md as audit trail. Gate-based AUTO_PROCEED mode. 31 composable Markdown-only skills, zero dependencies."
+gaps: "Did not test ARIS installation or run the pipeline. Cross-model review via Codex MCP not evaluated (we don't use Codex MCP)."
+evidence: "ARIS state file survives context compaction, session crashes, and restarts. Recovery logic: absent/completed → fresh start; in_progress + >24h → stale, fresh start; in_progress + <24h → resume from round+1."
+implication: "Add RESEARCH_STATE.json pattern to our pipeline. Add cumulative session log. Add 'uv run mde-py research run --auto-proceed --max-rounds 4' command with gate logic. Track score progression across rounds."
+status: discovered
+tags:
+  - state-persistence
+  - session-survival
+  - auto-proceed
+  - checkpoint
+  - aris
+coverage_assessment: full_review

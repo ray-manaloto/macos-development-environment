@@ -1,22 +1,21 @@
 amends "package://github.com/jdx/hk/releases/download/v1.38.0/hk@1.38.0#/Config.pkl"
 import "package://github.com/jdx/hk/releases/download/v1.38.0/hk@1.38.0#/Builtins.pkl"
 
-local linters = new Mapping<String, Step> {
+// All quality checks flow through `uv run mde-py quality`.
+// Individual ruff/shellcheck steps kept for `hk fix` (auto-fix on commit).
+local fixers = new Mapping<String, Step> {
     ["ruff"] = (Builtins.ruff) {
         exclude = List(".agents/skills/**")
     }
     ["ruff_format"] = (Builtins.ruff_format) {
         exclude = List(".agents/skills/**")
     }
-    ["ty"] = (Builtins.ty) {
-        exclude = List(".agents/skills/**")
-    }
     ["shellcheck"] = Builtins.shellcheck
 }
 
-local validators = new Mapping<String, Step> {
-    ["mde-validate"] {
-        check = "uv run mde-py validate --all"
+local quality_gate = new Mapping<String, Step> {
+    ["mde-quality"] {
+        check = "uv run mde-py quality"
     }
 }
 
@@ -24,13 +23,13 @@ hooks {
     ["pre-commit"] {
         fix = true
         stash = "git"
-        steps = new Mapping { ...linters ...validators }
+        steps = new Mapping { ...fixers ...quality_gate }
     }
     ["fix"] {
         fix = true
-        steps = linters
+        steps = fixers
     }
     ["check"] {
-        steps = linters
+        steps = quality_gate
     }
 }

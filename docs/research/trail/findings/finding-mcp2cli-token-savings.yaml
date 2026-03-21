@@ -1,0 +1,17 @@
+id: finding-mcp2cli-token-savings
+timestamp: "2026-03-20T11:30:00Z"
+source: https://github.com/knowsuchagency/mcp2cli
+agent: research-mcp2cli-amplihack
+finding_type: tool
+confidence: probable
+confident_about: "Runtime CLI generation from MCP/OpenAPI/GraphQL. Bake pattern saves connection config to ~/.config/mcp2cli/baked.json. TOON output 40-60% fewer tokens than JSON. Supports fnox exec for secrets. MIT license, 96 tests, uv-installable."
+gaps: "Blog post with detailed token benchmarks was unavailable (fetch failed). 96-99% claim not independently verified — refers to eliminating schema injection, not data transfer savings."
+evidence: "mcp2cli eliminates per-turn MCP tool schema injection. With 200+ deferred tools, this is thousands of tokens per turn. Bake pattern: mcp2cli bake create myapi --mcp https://... --include 'list-*' --exclude 'delete-*'. Then mcp2cli @myapi search --query test."
+implication: "Install mcp2cli via mise. Bake configs for GitHub, Docker MCP gateway. Use --include/--exclude to expose only needed tools per agent role. Evaluate actual token savings in our workflow."
+status: discovered
+tags:
+  - token-optimization
+  - mcp-to-cli
+  - bake-pattern
+  - mcp2cli
+coverage_assessment: full_review

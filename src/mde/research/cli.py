@@ -15,6 +15,18 @@ def add_subparsers(sub: argparse._SubParsersAction) -> None:
     research_sub.add_parser("score", help="Calculate current improvement score")
     research_sub.add_parser("catalog", help="Show source catalog summary")
 
+    # skill-search subcommand — delegates to skillsmp module
+    ss = research_sub.add_parser("skill-search", help="Search SkillsMP marketplace")
+    ss.add_argument("query", help="Search query")
+    ss.add_argument("--ai", action="store_true", help="Use AI semantic search")
+    ss.add_argument("--limit", type=int, default=10, help="Results per page")
+    ss.add_argument("--json", action="store_true", dest="json_output", help="Output raw JSON")
+
+    # skill-discover subcommand — unified search across all sources
+    sd = research_sub.add_parser("skill-discover", help="Search all skill sources")
+    sd.add_argument("query", help="Search query")
+    sd.add_argument("--json", action="store_true", dest="json_output", help="JSON output")
+
 
 def dispatch(args: argparse.Namespace) -> int:
     """Route to the correct research subcommand handler."""
@@ -25,7 +37,12 @@ def dispatch(args: argparse.Namespace) -> int:
         return _cmd_score()
     if cmd == "status":
         return _cmd_status()
-    print("Usage: mde-py research {catalog|score|status}", file=sys.stderr)
+    if cmd == "skill-search":
+        return _cmd_skill_search(args)
+    if cmd == "skill-discover":
+        return _cmd_skill_discover(args)
+    cmds = "catalog|score|status|skill-search|skill-discover"
+    print(f"Usage: mde-py research {{{cmds}}}", file=sys.stderr)
     return 1
 
 
@@ -84,6 +101,28 @@ def _cmd_score() -> int:
     score = calculate_score(card)
     print(f"Improvement Score: {score:.3f} (from {source})")
     return 0
+
+
+def _cmd_skill_search(args: argparse.Namespace) -> int:
+    from mde.research.skillsmp import cli_main
+
+    # Build args list for the skillsmp CLI
+    cli_args = [args.query]
+    if getattr(args, "ai", False):
+        cli_args.append("--ai")
+    if getattr(args, "json_output", False):
+        cli_args.append("--json")
+    cli_args.extend(["--limit", str(getattr(args, "limit", 10))])
+    return cli_main(cli_args)
+
+
+def _cmd_skill_discover(args: argparse.Namespace) -> int:
+    from mde.research.skill_discover import cli_main as discover_main
+
+    cli_args = [args.query]
+    if getattr(args, "json_output", False):
+        cli_args.append("--json")
+    return discover_main(cli_args)
 
 
 def _cmd_status() -> int:

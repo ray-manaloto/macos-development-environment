@@ -1,0 +1,18 @@
+id: finding-orchestrator-ci-feedback
+timestamp: "2026-03-20T11:30:00Z"
+source: https://github.com/ComposioHQ/agent-orchestrator
+agent: research-orchestrator
+finding_type: pattern
+confidence: confirmed
+confident_about: "Programmatic worktree lifecycle at ~/.worktrees/<project>/<session>. Polling state machine for CI status (spawning → working → pr_open → ci_failed → approved → merged). Reaction engine with configurable retries and escalation thresholds. Review comment fingerprinting via content hash."
+gaps: "Polling-based (not webhook-driven) adds latency. Feedback pipeline design doc is design-phase, not fully implemented."
+evidence: "ci-failed reaction: auto: true, action: send-to-agent, retries: 2. changes-requested: auto: true, action: send-to-agent, escalateAfter: 30m. After N retries or time threshold, escalates from send-to-agent to human notification."
+implication: "Add CI-failure-to-agent routing to finishing skill: after gh pr checks failure, extract log, feed back to agent with max 2-3 retry attempts. Add escalation threshold. Add review comment fingerprinting for dedup."
+status: discovered
+tags:
+  - ci-feedback
+  - escalation
+  - worktree-lifecycle
+  - retry-limits
+  - agent-orchestrator
+coverage_assessment: full_review

@@ -8,6 +8,7 @@ dependencies = [
     "pyyaml>=6.0",
     "tomli>=2.0; python_version < '3.11'",
     "claude-agent-sdk>=0.1.49",
+    "httpx>=0.27",
 ]
 
 [project.scripts]
@@ -86,8 +87,12 @@ include = ["src/mde"]
 exclude = [".agents/skills"]
 
 [tool.ty.rules]
+# Enable ALL rules that default to "ignore" — no silent type errors
+division-by-zero = "error"
 possibly-missing-attribute = "error"
 possibly-missing-import = "error"
+possibly-unresolved-reference = "error"
+unsupported-dynamic-base = "error"
 unused-ignore-comment = "warn"
 
 # ── pytest ──

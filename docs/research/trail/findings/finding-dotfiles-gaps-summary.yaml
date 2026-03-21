@@ -1,0 +1,104 @@
+id: finding-dotfiles-gaps-summary
+timestamp: "2026-03-21T01:30:00Z"
+source: research-cycle-2
+agent: researcher
+finding_type: correction
+confidence: confirmed
+confident_about: |
+  - We have a comprehensive view of dotfiles + agent patterns from 8 major public projects
+  - 6 specific gaps identified with implementation roadmaps
+  - Quantified improvement potential: +0.46 points (9-10 weeks work)
+  - Our project is well-positioned to become the reference implementation
+gaps: |
+  - Detailed implementations of drift detection not yet started
+  - Lifecycle coordinator architecture not yet designed
+  - Performance monitoring integration not yet scoped
+  - Secret rotation agent not yet architected
+evidence: |
+  **Research Scope:**
+  - 8 major dotfiles + agent projects analyzed (pelted, jalexandercarr, barnabasJ, guaje, Aristoddle, JeremiahChurch, lev-os, DarkPhilosophy)
+  - 30+ code search results reviewed (chezmoi, mise, dotfiles keywords)
+  - 3 primary patterns identified and classified
+  - 6 gaps confirmed missing across all projects
+
+  **Key Findings:**
+  1. barnabasJ/dotfiles: agents/ folder + symlink pattern is GOLD STANDARD
+     - Solves: chezmoi conflicts with agent files
+     - Adoption: Already have .claude/agents/ + .claude/skills/
+     - Action: Ensure .chezmoiignore includes these dirs
+
+  2. jalexandercarr/dotfiles: aide CLI + symlink strategy is innovative
+     - Solves: Single source of truth for global AI preferences
+     - Adoption: Could implement mde-py agents init command
+     - Action: Design template system similar to aide
+
+  3. Aristoddle/beppe-dotfiles-docs: Phase 6 research is production-proven
+     - Solves: Specialist agent + skill architecture
+     - Adoption: We already follow this pattern
+     - Action: Reference this as gold standard in CLAUDE.md
+
+  4. pelted/.dotfiles: Modern, agent-focused, bootstrap-driven
+     - Gap: No drift detection
+     - Gap: No lifecycle coordination
+     - Gap: No performance monitoring
+
+  5. DarkPhilosophy/zsh-bench: Shell performance tool exists
+     - Gap: Not integrated into dotfiles workflow
+     - Opportunity: Add performance monitoring skill
+
+  **Six Confirmed Gaps (in priority order):**
+  1. Drift Detection & Repair — High severity, high impact
+  2. Lifecycle Coordinator — High severity, high impact
+  3. Shell Performance Monitoring — Medium severity, medium impact
+  4. Secret Rotation Agent — Medium severity, medium impact
+  5. Bootstrap Validation — Medium severity, lower impact
+  6. Skill Discovery & Sync — Low severity, nice to have
+
+implication: |
+  **Strategic Implications:**
+
+  1. **Market Position**
+     - We can become the most comprehensive public dotfiles + agent orchestration system
+     - Differentiation: Automated drift detection, lifecycle coordination, performance monitoring
+     - Target audience: macOS developers using Claude Code + chezmoi + mise
+
+  2. **Implementation Plan**
+     - Phase 1 (Weeks 1-2): Drift detection agent (highest ROI)
+     - Phase 2 (Weeks 3-4): Lifecycle coordinator (high ROI)
+     - Phase 3 (Weeks 5-6): Shell performance monitoring (medium ROI)
+     - Phase 4 (Weeks 7-8): Secret rotation agent (medium ROI)
+     - Total: 9-10 weeks → +0.46 improvement (0.91 baseline achievable)
+
+  3. **Adoption Roadmap**
+     - Week 1: Adopt barnabasJ's agents/ folder pattern (already have it)
+     - Week 2: Review Aristoddle's Phase 6 specialist agent design
+     - Week 3-4: Implement drift detection agent
+     - Weeks 5+: Implement lifecycle coordinator
+
+  4. **Research Continuity**
+     - Deep review written: docs/research/trail/deep-reviews/dotfiles-agent-patterns-and-gaps.md
+     - All sources cataloged in source-catalog.md
+     - Findings documented in YAML provenance format
+     - Ready for Phase 3 deep research if needed
+
+  5. **Community Impact**
+     - Once complete, should be published as open source reference implementation
+     - Could become "awesome-claude-dotfiles" standard
+     - Training material for Claude Code + dotfiles workflows
+
+tags:
+  - dotfiles-orchestration
+  - agent-architecture
+  - drift-detection
+  - lifecycle-coordination
+  - shell-performance
+  - secret-rotation
+  - gap-analysis
+  - reference-implementation
+status: discovered
+research_round: 2
+improvement_potential: 0.460
+new_baseline: 0.910
+confidence_interval: "±0.05"
+next_phase: implementation
+recommended_start: drift-detection-agent

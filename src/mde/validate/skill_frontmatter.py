@@ -62,9 +62,9 @@ def _validate_single_skill(result: ValidationResult, skill_md: Path) -> None:
 
 def _parse_frontmatter(result: ValidationResult, path: str, raw: str) -> dict | None:
     """Parse YAML frontmatter, recording errors on failure."""
-    try:
-        import yaml
+    import yaml
 
+    try:
         fm = yaml.safe_load(raw)
     except yaml.YAMLError as exc:
         result.add_error(

@@ -1,0 +1,182 @@
+id: finding-skill-cli-tools
+timestamp: "2026-03-20T21:15:00Z"
+source: "Multiple (npm, GitHub, Claude Code CLI)"
+agent: researcher
+finding_type: tool
+confidence: confirmed
+tags:
+  - claude-code
+  - plugin-marketplace
+  - skill-management
+  - cli-tools
+  - npm-packages
+  - installation
+  - discovery
+status: discovered
+
+confident_about: |
+  1. Claude Code's official `/plugin` command (built-in) manages plugins from configured marketplaces
+  2. Three official marketplaces are pre-configured:
+     - claude-code-workflows (72 plugins, by Seth Hobson)
+     - claude-plugins-official (Anthropic-managed directory)
+     - docker (MCP Toolkit integration)
+  3. Marketplace protocol uses marketplace.json with standard schema (anthropic.com/claude-code/marketplace.schema.json)
+  4. Plugins stored locally in ~/.claude/plugins/marketplaces/{marketplace-name}/plugins/
+  5. Individual plugins use plugin.json format with name, version, description, author, license fields
+  6. At least 14 specialized npm CLIs exist for skill/plugin management, discovered Feb-March 2026
+
+gaps: |
+  1. No published official Anthropic SDK for programmatic marketplace API (CLI-only)
+  2. Plugin content validation rules not fully documented
+  3. Marketplace.add protocol details (--file, --url, --github-repo options exist but undocumented)
+  4. Cross-marketplace search/discovery not centralized through Claude Code CLI
+  5. No official registry-of-registries or aggregation mechanism (community-driven only)
+  6. Plugin versioning strategy and SemVer enforcement not found
+
+evidence: |
+  **Claude Code Built-In Commands:**
+  - `claude plugins list` — shows installed plugins with version/scope/status
+  - `claude plugins install <plugin>` — install from marketplace
+  - `claude plugins enable/disable <plugin>` — toggle plugin activation
+  - `claude plugins marketplace list` — shows configured marketplaces
+  - `claude plugins marketplace add <source>` — add marketplace from URL/GitHub/path
+  - `claude plugins marketplace update [name]` — sync marketplace changes
+
+  **Official Marketplace Locations:**
+  - claude-code-workflows: ~/.claude/plugins/marketplaces/claude-code-workflows/ (GitHub: wshobson/agents)
+  - claude-plugins-official: ~/.claude/plugins/marketplaces/claude-plugins-official/ (GitHub: anthropics/claude-plugins-official)
+  - docker: ~/.claude/plugins/marketplaces/docker/ (GitHub: docker/claude-plugins)
+
+  **Marketplace.json Structure (claude-code-workflows example):**
+  ```json
+  {
+    "name": "claude-code-workflows",
+    "owner": {"name": "Seth Hobson", "email": "seth@major7apps.com"},
+    "metadata": {"description": "72 plugins, 112 agents, 146 skills", "version": "1.5.6"},
+    "plugins": [
+      {
+        "name": "code-documentation",
+        "source": "./plugins/code-documentation",
+        "description": "...",
+        "version": "1.2.0",
+        "author": {...},
+        "category": "documentation",
+        "license": "MIT"
+      }
+    ]
+  }
+  ```
+
+  **Plugin.json Structure (agent-orchestration example):**
+  ```json
+  {
+    "name": "agent-orchestration",
+    "version": "1.2.1",
+    "description": "...",
+    "author": {"name": "Seth Hobson", "email": "..."},
+    "license": "MIT"
+  }
+  ```
+
+  **14 Specialized Skill/Plugin Management CLIs (npm packages):**
+
+  1. **@spardutti/claude-skills** (v1.10.0, Mar 2026)
+     - Command: `npx @spardutti/claude-skills`
+     - Function: Interactive skill installer for claude-skills collection
+     - Capabilities: Add, remove, list, update skills
+     - Source: https://github.com/spardutti/claude-skills
+
+  2. **@agent-nexus/csreg** (v0.1.16, Feb 2026)
+     - Command: `npx @agent-nexus/csreg`
+     - Function: CLI for Claude Skills Registry (registry protocol)
+     - Capabilities: login, init, validate, pack, push, pull, search, info, versions
+     - Registry support: Push to registry, download from registry
+     - Source: https://github.com/agent-nexus/csreg
+
+  3. **@mammals-at-work/yacs** (v0.10.0, Mar 2026, "Yet Another Claude Skills")
+     - Command: `npx @mammals-at-work/yacs`
+     - Function: Interactive CLI installer with multi-language support
+     - Capabilities: Install skills, agents; specify target CLI (claude/gemini/codex/copilot)
+     - Options: --path, --skills (spec syntax), --agents, --language (en/es/ca/eu/gl/an/ja)
+     - Source: https://github.com/Mammals-at-work/YACS
+
+  4. **vibeindex** (v0.1.1, Mar 2026)
+     - Command: `npx vibeindex add <owner/repo> [--skill <name>]`
+     - Function: Install Claude Code skills to .claude/skills/
+     - Capabilities: Add skills from GitHub repos, supports multi-skill repos
+     - Source: https://vibeindex.ai
+
+  5. **@talisikai/claude-skills** (v1.2.0, Mar 2026)
+     - Function: CLI to install and manage talisikai Claude skills
+     - Similar to @spardutti but branded for talisikai collection
+
+  6. **@dayinxisheng/skillctl** (v1.1.1, Mar 2026)
+     - Function: Claude Skills management tool
+     - Capabilities: Manage activation state and project archives
+
+  7. **@lavelle/lint-agent** (v0.0.8, Feb 2026)
+     - Function: Linter for .claude/skills/ directory
+     - Validates: Correct filenames, valid frontmatter
+
+  8. **mcp-to-skill-with-headers** (v0.2.2, Mar 2026)
+     - Function: Convert MCP servers to Claude Skills with progressive disclosure
+     - Role: MCP ↔ Skill adapter
+
+  9. **claude-skills** (v1.0.2, Dec 2025, by nannantown)
+     - Function: Collection of Claude Code skills
+
+  10. **claude-skills-frontend** (v1.4.0, Feb 2026)
+      - Function: Frontend development skills with MCP auto-config
+
+  11. **@vibe-agent-toolkit/runtime-claude-skills** (v0.1.3, Feb 2026)
+      - Function: Build VAT agents as Claude Skills
+
+  12. **@loom-node/skills** (v0.1.16, Mar 2026)
+      - Function: Three-layer progressive disclosure architecture
+
+  13. **skillshub** (skilluse/skilluse, 41 stars on GitHub)
+      - Function: Agent Skills Registry & CLI
+      - Feature: Token-efficient skill resolution, 5,000+ skills from 500+ repos
+
+  14. **tech-leads-club/agent-skills** (1,770 stars on GitHub)
+      - Function: Secure, validated skill registry for professional AI agents
+      - Supports: Claude Code, Cursor, Copilot, Antigravity
+
+  **Top Community Aggregators (Awesome Lists):**
+  - ComposioHQ/awesome-claude-skills (46,445 stars, most popular)
+  - hesreallyhim/awesome-claude-code (29,439 stars)
+  - VoltAgent/awesome-claude-code-subagents (14,555 stars)
+  - travisvn/awesome-claude-skills (9,353 stars)
+
+  **Official Anthropic Sources:**
+  - GitHub: anthropics/claude-plugins-public (official, Anthropic-managed directory)
+  - GitHub: anthropics/claude-plugins-official (marketplace in ~/.claude/plugins/marketplaces/)
+  - Schema: https://anthropic.com/claude-code/marketplace.schema.json
+
+implication: |
+  1. **Plugin Marketplace Protocol is Decentralized**: Claude Code users can add custom marketplaces via `claude plugins marketplace add`. No centralized registry enforced by Anthropic beyond official three.
+
+  2. **Multiple Skill Management Strategies Coexist**: Each npm CLI (@spardutti, vibeindex, YACS, csreg) represents different approaches to skill discovery/installation, suggesting market fragmentation and user choice, not standardization.
+
+  3. **MCP and Skills are Separable**: mcp-to-skill-with-headers tool indicates MCP servers are conceptually distinct from Claude Code skills, but conversion is possible. This is important for architecture decisions.
+
+  4. **No Official API / CLI-Only**: All skill/plugin management is CLI-driven. There is no published REST API, SDK, or programmatic interface for plugin operations. Cross-tool integration requires spawning subprocesses or parsing CLI output.
+
+  5. **Community-Driven Discovery**: Official Anthropic does not publish a master registry. Community awesome-lists (46k+ stars) and registries (tech-leads-club, skillshub) fill the gap. Skill discovery is outsourced to npm, GitHub, and community projects.
+
+  6. **Schema-Driven Marketplace Architecture**: The presence of marketplace.json + plugin.json schema suggests opportunities for:
+     - Automated validation (cf. @lavelle/lint-agent)
+     - Version management
+     - Cross-marketplace search tools
+     - Marketplace aggregation
+
+  7. **For This Project**:
+     - The .claude/plugins/marketplaces/ directory and `claude plugins marketplace add` command enable custom enterprise/team marketplaces
+     - The 14 npm CLIs present building blocks for composable skill discovery (search one via csreg, install via vibeindex, validate via lint-agent)
+     - The schema at anthropic.com/claude-code/marketplace.schema.json should be the authoritative spec for any plugin tooling built here
+
+  8. **Next Steps for Implementation**:
+     - Fetch and validate the official marketplace schema
+     - Compare schema versions across marketplace.json examples (claude-code-workflows, official, docker) for version skew
+     - Catalog skills in the three official marketplaces via direct filesystem analysis (~72 + official + docker)
+     - Evaluate whether to compose existing CLIs or build new aggregation tool
