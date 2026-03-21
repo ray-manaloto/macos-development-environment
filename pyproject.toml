@@ -55,6 +55,7 @@ ignore = [
     "PIE810",   # endswith tuple merge is a style nit
     "PLW2901",  # loop var reassignment is intentional in text processing
 ]
+# Per-file ignores for datamodel-codegen output (pattern: D100,D101,ERA001,E501,COM812 + extras)
 "src/mde/statusline/models.py" = [
     "D100",     # generated file — no module docstring
     "D101",     # generated file — no class docstrings

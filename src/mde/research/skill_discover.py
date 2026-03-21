@@ -11,10 +11,13 @@ Usage:
 from __future__ import annotations
 
 import json
+import logging
 import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
+
+_log = logging.getLogger(__name__)
 
 __all__ = ["SkillResult", "discover_skills"]
 
@@ -65,16 +68,13 @@ def _parse_skills_sh_line(line: str, skills: list[SkillResult]) -> None:
         if len(parts) >= _MIN_PARTS:
             name_part = parts[0]
             raw = parts[1].replace(",", "")
-            if raw.upper().endswith("K"):
-                try:
-                    installs = int(float(raw[:-1]) * 1000)
-                except ValueError:
-                    installs = 0
-            else:
-                try:
-                    installs = int(float(raw))
-                except ValueError:
-                    installs = 0
+            suffixes = {"K": 1_000, "M": 1_000_000, "B": 1_000_000_000}
+            multiplier = suffixes.get(raw[-1:].upper(), 1)
+            numeric = raw[:-1] if multiplier > 1 else raw
+            try:
+                installs = int(float(numeric) * multiplier)
+            except ValueError:
+                installs = 0
             author, _, skill_name = name_part.partition("@")
             if not skill_name:
                 skill_name = author
@@ -98,6 +98,8 @@ def _search_skills_sh(query: str) -> list[SkillResult]:
         text=True,
         timeout=30,
     )
+    if result.returncode != 0:
+        _log.warning("skills.sh search exit %d: %s", result.returncode, result.stderr.strip())
     skills: list[SkillResult] = []
     for line in result.stdout.split("\n"):
         _parse_skills_sh_line(line, skills)
@@ -112,6 +114,8 @@ def _search_github(query: str) -> list[SkillResult]:
         text=True,
         timeout=30,
     )
+    if result.returncode != 0:
+        _log.warning("GitHub search exit %d: %s", result.returncode, result.stderr.strip())
     skills: list[SkillResult] = []
     seen: set[str] = set()
     for line in result.stdout.split("\n"):

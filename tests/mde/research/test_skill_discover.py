@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
-if TYPE_CHECKING:
-    import pytest
+import pytest
 
 from mde.research.skill_discover import (
     DiscoveryResult,
@@ -32,16 +30,34 @@ class TestStripAnsi:
 class TestParseSkillsShLine:
     """Tests for skills.sh line parser."""
 
-    def test_parses_skill_with_installs(self) -> None:
+    @pytest.mark.parametrize(
+        ("line", "expected_name", "expected_author", "expected_installs"),
+        [
+            (
+                "hashicorp@terraform-style-guide 2,000 installs",
+                "terraform-style-guide",
+                "hashicorp",
+                2000,
+            ),
+            ("author@skill 7.3K installs", "skill", "author", 7300),
+            ("author@skill 1.2M installs", "skill", "author", 1_200_000),
+            ("author@skill 50 installs", "skill", "author", 50),
+        ],
+        ids=["comma-separated", "k-suffix", "m-suffix", "plain-number"],
+    )
+    def test_parses_skill_with_installs(
+        self,
+        line: str,
+        expected_name: str,
+        expected_author: str,
+        expected_installs: int,
+    ) -> None:
         skills: list[SkillResult] = []
-        _parse_skills_sh_line(
-            "hashicorp@terraform-style-guide 2,000 installs",
-            skills,
-        )
+        _parse_skills_sh_line(line, skills)
         assert len(skills) == 1
-        assert skills[0].name == "terraform-style-guide"
-        assert skills[0].author == "hashicorp"
-        assert skills[0].installs == 2000
+        assert skills[0].name == expected_name
+        assert skills[0].author == expected_author
+        assert skills[0].installs == expected_installs
         assert skills[0].source == "skills.sh"
 
     def test_parses_url_line(self) -> None:
@@ -58,15 +74,47 @@ class TestParseSkillsShLine:
         _parse_skills_sh_line("Some random output", skills)
         assert len(skills) == 0
 
-    def test_k_suffix_multiplied(self) -> None:
-        """Install count with K suffix is multiplied by 1000."""
-        skills: list[SkillResult] = []
-        _parse_skills_sh_line("author@skill 7.3K installs", skills)
-        assert skills[0].installs == 7300
+
+class TestSearchSkillsSh:
+    """Tests for skills.sh subprocess search."""
+
+    @patch("mde.research.skill_discover.subprocess.run")
+    def test_nonzero_returncode_logs_warning(
+        self,
+        mock_run: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Non-zero exit from npx skills search logs a warning."""
+        from mde.research.skill_discover import _search_skills_sh
+
+        mock_run.return_value = MagicMock(stdout="", returncode=1, stderr="not found")
+        import logging
+
+        with caplog.at_level(logging.WARNING):
+            results = _search_skills_sh("nonexistent")
+        assert results == []
+        assert any("skills.sh" in r.message and "exit" in r.message for r in caplog.records)
 
 
 class TestSearchGitHub:
     """Tests for GitHub code search result parsing."""
+
+    @patch("mde.research.skill_discover.subprocess.run")
+    def test_nonzero_returncode_logs_warning(
+        self,
+        mock_run: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Non-zero exit from gh search code logs a warning."""
+        from mde.research.skill_discover import _search_github
+
+        mock_run.return_value = MagicMock(stdout="", returncode=1, stderr="error")
+        import logging
+
+        with caplog.at_level(logging.WARNING):
+            results = _search_github("nonexistent")
+        assert results == []
+        assert any("github" in r.message.lower() and "exit" in r.message for r in caplog.records)
 
     @patch("mde.research.skill_discover.subprocess.run")
     def test_parses_github_search_output(self, mock_run: MagicMock) -> None:
