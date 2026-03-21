@@ -1,0 +1,38 @@
+name: Check Agent Schema Drift
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Weekly Monday 8am UTC
+  workflow_dispatch:
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch and hash current docs
+        run: |
+          curl -sL https://code.claude.com/docs/en/sub-agents \
+            | sha256sum | awk '{print $1}' > /tmp/subagents-docs.sha256
+
+      - name: Compare with cached hash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cached="docs/research/cache/subagents-docs.sha256"
+          if [ ! -f "$cached" ]; then
+            echo "::error::Cached hash not found at $cached — commit it first"
+            exit 1
+          fi
+
+          if ! diff -q "$cached" /tmp/subagents-docs.sha256 > /dev/null 2>&1; then
+            echo "::warning::Claude Code subagent docs have changed"
+            gh issue create \
+              --title "Agent schema drift detected" \
+              --body "The Claude Code subagent docs page has changed since the last cached snapshot. Review for new frontmatter fields and update docs/schemas/agent-frontmatter.schema.json accordingly." \
+              --label "auto:agent-discovered"
+          else
+            echo "No drift detected."
+          fi

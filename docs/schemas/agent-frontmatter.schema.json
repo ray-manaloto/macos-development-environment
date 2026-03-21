@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ray-manaloto/macos-development-environment/docs/schemas/agent-frontmatter.schema.json",
+  "title": "Claude Code Agent Frontmatter",
+  "description": "JSON Schema for .claude/agents/*.md YAML frontmatter. Derived from code.claude.com/docs/en/sub-agents (2026-03-20). No official schema exists; this is project-local.",
+  "type": "object",
+  "required": ["name", "description"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Agent identifier in kebab-case. Must match the filename stem."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable description of the agent's purpose and when to use it."
+    },
+    "tools": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Comma-separated list of allowed tool names."
+        },
+        {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Array of allowed tool names."
+        }
+      ],
+      "description": "Tools available to this agent. If omitted, inherits parent's tools."
+    },
+    "disallowedTools": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Comma-separated list of denied tool names."
+        },
+        {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Array of denied tool names."
+        }
+      ],
+      "description": "Tools explicitly denied to this agent."
+    },
+    "model": {
+      "type": "string",
+      "description": "Model to use. Named shortcuts or full model ID with claude-* prefix.",
+      "anyOf": [
+        { "enum": ["sonnet", "opus", "haiku", "inherit"] },
+        { "pattern": "^claude-" }
+      ]
+    },
+    "permissionMode": {
+      "type": "string",
+      "enum": ["default", "acceptEdits", "dontAsk", "bypassPermissions", "plan"],
+      "description": "Permission level for the agent's tool use."
+    },
+    "maxTurns": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum number of conversation turns before the agent stops."
+    },
+    "skills": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Skills to inject into the agent's context."
+    },
+    "mcpServers": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "enum": ["stdio", "sse", "http"] },
+                "command": { "type": "string" },
+                "args": { "type": "array", "items": { "type": "string" } },
+                "url": { "type": "string", "format": "uri" },
+                "env": { "type": "object", "additionalProperties": { "type": "string" } }
+              }
+            }
+          }
+        ]
+      },
+      "description": "MCP servers available to this agent, by name or inline definition."
+    },
+    "hooks": {
+      "type": "object",
+      "properties": {
+        "PreToolUse": { "$ref": "#/$defs/hookEventList" },
+        "PostToolUse": { "$ref": "#/$defs/hookEventList" },
+        "Stop": { "$ref": "#/$defs/hookEventList" }
+      },
+      "additionalProperties": false,
+      "description": "Agent-specific hook handlers."
+    },
+    "memory": {
+      "type": "string",
+      "enum": ["user", "project", "local"],
+      "description": "Memory scope for the agent's auto-memory."
+    },
+    "background": {
+      "type": "boolean",
+      "description": "If true, agent runs in the background by default."
+    },
+    "effort": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "max"],
+      "description": "Reasoning effort level for the agent."
+    },
+    "isolation": {
+      "type": "string",
+      "enum": ["worktree"],
+      "description": "Isolation strategy. Currently only 'worktree' is supported."
+    }
+  },
+  "$defs": {
+    "hookEventList": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "matcher": { "type": "string" },
+          "hooks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "properties": {
+                "type": { "type": "string", "enum": ["command", "prompt"] },
+                "command": { "type": "string" },
+                "prompt": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

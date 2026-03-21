@@ -6,6 +6,7 @@ Subcommands (dispatched via _HOOKS_DISPATCH in cli.py):
 - log-agent-event: SubagentStart/SubagentStop logger (always exit 0)
 - session-start: SessionStart context setup (always exit 0)
 - post-compact: PostCompact event logger (always exit 0)
+- validate-agents: PostToolUse validator for .claude/agents/ frontmatter (exit 1 blocks)
 """
 
 from __future__ import annotations
