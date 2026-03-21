@@ -118,21 +118,41 @@ class TestValidateAgents:
         from mde.hooks.validate_agents import _extract_frontmatter
 
         text = "---\nname: test\ndescription: hello\n---\nBody content here."
-        fm = _extract_frontmatter(text)
+        fm, err = _extract_frontmatter(text)
         assert fm == {"name": "test", "description": "hello"}
+        assert err is None
 
     def test_extract_frontmatter_missing(self) -> None:
         from mde.hooks.validate_agents import _extract_frontmatter
 
-        assert _extract_frontmatter("No frontmatter here") is None
+        fm, err = _extract_frontmatter("No frontmatter here")
+        assert fm is None
+        assert err is None
 
     def test_extract_frontmatter_malformed_yaml(self) -> None:
         from mde.hooks.validate_agents import _extract_frontmatter
 
-        # Syntactically invalid YAML — should return None, not raise
+        # Syntactically invalid YAML — should return (None, error_msg), not raise
         text = "---\nname: [\nunclosed bracket\n---\nBody."
-        result = _extract_frontmatter(text)
+        result, err = _extract_frontmatter(text)
         assert result is None
+        assert err is not None
+        assert "malformed" in err.lower() or "parse error" in err.lower()
+
+    def test_extract_frontmatter_missing_returns_none_error(self) -> None:
+        from mde.hooks.validate_agents import _extract_frontmatter
+
+        result, err = _extract_frontmatter("No frontmatter here")
+        assert result is None
+        assert err is None  # missing frontmatter has no error message
+
+    def test_extract_frontmatter_valid_returns_dict_no_error(self) -> None:
+        from mde.hooks.validate_agents import _extract_frontmatter
+
+        text = "---\nname: test\ndescription: hello\n---\nBody content here."
+        fm, err = _extract_frontmatter(text)
+        assert fm == {"name": "test", "description": "hello"}
+        assert err is None
 
     def test_validate_agent_file(self, tmp_path: object) -> None:
         from pathlib import Path
@@ -265,3 +285,44 @@ class TestValidateAgents:
             result = validate_agents_hook()
         assert result == 1
         assert "validation failed" in mock_err.getvalue()
+
+    def test_malformed_yaml_error_message_in_file_validation(self, tmp_path: object) -> None:
+        """Malformed YAML should produce a 'malformed' error, not 'no valid YAML frontmatter'."""
+        from pathlib import Path
+
+        from mde.hooks.validate_agents import validate_agent_file
+
+        p = Path(str(tmp_path)) / "broken.md"
+        p.write_text("---\nname: [\nunclosed bracket\n---\nBody.")
+        errors = validate_agent_file(p)
+        assert len(errors) >= 1
+        assert any("malformed" in e.lower() or "parse error" in e.lower() for e in errors)
+
+    def test_missing_frontmatter_error_message(self, tmp_path: object) -> None:
+        """Missing frontmatter should produce a 'no YAML frontmatter' error."""
+        from pathlib import Path
+
+        from mde.hooks.validate_agents import validate_agent_file
+
+        p = Path(str(tmp_path)) / "plain.md"
+        p.write_text("This file has no YAML frontmatter at all.")
+        errors = validate_agent_file(p)
+        assert len(errors) >= 1
+        assert any("no" in e.lower() and "frontmatter" in e.lower() for e in errors)
+
+
+class TestDispatchHooks:
+    """Tests for the dispatch_hooks CLI path."""
+
+    def test_validate_agents_dispatch(self) -> None:
+        """dispatch_hooks('validate-agents') should route to validate_agents_hook."""
+        from unittest.mock import patch
+
+        from mde.hooks import dispatch_hooks
+
+        # Simulate a non-agent-file path so it short-circuits without I/O
+        data = {"tool_input": {"file_path": "/tmp/not-an-agent.py"}}
+        stdin = io.StringIO(json.dumps(data))
+        with patch.object(sys, "stdin", stdin):
+            result = dispatch_hooks("validate-agents")
+        assert result == 0

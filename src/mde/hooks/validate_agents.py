@@ -29,21 +29,29 @@ from mde.hooks.agent_frontmatter_model import ClaudeCodeAgentFrontmatter
 _AGENTS_DIR = ".claude/agents/"
 
 
-def _extract_frontmatter(text: str) -> dict[str, Any] | None:
-    """Extract YAML frontmatter from a markdown file's content."""
+def _extract_frontmatter(text: str) -> tuple[dict[str, Any] | None, str | None]:
+    """Extract YAML frontmatter from a markdown file's content.
+
+    Returns a tuple (frontmatter, error):
+    - (dict, None)  — valid frontmatter parsed successfully
+    - (None, None)  — no frontmatter delimiters found
+    - (None, str)   — frontmatter delimiters present but YAML is malformed
+    """
     if not text.startswith("---"):
-        return None
+        return None, None
     end = text.find("---", 3)
     if end == -1:
-        return None
+        return None, None
     raw = text[3:end].strip()
     if not raw:
-        return None
+        return None, None
     try:
         result = yaml.safe_load(raw)
-    except yaml.YAMLError:
-        return None
-    return result if isinstance(result, dict) else None
+    except yaml.YAMLError as exc:
+        return None, f"malformed YAML: {exc}"
+    if not isinstance(result, dict):
+        return None, None
+    return result, None
 
 
 def validate_agent_frontmatter(frontmatter: dict[str, Any]) -> list[str]:
@@ -84,9 +92,11 @@ def validate_agent_file(path: Path) -> list[str]:
     if not path.exists():
         return [f"file not found: {path}"]
     text = path.read_text(encoding="utf-8")
-    fm = _extract_frontmatter(text)
+    fm, parse_error = _extract_frontmatter(text)
     if fm is None:
-        return [f"no valid YAML frontmatter in {path.name}"]
+        if parse_error is not None:
+            return [f"{path.name}: {parse_error}"]
+        return [f"no YAML frontmatter in {path.name}"]
 
     errors = validate_agent_frontmatter(fm)
     name = fm.get("name")
