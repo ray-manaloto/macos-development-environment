@@ -27,8 +27,10 @@ Entry point: `uv run mde-py <subcommand>`. Tools: ruff, ty, pytest.
 - Issue tracking: catalog unrelated errors as GitHub Issues via `gh issue create`
 
 ## Subagents
-Defined in .claude/agents/. Key roles: researcher (Haiku, read-only), coder (inherits),
-tester (inherits, pytest/ruff/ty), reviewer (Sonnet, read-only).
+Defined in .claude/agents/. Core: researcher (Haiku, writes to docs/research/),
+coder (inherit), tester (inherit, pytest/ruff/ty), reviewer (Sonnet, read-only).
+Specialists: python-coder, mise-specialist, chezmoi-specialist, brew-specialist,
+security-auditor (Sonnet, read-only), claude-code-specialist (Sonnet, platform expert).
 
 ## MCP Access
 Do NOT use MCP tool schemas in context. Use CLI wrappers instead:
@@ -165,173 +167,46 @@ These 8 files remain as-is -- they are already clean of claude-flow references:
 
 ## 3. New .claude/agents/ Files
 
-Replace all 15 existing agents with 4 canonical roles. The existing agents (api-auditor, config-reviewer, findings-consolidator, hooks-reviewer, etc.) are leftovers from the claude-flow era and should be removed.
+Replace all 15 existing agents with 10 roles: 4 core + 6 specialists. The existing agents (api-auditor, config-reviewer, findings-consolidator, hooks-reviewer, etc.) are leftovers from the claude-flow era and should be removed.
 
-### 3.1 researcher.md
+**Design decisions (cross-referenced from research):**
+- Every successful project gives researchers Write access ([researcher-agent-configurations-comparison.md](../../research/trail/deep-reviews/researcher-agent-configurations-comparison.md))
+- Descriptions include "Use PROACTIVELY when..." trigger conditions for routing accuracy ([everything-claude-code-agents.md](../../research/trail/deep-reviews/everything-claude-code-agents.md))
+- Model routing: haiku for simple/doc, sonnet for coding/review, opus for architecture ([everything-claude-code-agents.md](../../research/trail/deep-reviews/everything-claude-code-agents.md))
+- 4-tier tool permissions: read-only, read+bash, full-write, MCP-specific ([everything-claude-code-agents.md](../../research/trail/deep-reviews/everything-claude-code-agents.md))
+- `skills:` field INJECTS full skill content at startup, subagents do NOT inherit from parent ([subagent-frontmatter-and-skills-mapping.md](../../research/trail/deep-reviews/subagent-frontmatter-and-skills-mapping.md))
 
-```yaml
----
-name: researcher
-description: Read-only research agent. Searches codebase, reads docs, fetches URLs via agent-fetch skill. Writes findings to docs/research/trail/findings/*.yaml. Use for any investigation or information gathering.
-tools: Read, Glob, Grep, Bash
-skills: [agent-fetch]
-disallowedTools: Write, Edit, Agent, WebFetch, WebSearch
-model: haiku
-maxTurns: 30
-memory: project
----
+### 3.1 Core Agents
 
-You are the Research Agent. Your job is to investigate, discover, and document findings.
+All 4 core agent definitions are in `.claude/agents/`. See the actual files for full system prompts.
 
-IMPORTANT: For fetching URL content, use the agent-fetch skill which runs
-`npx agent-fetch "<url>" --json` via Bash. NEVER use WebFetch or WebSearch --
-they truncate content and waste context tokens.
+| Agent | Model | Tools | Description |
+|-------|-------|-------|-------------|
+| **researcher** | haiku | Read, Glob, Grep, Bash, **Write, Edit** + agent-fetch | Research + write findings to docs/research/. **FIX**: original spec had Write/Edit in disallowedTools, but protocol required writing files. Now has Write/Edit per universal pattern. |
+| **coder** | inherit | All except WebFetch, WebSearch | General implementation with full tool access |
+| **tester** | inherit | Read, Glob, Grep, Bash, Write, Edit | pytest, ruff, ty quality gates |
+| **reviewer** | sonnet | Read, Glob, Grep, Bash + agent-fetch | Read-only code review, P1/P2/P3 priority system |
 
-## Protocol
-1. Search the codebase and external sources for the requested information
-2. Write each finding IMMEDIATELY to a YAML provenance file:
-   `docs/research/trail/findings/finding-<descriptive-slug>.yaml`
-3. Use this YAML template for each finding:
+### 3.2 Specialist Agents
 
-```yaml
-id: finding-<slug>
-timestamp: "<ISO 8601>"
-source: <url-or-file-path>
-agent: researcher
-finding_type: technique|architecture|tool|pattern|anti-pattern
-confidence: confirmed|likely|speculative
-confident_about: "<what was confirmed>"
-gaps: "<what remains unknown>"
-evidence: "<specific quotes or data points>"
-implication: "<what this means for the project>"
-status: discovered
-tags: []
-```
+| Agent | Model | Tools | Description |
+|-------|-------|-------|-------------|
+| **python-coder** | inherit | All except WebFetch, WebSearch | Python specialist for src/mde/ with ruff/ty/pytest knowledge |
+| **mise-specialist** | haiku | Read, Glob, Grep, Bash | mise config, backend priority, tool management |
+| **chezmoi-specialist** | haiku | Read, Glob, Grep, Bash | chezmoi templates, dotfiles, secret injection |
+| **brew-specialist** | haiku | Read, Glob, Grep, Bash | Homebrew packages, cask management, mise conflict resolution |
+| **security-auditor** | sonnet | Read, Glob, Grep | Read-only security review with OWASP focus |
+| **claude-code-specialist** | sonnet | Read, Glob, Grep, Bash | Claude Code platform expert (subagents, hooks, skills, teams, plugins, settings, telemetry, platform tools) |
 
-4. For URL content, use the agent-fetch skill: `npx agent-fetch "<url>" --json` via Bash (full content, no truncation)
-   NEVER use WebFetch or WebSearch -- they truncate and waste tokens.
-5. Log ALL discovered URLs in docs/research/source-catalog.md
-6. Return a concise summary (under 2000 tokens) listing:
-   - Files written (absolute paths)
-   - Key findings (one sentence each)
-   - Gaps requiring follow-up
+### 3.3 Key Design Change: Researcher Writes Directly
 
-## Constraints
-- NEVER modify source code
-- NEVER create files outside docs/research/
-- Write findings to disk AS YOU DISCOVER THEM, not at the end
-```
+**Original spec (broken):** `disallowedTools: Write, Edit` but protocol says "Write each finding IMMEDIATELY"
 
-### 3.2 coder.md
+**Fixed spec:** `tools: Read, Glob, Grep, Bash, Write, Edit` with `disallowedTools: Agent, WebFetch, WebSearch`
 
-```yaml
----
-name: coder
-description: Implementation agent with full tool access. Writes code, runs tests, commits. Use for any code modification task.
-skills: [agent-fetch]
-disallowedTools: WebFetch, WebSearch
-model: inherit
-memory: project
----
+**Evidence from 7 projects:** Every successful research agent directly writes files. No project separates "research" from "persistence" into distinct agents. See [researcher-agent-configurations-comparison.md](../../research/trail/deep-reviews/researcher-agent-configurations-comparison.md) for the full cross-project analysis.
 
-You are the Coder Agent. Your job is to implement, fix, and improve code.
-
-For fetching URL content (docs, references), use the agent-fetch skill which runs
-`npx agent-fetch "<url>" --json` via Bash. NEVER use WebFetch or WebSearch.
-
-## Protocol
-1. Read the relevant code before modifying it
-2. Follow existing patterns in the codebase
-3. Run `uv run ruff check` and `uv run ty check` after changes
-4. Run `uv run pytest` for affected test files
-5. Write descriptive git commits at each logical milestone
-6. All Python tool config goes in pyproject.toml (never standalone .cfg/.ini/.yaml)
-7. All automation is Python modules in src/mde/ (never .sh files)
-8. Use `uv run <tool>` for ruff, ty, pytest -- never `uv run python -m <module>`
-
-## Constraints
-- Prefer editing existing files over creating new ones
-- Never save working files to the root folder
-- Never use `uv run python` -- use `uv run <entry-point>` or `uv run <tool>`
-- Check `pyproject.toml` for existing dependencies before adding new ones
-```
-
-### 3.3 tester.md
-
-```yaml
----
-name: tester
-description: Testing agent focused on pytest, ruff, and ty validation. Use for running test suites, fixing lint errors, and verifying type safety.
-tools: Read, Glob, Grep, Bash, Write, Edit
-disallowedTools: WebFetch, WebSearch
-model: inherit
-memory: project
----
-
-You are the Tester Agent. Your job is to verify code quality and correctness.
-
-## Protocol
-1. Run the full quality gate: `uv run ruff check src/ tests/ && uv run ty check && uv run pytest`
-2. For each failure:
-   a. Read the failing file
-   b. Determine root cause
-   c. Fix the issue (prefer minimal changes)
-   d. Re-run the specific check to confirm
-3. After all fixes, run the full gate again to confirm no regressions
-4. Report results as a structured summary:
-   - Tests: X passed, Y failed, Z skipped
-   - Ruff: X violations found, Y fixed
-   - Ty: X type errors found, Y fixed
-
-## Constraints
-- Never modify test assertions to make tests pass (fix the code under test)
-- Never use `|| true` to mask failures
-- Never classify failures as "pre-existing" without either fixing them or creating a GitHub Issue
-- Use `uv run mde-py validate --all` as the source of truth for open issues
-```
-
-### 3.4 reviewer.md
-
-```yaml
----
-name: reviewer
-description: Read-only code review agent. Analyzes diffs, finds bugs, evaluates architecture. Use for PR review or pre-commit quality checks.
-tools: Read, Glob, Grep, Bash
-skills: [agent-fetch]
-disallowedTools: Write, Edit, Agent, WebFetch, WebSearch
-model: sonnet
-maxTurns: 20
-memory: project
----
-
-You are the Code Reviewer. Your job is to find real bugs, not nitpick style.
-
-If you need to reference external documentation, use the agent-fetch skill which runs
-`npx agent-fetch "<url>" --json` via Bash. NEVER use WebFetch or WebSearch.
-
-## Protocol
-1. Read the diff: `git diff main...HEAD` (or the specified target)
-2. For each changed file, read the FULL file (not just the diff) to understand context
-3. Focus on these categories (in priority order):
-   - P1 CRITICAL: Data loss, security holes, race conditions, broken logic
-   - P2 IMPORTANT: Missing error handling, untested edge cases, API misuse
-   - P3 NICE-TO-HAVE: Simplification opportunities, naming improvements
-
-## Review Checklist
-- SQL/data safety: parameterized queries, TOCTOU races
-- Type safety: proper Pydantic validation, no bare dicts for structured data
-- Error handling: no bare except, no swallowed exceptions
-- Test coverage: new code has tests, tests verify behavior not implementation
-- Dependency hygiene: new deps declared in pyproject.toml, justified in commit message
-
-## Output Format
-Write review findings to a file: `docs/reviews/<date>-<branch>-review.md`
-
-## Constraints
-- NEVER modify any files
-- NEVER flag: harmless redundancy, missing comments, consistency-only changes
-- DO flag: anything that could fail silently in production
-```
+**Constraint:** Researcher is constrained via system prompt to ONLY write to `docs/research/` paths. This is enforced by convention, not by tool restrictions (no per-path tool scoping exists in Claude Code).
 
 ---
 
@@ -760,10 +635,16 @@ Execute in this order. Each step should be a separate git commit on a feature br
 ### Phase 3: Replace agents
 
 - [ ] 9. **DELETE** all 15 files in `.claude/agents/` (api-auditor.md, config-reviewer.md, findings-consolidator.md, hooks-reviewer.md, integration-tester.md, learning-hook-writer.md, learning-writer.md, mise-fixer.md, process-reviewer.md, prompt-writer.md, qa-verifier.md, settings-integrator.md, stop-hook-writer.md, team-config-writer.md, type-safety-agent.md)
-- [ ] 10. **CREATE** `.claude/agents/researcher.md` with content from Section 3.1
-- [ ] 11. **CREATE** `.claude/agents/coder.md` with content from Section 3.2
-- [ ] 12. **CREATE** `.claude/agents/tester.md` with content from Section 3.3
-- [ ] 13. **CREATE** `.claude/agents/reviewer.md` with content from Section 3.4
+- [ ] 10. **CREATE** `.claude/agents/researcher.md` -- core, Haiku, **with Write/Edit** (FIX from original spec)
+- [ ] 11. **CREATE** `.claude/agents/coder.md` -- core, inherit model
+- [ ] 12. **CREATE** `.claude/agents/tester.md` -- core, inherit model
+- [ ] 13. **CREATE** `.claude/agents/reviewer.md` -- core, Sonnet, read-only
+- [ ] 13a. **CREATE** `.claude/agents/python-coder.md` -- specialist, inherit model
+- [ ] 13b. **CREATE** `.claude/agents/mise-specialist.md` -- specialist, Haiku
+- [ ] 13c. **CREATE** `.claude/agents/chezmoi-specialist.md` -- specialist, Haiku
+- [ ] 13d. **CREATE** `.claude/agents/brew-specialist.md` -- specialist, Haiku
+- [ ] 13e. **CREATE** `.claude/agents/security-auditor.md` -- specialist, Sonnet, read-only
+- [ ] 13f. **CREATE** `.claude/agents/claude-code-specialist.md` -- specialist, Sonnet, platform expert
 
 ### Phase 4: Add hooks
 
@@ -801,19 +682,30 @@ Execute in this order. Each step should be a separate git commit on a feature br
 
 ## Appendix A: File Inventory (What Changes)
 
-### Files Created (10)
+### Files Created (22)
 ```
 ~/CLAUDE.md                                    (rewritten, 47 lines)
 .claude/rules/mcp-access.md                    (new)
 .claude/rules/agent-notes.md                   (new)
 .claude/rules/context-budget.md                (new)
 .claude/rules/second-brain.md                  (new)
-.claude/agents/researcher.md                   (new)
+.claude/agents/researcher.md                   (new, with Write/Edit -- FIX from original spec)
 .claude/agents/coder.md                        (new)
 .claude/agents/tester.md                       (new)
 .claude/agents/reviewer.md                     (new)
+.claude/agents/python-coder.md                 (new, specialist)
+.claude/agents/mise-specialist.md              (new, specialist)
+.claude/agents/chezmoi-specialist.md           (new, specialist)
+.claude/agents/brew-specialist.md              (new, specialist)
+.claude/agents/security-auditor.md             (new, specialist)
+.claude/agents/claude-code-specialist.md       (new, specialist)
+.claude/skills/research-team/SKILL.md          (new, team spawn recipe)
+.claude/skills/python-dev-team/SKILL.md        (new, team spawn recipe)
+.claude/skills/dotfiles-team/SKILL.md          (new, team spawn recipe)
+.claude/skills/infra-team/SKILL.md             (new, team spawn recipe)
 docs/research/RESEARCH_STATE.json              (new)
 docs/research/trail/score-history.tsv          (new)
+docs/research/trail/deep-reviews/*.md          (10 new deep review files from research)
 ```
 
 ### Files Modified (1)
@@ -860,11 +752,11 @@ docs/research/trail/score-history.tsv          (new)
 
 ### 12.1 The Gap: No Official Schema
 
-As of 2026-03-20, Anthropic publishes no JSON Schema for `.claude/agents/*.md` YAML frontmatter. The canonical specification exists only as documentation prose at `code.claude.com/docs/en/sub-agents`. The Agent SDK Python `AgentDefinition` dataclass covers only 7 of the 15 supported fields. There is no `claude agents validate` command.
+As of 2026-03-20, Anthropic publishes no JSON Schema for `.claude/agents/*.md` YAML frontmatter. The canonical specification exists only as documentation prose at `code.claude.com/docs/en/sub-agents`. The Agent SDK Python `AgentDefinition` dataclass covers only 7 of the 14 documented fields. There is no `claude agents validate` command.
 
 ### 12.2 Derived JSON Schema for Agent Frontmatter
 
-We will maintain a project-local JSON Schema derived from the official documentation. This schema covers all 15 frontmatter fields: `name`, `description`, `tools`, `disallowedTools`, `model`, `permissionMode`, `maxTurns`, `skills`, `mcpServers`, `hooks`, `memory`, `background`, `effort`, `isolation`.
+We will maintain a project-local JSON Schema derived from the official documentation. This schema covers all 14 documented frontmatter fields: `name`, `description`, `tools`, `disallowedTools`, `model`, `permissionMode`, `maxTurns`, `skills`, `mcpServers`, `hooks`, `memory`, `background`, `effort`, `isolation`. (Note: an undocumented `color` field also exists but is excluded from the schema to align with official docs.)
 
 **Location:** `docs/schemas/agent-frontmatter.schema.json`
 
@@ -881,22 +773,20 @@ The full schema is documented in the research appendix (Approach A in the deep r
 | `isolation` | string | Enum: worktree |
 | `maxTurns` | integer | Minimum 1 |
 
-### 12.3 gitagent as the Portability/Validation Hub
+### 12.3 gitagent as a Portability/Export Tool (NOT a Validator)
 
-gitagent is the only tool that can import from Claude Code format and export to 10+ formats, with 10 built-in JSON Schemas. It provides round-trip validation without a custom schema:
+**Correction (2026-03-20):** Investigation confirmed that gitagent (`open-gitagent/gitagent`) is a **portability/export bridge**, not a validator for Claude Code agent files. It imports Claude Code agents into gitagent's own multi-file format (`agent.yaml` + `SOUL.md`) and exports to 10+ frameworks (CrewAI, AutoGen, LangChain, etc.). However, `gitagent validate` validates gitagent format, NOT Claude Code `.md` frontmatter format.
 
 ```bash
-# Import existing Claude Code agents into gitagent format
-gitagent import --from claude .claude/agents/
+# gitagent is for EXPORT, not validation:
+gitagent import --from claude .claude/agents/   # Convert to gitagent format
+gitagent export --format crewai                  # Export to CrewAI
 
-# Validate with full schema
-gitagent validate
-
-# Export back to Claude Code format (verify round-trip)
-gitagent export --format claude-code
+# For Claude Code agent VALIDATION, use our custom hook instead:
+# uv run mde-py hooks validate-agents (Section 12.4-12.5)
 ```
 
-**Decision:** Install gitagent as a mise tool for agent file validation. Use it alongside our derived schema -- gitagent for portability/export, our schema for lightweight pre-commit checks.
+**Decision:** Install gitagent via mise for future portability needs. Do NOT use it for agent file validation — use `validate_agents.py` (Section 12.5) instead.
 
 ### 12.4 PostToolUse Hook for Real-Time Validation
 
@@ -1079,17 +969,18 @@ Set in `.claude/settings.json` (already done):
 
 **Use case:** Research cycles, source discovery, literature review, knowledge synthesis.
 
-**Composition:** Lead (Opus) + 2 Fetchers (Haiku) + 1 Synthesizer (Sonnet) + 1 Note Writer (Haiku)
+**Composition:** Lead (inherit) + 2 Researchers (Haiku, write directly) + 1 Reviewer (Sonnet, read-only)
+
+**Design change:** Removed "note-writer" agent. Researchers write findings directly, per the universal pattern found across 7 projects (see [researcher-agent-configurations-comparison.md](../../research/trail/deep-reviews/researcher-agent-configurations-comparison.md)). Each researcher writes to non-overlapping file paths to avoid conflicts.
 
 **Spawn prompt:**
 ```
-Create an agent team to research [TOPIC]. Spawn 4 teammates:
-1. "fetcher-a" -- Fetch content from [URL1, URL2, URL3] via agent-fetch. Summarize findings.
-2. "fetcher-b" -- Fetch content from [URL4, URL5, URL6] via agent-fetch. Summarize findings.
-3. "synthesizer" -- Wait for fetchers, cross-reference all findings, identify patterns and gaps.
-4. "note-writer" -- Write final document to docs/research/trail/deep-reviews/[FILENAME].md.
-   Update docs/research/source-catalog.md with all discovered URLs.
-Use Sonnet for synthesizer, Haiku for all others.
+Create an agent team to research [TOPIC]. Spawn 3 teammates:
+1. "researcher-a" -- Fetch and analyze [URL1, URL2, URL3] via agent-fetch. Write findings to docs/research/trail/findings/finding-[topic]-a-*.yaml. Write deep review section to docs/research/trail/deep-reviews/[FILENAME]-part-a.md.
+2. "researcher-b" -- Fetch and analyze [URL4, URL5, URL6] via agent-fetch. Write findings to docs/research/trail/findings/finding-[topic]-b-*.yaml. Write deep review section to docs/research/trail/deep-reviews/[FILENAME]-part-b.md.
+3. "reviewer" -- After researchers complete, cross-reference all findings, identify contradictions and gaps. Read-only.
+Lead synthesizes parts into final document at docs/research/trail/deep-reviews/[FILENAME].md.
+Use Sonnet for reviewer, Haiku for researchers.
 ```
 
 #### Python Development Team
@@ -1148,16 +1039,16 @@ Create an agent team to [DESCRIBE CHANGE] in our infrastructure. Spawn 3 teammat
 
 ### 14.3 Team Spawn Recipe Skills
 
-Each team template becomes a reusable skill under `.claude/skills/`:
+Each team template is a reusable skill under `.claude/skills/<team-name>/SKILL.md` with `context: fork` and `agent:` frontmatter:
 
 | Skill | Location | Purpose |
 |-------|----------|---------|
-| `spawn-research-team` | `.claude/skills/spawn-research-team.md` | Adapt fetcher count to source count, set task dependencies |
-| `spawn-python-team` | `.claude/skills/spawn-python-team.md` | File ownership rules, quality gate criteria |
-| `spawn-dotfiles-team` | `.claude/skills/spawn-dotfiles-team.md` | Chezmoi + mise coordination, validation gate |
-| `spawn-infra-team` | `.claude/skills/spawn-infra-team.md` | Brewfile management, security review |
+| `research-team` | `.claude/skills/research-team/SKILL.md` | Multi-source research with researcher agents that write directly |
+| `python-dev-team` | `.claude/skills/python-dev-team/SKILL.md` | Feature implementation with file ownership rules |
+| `dotfiles-team` | `.claude/skills/dotfiles-team/SKILL.md` | Chezmoi + mise coordination, validation gate |
+| `infra-team` | `.claude/skills/infra-team/SKILL.md` | Brewfile management, security review |
 
-Skills contain the full spawn prompt, file ownership rules, quality gate criteria, and task decomposition strategy. The lead reads the skill and uses it as the team blueprint.
+Skills contain the full spawn prompt, file ownership rules, quality gate criteria, and task decomposition strategy. Each uses `context: fork` to run in a forked subagent context, and `agent:` to specify the default agent type for the lead.
 
 ### 14.4 Quality Gate Hooks per Team Type
 
@@ -1205,8 +1096,8 @@ Add these items to the existing Phase 2-5 checklist from Section 11:
 
 ### Phase 3 additions (after step 13)
 
-- [ ] 13a. **INSTALL** gitagent via mise: `mise use github:open-gitagent/gitagent`
-- [ ] 13b. **VALIDATE** agent files round-trip: `gitagent import --from claude .claude/agents/ && gitagent validate`
+- [ ] 13a. **INSTALL** gitagent via mise: `mise use npm:@open-gitagent/gitagent` (portability tool, NOT validator)
+- [ ] 13b. ~~**VALIDATE** agent files round-trip~~ **SKIPPED** — gitagent validates its own format, not Claude Code .md frontmatter. Use `validate_agents.py` (step 16b) instead.
 
 ### Phase 4 additions (after step 16)
 
@@ -1237,6 +1128,6 @@ Add these items to the existing Phase 2-5 checklist from Section 11:
 
 ### New Phase 11: Validation of Supplemental Items
 
-- [ ] 41. **VERIFY** `gitagent validate` passes for all agent files in `.claude/agents/`
+- [ ] 41. ~~**VERIFY** `gitagent validate`~~ **REPLACED** — verify `uv run mde-py hooks validate-agents` passes for all agent files in `.claude/agents/` (gitagent validates its own format, not Claude Code)
 - [ ] 42. **VERIFY** `uv run mde-py hooks validate-agents` correctly validates and rejects malformed frontmatter
 - [ ] 43. **TEST** team spawn by invoking one of the recipe skills and confirming teammates spawn correctly

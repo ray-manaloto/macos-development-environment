@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
 
-def _build_parser() -> argparse.ArgumentParser:
+def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     """Build the top-level argument parser."""
     parser = argparse.ArgumentParser(
         prog="mde",
@@ -34,6 +34,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
     # verify
     sub.add_parser("verify", help="Run verification checks")
+
+    # quality
+    quality_p = sub.add_parser("quality", help="Run quality gate (lint + test + validate)")
+    quality_p.add_argument("--lint", action="store_true", help="Lint only (ruff + ty + pyright)")
+    quality_p.add_argument("--test", action="store_true", help="Test only (pytest)")
+    quality_p.add_argument("--validate", action="store_true", help="Validate only")
 
     # status
     sub.add_parser("status", help="Show dashboard")
@@ -287,6 +293,19 @@ def _cmd_research(args: argparse.Namespace) -> int:
     return research_dispatch(args)
 
 
+def _cmd_quality(args: argparse.Namespace) -> int:
+    from mde.quality import cli_main
+
+    cli_args: list[str] = []
+    if getattr(args, "lint", False):
+        cli_args.append("--lint")
+    if getattr(args, "test", False):
+        cli_args.append("--test")
+    if getattr(args, "validate", False):
+        cli_args.append("--validate")
+    return cli_main(cli_args)
+
+
 def _cmd_statusline(args: argparse.Namespace) -> int:
     action = args.statusline_action
     handlers: dict[str, tuple[str, str]] = {
@@ -314,6 +333,7 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "validate": _cmd_validate,
     "update": _cmd_update,
     "verify": _cmd_verify,
+    "quality": _cmd_quality,
     "status": _cmd_status,
     "doctor": _cmd_doctor,
     "drift": _cmd_drift,

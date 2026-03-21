@@ -1,0 +1,64 @@
+id: finding-skillsmp-marketplace
+timestamp: "2026-03-21T01:30:00Z"
+source: https://skillsmp.com
+agent: researcher
+finding_type: tool
+confidence: confirmed
+confident_about: |
+  SkillsMP is an active, mature skills marketplace for AI agents with ~161K indexed skills.
+  It has a public REST API (v1) at https://skillsmp.com/api/v1 requiring API key authentication.
+  Multiple MCP server implementations exist for integration with Claude Code, Cursor, and others.
+  The platform is actively maintained (latest commits Feb-Mar 2026).
+  It deduplicates and aggregates skills from GitHub repositories across all major AI agent platforms.
+gaps: |
+  - Exact number of total unique skills not directly accessible (Cloudflare protection on web UI)
+  - Real-time skill count from official API not queried (requires API key)
+  - Skill categories/taxonomy not documented
+  - Upload/submission process not confirmed from web pages
+  - Commercial model and pricing (if any) not found
+evidence: |
+  1. Official repo: yan-labs/skillsmp (7 stars, created 2026-01-21, minimal code - "Coming Soon")
+  2. Aggregation data from skilldb (AmazingAng/skilldb):
+     - Unified index of ~180K+ deduplicated skills across three platforms
+     - SkillsMP: ~161K skills (largest platform by far)
+     - skills.sh: ~22K skills
+     - ClawHub: ~11K skills
+  3. API Base URL confirmed: https://skillsmp.com/api/v1
+  4. MCP Server Implementations:
+     - anilcancakir/skillsmp-mcp-server (3 stars, full featured)
+     - boyonglin/skillsmp-mcp-lite (0 stars, lightweight, actively maintained Feb 2026)
+     - skillsmp-mcp-lite npm package (2.4.1, 14 versions, published monthly)
+     - luckybalabalaya/skillsmp-mcp-server (intelligent tiering, Mar 2026)
+     - kefjbo/skillsmp-mcp (@kefjbo/skillsmp-mcp)
+  5. CLI Tools:
+     - agent-skills-cli/Karanjot786 (58 stars) - "Universal CLI for Agent Skills"
+     - tarangchokshi/claude-skills-cli (1.1.0) - Install from SkillsMP
+  6. API Features (from MCP server implementations):
+     - Keyword search with pagination and sorting (by stars/recent)
+     - AI semantic search (powered by Cloudflare AI)
+     - Get skill content from GitHub
+     - List repo skills
+     - Install skills to agents
+  7. Supported Agents:
+     - Claude Code, Cursor, Claude Desktop, Codex, Opencode, Antigravity, Roo Code, GitHub Copilot
+  8. Web Protection: Cloudflare challenge (requires JavaScript/cookies)
+implication: |
+  SkillsMP is the PRIMARY skills marketplace for AI agents - ~7-8x larger than competitors.
+  It should be prioritized in:
+  1. Skills discovery workflows (search before building)
+  2. Integration documentation (MCP server or CLI)
+  3. Skill submission/publication strategy
+  4. Marketplace comparison analysis
+  Should set up SkillsMP API integration for automated skill discovery in research/development workflows.
+  The Cloudflare protection means the website requires a browser client - use API or MCP servers instead.
+tags:
+  - skillsmp
+  - marketplace
+  - agent-skills
+  - mcp-server
+  - api
+  - claude-code
+  - skill-discovery
+  - ~161k-skills
+  - cloudflare-protected
+status: discovered

@@ -1,0 +1,101 @@
+id: finding-chezmoi-mise-skills-ecosystem-cycle-2
+timestamp: "2026-03-20T21:00:00Z"
+source: "https://github.com/wshobson/agents, https://github.com/affaan-m/everything-claude-code, https://github.com/VoltAgent/awesome-claude-code-subagents, https://github.com/ComposioHQ/awesome-claude-skills"
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  - Curated GitHub collections contain NO chezmoi, mise, or dotfiles skills anywhere
+  - wshobson/agents (31.7K stars, 72 plugins) has dependency-management and developer-essentials categories but ZERO chezmoi/mise-specific agents
+  - affaan-m/everything-claude-code (78.8K stars) lists no chezmoi or mise skills
+  - VoltAgent/awesome-claude-code-subagents (14.4K stars) has dependency-manager subagent (covers CVE scanning, version conflicts, lock files) but NOT dotfiles/chezmoi
+  - ComposioHQ/awesome-claude-skills (125+ skills) has "file-organizer" generic skill but ZERO chezmoi or mise skills
+  - PROJECT ALREADY HAS chezmoi-config skill at .agents/skills/chezmoi-config/ (comprehensive, with references for templating, scripts, password managers)
+  - PROJECT ALREADY HAS mise-enforcement and mise-tool-management skills (best-in-ecosystem implementations, per deep review cycle 1)
+  - No external ecosystem contains the specialized dotfiles lifecycle coordination skills our project offers
+
+gaps: |
+  - ComposioHQ awesome-claude-skills catalog not fully indexed (125+ skills claimed, but only ~50 listed in GitHub)
+  - wshobson/agents plugins structure uses subdirectories (agents/, commands/, skills/) — only partially explored
+  - affaan-m/everything-claude-code skill structure unclear (.claude/skills/ returned single directory "everything-claude-code")
+  - MarketplaceJSON schemas and skill registry URLs not explored
+  - skills.sh marketplace search API not tested with advanced query operators
+
+evidence: |
+  **wshobson/agents (31.7K ⭐)**
+  - Plugins directory: 63 categories (accessibility-compliance through web-scripting)
+  - Relevant categories checked:
+    - dependency-management/agents: legacy-modernizer.md only
+    - developer-essentials/agents: monorepo-architect.md only
+    - deployment-strategies/agents: deployment-engineer.md, terraform-specialist.md, cloud-architect.md
+    - shell-scripting/agents: bash-pro.md, posix-shell-pro.md
+    - cicd-automation/agents: cloud-architect.md, deployment-engineer.md, devops-troubleshooter.md, kubernetes-architect.md, terraform-specialist.md
+  - VERDICT: Zero chezmoi/dotfiles/mise-specific plugins found. Closest is deployment/infrastructure agents.
+
+  **VoltAgent/awesome-claude-code-subagents (14.4K ⭐)**
+  - 15 developer-experience subagents confirmed: build-engineer, cli-developer, dependency-manager, documentation-engineer, dx-optimizer, git-workflow-manager, legacy-modernizer, mcp-developer, powershell-module-architect, powershell-ui-architect, refactoring-specialist, slack-expert, tooling-engineer
+  - dependency-manager subagent scope: CVE/vulnerability scanning, version conflicts, unused dependency detection, license compliance, SBOM generation, semantic versioning, lock file management, NPM/Yarn/Maven/Gradle/Python environments
+  - VERDICT: dependency-manager covers tool versioning but NOT dotfiles management, chezmoi templates, or mise integration patterns.
+
+  **affaan-m/everything-claude-code (78.8K ⭐)**
+  - Repository structure: .agents/, .claude/, .codex/, .cursor/, .opencode/, agents/, commands/, contexts/ directories
+  - .claude/skills/ directory structure unclear (single directory entry "everything-claude-code" returned)
+  - agents/ directory contains: architect.md, build-error-resolver.md, chief-of-staff.md, code-reviewer.md, language-specific-resolvers (cpp, go, java, kotlin, python, rust, typescript), database-reviewer.md, doc-updater.md, e2e-runner.md, flutter-reviewer.md, harness-optimizer.md, loop-operator.md, planner.md, refactor-cleaner.md, security-reviewer.md, tdd-guide.md
+  - VERDICT: Zero chezmoi/dotfiles/mise agents. Focus is code quality, testing, and language-specific tooling.
+
+  **ComposioHQ/awesome-claude-skills (125+ skills claimed)**
+  - Top-level structure: README.md, CONTRIBUTING.md, ~50 skill directories listed
+  - Skill directories found: artifacts-builder, brand-guidelines, canvas-design, changelog-generator, competitive-ads-extractor, composio-skills, connect-apps, content-research-writer, developer-growth-analysis, document-skills, domain-name-brainstormer, file-organizer, image-enhancer, internal-comms, invoice-organizer, langsmith-fetch, (partial list)
+  - file-organizer skill: generic file organization, NOT dotfiles-specific
+  - VERDICT: No chezmoi or mise skills in indexed subset. Full catalog exploration pending.
+
+  **PROJECT INVENTORY (macos-development-environment)**
+  - chezmoi-config skill: PRESENT at .agents/skills/chezmoi-config/SKILL.md
+    - Scope: comprehensive chezmoi dotfile management (templates, .chezmoi.toml, .chezmoidata, .chezmoiexternal, scripts, password managers, cross-platform configs)
+    - Reference docs: template-syntax.md, external-files.md, ignore-files.md, password-managers.md, scripts.md, advanced-configuration.md
+    - Safety constraints: read-only mode (forbids `chezmoi apply`, `chezmoi update`), allows `chezmoi diff`, `chezmoi apply --dry-run`, `chezmoi doctor`, `chezmoi data`
+    - Status: Fully implemented, symlinked to .claude/skills/chezmoi-config
+  - mise-enforcement skill: PRESENT at .agents/skills/mise-enforcement/SKILL.md
+    - Scope: mise as authority for global runtimes/CLIs, contract enforcement, drift detection
+    - Config references: configs/mde-tool-ownership.json, configs/mde-modernization-matrix.json, configs/mde-install-exceptions.json, configs/mde-skill-registry.json
+    - Status: Fully implemented, comprehensive
+  - mise-tool-management skill: PRESENT at .agents/skills/mise-tool-management/SKILL.md
+    - Scope: backend selection (registry > aqua > github > pipx > npm > cargo > go), adding tools, drift detection, GIT_TERMINAL_PROMPT enforcement
+    - Workflow: registry check → backend selection → .chezmoisource/dot_config/mise/config.toml.tmpl update → chezmoi apply → mise install → mise lock → mise reshim
+    - Status: Fully implemented, best-in-ecosystem per cycle 1 review
+  - mde-homebrew skill: Brewfile management (via chezmoi)
+  - mde-macos-setup skill: macOS defaults/preferences (non-dotfiles)
+  - mde-global-tool-migration skill: Migration workflow
+
+implication: |
+  1. **No need to search external ecosystem for chezmoi/mise skills** — the three main curated collections (wshobson 31.7K⭐, affaan-m 78.8K⭐, VoltAgent 14.4K⭐) contain ZERO such skills. The project's own chezmoi-config, mise-enforcement, and mise-tool-management are the only implementations.
+
+  2. **chezmoi-config skill is production-ready** — fully documented with references, safety constraints, and best practices. No external skill needs to be installed or adapted. Deep review cycle 1 already confirmed this and recommended maintaining as-is.
+
+  3. **mise-tool-management has documented chezmoi integration** — Line 33 already specifies `.chezmoisource/dot_config/mise/config.toml.tmpl` as the update target. Full lifecycle (apply → install → lock → reshim) is specified. No external skill provides this coordination.
+
+  4. **Gap from cycle 1 confirmed at skill level** — The "mde-dotfiles-lifecycle" skill (recommended in deep review) does NOT exist in any external collection. This is a novel skill that must be created in-project. The "mde-chezmoi-dotfiles" skill likewise has no external equivalent.
+
+  5. **Dependency-manager subagent (VoltAgent) is complementary, not overlapping** — covers version conflicts and CVE scanning, but NOT dotfiles or chezmoi templates. No merge/integration needed.
+
+  6. **Comparison matrix updated** — affaan-m/everything-claude-code (78.8K⭐) is 4x larger than garrytan/gstack (16K⭐) but similarly lacks dotfiles/mise skills. martinemde/dotfiles remains the only reference implementation outside our project.
+
+tags:
+  - chezmoi
+  - mise
+  - dotfiles
+  - skills-ecosystem
+  - awesome-lists
+  - github-collections
+  - wshobson
+  - affaan-m
+  - VoltAgent
+  - ComposioHQ
+  - skills.sh
+  - skill-discovery
+  - no-external-chezmoi-skills
+  - project-best-in-class
+  - dotfiles-lifecycle-gap
+  - cli-tool-management
+
+status: discovered

@@ -1,0 +1,104 @@
+id: finding-classmethod-local-lsp
+timestamp: "2026-03-21T00:46:00Z"
+source: https://dev.classmethod.jp/en/articles/claude-code-lsp-from-local-marketplace/
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: |
+  - Local marketplace directory structure (.claude-plugin/marketplace.json pattern)
+  - Complete marketplace.json format with lspServers nested structure
+  - Essential fields: command, args, extensionToLanguage
+  - Registration command: /plugin marketplace add <path>
+  - Installation command: /plugin install <plugin-id>@<marketplace-name>
+  - strict: false allows marketplace entry to be complete plugin definition (no plugin.json needed)
+  - File extensions to LSP language ID mappings for TypeScript/JavaScript
+  - TypeScript LSP server command is typescript-language-server
+gaps: |
+  - Does NOT document .lsp.json files (only marketplace.json found)
+  - No explanation of why .lsp.json appears in search results
+  - Schema URL (https://anthropic.com/claude-code/marketplace.schema.json) returns 404 at time of article
+  - No details on plugin.json structure or when/if it's required
+  - Settings.json ENABLE_LSP_TOOL flag mentioned but not fully documented
+evidence: |
+  From extracted marketplace.json example (Code Block 1):
+  ```json
+  {
+    "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+    "name": "project-plugins",
+    "description": "Offline plugins",
+    "owner": {
+      "name": "YOUR_NAME_HERE"
+    },
+    "plugins": [
+      {
+        "name": "typescript-lsp",
+        "description": "TypeScript/JavaScript language server for enhanced code intelligence",
+        "version": "1.0.0",
+        "author": {
+          "name": "YOUR_TEAM_HERE",
+          "email": "support@example.com"
+        },
+        "source": "./plugins/typescript-lsp",
+        "category": "development",
+        "strict": false,
+        "lspServers": {
+          "typescript": {
+            "command": "typescript-language-server",
+            "args": ["--stdio"],
+            "extensionToLanguage": {
+              ".ts": "typescript",
+              ".tsx": "typescriptreact",
+              ".js": "javascript",
+              ".jsx": "javascriptreact",
+              ".mts": "typescript",
+              ".cts": "typescript",
+              ".mjs": "javascript",
+              ".cjs": "javascript"
+            }
+          }
+        }
+      }
+    ]
+  }
+  ```
+
+  Directory structure:
+  ```
+  .your-claude-marketplace/
+  ├── .claude-plugin/
+  │   └── marketplace.json
+  └── plugins/
+      └── typescript-lsp/
+          └── README.md
+  ```
+
+  Registration steps:
+  - Command: `/plugin marketplace add ./.your-claude-marketplace`
+  - Install: `/plugin install typescript-lsp@project-plugins`
+  - Reload plugins
+
+  Field descriptions from article:
+  - `command`: The LSP server binary to execute (must exist in PATH)
+  - `extensionToLanguage`: Mapping between file extensions and language IDs
+  - `strict: false`: Marketplace entry becomes complete plugin definition, no plugin.json needed
+
+implication: |
+  For Claude Code LSP setup:
+  1. Do NOT rely on official marketplace URL (schema is 404)
+  2. Use local marketplace pattern with .claude-plugin/marketplace.json
+  3. Declare lspServers directly in marketplace.json when strict: false
+  4. Ensure language server binaries are in PATH (e.g., typescript-language-server)
+  5. Map file extensions to language IDs correctly for type support
+  6. Search for .lsp.json mentioned in article but not documented—may be legacy or internal format
+  7. Verify schema-less marketplace.json still works despite 404 schema URL
+
+tags:
+  - claude-code
+  - lsp
+  - language-server-protocol
+  - local-marketplace
+  - typescript-lsp
+  - plugin-registration
+  - offline-setup
+  - strict-mode
+status: discovered

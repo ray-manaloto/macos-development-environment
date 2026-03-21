@@ -68,12 +68,10 @@
     ]
   },
   "enabledPlugins": {
-    "python-development@claude-code-workflows": true,
-    "shell-scripting@claude-code-workflows": true,
-    "developer-essentials@claude-code-workflows": true,
-    "conductor@claude-code-workflows": true
+    "pyright-lsp@claude-plugins-official": true
   },
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "ENABLE_LSP_TOOL": "1"
   }
 }

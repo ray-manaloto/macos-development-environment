@@ -1,0 +1,146 @@
+id: finding-piebald-lsp-setup
+timestamp: "2026-03-20T00:53:00Z"
+source: https://github.com/Piebald-AI/claude-code-lsps
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: |
+  1. EXACT INSTALLATION STEPS:
+     - Run: npx tweakcc --apply (patches Claude Code LSP support)
+     - Run claude CLI
+     - Type: /plugin marketplace add Piebald-AI/claude-code-lsps
+     - Run claude CLI again
+     - Type: /plugins
+     - Tab to Marketplaces > Browse plugins > select with spacebar > press i to install
+     - Restart Claude Code
+
+  2. FILE STRUCTURE:
+     - Each plugin is a directory in /plugins
+     - .lsp.json files are CANONICAL SOURCE for LSP configuration
+     - .claude-plugin/marketplace.json entries are GENERATED FROM .lsp.json
+     - DO NOT hand-edit marketplace.json entries—they are auto-generated
+     - Validation workflow: node scripts/validate-all.mjs
+
+  3. TWEAKCC PATCHES:
+     - Detects both npm and native Claude Code installations
+     - Patches Claude Code to make LSP support "usable" (official docs)
+     - Also customizes system prompts, themes, thinking verbs, and more
+     - Not optional—required for LSP functionality in Claude Code
+
+  4. CLAUDE CODE VERSION REQUIREMENT:
+     - Minimum: 2.0.74 (officially added LSP to changelog)
+     - Marketplace targets: 2.1.50+ (supports startupTimeout field)
+     - Latest tested: 2.1.52
+
+  5. LSP CAPABILITIES OFFERED:
+     - goToDefinition, goToImplementation, hover
+     - documentSymbol (list all symbols in file)
+     - findReferences (symbol references)
+     - workspaceSymbol (cross-workspace search)
+     - callHierarchy (prepareCallHierarchy)
+     - incomingCalls, outgoingCalls
+
+gaps: |
+  1. EXACT .lsp.json SCHEMA:
+     - Found they exist and are canonical source
+     - Did not retrieve sample .lsp.json file structure
+     - Did not see exact field names or required properties
+     - No location documentation (where .lsp.json goes in plugin dir)
+
+  2. HOW .lsp.json MAPS TO marketplace.json:
+     - Confirmed sync-lsp-to-marketplace.mjs generates marketplace.json
+     - Did not see the mapping logic or transformation rules
+     - Did not see sample input/output transformation
+
+  3. PLUGIN INSTALLATION MECHANICS:
+     - /plugins UI interaction not fully documented
+     - Spacebar vs Enter behavior unclear
+     - What happens on restart (how plugins are registered)
+
+  4. TWEAKCC DETAILED BEHAVIOR:
+     - Confirmed it patches Claude Code
+     - Did not find tweakcc documentation or repo
+     - Unknown: what exact patches are applied
+     - Unknown: whether tweakcc is required or just recommended
+
+  5. LANGUAGE-SPECIFIC LSP SERVERS:
+     - Retrieved setup instructions for ~25 languages
+     - Installation varies widely (npm, cargo, brew, opam, etc.)
+     - No centralized LSP server registry/installation tool
+     - Each language requires manual PATH setup and validation
+
+evidence: |
+  From https://github.com/Piebald-AI/claude-code-lsps README:
+
+  **Installation Steps (Direct Quote):**
+  "Run npx tweakcc --apply. tweakcc automatically detects your Claude Code
+  installation (npm or native) and applies the necessary patches. It will
+  automatically patch your Claude Code installation to make CC's builtin LSP
+  support usable."
+
+  "Install them the usual way. First make CC aware of the marketplace:
+  Run claude
+  /plugin marketplace add Piebald-AI/claude-code-lsps
+  Then enable the plugins of your choice:
+  Run claude
+  Type /plugins
+  Tab to Marketplaces
+  Enter the claude-code-lsps marketplace and choose Browse plugins
+  Select the plugins you'd like with the spacebar (e.g. TypeScript, Rust)
+  Press 'i' to install them
+  Restart Claude Code"
+
+  **LSP Definition Workflow (Direct Quote):**
+  ".lsp.json files are the canonical source of LSP configuration.
+  .claude-plugin/marketplace.json lspServers entries are generated from .lsp.json.
+  Do not hand-edit generated lspServers blocks.
+  sync-lsp-to-marketplace only updates plugins that already exist in
+  marketplace plugins[]. Add a marketplace entry first when introducing
+  a new plugin directory."
+
+  **Version Requirements (Direct Quote):**
+  "Claude Code officially supports LSP. In 2.0.74 they officially added it
+  to the changelog. Previously, the new LSP builtin tool had to be enabled
+  manually via $ENABLE_LSP_TOOL=1. This marketplace currently targets
+  Claude Code 2.1.50+ (latest release: 2.1.52) to use modern LSP configuration
+  fields like startupTimeout."
+
+  **Validation Workflow (Direct Quote):**
+  "Run this workflow after any LSP config change:
+  node scripts/validate-all.mjs
+  validate-all runs:
+  - sync-lsp-to-marketplace.mjs
+  - validate-lsp-definitions.mjs
+  - validate-runtime-marketplace.mjs"
+
+implication: |
+  1. **FOR LSP DEPLOYMENT:**
+     - The `.lsp.json` is the config source-of-truth, never hand-edit marketplace.json
+     - Validation must always run before commit (validate-all.mjs)
+     - tweakcc is a MANDATORY prerequisite—not optional
+
+  2. **FOR MIGRATION VS claude-plugins-official:**
+     - Piebald's marketplace is NOT just another plugin marketplace
+     - It specializes in LSP server CONFIGURATIONS (25+ languages)
+     - Each plugin maps to a language LSP server that must be installed separately
+     - claude-plugins-official may not have LSP-focused plugin infrastructure
+
+  3. **FOR CLAUDE CODE VERSION TARGETING:**
+     - Do NOT try to use Piebald LSP plugins with Claude Code < 2.0.74
+     - 2.1.50+ is recommended (supports startupTimeout and other modern LSP fields)
+     - Version mismatch will cause LSP tool failures
+
+  4. **FOR LANGUAGE-SPECIFIC SETUP:**
+     - Installing a Piebald LSP plugin is NOT sufficient
+     - Must independently install the LSP server (rust-analyzer, pyright, gopls, etc.)
+     - Each LSP has different installation method and PATH requirements
+     - PATH setup is user's responsibility (build on your own PATH, etc.)
+
+  5. **FUTURE RESEARCH AREAS:**
+     - .lsp.json schema and location within plugin directories
+     - How tweakcc patches Claude Code (does it modify files? env vars? CLI args?)
+     - Complete plugin registry and descriptor format
+     - Comparison with claude-plugins-official marketplace architecture
+
+tags: [lsp, claude-code, marketplace, piebald-ai, language-servers, installation, tweakcc, source-of-truth, plugin-architecture, version-requirements]
+status: discovered

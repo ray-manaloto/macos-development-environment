@@ -212,9 +212,17 @@ uv run datamodel-codegen \
   --formatters ruff-format ruff-check
 """
 
+[tasks."mde:lint"]
+description = "Run all linters: ruff + ty + pyright"
+run = "uv run mde-py quality --lint"
+
 [tasks."mde:test:py"]
 description = "Run Python test suite"
-run = "uv run pytest tests/mde/ -v"
+run = "uv run mde-py quality --test"
+
+[tasks."mde:quality"]
+description = "Full quality gate: lint + type check + test + validate"
+run = "uv run mde-py quality"
 
 [tasks."mde:doctor"]
 description = "System health check"

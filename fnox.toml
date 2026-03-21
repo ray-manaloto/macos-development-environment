@@ -41,3 +41,4 @@ GEMINI_API_KEY= { provider = "keychain", value = "GEMINI_API_KEY", if_missing = 
 LANGSMITH_API_KEY= { provider = "keychain", value = "LANGSMITH_API_KEY", if_missing = "ignore" }
 GITHUB_TOKEN= { provider = "keychain", value = "GITHUB_TOKEN", if_missing = "ignore" }
 GITHUB_MCP_PAT= { provider = "keychain", value = "GITHUB_MCP_PAT", if_missing = "ignore" }
+SKILLSMP_API_KEY= { provider = "keychain", value = "SKILLSMP_API_KEY", if_missing = "ignore" }

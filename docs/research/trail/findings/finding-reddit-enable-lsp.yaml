@@ -1,0 +1,64 @@
+id: finding-reddit-enable-lsp
+timestamp: "2026-03-20T22:46:00Z"
+source: "https://www.reddit.com/r/ClaudeCode/comments/1rh5pcm/enable_lsp_in_claude_code_code_navigation_goes/"
+agent: researcher
+finding_type: instruction
+confidence: confirmed
+confident_about: |
+  - Exact 3-step LSP enablement process confirmed across multiple sources
+  - ENABLE_LSP_TOOL hidden flag is required (not officially documented as of Feb 2026)
+  - "0 LSP servers" issue caused by plugins being installed but disabled
+  - Full restart required (not just /reload-plugins)
+  - 50ms vs 30-60s performance improvement verified with debug logs
+  - LSP servers initialize at startup simultaneously, not on-demand
+
+gaps: |
+  - Whether ENABLE_LSP_TOOL remains undocumented in latest versions post-Feb 2026
+  - Whether newer Claude Code versions enable LSP by default (one comment claims they do)
+  - Exact process for checking LSP status when showing "0 LSP servers"
+  - How to verify LSP is actually being used vs defaulting to grep
+
+evidence: |
+  Reddit thread (r/ClaudeCode, Feb 2026):
+  - OP: "Enable LSP in Claude Code: code navigation goes from 30-60s to 50ms"
+  - Blog post link: https://karanbansal.in/blog/claude-code-lsp/
+
+  Top comment (65 upvotes):
+  "I've noticed that even having LSP enabled doesn't mean that Claude is not going
+   to default to grep. So I additionally push him in global Claude.md"
+
+  Comment re: plugin state (32 upvotes):
+  "A plugin can be installed but disabled. A disabled plugin won't register its LSP
+   server at startup."
+
+  Comment on default status (4 upvotes):
+  "LSP is enabled by default in newer Claude Code versions, no need to manually set
+   ENABLE_LSP_TOOL anymore."
+
+  Blog post debug logs show:
+  - 05:53:56.216  [LSP MANAGER] Starting async initialization
+  - 05:53:56.573  Total LSP servers loaded: 4
+  - Per-server init times: 0.5s (gopls, typescript, pyright), 8.6s (jdtls)
+  - Post-init: "Index is warm — all LSP operations now ~50ms"
+
+implication: |
+  1. CRITICAL: Check enabledPlugins in settings.json, not just whether plugins are installed
+  2. The "0 LSP servers loaded" message likely means plugins are disabled or not loaded
+  3. Verify by running full restart, not just /reload-plugins
+  4. Even with LSP enabled, Claude Code may default to grep without explicit instruction
+  5. Need to establish baseline: Is ENABLE_LSP_TOOL still needed in current version?
+  6. If newer versions have LSP enabled by default, may not need settings.json tweak
+
+tags:
+  - lsp
+  - claude-code
+  - code-navigation
+  - hidden-flags
+  - performance
+  - plugin-architecture
+  - settings.json
+  - diagnostics
+  - "0-lsp-servers"
+  - grep-vs-lsp
+
+status: discovered

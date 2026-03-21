@@ -1,0 +1,55 @@
+id: finding-skillfish-marketplace
+timestamp: "2026-03-21T01:35:00Z"
+source: https://github.com/knoxgraeme/skillfish
+agent: researcher
+finding_type: tool
+confidence: confirmed
+confident_about: |
+  skill.fish is a CLI-driven skill manager and marketplace aggregator for 32+ AI coding agents
+  (Claude Code, Cursor, Windsurf, Copilot, Cline, etc.). The skillfish npm package (v1.0.30,
+  126 stars) installed from https://www.skill.fish provides CLI for searching, installing,
+  and syncing skills across all supported agents. The website skill.fish itself is a Vercel
+  SPA with Astro backend that requires javascript rendering, so direct HTML scraping fails
+  (gets security checkpoint). Search uses mcpmarket.com/api/search backend. The CLI is
+  actively maintained (last update 2026-03-02, created 2026-01-21).
+gaps: |
+  - skill.fish website content inaccessible (Vercel SPA requires JS rendering)
+  - API search endpoint returns total_count but empty results for specific queries (possible
+    backend issues or permissions)
+  - Exact catalog size unknown (search says ~31k-33k skills exist but CLI returns zero results)
+  - No offline skill catalog published; skills must be fetched from GitHub repos
+  - Cannot enumerate all available skills programmatically without accessing website
+evidence: |
+  npm view skillfish returned: version 1.0.30, 126 stars, AGPL-3.0 license
+  GitHub repo: knoxgraeme/skillfish, 126 stars, 10 forks, created 2026-01-21, last push 2026-03-16
+  README states: Works with 32 agents (Claude Code, Cursor, Windsurf, Codex, GitHub Copilot,
+  Gemini CLI, OpenCode, Goose, Amp, Roo Code, Kiro CLI, Kilo Code, Trae, Cline, Antigravity,
+  Droid, Augment, OpenClaw, CodeBuddy, Command Code, Crush, Kode, Mistral Vibe, Mux,
+  OpenClaude IDE, OpenHands, Qoder, Qwen Code, Replit, Trae CN, Neovate, AdaL)
+  skillfish README homepage: https://skill.fish
+  searchCommand uses REGISTRY_SEARCH_URL = 'https://mcpmarket.com/api/search'
+  Skill discovery via: skillfish search <query>, skillfish add owner/repo, skillfish submit
+  CLI commands: add, init, list, remove, search, update, bundle, install, submit
+  Team sync via skillfish.json manifest with pin-to-ref syntax
+implication: |
+  skill.fish represents a UNIFIED MARKETPLACE for all agent skills (not Claude Code specific).
+  Critical gaps for our research:
+  1. We cannot enumerate the full catalog without JS-capable fetcher (playwright, puppeteer)
+  2. mcpmarket.com API is the source of truth; skill.fish is a frontend
+  3. Skills are scattered across individual GitHub repos — no centralized repo index exists
+  4. skillfish CLI is the primary discovery/installation tool for the ecosystem
+  5. We should add skillfish to our skills inventory and use it for meta-discovery
+  6. Cannot find chezmoi/mise/dotfiles-specific skills via CLI search (returns empty)
+  7. For comprehensive skill catalog, need either: (a) JS renderer for skill.fish website,
+     (b) direct access to mcpmarket.com API (returns 403), or (c) crawl GitHub for SKILL.md files
+tags:
+  - skill-manager
+  - agent-marketplace
+  - claude-code
+  - cursor
+  - skill-registry
+  - mcpmarket
+  - tool-discovery
+  - unified-ecosystem
+  - cli-tool
+status: discovered

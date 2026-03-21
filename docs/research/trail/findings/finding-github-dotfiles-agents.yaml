@@ -1,0 +1,133 @@
+id: finding-github-dotfiles-agents
+timestamp: "2026-03-21T01:15:00Z"
+source: github-search
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  - Other teams use chezmoi + mise + Claude Code agents for dotfiles management
+  - Three primary agent patterns exist: specialist agents, template-based bootstrapping, and lifecycle coordination
+  - Most projects lack drift detection, secret rotation automation, and shell performance monitoring
+  - Few repos integrate chezmoi + mise + brew in a coordinated lifecycle
+tags:
+  - chezmoi-agents
+  - mise-specialist
+  - dotfiles-patterns
+  - agent-architecture
+  - shell-provisioning
+gaps: |
+  CONFIRMED MISSING PATTERNS (from other repos):
+
+  1. **Drift Detection & Reconciliation**
+     - No repos implement `chezmoi verify` + automated repair
+     - No drift detection between deployed state and source truth
+     - No automated alerting when `chezmoi verify` fails
+
+  2. **Lifecycle Coordination (chezmoi → mise → brew)**
+     - pelted/.dotfiles: mise, zoxide, fzf (no coordinator)
+     - barnabasJ/dotfiles: agents folder + commands (no lifecycle)
+     - guaje/dotfiles: chezmoi + age (no mise coordination)
+     - No single repo coordinates all three: brew install → mise tasks → chezmoi apply
+
+  3. **Secret Rotation & Expiration Monitoring**
+     - pelted/.dotfiles: 1Password integration (read-only)
+     - guaje/dotfiles: age + fnox (static encryption)
+     - No repos implement: secret expiration checks, rotation scheduling, keychain update triggers
+
+  4. **Shell Performance Monitoring & Benchmarking**
+     - pelted/.dotfiles: "fast startup" (no metrics)
+     - DarkPhilosophy/zsh-bench: Tool exists but not integrated into dotfiles workflow
+     - No repos measure: startup time per change, profiling on apply, regression detection
+
+  5. **Bootstrap/Provision Automation**
+     - Most: bash bootstrap.sh (one-time, imperative)
+     - No: repeatability verification, idempotent agent-driven provisioning
+     - No: multi-machine orchestration with consistency checks
+
+  6. **Skills Inventory & Discovery**
+     - jalexandercarr/dotfiles: aide CLI for template management (brilliant!)
+     - barnabasJ/dotfiles: Agents folder system with symlinks (solves chezmoi conflicts)
+     - No repos: automated skill discovery, skill versioning, skill marketplace integration
+
+  7. **Dependency Graph Visualization**
+     - No repos map: brew packages → mise tools → chezmoi templates dependencies
+     - No automated detection of: circular deps, orphaned tools, breaking version changes
+
+evidence: |
+  REPOS ANALYZED:
+
+  **pelted/.dotfiles** (agent-focused, modern)
+  - URL: https://github.com/pelted/.dotfiles
+  - Features: chezmoi + 1Password + mise + minimal zsh + bootstrap.sh
+  - Gap: No drift detection, no mise lifecycle coordination, no performance monitoring
+
+  **jalexandercarr/dotfiles** (aide CLI, template-based)
+  - URL: https://github.com/jalexandercarr/dotfiles
+  - Features: aide CLI, global AI_PREFERENCES.md, symlink strategy, templates (base/go/python/ts/infra)
+  - Gap: No lifecycle coordination, no bootstrap validation
+
+  **barnabasJ/dotfiles** (agents folder pattern)
+  - URL: https://github.com/barnabasJ/dotfiles
+  - Features: agents/ folder (ignored by chezmoi), symlinks to ~/.claude/commands/, 17 command files
+  - Gap: No secret rotation, no drift detection, no performance tracking
+
+  **guaje/dotfiles** (age encryption + fnox)
+  - URL: https://github.com/guaje/dotfiles
+  - Features: chezmoi + age encryption on Android/Termux, starship, neovim, tmux
+  - Gap: No automation, no agent coordination, no performance monitoring
+
+  **Aristoddle/beppe-dotfiles-docs** (comprehensive agent research)
+  - URL: https://github.com/Aristoddle/beppe-dotfiles-docs
+  - Features: Phase 6 complete (9 agents + 8 skills), chezmoi-managed, parallel agent execution
+  - Gap: Manual skill/agent management (not automated via chezmoi), no drift detection
+
+  **JeremiahChurch/dotfiles-template** (Claude Code starter)
+  - URL: https://github.com/JeremiahChurch/dotfiles-template
+  - Features: chezmoi + Claude Code + WSL template
+  - Gap: Minimal feature set, no mise integration
+
+  **lev-os/leviathan** (advanced ops pattern)
+  - URL: https://github.com/lev-os/leviathan
+  - Features: Ops sync dashboard, multi-machine sync, source-side intent resolution
+  - Gap: Complex, not open source friendly
+
+implication: |
+  **OUR PROJECT OPPORTUNITIES (Priority Order):**
+
+  1. **HIGH IMPACT - Drift Detection Agent** ⭐
+     - Implement: `chezmoi verify` + automated repair in background agent
+     - Trigger: periodic (nightly) or on-demand via skill
+     - Missing: Only we could ship this cleanly to the ecosystem
+
+  2. **HIGH IMPACT - Lifecycle Coordinator** ⭐
+     - Chain: brew install → mise install → chezmoi apply (with dependency graph)
+     - Missing: No other project coordinates all three
+     - Could be: mise-specialist skill enhancement
+
+  3. **MEDIUM IMPACT - Shell Performance Skill**
+     - Integrate: zsh-bench or hyperfine for startup regression detection
+     - Trigger: on chezmoi apply, measure delta
+     - Missing: Only we'd add observability to provisioning
+
+  4. **MEDIUM IMPACT - Secret Rotation Agent**
+     - Monitor: 1Password/age secret expiration dates
+     - Trigger: rotate secrets before expiry, alert if past expiry
+     - Integrate: fnox + Keychain + notebooklm for audit trail
+
+  5. **LOWER IMPACT - Skill Discovery & Marketplace**
+     - barnabasJ/dotfiles solved: symlink strategy prevents chezmoi conflicts
+     - We should: adopt their agents/ folder pattern in our chezmoi config
+     - Add: automated skill sync from awesome-claude-plugins/skills registry
+
+  **IMMEDIATE NEXT STEPS:**
+  1. Review barnabasJ's agents/ folder symlink pattern (already implemented!)
+  2. Implement drift-detection-agent (nightly chezmoi verify + repair)
+  3. Create lifecycle-coordinator-agent (brew → mise → chezmoi)
+  4. Add shell startup performance monitoring to mise-specialist skill
+  5. Migrate skills inventory to source catalog per research pipeline policy
+
+---
+status: discovered
+research_round: 2
+baseline_score: 0.450
+improvement_potential: 0.600+

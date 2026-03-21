@@ -1,0 +1,12 @@
+id: finding-agent-smoke-test
+timestamp: "2026-03-21T00:00:00Z"
+source: smoke-test
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: "Researcher agent can write files"
+gaps: "None — this is a smoke test"
+evidence: "File was written successfully by researcher agent"
+implication: "The Write/Edit tools work correctly for the researcher agent"
+tags: [smoke-test, verification]
+status: discovered
