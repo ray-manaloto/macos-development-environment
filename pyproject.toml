@@ -62,6 +62,14 @@ ignore = [
     "E501",     # generated file — long descriptions from schema
     "COM812",   # generated file — trailing comma style
 ]
+"src/mde/research/clients/skillsmp_models.py" = [
+    "D100",     # generated file — no module docstring
+    "D101",     # generated file — no class docstrings
+    "ERA001",   # generated file — codegen header comments
+    "N815",     # generated file — camelCase field aliases
+    "E501",     # generated file — long descriptions from schema
+    "COM812",   # generated file — trailing comma style
+]
 "tests/**/*.py" = [
     "S101",     # assert is expected in tests
     "S108",     # temp file paths in test fixtures are fine

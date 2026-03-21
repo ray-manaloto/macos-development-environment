@@ -212,6 +212,27 @@ uv run datamodel-codegen \
   --formatters ruff-format ruff-check
 """
 
+[tasks."mde:codegen:skillsmp"]
+description = "Regenerate SkillsMP Pydantic models from JSON Schemas"
+run = """
+uv run datamodel-codegen \
+  --input docs/schemas/skillsmp/ \
+  --input-file-type jsonschema \
+  --output src/mde/research/clients/skillsmp_models.py \
+  --output-model-type pydantic_v2.BaseModel \
+  --target-python-version 3.12 \
+  --use-annotated \
+  --use-union-operator \
+  --field-constraints \
+  --use-default-kwarg \
+  --collapse-root-models \
+  --strict-nullable \
+  --use-one-literal-as-default \
+  --allow-extra-fields \
+  --snake-case-field \
+  --formatters ruff-format ruff-check
+"""
+
 [tasks."mde:lint"]
 description = "Run all linters: ruff + ty + pyright"
 run = "uv run mde-py quality --lint"
