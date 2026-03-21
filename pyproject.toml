@@ -71,6 +71,14 @@ ignore = [
     "E501",     # generated file — long descriptions from schema
     "COM812",   # generated file — trailing comma style
 ]
+"src/mde/hooks/agent_frontmatter_model.py" = [
+    "D100",     # generated file — no module docstring
+    "D101",     # generated file — no class docstrings
+    "ERA001",   # generated file — codegen header comments
+    "N815",     # generated file — camelCase field names match Claude Code API
+    "E501",     # generated file — long descriptions from schema
+    "COM812",   # generated file — trailing comma style
+]
 "tests/**/*.py" = [
     "S101",     # assert is expected in tests
     "S108",     # temp file paths in test fixtures are fine
@@ -93,7 +101,7 @@ python-version = "3.12"
 
 [tool.ty.src]
 include = ["src/mde"]
-exclude = [".agents/skills"]
+exclude = [".agents/skills", "src/mde/hooks/agent_frontmatter_model.py"]
 
 [tool.ty.rules]
 # Enable ALL rules that default to "ignore" — no silent type errors
@@ -103,6 +111,12 @@ possibly-missing-import = "error"
 possibly-unresolved-reference = "error"
 unsupported-dynamic-base = "error"
 unused-ignore-comment = "warn"
+
+# ── pyright ──
+[tool.pyright]
+exclude = [
+    "src/mde/hooks/agent_frontmatter_model.py",  # generated file — constr/conint calls in type exprs
+]
 
 # ── pytest ──
 [tool.pytest.ini_options]
