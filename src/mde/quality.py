@@ -22,7 +22,7 @@ _LINT_CHECKS: list[tuple[str, list[str], str]] = [
     ("ruff-check", ["uv", "run", "ruff", "check", "src/", "tests/"], "Lint rules"),
     ("ruff-format", ["uv", "run", "ruff", "format", "--check", "src/", "tests/"], "Format check"),
     ("ty", ["uv", "run", "ty", "check"], "Type check (ty)"),
-    ("pyright", ["pyright", "src/mde/"], "Type check (pyright)"),
+    ("pyright", ["uv", "run", "pyright", "src/mde/"], "Type check (pyright)"),
 ]
 
 _TEST_CHECKS: list[tuple[str, list[str], str]] = [
