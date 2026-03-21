@@ -513,7 +513,7 @@ cycle	score	sources_processed	status	description
 - `cycle`: date + sequence number
 - `score`: quantified improvement metric (0.0-1.0)
 - `sources_processed`: count of sources reviewed
-- `status`: `baseline`, `in_progress`, `completed`, `regression`
+- `status`: `baseline`, `in_progress`, `completed`, `regression`, `abandoned`
 - `description`: what the cycle attempted
 
 ### 8.4 Provenance Enrichment (from compound)
