@@ -64,11 +64,17 @@ def _parse_skills_sh_line(line: str, skills: list[SkillResult]) -> None:
         parts = clean.split()
         if len(parts) >= _MIN_PARTS:
             name_part = parts[0]
-            install_str = parts[1].replace(",", "").replace("K", "000")
-            try:
-                installs = int(float(install_str))
-            except ValueError:
-                installs = 0
+            raw = parts[1].replace(",", "")
+            if raw.upper().endswith("K"):
+                try:
+                    installs = int(float(raw[:-1]) * 1000)
+                except ValueError:
+                    installs = 0
+            else:
+                try:
+                    installs = int(float(raw))
+                except ValueError:
+                    installs = 0
             author, _, skill_name = name_part.partition("@")
             if not skill_name:
                 skill_name = author

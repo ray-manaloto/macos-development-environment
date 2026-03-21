@@ -13,14 +13,11 @@ from mde.research.clients.skillsmp_models import (
     SkillSearchResponse,
 )
 
-# Ensure tests don't pick up a real API key from the environment.
-_NO_KEY_ENV = {k: v for k, v in os.environ.items() if k != "SKILLSMP_API_KEY"}
-
 
 class TestSkillsMPClientConfig:
     """Configuration and missing-key behavior."""
 
-    @patch.dict(os.environ, _NO_KEY_ENV, clear=True)
+    @patch.dict(os.environ, {"SKILLSMP_API_KEY": ""})
     def test_no_api_key_is_not_configured(self) -> None:
         client = SkillsMPClient(api_key="")
         assert client.is_configured is False
@@ -29,7 +26,7 @@ class TestSkillsMPClientConfig:
         client = SkillsMPClient(api_key="test-key-123")
         assert client.is_configured is True
 
-    @patch.dict(os.environ, _NO_KEY_ENV, clear=True)
+    @patch.dict(os.environ, {"SKILLSMP_API_KEY": ""})
     def test_search_without_key_returns_error(self) -> None:
         client = SkillsMPClient(api_key="")
         result = client.search("terraform")
@@ -37,7 +34,7 @@ class TestSkillsMPClientConfig:
         assert result.error is not None
         assert result.error.code == "MISSING_API_KEY"
 
-    @patch.dict(os.environ, _NO_KEY_ENV, clear=True)
+    @patch.dict(os.environ, {"SKILLSMP_API_KEY": ""})
     def test_ai_search_without_key_returns_error(self) -> None:
         client = SkillsMPClient(api_key="")
         result = client.ai_search("terraform")

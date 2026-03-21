@@ -58,11 +58,97 @@ class TestParseSkillsShLine:
         _parse_skills_sh_line("Some random output", skills)
         assert len(skills) == 0
 
-    def test_k_suffix_replaced(self) -> None:
-        """K replaced with '000': '7.3K' -> '7.3000' -> int(7.3) -> 7."""
+    def test_k_suffix_multiplied(self) -> None:
+        """Install count with K suffix is multiplied by 1000."""
         skills: list[SkillResult] = []
         _parse_skills_sh_line("author@skill 7.3K installs", skills)
-        assert skills[0].installs == 7
+        assert skills[0].installs == 7300
+
+
+class TestSearchGitHub:
+    """Tests for GitHub code search result parsing."""
+
+    @patch("mde.research.skill_discover.subprocess.run")
+    def test_parses_github_search_output(self, mock_run: MagicMock) -> None:
+        """Parse realistic gh search code output into SkillResult."""
+        from mde.research.skill_discover import _search_github
+
+        mock_run.return_value = MagicMock(
+            stdout=(
+                "hashicorp/terraform-skills:skills/terraform-style-guide/SKILL.md: description\n"
+                "user/repo:agents/skills/my-skill/SKILL.md: some content\n"
+            ),
+            returncode=0,
+        )
+        results = _search_github("terraform")
+        assert len(results) >= 1
+        assert results[0].source == "github"
+        assert results[0].author == "hashicorp"
+        assert "github.com" in results[0].url
+
+    @patch("mde.research.skill_discover.subprocess.run")
+    def test_deduplicates_by_author_skill(self, mock_run: MagicMock) -> None:
+        """Duplicate author/skill combinations are deduplicated."""
+        from mde.research.skill_discover import _search_github
+
+        mock_run.return_value = MagicMock(
+            stdout=(
+                "user/repo:skills/my-skill/SKILL.md: line1\n"
+                "user/repo:skills/my-skill/SKILL.md: line2\n"
+            ),
+            returncode=0,
+        )
+        results = _search_github("test")
+        assert len(results) == 1
+
+
+class TestSearchSkillsMP:
+    """Tests for SkillsMP search result conversion."""
+
+    def test_converts_skillsmp_results(self) -> None:
+        """SkillsMP results are correctly mapped to SkillResult fields."""
+        from unittest.mock import PropertyMock
+
+        from mde.research.clients.skillsmp_client import SkillsMPClient
+        from mde.research.clients.skillsmp_models import Skill as SMPSkill
+        from mde.research.clients.skillsmp_models import SkillSearchData, SkillSearchResponse
+        from mde.research.skill_discover import _search_skillsmp
+
+        with (
+            patch.object(
+                SkillsMPClient,
+                "is_configured",
+                new_callable=PropertyMock,
+                return_value=True,
+            ),
+            patch.object(SkillsMPClient, "search") as mock_search,
+        ):
+            mock_search.return_value = SkillSearchResponse(
+                success=True,
+                data=SkillSearchData(
+                    skills=[
+                        SMPSkill(
+                            id="1",
+                            name="terraform",
+                            author="hashicorp",
+                            description="Terraform skills",
+                            stars=100,
+                            skill_url="https://skillsmp.com/skills/terraform",
+                        )
+                    ],
+                    total=1,
+                ),
+            )
+
+            results = _search_skillsmp("terraform")
+
+        assert len(results) == 1
+        assert results[0].name == "terraform"
+        assert results[0].author == "hashicorp"
+        assert results[0].source == "skillsmp"
+        assert results[0].stars == 100
+        assert results[0].description == "Terraform skills"
+        assert results[0].url == "https://skillsmp.com/skills/terraform"
 
 
 class TestSkillResultSortKey:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from mde.research.clients.skillsmp_models import (
+    AISearchResponse,
     ErrorResponse,
     Skill,
     SkillSearchData,
@@ -63,10 +64,34 @@ class TestSkillSearchResponse:
         assert resp.data is None
 
     def test_empty_skills_list(self) -> None:
-        resp = SkillSearchResponse(success=True, data=SkillSearchData())
+        resp = SkillSearchResponse(success=True, data=SkillSearchData(skills=[]))
         assert resp.data is not None
         assert resp.data.skills == []
         assert resp.data.total == 0
+
+
+class TestAISearchResponse:
+    """Tests for the AISearchResponse model."""
+
+    def test_ai_search_with_results(self) -> None:
+        """Parse AI search response with nested results."""
+        data = {
+            "success": True,
+            "data": {
+                "object": "list",
+                "search_query": "terraform",
+                "data": [
+                    {"file_id": "abc", "filename": "SKILL.md", "score": 0.95},
+                    {"file_id": "def", "filename": "README.md", "score": 0.72},
+                ],
+            },
+        }
+        resp = AISearchResponse.model_validate(data)
+        assert resp.success is True
+        assert resp.data is not None
+        assert len(resp.data.data) == 2
+        assert resp.data.data[0].score == 0.95
+        assert resp.data.search_query == "terraform"
 
 
 class TestErrorResponse:
