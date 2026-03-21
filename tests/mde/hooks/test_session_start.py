@@ -3,14 +3,21 @@
 from __future__ import annotations
 
 import subprocess
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pytest
 
 
-def test_session_start_exits_zero() -> None:
+def test_session_start_exits_zero(capsys: pytest.CaptureFixture[str]) -> None:
     """SessionStart should always succeed (never block session start)."""
     from mde.hooks.session_start import session_start
 
     result = session_start()
     assert result == 0
+
+    captured = capsys.readouterr()
+    assert "Recent commits" in captured.out, "SessionStart should print 'Recent commits' header"
 
 
 def test_session_start_cli_dispatch() -> None:

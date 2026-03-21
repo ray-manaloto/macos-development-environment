@@ -10,6 +10,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
 
+_SUBPARSERS: dict[str, argparse.ArgumentParser] = {}
+
+
 def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     """Build the top-level argument parser."""
     parser = argparse.ArgumentParser(
@@ -97,10 +100,11 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     hooks_p = sub.add_parser("hooks", help="Claude Code hook handlers")
     hooks_sub = hooks_p.add_subparsers(dest="hooks_action")
     hooks_sub.add_parser("log-edit-outcome", help="PostToolUse logger")
-    hooks_sub.add_parser("log-agent-event", help="SubagentStarted/Completed logger")
+    hooks_sub.add_parser("log-agent-event", help="SubagentStart/SubagentStop logger")
     hooks_sub.add_parser("guard-install", help="PreToolUse install guard")
     hooks_sub.add_parser("session-start", help="SessionStart context setup")
     hooks_sub.add_parser("post-compact", help="PostCompact research state save")
+    _SUBPARSERS["hooks"] = hooks_p
 
     # research
     from mde.research.cli import add_subparsers as _add_research_subparsers
@@ -272,6 +276,9 @@ _HOOKS_DISPATCH: dict[str, tuple[str, str]] = {
 
 def _cmd_hooks(args: argparse.Namespace) -> int:
     action = args.hooks_action
+    if action is None:
+        _SUBPARSERS["hooks"].print_help()
+        return 1
     entry = _HOOKS_DISPATCH.get(action)
     if entry is None:
         print(f"Unknown hooks action: {action}", file=sys.stderr)

@@ -30,7 +30,9 @@ def _repo_root() -> Path:
     return Path.cwd()
 
 
-_COMPACT_LOG = _repo_root() / ".artifacts" / "compact-events.jsonl"
+def _compact_log() -> Path:
+    """Return the compact event log path (computed lazily to avoid git at import time)."""
+    return _repo_root() / ".artifacts" / "compact-events.jsonl"
 
 
 def post_compact() -> int:
@@ -40,9 +42,10 @@ def post_compact() -> int:
         "event": "post_compact",
     }
 
+    log_path = _compact_log()
     try:
-        _COMPACT_LOG.parent.mkdir(parents=True, exist_ok=True)
-        with _COMPACT_LOG.open("a") as f:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("a") as f:
             f.write(json.dumps(record) + "\n")
     except OSError as exc:
         print(f"PostCompact: could not log event: {exc}", file=sys.stderr)

@@ -6,23 +6,33 @@ import json
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pytest
 
 
-def test_post_compact_returns_zero() -> None:
+def test_post_compact_returns_zero(monkeypatch: pytest.MonkeyPatch) -> None:
     """PostCompact should always succeed (never block compaction)."""
-    from mde.hooks.post_compact import post_compact
+    import mde.hooks.post_compact as module
 
-    result = post_compact()
-    assert result == 0
+    with tempfile.TemporaryDirectory() as tmp:
+        log_path = Path(tmp) / ".artifacts" / "compact-events.jsonl"
+        monkeypatch.setattr(module, "_compact_log", lambda: log_path)
+
+        from mde.hooks.post_compact import post_compact
+
+        result = post_compact()
+        assert result == 0
 
 
-def test_post_compact_writes_valid_json_to_log(monkeypatch: object) -> None:
+def test_post_compact_writes_valid_json_to_log(monkeypatch: pytest.MonkeyPatch) -> None:
     """PostCompact should write a valid JSON record to the compact log."""
     import mde.hooks.post_compact as module
 
     with tempfile.TemporaryDirectory() as tmp:
         log_path = Path(tmp) / ".artifacts" / "compact-events.jsonl"
-        monkeypatch.setattr(module, "_COMPACT_LOG", log_path)
+        monkeypatch.setattr(module, "_compact_log", lambda: log_path)
 
         from mde.hooks.post_compact import post_compact
 
