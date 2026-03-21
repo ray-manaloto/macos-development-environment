@@ -9,6 +9,19 @@ argument-hint: <use-case-or-query>
 
 Search across all Claude Code skill sources, compare to what's installed, and install the best match — or identify gaps where a custom skill is needed.
 
+## Quick Start
+
+```bash
+# Unified search across all sources (skills.sh + GitHub + SkillsMP)
+uv run mde-py research skill-discover <query>
+
+# JSON output for programmatic use
+uv run mde-py research skill-discover <query> --json
+
+# Via mise task
+mise run mde:research:skill-discover -- <query>
+```
+
 ## The Discovery Pipeline
 
 ```

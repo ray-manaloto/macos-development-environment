@@ -9,6 +9,12 @@ Available clients:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from mde.research.clients.skillkit_client import SkillKitClient
+    from mde.research.clients.skillsmp_client import SkillsMPClient
+
 __all__ = ["SkillKitClient", "SkillsMPClient"]
 
 

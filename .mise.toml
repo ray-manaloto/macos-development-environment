@@ -98,6 +98,10 @@ run = "uv run mde-py research score"
 description = "Show research pipeline status"
 run = "uv run mde-py research status"
 
+[tasks."mde:research:skill-discover"]
+description = "Search all skill sources (skills.sh + GitHub + SkillsMP)"
+run = "uv run mde-py research skill-discover \"$@\""
+
 [tasks."mde:research:autoimprove"]
 description = "Run the bounded multi-agent autoresearch loop for host setup and tooling improvements"
 run = "scripts/mde-research-autoimprove.sh"
@@ -210,6 +214,29 @@ uv run datamodel-codegen \
   --capitalise-enum-members \
   --allow-extra-fields \
   --formatters ruff-format ruff-check
+"""
+
+[tasks."mde:codegen:skillsmp"]
+description = "Regenerate SkillsMP Pydantic models from JSON Schema + apply post-gen edits"
+run = """
+uv run datamodel-codegen \
+  --input docs/schemas/skillsmp.schema.json \
+  --input-file-type jsonschema \
+  --output src/mde/research/clients/skillsmp_models.py \
+  --output-model-type pydantic_v2.BaseModel \
+  --target-python-version 3.12 \
+  --use-annotated \
+  --use-union-operator \
+  --field-constraints \
+  --use-default-kwarg \
+  --collapse-root-models \
+  --strict-nullable \
+  --use-one-literal-as-default \
+  --allow-extra-fields \
+  --snake-case-field \
+  --formatters ruff-format ruff-check && \
+uv run python -m mde.codegen.postprocess_skillsmp && \
+uv run ruff format src/mde/research/clients/skillsmp_models.py
 """
 
 [tasks."mde:lint"]

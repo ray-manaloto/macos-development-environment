@@ -55,10 +55,19 @@ ignore = [
     "PIE810",   # endswith tuple merge is a style nit
     "PLW2901",  # loop var reassignment is intentional in text processing
 ]
+# Per-file ignores for datamodel-codegen output (pattern: D100,D101,ERA001,E501,COM812 + extras)
 "src/mde/statusline/models.py" = [
     "D100",     # generated file — no module docstring
     "D101",     # generated file — no class docstrings
     "ERA001",   # generated file — codegen header comments
+    "E501",     # generated file — long descriptions from schema
+    "COM812",   # generated file — trailing comma style
+]
+"src/mde/research/clients/skillsmp_models.py" = [
+    "D100",     # generated file — no module docstring
+    "D101",     # generated file — no class docstrings
+    "ERA001",   # generated file — codegen header comments
+    "N815",     # generated file — camelCase field aliases
     "E501",     # generated file — long descriptions from schema
     "COM812",   # generated file — trailing comma style
 ]
