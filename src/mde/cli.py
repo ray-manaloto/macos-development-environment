@@ -101,6 +101,8 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     hooks_sub.add_parser("log-edit-outcome", help="PostToolUse logger")
     hooks_sub.add_parser("log-agent-event", help="SubagentStarted/Completed logger")
     hooks_sub.add_parser("guard-install", help="PreToolUse install guard")
+    hooks_sub.add_parser("session-start", help="SessionStart context setup")
+    hooks_sub.add_parser("post-compact", help="PostCompact research state save")
 
     # research
     from mde.research.cli import add_subparsers as _add_research_subparsers
@@ -261,30 +263,28 @@ def _cmd_skill(args: argparse.Namespace) -> int:
     return 1
 
 
+_HOOKS_DISPATCH: dict[str, tuple[str, str]] = {
+    "verify-task-completion": ("mde.hooks.verify_task", "verify_task_completion"),
+    "check-teammate-work": ("mde.hooks.check_teammate", "check_teammate_work"),
+    "log-edit-outcome": ("mde.hooks.log_outcome", "log_edit_outcome"),
+    "log-agent-event": ("mde.hooks.log_agent_event", "log_agent_event"),
+    "guard-install": ("mde.hooks.guard_install", "guard_install"),
+    "session-start": ("mde.hooks.session_start", "session_start"),
+    "post-compact": ("mde.hooks.post_compact", "post_compact"),
+}
+
+
 def _cmd_hooks(args: argparse.Namespace) -> int:
     action = args.hooks_action
-    if action == "verify-task-completion":
-        from mde.hooks.verify_task import verify_task_completion
+    entry = _HOOKS_DISPATCH.get(action)
+    if entry is None:
+        print(f"Unknown hooks action: {action}", file=sys.stderr)
+        return 1
+    import importlib
 
-        return verify_task_completion()
-    if action == "check-teammate-work":
-        from mde.hooks.check_teammate import check_teammate_work
-
-        return check_teammate_work()
-    if action == "log-edit-outcome":
-        from mde.hooks.log_outcome import log_edit_outcome
-
-        return log_edit_outcome()
-    if action == "log-agent-event":
-        from mde.hooks.log_agent_event import log_agent_event
-
-        return log_agent_event()
-    if action == "guard-install":
-        from mde.hooks.guard_install import guard_install
-
-        return guard_install()
-    print(f"Unknown hooks action: {action}", file=sys.stderr)
-    return 1
+    module = importlib.import_module(entry[0])
+    handler = getattr(module, entry[1])
+    return handler()
 
 
 def _cmd_research(args: argparse.Namespace) -> int:
