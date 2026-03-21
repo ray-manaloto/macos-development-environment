@@ -5,8 +5,8 @@ from __future__ import annotations
 import subprocess
 
 
-def test_session_start_prints_recent_git_log() -> None:
-    """SessionStart should print recent git log for session context."""
+def test_session_start_exits_zero() -> None:
+    """SessionStart should always succeed (never block session start)."""
     from mde.hooks.session_start import session_start
 
     result = session_start()

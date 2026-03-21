@@ -8,11 +8,29 @@ Always exits 0 (never blocks compaction).
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-_COMPACT_LOG = Path(".artifacts/compact-events.jsonl")
+
+def _repo_root() -> Path:
+    """Return the git repository root, falling back to cwd on failure."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return Path(result.stdout.strip())
+    except (subprocess.TimeoutExpired, OSError):
+        pass
+    return Path.cwd()
+
+
+_COMPACT_LOG = _repo_root() / ".artifacts" / "compact-events.jsonl"
 
 
 def post_compact() -> int:

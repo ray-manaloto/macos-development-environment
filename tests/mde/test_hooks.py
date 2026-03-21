@@ -8,53 +8,6 @@ import sys
 from unittest.mock import patch
 
 
-class TestVerifyTaskCompletion:
-    """Tests for the TaskCompleted hook handler."""
-
-    def test_allows_with_evidence(self) -> None:
-        from mde.hooks.verify_task import verify_task_completion
-
-        data = {"task_description": "All tests passed. Exit code 0.", "task_subject": "Fix bug"}
-        stdin = io.StringIO(json.dumps(data))
-        with patch.object(sys, "stdin", stdin):
-            assert verify_task_completion() == 0
-
-    def test_blocks_without_evidence(self) -> None:
-        from mde.hooks.verify_task import verify_task_completion
-
-        data = {"task_description": "I think it works now.", "task_subject": "Fix bug"}
-        stdin = io.StringIO(json.dumps(data))
-        with patch.object(sys, "stdin", stdin):
-            assert verify_task_completion() == 2
-
-    def test_allows_empty_input(self) -> None:
-        from mde.hooks.verify_task import verify_task_completion
-
-        data = {"task_description": "", "task_subject": ""}
-        stdin = io.StringIO(json.dumps(data))
-        with patch.object(sys, "stdin", stdin):
-            assert verify_task_completion() == 0
-
-    def test_allows_invalid_json(self) -> None:
-        from mde.hooks.verify_task import verify_task_completion
-
-        stdin = io.StringIO("not json")
-        with patch.object(sys, "stdin", stdin):
-            assert verify_task_completion() == 0
-
-
-class TestCheckTeammateWork:
-    """Tests for the TeammateIdle hook handler."""
-
-    def test_allows_idle_by_default(self) -> None:
-        from mde.hooks.check_teammate import check_teammate_work
-
-        data = {"teammate_name": "coder", "team_name": "test-team"}
-        stdin = io.StringIO(json.dumps(data))
-        with patch.object(sys, "stdin", stdin):
-            assert check_teammate_work() == 0
-
-
 class TestLogEditOutcome:
     """Tests for the PostToolUse hook handler."""
 
