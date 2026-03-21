@@ -76,6 +76,8 @@ ignore = [
     "D101",     # generated file — no class docstrings
     "ERA001",   # generated file — codegen header comments
     "N815",     # generated file — camelCase field names match Claude Code API
+    "E501",     # generated file — long descriptions from schema
+    "COM812",   # generated file — trailing comma style
 ]
 "tests/**/*.py" = [
     "S101",     # assert is expected in tests

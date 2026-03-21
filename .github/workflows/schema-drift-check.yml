@@ -29,10 +29,15 @@ jobs:
 
           if ! diff -q "$cached" /tmp/subagents-docs.sha256 > /dev/null 2>&1; then
             echo "::warning::Claude Code subagent docs have changed"
-            gh issue create \
-              --title "Agent schema drift detected" \
-              --body "The Claude Code subagent docs page has changed since the last cached snapshot. Review for new frontmatter fields and update docs/schemas/agent-frontmatter.schema.json accordingly." \
-              --label "auto:agent-discovered"
+            if ! gh issue list --label "auto:agent-discovered" --state open \
+                  --search "Agent schema drift detected" | grep -q .; then
+              gh issue create \
+                --title "Agent schema drift detected" \
+                --body "The Claude Code subagent docs page has changed since the last cached snapshot. Review for new frontmatter fields and update docs/schemas/agent-frontmatter.schema.json accordingly." \
+                --label "auto:agent-discovered"
+            else
+              echo "Drift issue already open — skipping duplicate creation."
+            fi
           else
             echo "No drift detected."
           fi

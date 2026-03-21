@@ -39,7 +39,10 @@ def _extract_frontmatter(text: str) -> dict[str, Any] | None:
     raw = text[3:end].strip()
     if not raw:
         return None
-    result = yaml.safe_load(raw)
+    try:
+        result = yaml.safe_load(raw)
+    except yaml.YAMLError:
+        return None
     return result if isinstance(result, dict) else None
 
 

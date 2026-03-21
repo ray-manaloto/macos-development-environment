@@ -126,6 +126,14 @@ class TestValidateAgents:
 
         assert _extract_frontmatter("No frontmatter here") is None
 
+    def test_extract_frontmatter_malformed_yaml(self) -> None:
+        from mde.hooks.validate_agents import _extract_frontmatter
+
+        # Syntactically invalid YAML — should return None, not raise
+        text = "---\nname: [\nunclosed bracket\n---\nBody."
+        result = _extract_frontmatter(text)
+        assert result is None
+
     def test_validate_agent_file(self, tmp_path: object) -> None:
         from pathlib import Path
 
