@@ -315,14 +315,14 @@ class TestDispatchHooks:
     """Tests for the dispatch_hooks CLI path."""
 
     def test_validate_agents_dispatch(self) -> None:
-        """dispatch_hooks('validate-agents') should route to validate_agents_hook."""
+        """validate_agents_hook returns 0 for non-agent file paths."""
         from unittest.mock import patch
 
-        from mde.hooks import dispatch_hooks
+        from mde.hooks.validate_agents import validate_agents_hook
 
         # Simulate a non-agent-file path so it short-circuits without I/O
         data = {"tool_input": {"file_path": "/tmp/not-an-agent.py"}}
         stdin = io.StringIO(json.dumps(data))
         with patch.object(sys, "stdin", stdin):
-            result = dispatch_hooks("validate-agents")
+            result = validate_agents_hook()
         assert result == 0
