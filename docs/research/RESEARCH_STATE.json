@@ -1,0 +1,14 @@
+{
+  "round": 1,
+  "status": "completed",
+  "last_score": 0.450,
+  "last_verdict": "baseline",
+  "timestamp": "2026-03-20T20:00:00Z",
+  "pending_sources": [],
+  "completed_findings": [
+    "finding-agent-note-persistence",
+    "finding-3layer-disclosure",
+    "finding-all-skill-marketplaces",
+    "finding-agent-smoke-test"
+  ]
+}
