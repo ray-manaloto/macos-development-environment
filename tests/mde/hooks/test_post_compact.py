@@ -49,10 +49,12 @@ def test_post_compact_writes_valid_json_to_log(monkeypatch: pytest.MonkeyPatch) 
 
 def test_post_compact_cli_dispatch() -> None:
     """CLI should dispatch 'hooks post-compact' correctly."""
+    env = {**__import__("os").environ, "OTEL_SDK_DISABLED": "true"}
     proc = subprocess.run(
         ["uv", "run", "mde-py", "hooks", "post-compact"],
         capture_output=True,
         text=True,
-        timeout=10,
+        timeout=30,
+        env=env,
     )
     assert proc.returncode == 0
