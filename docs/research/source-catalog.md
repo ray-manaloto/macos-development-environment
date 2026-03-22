@@ -791,3 +791,65 @@ GitHub code search reveals 45+ personal dotfiles repos encoding framework expert
 5. Monitor skilldb updates for competitor intel (skillsh.com, clawhub.ai)
 
 ---
+
+## GitHub Repos — LLM Observability & Event Aggregation
+
+**Date cataloged:** 2026-03-22
+**Research depth:** Full review of 30+ tools via GitHub API + agent-fetch
+
+### Tier 1: OTEL-Native Production Observability
+
+| Status | Tool | URL | Stars | Verdict | In NB |
+|--------|------|-----|-------|---------|-------|
+| [x] | OpenLLMetry | https://github.com/traceloop/openllmetry | 6939 | STRONG — OTEL semantic conventions for LLM/embedding/vector DB; standard ingest protocol | No |
+| [x] | Pydantic Logfire | https://github.com/pydantic/logfire | 4113 | STRONG — OTEL wrapper with Python-centric insights, SQL interface, enterprise self-hosted | No |
+| [x] | OpenLIT | https://github.com/openlit/openlit | 2306 | STRONG — OTEL platform with GPU monitoring, guardrails, evals, 50+ LLM integrations | No |
+
+### Tier 2: Agent-Specific Event Stores
+
+| Status | Tool | URL | Stars | Verdict | In NB |
+|--------|------|-----|-------|---------|-------|
+| [x] | RagaAI Catalyst | https://github.com/raga-ai-hub/RagaAI-Catalyst | 16113 | STRONG — Multi-agent debugging with timeline + execution graph DAG views | No |
+| [x] | MLflow | https://github.com/mlflow/mlflow | 24903 | STRONG — Free, self-hosted, LLM ops focus, experimental tracking | No |
+| [x] | Langfuse | https://github.com/langfuse/langfuse | ~2000 | STRONG — Self-hosted option, evals, cost tracking, framework-agnostic | No |
+
+### Tier 3: Agent Framework Integrations
+
+| Status | Tool | URL | Stars | Category | Verdict | In NB |
+|--------|------|-----|-------|----------|---------|-------|
+| [x] | Hermes Agent | https://github.com/NousResearch/hermes-agent | ~2000 | Self-improving agent | CONSIDER — Built-in memory, skill learning loop, event persistence | No |
+| [x] | LiteLLM | https://github.com/BerriAI/litellm | ~3000 | LLM routing | CONSIDER — Provider abstraction with OTEL/Langfuse export | No |
+| [x] | AgentOps SDK | https://github.com/AgentOps-AI/agentops | — | Agent tracking | STRONG — Clean decorator API, framework-agnostic | No |
+
+### Tier 4: Claude Code Session Log Parsers
+
+**Finding:** 8+ specialized tools for JSONL session parsing discovered
+
+| Status | Tool | URL | Stars | Description | Verdict | In NB |
+|--------|------|-----|-------|-------------|---------|-------|
+| [x] | cclv | https://github.com/albertov/cclv | 4 | TUI for JSONL session logs | EARLY STAGE — Real-time tail/search | No |
+| [x] | claude-code-trace | https://github.com/delexw/claude-code-trace | 2 | Desktop/web/TUI viewer | EARLY STAGE — Timeline viz | No |
+| [x] | claude_code_lens | https://github.com/sarang87/claude_code_lens | 1 | JSONL compression + timeline | EARLY STAGE — Handles 80+ events/hr | No |
+| [x] | clawdbot-session-pruner | https://github.com/meridianix/clawdbot-session-pruner | 3 | JSONL optimization | EARLY STAGE — Truncate large results | No |
+| [x] | claude-export-session | https://github.com/SanderBuruma/claude-export-session | 0 | Export to Markdown/HTML | EARLY STAGE — Report generation | No |
+| [x] | claude-session-viewer | https://github.com/eric134422/claude-session-viewer | 0 | JSONL parser | EARLY STAGE — Cost tracking | No |
+| [x] | claude-session-tools | https://github.com/aurora-thesean/claude-session-tools | 0 | Fork-aware search | EARLY STAGE — Key insight: JSONL ≠ linear | No |
+| [x] | cc-birdee | https://github.com/areznik23/cc-birdee | 0 | JSONL analyzer | EARLY STAGE — Timeline insights | No |
+
+### Tier 5: Context & Memory Management
+
+| Status | Tool | URL | Description | Verdict | In NB |
+|--------|------|-----|-------------|---------|-------|
+| [x] | CXDB | https://github.com/strongdm/cxdb | Turn DAG + Blob CAS for context branching | PRODUCTION — Novel architecture for efficient dedup | No |
+| [x] | Honcho | https://github.com/plastic-labs/honcho | User modeling + memory library | PRODUCTION — Integrates with Hermes | No |
+
+### Tier 6: Specialized Monitoring
+
+| Status | Tool | URL | Stars | Verdict | In NB |
+|--------|------|-----|-------|---------|-------|
+| [x] | Arize Phoenix | https://github.com/Arize-ai/phoenix | ~1000 | STRONG — RAG/retrieval evals, open-source core | No |
+| [x] | Monocle | https://github.com/monocle2ai/monocle | 71 | STRONG — Simplified OTEL wrapper, S3 export | No |
+| [x] | AgentWatch | https://github.com/cyberask/agentwatch | 111 | STRONG — Multi-platform agent monitoring | No |
+| [x] | Invariant Gateway | https://github.com/invariantlabs-ai/invariant-gateway | 68 | STRONG — LLM proxy for drop-in observability | No |
+
+---

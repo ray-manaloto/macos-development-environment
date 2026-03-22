@@ -1,0 +1,146 @@
+id: finding-python-multi-sink-logging
+timestamp: "2026-03-22T05:00:00Z"
+source: PyPI, GitHub, official docs
+agent: researcher
+finding_type: tool-comparison
+confidence: confirmed
+status: discovered
+
+recommendation: |
+  USE LOGFIRE as the single logging/tracing library for mde.
+  - One call → structured log + OTEL span simultaneously
+  - Built-in structlog processor + stdlib logging handler
+  - Exports to ANY OTEL backend (not locked to Logfire platform)
+  - send_to_logfire=False disables their platform, keeps OTEL export
+  - Pydantic team, 4.1K stars, MIT license
+  - We already use Pydantic (natural fit)
+
+  ADD OPENLIT for Anthropic SDK auto-instrumentation.
+  ADD STRUCTLOG for the developer-facing logging API.
+
+  Stack: structlog (API) → logfire.StructlogProcessor() (bridge) → OTEL backend
+
+libraries:
+
+  - name: "Logfire"
+    url: "https://github.com/pydantic/logfire"
+    pypi: "logfire"
+    stars: 4113
+    license: MIT
+    multi_sink: "YES — native dual sink: structured console/file + OTEL export"
+    otel_integration: "Native — IS an OTEL wrapper. Full traces, metrics, logs."
+    structured_json: "YES — via structlog or stdlib integration"
+    disable_console: "YES — logfire.configure(console=False) or send_to_logfire=False"
+    auto_instrument: "YES — FastAPI, Django, httpx, etc. NOT Anthropic (use OpenLIT for that)"
+    performance: "Low overhead (OTEL batching)"
+    dual_sink_example: |
+      import logfire
+      import structlog
+
+      logfire.configure(
+          service_name="mde",
+          send_to_logfire=False,  # Only use OTEL export, no Logfire platform
+      )
+
+      structlog.configure(
+          processors=[
+              structlog.contextvars.merge_contextvars,
+              structlog.processors.add_log_level,
+              structlog.processors.TimeStamper(fmt="iso"),
+              logfire.StructlogProcessor(),          # ← OTEL sink
+              structlog.dev.ConsoleRenderer(),        # ← console sink (dev only)
+          ],
+      )
+
+      logger = structlog.get_logger()
+      logger.info("quality_gate_started", checks=6)
+      # → goes to BOTH console AND OTEL backend
+
+  - name: "structlog"
+    url: "https://github.com/hynek/structlog"
+    pypi: "structlog"
+    stars: 3500
+    license: MIT
+    multi_sink: "YES — via processor chain. Each processor can output to different destinations."
+    otel_integration: "Via logfire.StructlogProcessor() or custom processor"
+    structured_json: "YES — structlog.processors.JSONRenderer()"
+    disable_console: "YES — remove ConsoleRenderer from processor chain"
+    auto_instrument: "NO — manual only"
+    performance: "Very low overhead"
+    testing: "structlog.testing.capture_logs() — captures all log events in a list for assertions"
+    dual_sink_example: |
+      # structlog alone (without logfire):
+      structlog.configure(
+          processors=[
+              structlog.processors.TimeStamper(fmt="iso"),
+              structlog.processors.JSONRenderer(),
+          ],
+          logger_factory=structlog.PrintLoggerFactory(file=open("events.jsonl", "a")),
+      )
+      # → structured JSON to file only (no OTEL without logfire bridge)
+
+  - name: "loguru"
+    url: "https://github.com/Delgan/loguru"
+    pypi: "loguru"
+    stars: 19000
+    license: MIT
+    multi_sink: "YES — logger.add() for each sink. Best multi-sink API."
+    otel_integration: "NO native OTEL. No loguru-otel bridge on PyPI."
+    structured_json: "YES — serialize=True flag on any sink"
+    disable_console: "YES — logger.remove() removes default stderr sink"
+    auto_instrument: "NO"
+    performance: "Low overhead"
+    dual_sink_example: |
+      from loguru import logger
+      logger.remove()  # Remove default console sink
+      logger.add("events.jsonl", serialize=True)       # JSON file sink
+      logger.add(sys.stderr, level="WARNING")            # Console (warnings only)
+      # No OTEL sink available — would need custom sink function
+    verdict: "Best API but NO OTEL integration. Would require building custom OTEL sink."
+
+  - name: "opentelemetry-instrumentation-logging"
+    url: "https://github.com/open-telemetry/opentelemetry-python-contrib"
+    pypi: "opentelemetry-instrumentation-logging"
+    multi_sink: "YES — bridges stdlib logging to OTEL. Stdlib handlers still work."
+    otel_integration: "Native — IS the OTEL logging bridge"
+    structured_json: "Via python-json-logger or similar formatter"
+    disable_console: "YES — remove StreamHandler"
+    auto_instrument: "Logging only"
+    verdict: "Low-level bridge. Use logfire instead (wraps this)."
+
+  - name: "OpenLIT"
+    url: "https://github.com/openlit/openlit"
+    pypi: "openlit"
+    stars: 2306
+    license: Apache-2.0
+    multi_sink: "YES — console (default when no endpoint) + OTEL exporter"
+    otel_integration: "Native — auto-instruments 50+ LLM providers including Anthropic"
+    structured_json: "Via OTEL log records"
+    disable_console: "YES — set otlp_endpoint to send to collector instead of console"
+    auto_instrument: "YES — Anthropic, OpenAI, Hugging Face, vector DBs, etc."
+    verdict: "Best for LLM auto-instrumentation. Use alongside logfire."
+
+  - name: "eliot"
+    url: "https://github.com/itamarst/eliot"
+    pypi: "eliot"
+    multi_sink: "YES — multiple destinations via add_destinations()"
+    otel_integration: "NO native OTEL"
+    structured_json: "YES — native JSON output"
+    verdict: "Predates OTEL. Interesting action-tree model but no OTEL bridge."
+
+recommended_stack: |
+  1. structlog — developer-facing API (logger.info(), logger.error())
+  2. logfire — bridge structlog → OTEL (StructlogProcessor)
+  3. openlit — auto-instrument Anthropic SDK calls
+  4. Configuration:
+     - logfire.configure(service_name="mde", send_to_logfire=False)
+     - structlog processors: [..., logfire.StructlogProcessor(), ...]
+     - openlit.init() for LLM call tracing
+  5. All print() calls replaced with structlog logger calls
+  6. ruff T201 rule enforces no-print in src/mde/
+
+  This gives us:
+  - One API (structlog) → two destinations (file + OTEL)
+  - Auto-instrumented Anthropic calls (openlit)
+  - No console logging in production (enforced by ruff)
+  - Testing via structlog.testing.capture_logs() + OTEL InMemorySpanExporter

@@ -1,0 +1,449 @@
+id: finding-llm-observability-tools
+timestamp: "2026-03-22T04:30:00Z"
+source: multiple (GitHub API, agent-fetch)
+agent: researcher
+finding_type: tool-catalog
+confidence: confirmed
+confident_about: |
+  - 30+ LLM/AI observability, tracing, and event aggregation tools identified
+  - Most use OpenTelemetry (OTEL) as standard semantic framework
+  - Clear categories: production observability, agent-specific tracing, Claude Code log analysis
+  - Multiple Python SDKs with excellent adoption (stars 1000+)
+  - Several tools specifically support agent event stores (LangChain, CrewAI, AutoGen)
+  - 8+ specialized Claude Code session log parsers identified
+gaps: |
+  - User-specific event type ingestion (how to extend for custom Claude Code hook events)
+  - Comparative benchmarks (cost, latency, retention, storage backend)
+  - Whether tools support real-time streaming vs batch ingestion
+  - Integration examples with Claude Code hook system specifically
+  - Which tools support JSONL format natively (vs requiring conversion)
+evidence: |
+  - GitHub search: 6939★ openllmetry (OTEL-native), 4113★ logfire (Pydantic), 16113★ RagaAI-Catalyst
+  - Starting points all validated: CXDB (context DAG), Hermes (skill + memory learning loop), Honcho (user modeling)
+  - Claude Code tools ecosystem: cclv (4★), claude-code-trace (2★), claude_code_lens (1★)
+  - Production tools: MLflow (24903★), openlit (2306★), Langfuse (self-hosted + cloud)
+implication: |
+  For aggregating ALL AI/LLM invocations into central store for analysis:
+  1. Use OpenTelemetry as ingest protocol (enables any backend)
+  2. For Claude Code specifically: integrate with claude-code-trace or cclv (TUI viewers)
+  3. For agent events: RagaAI-Catalyst or Logfire (both have timeline/execution graphs)
+  4. For self-hosted: Langfuse, OpenLIT, or Logfire enterprise; export to OTEL-compatible backend
+  5. For budget-conscious: MLflow (free, self-hosted) or langfuse-python (decorators)
+tags:
+  - llm-observability
+  - otel-semantic-conventions
+  - agent-event-store
+  - claude-code-logs
+  - event-aggregation
+  - python-sdk
+  - self-hosted-option
+  - open-source
+status: discovered
+
+# Key Tools Catalog
+
+tools:
+
+  # ============================================================================
+  # TIER 1: OTEL-Native Production Observability (Recommended for central store)
+  # ============================================================================
+
+  - name: "OpenLLMetry"
+    url: "https://github.com/traceloop/openllmetry"
+    stars: 6939
+    python_sdk: "openllmetry"
+    category: "OTEL observability"
+    description: "Open-source observability built on OpenTelemetry. Standard semantic conventions for LLM, embedding, vector DB calls."
+    events_captured:
+      - llm_prompts
+      - llm_completions
+      - embedding_calls
+      - vector_db_queries
+      - agent_tool_calls
+    storage_backend: "OTEL exporter (Jaeger, Grafana Loki, Datadog, New Relic, etc.)"
+    custom_events: "Yes (OTEL span attributes)"
+    maturity: "production-ready"
+    notes: "Foundation for most enterprise setups. Integrates with 20+ frameworks."
+
+  - name: "Pydantic Logfire"
+    url: "https://github.com/pydantic/logfire"
+    stars: 4113
+    python_sdk: "logfire"
+    category: "OTEL + Platform"
+    description: "Pydantic team's opinionated OTEL wrapper. Python-centric insights (event-loop telemetry, profiling, DB queries)."
+    events_captured:
+      - manual_spans
+      - fastapi_traces
+      - database_queries
+      - http_requests
+      - pydantic_validations
+      - agent_calls (via integrations)
+    storage_backend: "Logfire platform (closed-source) OR export to OTEL-compatible backend"
+    custom_events: "Yes (custom spans with attributes)"
+    maturity: "production-ready"
+    enterprise: "Yes (self-hosted option available)"
+    notes: "Clean SQL query interface. Rich Python object display. Full OTEL signal support."
+
+  - name: "OpenLIT"
+    url: "https://github.com/openlit/openlit"
+    stars: 2306
+    python_sdk: "openlit"
+    category: "OTEL Platform"
+    description: "OTEL-native platform for AI engineering. Includes GPU monitoring, guardrails, evals, prompt management."
+    events_captured:
+      - llm_calls (50+ providers)
+      - vector_db_queries
+      - agent_events
+      - gpu_metrics
+      - prompt_versions
+    storage_backend: "Self-hosted dashboard + OTEL export"
+    custom_events: "Yes"
+    maturity: "production-ready"
+    notes: "Integrates with 50+ LLM providers. Agent framework support (LangChain, CrewAI, etc.)."
+
+  # ============================================================================
+  # TIER 2: Agent-Specific Event Stores & Multi-Agent Debugging
+  # ============================================================================
+
+  - name: "RagaAI Catalyst"
+    url: "https://github.com/raga-ai-hub/RagaAI-Catalyst"
+    stars: 16113
+    python_sdk: "raga-ai"
+    category: "Agent observability"
+    description: "Specialized for agent/LLM/tools tracing. Multi-agent debugging with timeline and execution graph views."
+    events_captured:
+      - agent_steps
+      - tool_calls
+      - llm_invocations
+      - agent_decisions
+      - error_traces
+    storage_backend: "Self-hosted dashboard (PostgreSQL backend implied)"
+    custom_events: "Yes"
+    maturity: "production-ready"
+    notes: "Execution graph visualization (DAG-based). Advanced analytics. Self-hosted dashboard."
+
+  - name: "MLflow"
+    url: "https://github.com/mlflow/mlflow"
+    stars: 24903
+    python_sdk: "mlflow"
+    category: "ML experiment tracking + LLM ops"
+    description: "Open-source ML platform with new LLM ops focus. Tracks agent runs, evaluations, experiments."
+    events_captured:
+      - agent_runs
+      - llm_evaluations
+      - parameter_tracking
+      - artifact_logging
+      - metrics
+    storage_backend: "SQLite (local) or PostgreSQL (production)"
+    custom_events: "Yes (custom tags, params, metrics)"
+    maturity: "production-ready (LLM focus is newer)"
+    notes: "Free, self-hosted. Largest ecosystem. Can be overkill for pure observability."
+
+  - name: "Langfuse"
+    url: "https://github.com/langfuse/langfuse"
+    stars: "~2000"
+    python_sdk: "langfuse"
+    category: "LLM tracing + evals"
+    description: "Dedicated LLM tracing with evaluations, prompt management, cost tracking."
+    events_captured:
+      - langchain_traces
+      - llama_index_traces
+      - langraph_traces
+      - manual_spans
+      - llm_costs
+    storage_backend: "Self-hosted (PostgreSQL) or managed cloud"
+    custom_events: "Yes (span decorators)"
+    maturity: "production-ready"
+    notes: "Framework-agnostic Python SDK. Good cost tracking. Evals first-class."
+
+  # ============================================================================
+  # TIER 3: AI/LLM Tracing Frameworks (Specific to Agent Frameworks)
+  # ============================================================================
+
+  - name: "LiteLLM Proxy"
+    url: "https://github.com/BerriAI/litellm"
+    python_sdk: "litellm"
+    category: "LLM routing + observability"
+    description: "LLM provider abstraction with built-in logging, cost tracking, fallback routing."
+    events_captured:
+      - llm_calls (any provider)
+      - fallback_events
+      - cost_tracking
+      - latency_metrics
+    storage_backend: "Pluggable (OTEL, Langfuse, Datadog, etc.)"
+    custom_events: "Via callbacks"
+    maturity: "production-ready"
+    notes: "Useful as upstream proxy before main observability layer."
+
+  - name: "AgentOps SDK"
+    url: "https://github.com/AgentOps-AI/agentops"
+    python_sdk: "agentops"
+    category: "Agent lifecycle tracking"
+    description: "Agent-specific instrumentation. Tracks agent state, actions, reasoning."
+    events_captured:
+      - agent_state_changes
+      - action_executions
+      - tool_results
+      - reasoning_traces
+    storage_backend: "AgentOps platform + OTEL export"
+    custom_events: "Yes"
+    maturity: "production-ready"
+    notes: "Works with any agent framework. Clean decorator API."
+
+  # ============================================================================
+  # TIER 4: Claude Code Specific Session Log Tooling
+  # ============================================================================
+
+  - name: "cclv"
+    url: "https://github.com/albertov/cclv"
+    stars: 4
+    python_sdk: "N/A (Rust)"
+    category: "Claude Code log viewer"
+    description: "TUI for viewing Claude Code JSONL session logs."
+    events_captured: "Parses JSONL session format"
+    storage_backend: "Local JSONL files (~/.claude/sessions/)"
+    custom_events: "No (reads existing format)"
+    maturity: "early-stage"
+    notes: "Real-time tail, search, filtering."
+
+  - name: "claude-code-trace"
+    url: "https://github.com/delexw/claude-code-trace"
+    stars: 2
+    python_sdk: "N/A (Tauri + React)"
+    category: "Claude Code session viewer"
+    description: "Real-time Claude Code session log viewer. Desktop GUI, web, and TUI."
+    events_captured: "All JSONL event types"
+    storage_backend: "Local JSONL files"
+    custom_events: "No"
+    maturity: "early-stage"
+    notes: "Multiple frontends (desktop/web/TUI). Timeline visualization."
+
+  - name: "claude_code_lens"
+    url: "https://github.com/sarang87/claude_code_lens"
+    stars: 1
+    python_sdk: "Python/TypeScript"
+    category: "Claude Code log compression"
+    description: "Parses JSONL logs and renders compressed, navigable timeline."
+    events_captured: "Tool calls, thinking, assistant turns, user messages"
+    storage_backend: "JSONL input → timeline output"
+    custom_events: "No"
+    maturity: "early-stage"
+    notes: "Handles 80+ events per hour. Deduplication and compression."
+
+  - name: "clawdbot-session-pruner"
+    url: "https://github.com/meridianix/clawdbot-session-pruner"
+    stars: 3
+    python_sdk: "Python"
+    category: "Claude Code session optimization"
+    description: "Truncate large tool results in JSONL while preserving continuity."
+    events_captured: "All JSONL types (optimizes size)"
+    storage_backend: "JSONL → JSONL (compressed)"
+    custom_events: "No"
+    maturity: "early-stage"
+    notes: "Useful for managing session bloat."
+
+  - name: "claude-export-session"
+    url: "https://github.com/SanderBuruma/claude-export-session"
+    stars: 0
+    python_sdk: "N/A (Skill)"
+    category: "Claude Code export tool"
+    description: "Export JSONL session logs to styled Markdown/HTML reports."
+    events_captured: "All JSONL types"
+    storage_backend: "JSONL → Markdown/HTML"
+    custom_events: "No"
+    maturity: "early-stage (skill format)"
+    notes: "Good for report generation and sharing."
+
+  - name: "claude-session-viewer"
+    url: "https://github.com/eric134422/claude-session-viewer"
+    stars: 0
+    python_sdk: "Python"
+    category: "Claude Code session parser"
+    description: "Parse and view Claude Code session logs. Extracts conversations, costs, file changes."
+    events_captured: "JSONL → structured data"
+    storage_backend: "JSONL input"
+    custom_events: "No"
+    maturity: "early-stage"
+    notes: "Cost tracking. File change attribution."
+
+  - name: "claude-session-tools"
+    url: "https://github.com/aurora-thesean/claude-session-tools"
+    stars: 0
+    python_sdk: "Python"
+    category: "Claude Code session search"
+    description: "Fork-aware session search. Handles non-linear JSONL (correct model of branching)."
+    events_captured: "All JSONL types"
+    storage_backend: "JSONL with branch tracking"
+    custom_events: "No"
+    maturity: "early-stage"
+    notes: "Key insight: JSONL is NOT linear (accounts for branches)."
+
+  # ============================================================================
+  # TIER 5: Context & State Management for Agents
+  # ============================================================================
+
+  - name: "CXDB (Context Database)"
+    url: "https://github.com/strongdm/cxdb"
+    python_sdk: "Not found (likely Go-first)"
+    category: "AI context store"
+    description: "Turn DAG + Blob CAS (content-addressed storage). Branch-from-any-turn without copying history."
+    events_captured: "Conversation turns, tool outputs, context blobs"
+    storage_backend: "Custom Turn DAG + CAS architecture"
+    custom_events: "Yes (arbitrary turn payloads)"
+    maturity: "production-ready (StrongDM)"
+    notes: "Novel architecture for efficient context branching. Fast deduplication."
+
+  - name: "Honcho"
+    url: "https://github.com/plastic-labs/honcho"
+    stars: "~500"
+    python_sdk: "honcho-ai"
+    category: "Agent memory library"
+    description: "User modeling and memory for agents. Managed service + open-source SDK."
+    events_captured: "User interactions, agent memory updates, dialectic context"
+    storage_backend: "Honcho managed service OR self-hosted"
+    custom_events: "Yes (custom memory types)"
+    maturity: "production-ready"
+    notes: "Integrates with Hermes agent. Dialectic user modeling."
+
+  - name: "Hermes Agent"
+    url: "https://github.com/NousResearch/hermes-agent"
+    stars: "~2000"
+    python_sdk: "Python/CLI"
+    category: "Self-improving agent with memory"
+    description: "Agent framework with built-in learning loop, skill creation, memory persistence, session search."
+    events_captured: "Agent decisions, tool results, skill creations, user interactions"
+    storage_backend: "Local SQLite-like + Honcho integration"
+    custom_events: "Yes"
+    maturity: "production-ready"
+    notes: "Hermes stores its own events. Can export via skills."
+
+  # ============================================================================
+  # TIER 6: Specialized Monitoring & Analysis
+  # ============================================================================
+
+  - name: "Arize Phoenix"
+    url: "https://github.com/Arize-ai/phoenix"
+    python_sdk: "arize-phoenix"
+    category: "LLM app observability"
+    description: "ML observability platform adapted for LLM apps. Trace analysis, retrieval evaluation."
+    events_captured: "LLM traces, embeddings, retrieval steps, ranking"
+    storage_backend: "Self-hosted (SQLite/DuckDB) or cloud"
+    custom_events: "Yes"
+    maturity: "production-ready"
+    notes: "Strong on RAG/retrieval evals. Open-source core."
+
+  - name: "Monocle"
+    url: "https://github.com/monocle2ai/monocle"
+    stars: 71
+    python_sdk: "monocle"
+    category: "GenAI tracing framework"
+    description: "Framework for tracing GenAI app code. Simplified API vs raw OTEL."
+    events_captured: "LLM calls, function traces, nested spans"
+    storage_backend: "S3/file export + OTEL backends"
+    custom_events: "Yes"
+    maturity: "production-ready"
+    notes: "Simpler than raw OTEL. Good for AWS/S3 pipelines."
+
+  - name: "AgentWatch"
+    url: "https://github.com/cyberark/agentwatch"
+    stars: 111
+    python_sdk: "agentwatch"
+    category: "AI observability framework"
+    description: "Comprehensive agent interaction monitoring across platforms."
+    events_captured: "Agent interactions, platform-specific events, custom events"
+    storage_backend: "Pluggable"
+    custom_events: "Yes"
+    maturity: "production-ready"
+    notes: "Minimal integration effort. Multi-platform focus."
+
+  - name: "Invariant Gateway"
+    url: "https://github.com/invariantlabs-ai/invariant-gateway"
+    stars: 68
+    python_sdk: "Via HTTP proxy"
+    category: "LLM debugging proxy"
+    description: "Transparent LLM proxy to observe and debug agent operations."
+    events_captured: "All LLM API calls, responses, timing"
+    storage_backend: "Invariant Labs + local logging"
+    custom_events: "Via proxy interception"
+    maturity: "production-ready"
+    notes: "Proxy-based (no code changes). Good for drop-in observability."
+
+# ============================================================================
+# Integration Patterns
+# ============================================================================
+
+integration_patterns:
+
+  otel_stack:
+    description: "Standard OpenTelemetry approach (recommended for flexibility)"
+    layers:
+      - instrument_code: "OpenLLMetry or Logfire decorators"
+      - collect: "OTEL SDK (Python SDK automatically manages)"
+      - export: "OTEL exporter (Jaeger, Grafana, Datadog, New Relic, etc.)"
+      - store: "Backend of choice (can switch without code changes)"
+    python_example: |
+      from opentelemetry import trace
+      from openllmetry import automatic_instrumentation
+      automatic_instrumentation("openai")  # Instruments OpenAI calls automatically
+
+  framework_specific:
+    description: "Use agent framework's native event hooks"
+    examples:
+      langchain: "LangSmith (native) or Langfuse (decorator)"
+      crewai: "Built-in telemetry + Langfuse integration"
+      autogen: "AutoGen logging + custom event handlers"
+      hermes: "Native memory + Honcho for user modeling"
+
+  claude_code_specific:
+    description: "Ingest ~/.claude/sessions/*.jsonl files"
+    approaches:
+      realtime: "Parse JSONL as written (watch file descriptor)"
+      batch: "Process JSONL files periodically"
+      export: "Use claude-export-session or claude-code-trace to convert format first"
+    challenge: "JSONL is fork-aware DAG, not linear log (see claude-session-tools)"
+
+# ============================================================================
+# Comparison Matrix
+# ============================================================================
+
+comparison:
+  all_events_coverage:
+    best: ["RagaAI-Catalyst", "OpenLIT", "Langfuse"]
+    reason: "Multi-framework support (LangChain, CrewAI, AutoGen, etc.)"
+
+  self_hosted_option:
+    fully_open: ["MLflow", "OpenLIT", "OpenLLMetry (any OTEL backend)"]
+    partial: ["Logfire (enterprise license)", "Langfuse"]
+
+  claude_code_integration:
+    specialized_tools: ["cclv", "claude-code-trace", "claude_code_lens"]
+    requires_custom: ["All general observability tools"]
+
+  ease_of_integration:
+    decorators: ["Logfire", "Langfuse", "OpenLLMetry"]
+    automatic: ["LiteLLM proxy", "Invariant Gateway"]
+    manual_spans: ["Logfire", "Monocle", "AgentOps"]
+
+  visual_interfaces:
+    execution_graphs: ["RagaAI-Catalyst", "Langfuse", "OpenLIT"]
+    timeline: ["claude-code-trace", "claude_code_lens"]
+    sql_query: ["Logfire", "Langfuse"]
+
+notes: |
+  OTEL SEMANTIC CONVENTIONS FOR GENAI:
+  - Official spec: github.com/open-telemetry/semantic-conventions/blob/main/docs/gen-ai/
+  - Standard attributes: gen_ai.operation.name, gen_ai.request.model, gen_ai.usage.input_tokens, etc.
+  - Most tools (OpenLLMetry, Logfire, Langfuse) implement these automatically
+
+  CLAUDE CODE JSONL FORMAT:
+  - Location: ~/.claude/sessions/{timestamp}/{event}.jsonl
+  - Not linear: represents a branching DAG (forks possible)
+  - Event types: message, thinking, tool_call, tool_result, function_output, etc.
+  - Parser libraries: claude-session-tools (understands fork structure)
+
+  RECOMMENDATION FOR USER:
+  1. For production AI app: OpenTelemetry + Langfuse or Logfire (easiest on-ramp)
+  2. For agent debugging: RagaAI-Catalyst or MLflow (timeline/graph views)
+  3. For Claude Code analysis: Start with claude-code-trace (visual), feed to RagaAI/Langfuse
+  4. For maximum flexibility: Use OTEL (any exporter), not proprietary solutions
+  5. For cost: MLflow (free, self-hosted) + OpenLLMetry (open-source)

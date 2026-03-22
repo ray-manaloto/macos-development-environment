@@ -162,6 +162,15 @@ wheels = [
 ]
 
 [[package]]
+name = "claude-code-analytics"
+version = "0.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c8/1a/9f75f27017c43b2c644187f479525748aeab67489843fc8b82041b771ac0/claude_code_analytics-0.1.1.tar.gz", hash = "sha256:d67837156e955e6d67193465c0e824168d0b35b09ff685263c9407bcabf6e5c2", size = 938515, upload-time = "2025-06-28T21:06:51.1Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8e/49/294890d887d30c4e1018a67bc46180b3ef30803d2ff0ccdfe33e1aacd771/claude_code_analytics-0.1.1-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:dc28ceedbc4df872468ded97b6afcce052c01209ba29b89a17644192a8dc75fa", size = 469420, upload-time = "2025-06-28T21:06:49.556Z" },
+]
+
+[[package]]
 name = "click"
 version = "8.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -487,6 +496,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "claude-agent-sdk" },
+    { name = "claude-code-analytics" },
     { name = "httpx" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -503,6 +513,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "claude-agent-sdk", specifier = ">=0.1.49" },
+    { name = "claude-code-analytics", specifier = ">=0.1.1" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "pydantic", specifier = ">=2.10" },
     { name = "pyyaml", specifier = ">=6.0" },
