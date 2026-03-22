@@ -12,7 +12,7 @@ A practical reference mapping every superpowers plugin skill to a complete softw
 
 | Stage | Primary Skill | Supporting Skills |
 |-------|--------------|-------------------|
-| **Discovery** | `/brainstorming` | WebSearch, mcptube |
+| **Discovery** | `/brainstorming` | agent-fetch, research skills |
 | **Planning** | `/writing-plans` | `/brainstorming` output |
 | **Branch Setup** | `/using-git-worktrees` | — |
 | **Implementation** | `/subagent-driven-development` | `/dispatching-parallel-agents` |

@@ -6,6 +6,7 @@ The pre-commit hook in hk.pkl is a SAFETY NET, not the primary check.
 See [Workflow Guide](../../docs/superpowers/workflow-guide.md) for the full process:
 - §10: Resuming existing work
 - §11: Sequential PR workflow
+- §12: Step announcements (announce next step after completing work)
 - §13: Skill-driven tool usage (invoke /ruff, /ty, /uv skills before running tools)
 - §14: Zero tolerance for warnings
 
