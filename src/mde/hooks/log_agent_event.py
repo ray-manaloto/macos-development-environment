@@ -29,7 +29,8 @@ def log_agent_event() -> int:
     """Read agent event JSON from stdin, log to JSONL file."""
     try:
         data = json.load(sys.stdin)
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValueError) as exc:
+        _logger.warning("hook_stdin_parse_failed", hook="log_agent_event", error=str(exc))
         return 0
 
     session_id = data.get("session_id", "")

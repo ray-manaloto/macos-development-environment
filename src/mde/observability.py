@@ -39,7 +39,12 @@ def _probe_collector() -> bool:
         resp = urlopen(req, timeout=1)  # noqa: S310
         # OTLP endpoints return 200 or 4xx — 5xx means wrong service
         return resp.status < 500  # noqa: TRY300, PLR2004
-    except Exception:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
+        import logging
+
+        logging.getLogger("mde.observability").debug(
+            "OTEL collector probe failed: %s: %s", type(exc).__name__, exc
+        )
         return False
 
 

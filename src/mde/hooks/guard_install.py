@@ -68,7 +68,8 @@ def guard_install() -> int:
     """Entry point: read JSON from stdin, block if ad-hoc install detected."""
     try:
         data = json.load(sys.stdin)
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValueError) as exc:
+        _logger.warning("hook_stdin_parse_failed", hook="guard_install", error=str(exc))
         return 0
 
     session_id = data.get("session_id", "")
@@ -84,9 +85,10 @@ def guard_install() -> int:
             tool_input = {}
         command = tool_input.get("command", "")
         if not command:
-            span.set_attribute("hook.blocked", "false")
+            not_blocked = False
+            span.set_attribute("hook.blocked", not_blocked)
             _logger.info(
-                "hook_completed", hook="guard_install", blocked="false", reason="no_command"
+                "hook_completed", hook="guard_install", blocked="False", reason="no_command"
             )
             return 0
 
@@ -96,4 +98,11 @@ def guard_install() -> int:
         if result is not None:
             json.dump(result, sys.stdout)
 
+        _logger.info(
+            "hook_completed",
+            hook="guard_install",
+            blocked=str(blocked),
+            command=command,
+            session_id=session_id,
+        )
         return 0

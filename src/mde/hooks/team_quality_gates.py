@@ -156,10 +156,16 @@ def team_quality_gate_hook() -> int:
     """Entry point: read JSON from stdin, run per-team quality gate."""
     try:
         data = json.load(sys.stdin)
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValueError) as exc:
+        _logger.warning("hook_stdin_parse_failed", hook="team_quality_gate", error=str(exc))
         return 0
 
     if not isinstance(data, dict):
+        _logger.warning(
+            "hook_invalid_input",
+            hook="team_quality_gate",
+            input_type=type(data).__name__,
+        )
         return 0
 
     session_id = str(data.get("session_id", ""))

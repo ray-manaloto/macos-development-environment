@@ -142,7 +142,10 @@ def _add_statusline_subparsers(sub: argparse._SubParsersAction) -> None:
 
 def run(argv: Sequence[str] | None = None) -> int:
     """Parse arguments and dispatch to the appropriate subcommand."""
-    init_observability()
+    try:
+        init_observability()
+    except Exception as exc:  # noqa: BLE001
+        print(f"WARNING: Observability init failed: {exc}", file=sys.stderr)
     parser = _build_parser()
     args = parser.parse_args(argv)
 

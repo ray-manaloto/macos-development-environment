@@ -130,7 +130,8 @@ def validate_agents_hook() -> int:
     """
     try:
         data = json.load(sys.stdin)
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValueError) as exc:
+        _logger.warning("hook_stdin_parse_failed", hook="validate_agents", error=str(exc))
         return 0
 
     session_id = data.get("session_id", "")

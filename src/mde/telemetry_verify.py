@@ -35,7 +35,11 @@ def _load_settings() -> tuple[dict[str, object], dict[str, str]]:
         if p.is_file():
             try:
                 data = json.loads(p.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
+            except json.JSONDecodeError as exc:
+                print(f"  [WARN] Skipping {p}: malformed JSON: {exc}", file=sys.stderr)
+                continue
+            except OSError as exc:
+                print(f"  [WARN] Skipping {p}: {exc}", file=sys.stderr)
                 continue
             merged.update(data)
             if "env" in data and isinstance(data["env"], dict):

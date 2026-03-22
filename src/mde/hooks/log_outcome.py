@@ -32,7 +32,8 @@ def log_edit_outcome() -> int:
     """Read tool JSON from stdin, log outcome to JSONL file."""
     try:
         data = json.load(sys.stdin)
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValueError) as exc:
+        _logger.warning("hook_stdin_parse_failed", hook="log_edit_outcome", error=str(exc))
         return 0
 
     session_id = data.get("session_id", "")
