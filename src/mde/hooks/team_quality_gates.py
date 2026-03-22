@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from collections.abc import Callable
 from enum import Enum
 from typing import Any
 
@@ -86,13 +87,13 @@ def gate_dotfiles() -> list[dict[str, Any]]:
     ]
 
 
-def gate_infrastructure() -> list[dict[str, Any]]:
+def gate_infrastructure(brewfile_path: str = "Brewfile") -> list[dict[str, Any]]:
     """Check brew packages and mise compatibility for infrastructure teams."""
     from pathlib import Path
 
     checks: list[dict[str, Any]] = []
 
-    brewfile = Path("Brewfile")
+    brewfile = Path(brewfile_path)
     if brewfile.exists():
         # Use 'brew bundle list' to verify parseability (not install state)
         checks.append(
@@ -115,7 +116,7 @@ def gate_infrastructure() -> list[dict[str, Any]]:
     return checks
 
 
-_GATE_DISPATCH: dict[str, Any] = {
+_GATE_DISPATCH: dict[str, Callable[[], list[dict[str, Any]]]] = {
     TeamType.PYTHON_DEV.value: gate_python_dev,
     TeamType.RESEARCH.value: gate_research,
     TeamType.DOTFILES.value: gate_dotfiles,

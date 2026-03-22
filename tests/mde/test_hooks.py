@@ -426,8 +426,13 @@ class TestTeamQualityGates:
         assert checks[0]["name"] == "validate"
         assert checks[0]["passed"]
 
-    def test_infrastructure_gate(self) -> None:
+    def test_infrastructure_gate_with_brewfile(self, tmp_path: object) -> None:
+        from pathlib import Path
+
         from mde.hooks.team_quality_gates import gate_infrastructure
+
+        bf = Path(str(tmp_path)) / "Brewfile"
+        bf.write_text('brew "git"\n')
 
         fake_result = subprocess.CompletedProcess(
             args=[],
@@ -436,10 +441,29 @@ class TestTeamQualityGates:
             stderr="",
         )
         with patch("mde.hooks.team_quality_gates.subprocess.run", return_value=fake_result):
-            checks = gate_infrastructure()
+            checks = gate_infrastructure(brewfile_path=str(bf))
         names = {c["name"] for c in checks}
         assert names == {"brewfile-parseable", "mise-doctor"}
         assert all(c["passed"] for c in checks)
+
+    def test_infrastructure_gate_no_brewfile(self, tmp_path: object) -> None:
+        from pathlib import Path
+
+        from mde.hooks.team_quality_gates import gate_infrastructure
+
+        missing = Path(str(tmp_path)) / "Brewfile"
+
+        fake_result = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="ok",
+            stderr="",
+        )
+        with patch("mde.hooks.team_quality_gates.subprocess.run", return_value=fake_result):
+            checks = gate_infrastructure(brewfile_path=str(missing))
+        brew_check = next(c for c in checks if c["name"] == "brewfile-parseable")
+        assert brew_check["passed"]
+        assert "skipping" in brew_check["output"]
 
     def test_unknown_team_type(self) -> None:
         from mde.hooks.team_quality_gates import run_team_quality_gate
