@@ -79,7 +79,9 @@ def guard_install() -> int:
         span.set_attribute("claude.tool_use_id", tool_use_id)
         span.set_attribute("hook.event", "PreToolUse")
 
-        tool_input = data.get("tool_input", {})
+        tool_input = data.get("tool_input") or {}
+        if not isinstance(tool_input, dict):
+            tool_input = {}
         command = tool_input.get("command", "")
         if not command:
             span.set_attribute("hook.blocked", "false")
