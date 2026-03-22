@@ -2,7 +2,7 @@
 name: chezmoi-specialist
 description: Chezmoi dotfiles expert. Manages templates, secrets, and dotfile lifecycle. Use PROACTIVELY when adding/editing shell config, tmux config, zsh plugins, starship config, or any chezmoi-managed file.
 tools: Read, Glob, Grep, Bash
-skills: [chezmoi-config, chezmoi-workflows]
+skills: [chezmoi-config, chezmoi-workflows, mde-chezmoi-dotfiles, mde-dotfiles-lifecycle]
 disallowedTools: WebFetch, WebSearch
 model: haiku
 memory: project
@@ -28,7 +28,7 @@ NEVER edit deployed files directly. Always go through `.chezmoisource/`.
 
 ## Template Patterns
 - OS-conditional: `{{ if eq .chezmoi.os "darwin" }}...{{ end }}`
-- Container-aware: `{{ if .chezmoi.container }}...{{ end }}`
+- Remote/CI-aware: `{{ if .remote }}...{{ end }}` (NOT `.chezmoi.container`)
 - External sources: `chezmoi externals` for oh-my-zsh, tmux plugins
 - Non-interactive bootstrap: env vars (GIT_USER_NAME, GIT_USER_EMAIL)
 
