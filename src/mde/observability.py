@@ -8,40 +8,39 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import IO, TYPE_CHECKING
 
-# Probe OTEL Collector BEFORE importing logfire/OTEL SDK.
-# If unreachable or not speaking OTLP, disable exporters to prevent noisy stderr spam.
-_otel_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
-_collector_ok = False
-if _otel_endpoint:
-    try:
-        from urllib.request import Request, urlopen
-
-        # OTLP HTTP health check — POST empty protobuf to /v1/traces
-        _http_endpoint = _otel_endpoint.replace(":4317", ":4318")  # HTTP port
-        _req = Request(  # noqa: S310
-            f"{_http_endpoint}/v1/traces", data=b"", method="POST"
-        )
-        _req.add_header("Content-Type", "application/x-protobuf")
-        urlopen(_req, timeout=1)  # noqa: S310
-        _collector_ok = True
-    except Exception:  # noqa: BLE001
-        _collector_ok = False
-if not _collector_ok:
-    os.environ.setdefault("OTEL_TRACES_EXPORTER", "none")
-    os.environ.setdefault("OTEL_METRICS_EXPORTER", "none")
-    os.environ.setdefault("OTEL_LOGS_EXPORTER", "none")
-os.environ.setdefault("OTEL_PYTHON_LOG_LEVEL", "fatal")
-
-import logfire  # noqa: E402 — must be after env var setup
-import structlog  # noqa: E402
+import structlog
 
 if TYPE_CHECKING:
     from opentelemetry.trace import Tracer
 
 _initialized = False
-_log_file_handle: object = None  # held open for the lifetime of the process
+_log_file_handle: IO[str] | None = None
+
+
+def _probe_collector() -> bool:
+    """Check if the OTEL Collector endpoint is reachable and speaks OTLP.
+
+    Returns True if the collector responds, False otherwise.
+    Called once during ``init_observability()`` — NOT at import time.
+    """
+    endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+    if not endpoint:
+        return False
+    try:
+        from urllib.request import Request, urlopen
+
+        http_endpoint = endpoint.replace(":4317", ":4318")
+        req = Request(  # noqa: S310
+            f"{http_endpoint}/v1/traces", data=b"", method="POST"
+        )
+        req.add_header("Content-Type", "application/x-protobuf")
+        urlopen(req, timeout=1)  # noqa: S310
+    except Exception:  # noqa: BLE001
+        return False
+    else:
+        return True
 
 
 def init_observability(
@@ -61,11 +60,32 @@ def init_observability(
     # Create log directory
     Path(log_file).parent.mkdir(parents=True, exist_ok=True)
 
+    # Probe OTEL Collector — disable exporters if unreachable to prevent stderr spam.
+    # Must happen BEFORE logfire.configure() which sets up OTEL SDK exporters.
+    os.environ.setdefault("OTEL_PYTHON_LOG_LEVEL", "fatal")
+    if not _probe_collector():
+        os.environ.setdefault("OTEL_TRACES_EXPORTER", "none")
+        os.environ.setdefault("OTEL_METRICS_EXPORTER", "none")
+        os.environ.setdefault("OTEL_LOGS_EXPORTER", "none")
+
+    # Suppress noisy OTEL exporter log messages
+    import logging
+
+    for noisy_logger in (
+        "opentelemetry.exporter",
+        "opentelemetry.sdk.trace.export",
+        "opentelemetry.sdk.metrics.export",
+        "urllib3.connectionpool",
+    ):
+        logging.getLogger(noisy_logger).setLevel(logging.CRITICAL)
+
     # OTEL bridge — sends to any OTEL backend, NOT Logfire platform
+    import logfire
+
     logfire.configure(
         service_name=service_name,
         send_to_logfire=False,
-        console=False,  # don't duplicate to console — structlog handles output
+        console=False,
     )
 
     # Keep file handle alive for the process lifetime

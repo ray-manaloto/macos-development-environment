@@ -82,6 +82,10 @@ def guard_install() -> int:
         tool_input = data.get("tool_input", {})
         command = tool_input.get("command", "")
         if not command:
+            span.set_attribute("hook.blocked", "false")
+            _logger.info(
+                "hook_completed", hook="guard_install", blocked="false", reason="no_command"
+            )
             return 0
 
         result = check_install_command(command)

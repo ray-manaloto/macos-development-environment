@@ -391,11 +391,15 @@ def _cmd_hooks(args: argparse.Namespace) -> int:
     if entry is None:
         print(f"Unknown hooks action: {action}", file=sys.stderr)
         return 1
-    import importlib
+    with _tracer.start_as_current_span("mde.cli.hooks") as span:
+        span.set_attribute("hook.action", action)
+        import importlib
 
-    module = importlib.import_module(entry[0])
-    handler = getattr(module, entry[1])
-    return handler()
+        module = importlib.import_module(entry[0])
+        handler = getattr(module, entry[1])
+        result = handler()
+        span.set_attribute("hook.passed", result == 0)
+        return result
 
 
 def _cmd_research(args: argparse.Namespace) -> int:
