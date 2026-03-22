@@ -70,6 +70,16 @@
       "id": "skills/mde-homebrew",
       "canonical_path": ".agents/skills/mde-homebrew/SKILL.md",
       "aliases": ["mde-homebrew", "homebrew", "brew"]
+    },
+    {
+      "id": "skills/mde-chezmoi-dotfiles",
+      "canonical_path": ".agents/skills/mde-chezmoi-dotfiles/SKILL.md",
+      "aliases": ["mde-chezmoi-dotfiles", "chezmoi", "dotfiles"]
+    },
+    {
+      "id": "skills/mde-dotfiles-lifecycle",
+      "canonical_path": ".agents/skills/mde-dotfiles-lifecycle/SKILL.md",
+      "aliases": ["mde-dotfiles-lifecycle", "dotfiles-lifecycle"]
     }
   ]
 }
