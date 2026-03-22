@@ -89,11 +89,14 @@ which runs `brew bundle`. No separate `brew bundle` invocation is needed.
 
 Run this sequence on a new machine after cloning the repo.
 
+Prerequisites: Homebrew must be installed before step 2 — `chezmoi apply`
+triggers `brew bundle` via the `run_onchange_before` script.
+
 ```bash
 # 1. Initialize chezmoi from the repo (sets up source dir and config)
 chezmoi init --source /path/to/macos-development-environment
 
-# 2. Apply all dotfiles to home directory
+# 2. Apply all dotfiles to home directory (triggers brew bundle if Brewfile changed)
 chezmoi apply
 
 # 3. Install all mise-managed tools
@@ -108,13 +111,12 @@ mise run mde:agent:preflight   # comprehensive preflight check
 mise run mde:verify            # verify tool versions match locked config
 mise run mde:drift             # check for config drift
 
-# 6. Validate mde quality gate (should show 6/6 passed)
-uv run mde-py quality
+# 6. Validate system state (includes chezmoi drift check)
+uv run mde-py validate --all
 ```
 
-On a fresh machine, `chezmoi apply` will also trigger `brew bundle` for the
-Brewfile if Homebrew is installed. If Homebrew is not yet installed, install it
-first before running `chezmoi apply`.
+If Homebrew is not installed, `brew bundle` will fail during step 2. Install
+Homebrew first: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 
 ## Env Var Coordination
 
@@ -138,7 +140,7 @@ Rules:
 
 ```toml
 [env]
-GITHUB_TOKEN = "{{ keyring \"github\" \"token\" }}"
+GITHUB_TOKEN = "{{ keyring "github" "token" }}"
 ```
 
 ## Remote-Aware Templates
