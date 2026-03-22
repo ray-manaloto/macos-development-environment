@@ -13,6 +13,11 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from mde.observability import get_logger, get_tracer
+
+_logger = get_logger(__name__)
+_tracer = get_tracer(__name__)
+
 
 def _repo_root() -> Path:
     """Return the git repository root, falling back to cwd on failure."""
@@ -37,17 +42,22 @@ def _compact_log() -> Path:
 
 def post_compact() -> int:
     """Log compaction event for observability."""
-    record = {
-        "timestamp": datetime.now(tz=UTC).isoformat(),
-        "event": "post_compact",
-    }
+    with _tracer.start_as_current_span("mde.hook.post_compact") as span:
+        span.set_attribute("hook.event", "PostCompact")
 
-    log_path = _compact_log()
-    try:
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        with log_path.open("a") as f:
-            f.write(json.dumps(record) + "\n")
-    except OSError as exc:
-        print(f"PostCompact: could not log event: {exc}", file=sys.stderr)
+        record = {
+            "timestamp": datetime.now(tz=UTC).isoformat(),
+            "event": "post_compact",
+        }
 
-    return 0
+        log_path = _compact_log()
+        try:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            with log_path.open("a") as f:
+                f.write(json.dumps(record) + "\n")
+        except OSError as exc:
+            span.record_exception(exc)
+            print(f"PostCompact: could not log event: {exc}", file=sys.stderr)
+
+        _logger.info("hook_completed", hook="post_compact")
+        return 0

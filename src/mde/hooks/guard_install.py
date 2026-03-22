@@ -7,6 +7,11 @@ import re
 import sys
 from typing import Any
 
+from mde.observability import get_logger, get_tracer
+
+_logger = get_logger(__name__)
+_tracer = get_tracer(__name__)
+
 _BLOCK_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"\bnpm\s+install\s+(?:.*\s)?(-g|--global)\b"),
     re.compile(r"\bnpm\s+i\s+(?:.*\s)?(-g|--global)\b"),
@@ -66,12 +71,23 @@ def guard_install() -> int:
     except (json.JSONDecodeError, ValueError):
         return 0
 
-    tool_input = data.get("tool_input", {})
-    command = tool_input.get("command", "")
-    if not command:
-        return 0
+    session_id = data.get("session_id", "")
+    tool_use_id = data.get("tool_use_id", "")
 
-    result = check_install_command(command)
-    if result is not None:
-        json.dump(result, sys.stdout)
-    return 0
+    with _tracer.start_as_current_span("mde.hook.guard_install") as span:
+        span.set_attribute("claude.session_id", session_id)
+        span.set_attribute("claude.tool_use_id", tool_use_id)
+        span.set_attribute("hook.event", "PreToolUse")
+
+        tool_input = data.get("tool_input", {})
+        command = tool_input.get("command", "")
+        if not command:
+            return 0
+
+        result = check_install_command(command)
+        blocked = result is not None
+        span.set_attribute("hook.blocked", blocked)
+        if result is not None:
+            json.dump(result, sys.stdout)
+
+        return 0

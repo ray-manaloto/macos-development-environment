@@ -17,6 +17,11 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from mde.observability import get_logger, get_tracer
+
+_logger = get_logger(__name__)
+_tracer = get_tracer(__name__)
+
 _AGENT_STATE_FILE = Path(".artifacts/agent-state.jsonl")
 
 
@@ -27,26 +32,42 @@ def log_agent_event() -> int:
     except (json.JSONDecodeError, ValueError):
         return 0
 
-    # Claude Code sends: agent_id, agent_type, hook_event_name
-    agent_id = str(data.get("agent_id", "unknown"))
-    agent_type = str(data.get("agent_type", "unknown"))
-    hook_event = str(data.get("hook_event_name", "unknown"))
+    session_id = data.get("session_id", "")
 
-    # Derive a readable event name from the hook event
-    event = "started" if hook_event == "SubagentStart" else "stopped"
+    with _tracer.start_as_current_span("mde.hook.log_agent_event") as span:
+        span.set_attribute("claude.session_id", session_id)
 
-    record = {
-        "timestamp": datetime.now(tz=UTC).isoformat(),
-        "agent_name": agent_type,
-        "agent_id": agent_id,
-        "event": event,
-    }
+        # Claude Code sends: agent_id, agent_type, hook_event_name
+        agent_id = str(data.get("agent_id", "unknown"))
+        agent_type = str(data.get("agent_type", "unknown"))
+        hook_event = str(data.get("hook_event_name", "unknown"))
 
-    try:
-        _AGENT_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with _AGENT_STATE_FILE.open("a") as f:
-            f.write(json.dumps(record) + "\n")
-    except OSError:
-        pass
+        span.set_attribute("hook.event", hook_event)
+        span.set_attribute("hook.agent_id", agent_id)
+        span.set_attribute("hook.agent_type", agent_type)
 
-    return 0
+        # Derive a readable event name from the hook event
+        event = "started" if hook_event == "SubagentStart" else "stopped"
+
+        record = {
+            "timestamp": datetime.now(tz=UTC).isoformat(),
+            "agent_name": agent_type,
+            "agent_id": agent_id,
+            "event": event,
+        }
+
+        try:
+            _AGENT_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with _AGENT_STATE_FILE.open("a") as f:
+                f.write(json.dumps(record) + "\n")
+        except OSError as exc:
+            span.record_exception(exc)
+
+        _logger.info(
+            "hook_completed",
+            hook="log_agent_event",
+            agent_type=agent_type,
+            agent_event=event,
+            session_id=session_id,
+        )
+        return 0
