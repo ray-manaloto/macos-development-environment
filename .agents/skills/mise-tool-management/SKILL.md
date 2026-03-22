@@ -33,6 +33,7 @@ When adding a new tool, choose the backend in this priority order:
 3. Add to `.chezmoisource/dot_config/mise/config.toml.tmpl` under `[tools]`
 4. Run `chezmoi apply` to deploy config
 5. Run `mise install --yes && mise lock && mise reshim`
+6. If the tool also needs a shell alias, env var, or PATH entry, load `mde-dotfiles-lifecycle`
 
 ## Aqua Backend Discovery
 
