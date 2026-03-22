@@ -633,19 +633,25 @@ class TestHookOutputSchema:
         from mde.cli import _HOOKS_DISPATCH, _build_parser
 
         parser = _build_parser()
-        # Find the hooks subparser and extract its sub-actions
-        hooks_action = None
-        for action in parser._subparsers._group_actions:
-            for choice_key, choice_parser in action.choices.items():
-                if choice_key == "hooks":
-                    # Get the hooks subparser's subparsers
-                    for sub_action in choice_parser._subparsers._group_actions:
-                        hooks_action = set(sub_action.choices.keys())
-                        break
-        assert hooks_action is not None, "Could not find hooks subparser"
+        # Find the hooks subparser and extract registered action names
+        hooks_choices: set[str] = set()
+        subparsers = parser._subparsers
+        if subparsers is not None:
+            for action in subparsers._group_actions:
+                choices = getattr(action, "choices", None)
+                if choices is None:
+                    continue
+                for choice_key, choice_parser in choices.items():
+                    if choice_key == "hooks":
+                        sub = choice_parser._subparsers
+                        if sub is not None:
+                            for sub_action in sub._group_actions:
+                                sub_choices = getattr(sub_action, "choices", None)
+                                if sub_choices is not None:
+                                    hooks_choices = set(sub_choices.keys())
+        assert hooks_choices, "Could not find hooks subparser"
         dispatch_keys = set(_HOOKS_DISPATCH.keys())
-        # Every dispatch key must have a subparser
-        missing = dispatch_keys - hooks_action
+        missing = dispatch_keys - hooks_choices
         assert not missing, f"Dispatch keys without subparsers: {missing}"
 
 
