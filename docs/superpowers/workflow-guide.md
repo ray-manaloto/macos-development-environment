@@ -1,7 +1,6 @@
 # Superpowers SDLC Workflow Guide
 
 A practical reference mapping every superpowers plugin skill to a complete software development lifecycle.
-Uses the **statusline enhancement project** as an applied example throughout.
 
 > **Superpowers version:** 5.0.5 (14 skills across 5 categories)
 
@@ -11,16 +10,16 @@ Uses the **statusline enhancement project** as an applied example throughout.
 
 ### SDLC Stage → Skill Mapping
 
-| Stage | Primary Skill | Supporting Skills | Statusline Example |
-|-------|--------------|-------------------|-------------------|
-| **Discovery** | `/brainstorming` | WebSearch, mcptube | Research terminal UI widget patterns |
-| **Planning** | `/writing-plans` | `/brainstorming` output | Plan widget specs, file ownership |
-| **Branch Setup** | `/using-git-worktrees` | — | `git worktree add` for isolated feature branch |
-| **Implementation** | `/subagent-driven-development` | `/dispatching-parallel-agents` | Build widgets, toggle system, renderer |
-| **Testing** | `/test-driven-development` | `/systematic-debugging` | RED-GREEN-REFACTOR per widget |
-| **Debugging** | `/systematic-debugging` | `/verification-before-completion` | Null JSON fields, ANSI escapes |
-| **Review** | `/requesting-code-review` | `/receiving-code-review` | Spec compliance → code quality |
-| **Completion** | `/finishing-a-development-branch` | `/verification-before-completion` | Merge/PR decision |
+| Stage | Primary Skill | Supporting Skills |
+|-------|--------------|-------------------|
+| **Discovery** | `/brainstorming` | agent-fetch, research skills |
+| **Planning** | `/writing-plans` | `/brainstorming` output |
+| **Branch Setup** | `/using-git-worktrees` | — |
+| **Implementation** | `/subagent-driven-development` | `/dispatching-parallel-agents` |
+| **Testing** | `/test-driven-development` | `/systematic-debugging` |
+| **Debugging** | `/systematic-debugging` | `/verification-before-completion` |
+| **Review** | `/requesting-code-review` | `/receiving-code-review` |
+| **Completion** | `/finishing-a-development-branch` | `/verification-before-completion` |
 
 ### Invocation Flow
 
@@ -30,7 +29,7 @@ Discovery          Planning          Branch Setup         Implementation        
                                        worktrees            development           development
                                        (REQUIRED)                 ↑                    |
                                                       /dispatching-parallel-          |
-                                                       agents (independent widgets)   ↓
+                                                       agents (independent tasks)     ↓
                                                                                Debugging
                                                                             /systematic-debugging
                                                                                   |
@@ -72,15 +71,14 @@ Discovery          Planning          Branch Setup         Implementation        
 
 **Trigger prompt:**
 ```
-I want to enhance the statusline with new metrics: token speed, burn rate,
-block timers, and daily totals. Each metric should be a toggleable widget.
-The renderer should migrate from bash to Python.
+I want to add [feature] to [system]. It should support [capability A],
+[capability B], and [capability C].
 ```
 
 **What the skill does:**
 - Explores user intent, requirements, and design constraints
 - Surfaces edge cases before implementation begins
-- Identifies technical risks (e.g., ANSI rendering differences across terminals)
+- Identifies technical risks (e.g., edge cases, compatibility issues)
 - Produces a structured requirements summary
 
 **Expected output:**
@@ -88,19 +86,16 @@ The renderer should migrate from bash to Python.
 - Design constraints and trade-offs identified
 - Open questions surfaced for user decision
 
-**Statusline example:** Discovers that `used_percentage` can be `null` early in a session (already handled by `_to_int` in `src/mde/statusline/render.py:119-123`), identifies that burn rate needs a time window, and surfaces the question of whether daily totals persist across sessions.
-
 ---
 
 ### Phase 2: Planning — `/writing-plans`
 
 **Trigger prompt:**
 ```
-Write an implementation plan for the statusline enhancement. We need:
-- 4 new widgets (token speed, burn rate, block timer, daily totals)
-- Per-widget toggle control via the existing toggle system
-- mcptube/deep-research integration for widget design inspiration
-- Migration from bash to Python renderer (already started in src/mde/statusline/)
+Write an implementation plan for [feature]. We need:
+- [Component A]
+- [Component B]
+- [Integration with existing system X]
 ```
 
 **What the skill does:**
@@ -114,16 +109,6 @@ Write an implementation plan for the statusline enhancement. We need:
 - File manifest (create/modify)
 - Dependency graph between steps
 
-**Statusline example plan steps:**
-1. Define widget protocol in `src/mde/statusline/widgets.py`
-2. Implement `token_speed_widget()` — tokens/sec from `current_usage`
-3. Implement `burn_rate_widget()` — cost/minute from `total_cost_usd` + `total_duration_ms`
-4. Implement `block_timer_widget()` — elapsed time for current operation
-5. Implement `daily_totals_widget()` — cumulative cost/tokens, persisted to `.artifacts/`
-6. Extend `src/mde/statusline/toggle.py` for per-widget toggles
-7. Update `src/mde/statusline/render.py` to compose enabled widgets
-8. Write tests at `tests/mde/test_statusline_widgets.py`
-
 ---
 
 ### Phase 2.5: Branch Setup — `/using-git-worktrees` (REQUIRED)
@@ -131,7 +116,7 @@ Write an implementation plan for the statusline enhancement. We need:
 **Trigger prompt:**
 ```
 /using-git-worktrees
-Create a worktree for the statusline enhancement feature.
+Create a worktree for the [feature] branch.
 ```
 
 **What the skill does:**
@@ -146,11 +131,9 @@ Create a worktree for the statusline enhancement feature.
 - Without this step, all commits go to `main`, requiring manual `git branch` / `git reset` surgery to create a PR later
 
 **Expected output:**
-- Feature branch created (e.g., `feat/statusline-metrics-bar`)
+- Feature branch created (e.g., `feat/my-feature`)
 - Worktree directory ready for implementation
 - `main` branch remains untouched
-
-**Statusline example:** `git worktree add .claude/worktrees/statusline-metrics feat/statusline-metrics-bar`
 
 ---
 
@@ -160,12 +143,12 @@ Create a worktree for the statusline enhancement feature.
 
 **Trigger prompt (same session):**
 ```
-Execute the statusline enhancement plan using subagent-driven development.
+Execute the [feature] plan using subagent-driven development.
 ```
 
 **Trigger prompt (separate session):**
 ```
-Execute the statusline enhancement plan from the previous session.
+Execute the [feature] plan from the previous session.
 ```
 
 **What `/subagent-driven-development` does:**
@@ -184,15 +167,13 @@ Execute the statusline enhancement plan from the previous session.
 - Tests written alongside implementation
 - Integration verified
 
-**Statusline example:** Sequential for toggle system refactor (shared state in `_MODE_FILE`), parallel for independent widgets (token speed, burn rate, block timer have no shared state).
-
 ---
 
 ### Phase 4: Testing — `/test-driven-development`
 
 **Trigger prompt:**
 ```
-Implement the burn rate widget using TDD.
+Implement [component] using TDD.
 ```
 
 **What the skill does:**
@@ -206,44 +187,9 @@ Implement the burn rate widget using TDD.
 - Minimal implementation to pass (GREEN)
 - Cleaned-up code (REFACTOR)
 
-**Statusline TDD example — burn rate widget:**
-
-```python
-# RED — tests/mde/test_statusline_widgets.py
-def test_burn_rate_zero_duration(self) -> None:
-    """Burn rate should be $0.00/min when duration is zero."""
-    from mde.statusline.widgets import burn_rate_widget
-
-    ctx = {"cost_usd": 1.50, "duration_ms": 0}
-    assert burn_rate_widget(ctx) == "$0.00/min"
-
-def test_burn_rate_normal(self) -> None:
-    """$1.50 over 60s = $1.50/min."""
-    from mde.statusline.widgets import burn_rate_widget
-
-    ctx = {"cost_usd": 1.50, "duration_ms": 60_000}
-    assert burn_rate_widget(ctx) == "$1.50/min"
-```
-
-```python
-# GREEN — src/mde/statusline/widgets.py
-def burn_rate_widget(ctx: dict[str, object]) -> str:
-    cost = _to_float(ctx.get("cost_usd", 0.0))
-    duration_ms = _to_float(ctx.get("duration_ms", 0.0))
-    if duration_ms <= 0:
-        return "$0.00/min"
-    rate_per_min = cost / (duration_ms / 60_000)
-    return f"${rate_per_min:.2f}/min"
-```
-
-```python
-# REFACTOR — extract _to_float from render.py into shared utils
-# Both render.py and widgets.py import from the same location
-```
-
 **Run tests:**
 ```
-uv run pytest tests/mde/test_statusline_widgets.py -v
+uv run pytest tests/ -v
 ```
 
 ---
@@ -252,7 +198,7 @@ uv run pytest tests/mde/test_statusline_widgets.py -v
 
 **Trigger prompt:**
 ```
-The burn rate widget shows "$inf/min" when duration_ms is missing from stdin JSON.
+[Component] shows [unexpected behavior] when [condition].
 ```
 
 **What the skill does:**
@@ -266,15 +212,13 @@ The burn rate widget shows "$inf/min" when duration_ms is missing from stdin JSO
 - Targeted fix (not shotgun debugging)
 - Regression test added
 
-**Statusline example:** The issue is that `duration_ms` defaults to `0.0` via `_to_float`, causing division by zero. The fix is the `if duration_ms <= 0` guard shown in the TDD example above.
-
 ---
 
 ### Phase 6: Review — `/requesting-code-review` + `/receiving-code-review`
 
 **Trigger prompt (requesting):**
 ```
-Review the statusline widget implementation before merging.
+Review the [feature] implementation before merging.
 ```
 
 **What `/requesting-code-review` does:**
@@ -291,12 +235,12 @@ Review the statusline widget implementation before merging.
 - Review findings with severity levels
 - Actionable items or justified dismissals
 
-**Statusline two-stage review:**
+**Two-stage review:**
 
 | Stage | Checks |
 |-------|--------|
-| **Spec compliance** | Does each widget match the plan? Are all 4 widgets implemented? Does toggle system support per-widget control? |
-| **Code quality** | Follows `_to_float()` pattern? Uses `_GREEN`/`_YELLOW`/`_RED`/`_RESET` ANSI constants from `render.py`? ruff ALL clean? Type annotations present? |
+| **Spec compliance** | Does the implementation match the plan? Are all required components present? Does it integrate with existing systems correctly? |
+| **Code quality** | Follows project patterns? Uses existing utilities? Lint-clean? Type annotations present? Tests passing? |
 
 ---
 
@@ -304,7 +248,7 @@ Review the statusline widget implementation before merging.
 
 **Trigger prompt:**
 ```
-The statusline enhancement is complete. All tests pass. How should we integrate?
+The [feature] is complete. All tests pass. How should we integrate?
 ```
 
 **What the skill does:**
@@ -331,52 +275,31 @@ Is the task decomposable into 2+ independent subtasks?
 └── NO  → Single agent, no orchestration needed
 ```
 
-### Applied: Statusline Enhancement
-
-| Component | Strategy | Reason |
-|-----------|----------|--------|
-| Token speed widget | **Parallel** | Independent function, own test file section |
-| Burn rate widget | **Parallel** | Independent function, no shared state |
-| Block timer widget | **Parallel** | Independent function, no shared state |
-| Daily totals widget | **Parallel** | Independent function (persistence is widget-internal) |
-| Toggle system refactor | **Sequential** | Modifies shared `_MODE_FILE` and `_CYCLE` dict |
-| Render pipeline update | **Sequential** | Depends on all widgets + toggle system existing |
-
-### Parallel Dispatch Prompt
+### Parallel Dispatch Pattern
 
 ```
-Dispatch 4 parallel agents with these file ownership boundaries:
+Dispatch N parallel agents with these file ownership boundaries:
 
-Agent 1 (token-speed):
-- OWNS: src/mde/statusline/widgets/token_speed.py
-- OWNS: tests/mde/test_widget_token_speed.py
-- READS (no modify): src/mde/statusline/render.py (for _to_float pattern)
+Agent 1 ([component-a]):
+- OWNS: src/myproject/component_a.py
+- OWNS: tests/test_component_a.py
+- READS (no modify): src/myproject/shared_utils.py
 
-Agent 2 (burn-rate):
-- OWNS: src/mde/statusline/widgets/burn_rate.py
-- OWNS: tests/mde/test_widget_burn_rate.py
-- READS (no modify): src/mde/statusline/render.py
+Agent 2 ([component-b]):
+- OWNS: src/myproject/component_b.py
+- OWNS: tests/test_component_b.py
+- READS (no modify): src/myproject/shared_utils.py
 
-Agent 3 (block-timer):
-- OWNS: src/mde/statusline/widgets/block_timer.py
-- OWNS: tests/mde/test_widget_block_timer.py
-- READS (no modify): src/mde/statusline/render.py
-
-Agent 4 (daily-totals):
-- OWNS: src/mde/statusline/widgets/daily_totals.py
-- OWNS: tests/mde/test_widget_daily_totals.py
-- READS (no modify): src/mde/statusline/render.py
-
-Each widget function takes a dict[str, object] context and returns a str.
-Use _to_float() for numeric conversion. Include TDD: write test first, then implementation.
+Each component takes [input type] and returns [output type].
+Use existing patterns from shared_utils.py. Include TDD: write test first.
 ```
 
 ### Integration Step (After Parallel Agents Return)
 
-After all 4 widget agents complete:
+After all parallel agents complete:
 1. Verify no file ownership conflicts: `git diff --name-only`
-2. Run all widget tests: `uv run pytest tests/mde/test_widget_*.py -v`
-3. Then proceed sequentially: toggle system → render pipeline → integration tests
+2. Run all component tests: `uv run pytest tests/ -v`
+3. Then proceed sequentially: integration layer → end-to-end tests
 
 ---
 
@@ -384,145 +307,79 @@ After all 4 widget agents complete:
 
 ### Three Levels of Testing
 
-| Level | Scope | Files | What to Test |
-|-------|-------|-------|-------------|
-| **Unit** | Per widget | `tests/mde/test_widget_*.py` | Each widget function in isolation |
-| **Integration** | Render pipeline | `tests/mde/test_statusline.py` | Widgets composed into full statusline output |
-| **E2E** | CLI entry point | `tests/mde/test_statusline.py` | `render_statusline()` with real stdin JSON |
+| Level | Scope | What to Test |
+|-------|-------|-------------|
+| **Unit** | Per component | Each function/class in isolation |
+| **Integration** | Composed pipeline | Components working together |
+| **E2E** | CLI entry point | Full system with real inputs |
 
-### RED-GREEN-REFACTOR Example: Token Speed Widget
+### RED-GREEN-REFACTOR Pattern
 
 **RED — Write the failing test first:**
 
 ```python
-# tests/mde/test_widget_token_speed.py
-from __future__ import annotations
-
+# tests/test_my_component.py
 import pytest
 
 
-class TestTokenSpeedWidget:
-    """Unit tests for the token speed widget."""
+class TestMyComponent:
+    def test_normal_case(self) -> None:
+        from myproject.component import my_function
 
-    def test_tokens_per_second_normal(self) -> None:
-        from mde.statusline.widgets import token_speed_widget
+        result = my_function({"input": "value"})
+        assert result == "expected"
 
-        ctx = {
-            "total_input_tokens": 50_000,
-            "total_output_tokens": 10_000,
-            "duration_ms": 60_000,
-        }
-        # 60k tokens in 60s = 1000 tok/s
-        assert token_speed_widget(ctx) == "1000 tok/s"
+    def test_missing_fields_default_gracefully(self) -> None:
+        from myproject.component import my_function
 
-    def test_zero_duration_returns_dash(self) -> None:
-        from mde.statusline.widgets import token_speed_widget
-
-        ctx = {"total_input_tokens": 100, "total_output_tokens": 0, "duration_ms": 0}
-        assert token_speed_widget(ctx) == "— tok/s"
-
-    def test_missing_fields_default_to_zero(self) -> None:
-        from mde.statusline.widgets import token_speed_widget
-
-        assert token_speed_widget({}) == "— tok/s"
+        assert my_function({}) == "default"
 ```
 
 **GREEN — Minimal implementation:**
 
 ```python
-# src/mde/statusline/widgets.py
-from __future__ import annotations
-
-from mde.statusline.render import _to_float
-
-
-def token_speed_widget(ctx: dict[str, object]) -> str:
-    """Tokens per second from total tokens and duration."""
-    input_tok = _to_float(ctx.get("total_input_tokens", 0))
-    output_tok = _to_float(ctx.get("total_output_tokens", 0))
-    duration_ms = _to_float(ctx.get("duration_ms", 0))
-    if duration_ms <= 0:
-        return "— tok/s"
-    total = input_tok + output_tok
-    tok_per_sec = total / (duration_ms / 1000)
-    return f"{int(tok_per_sec)} tok/s"
+# src/myproject/component.py
+def my_function(ctx: dict[str, object]) -> str:
+    value = ctx.get("input", "default")
+    return str(value)
 ```
 
 **REFACTOR — only after green:**
-- Extract `_to_float` into a shared module if not already shared
-- Consider whether `int()` truncation or `round()` is more appropriate
-
-### Test Fixtures Pattern
-
-Reuse the established `_sample_statusline_stdin()` pattern from `tests/mde/test_statusline.py:21-27`:
-
-```python
-def _sample_statusline_stdin() -> dict[str, object]:
-    """Real Claude Code statusline JSON shape."""
-    return {
-        "model": {"id": "claude-opus-4-6", "display_name": "Opus"},
-        "cost": {"total_cost_usd": 1.23, "total_duration_ms": 45000},
-        "context_window": {"used_percentage": 42, "context_window_size": 200000},
-    }
-```
+- Extract shared utilities if multiple components repeat the same pattern
+- Improve naming for clarity
 
 ### Anti-Patterns to Avoid
 
-Refer to the superpowers `testing-anti-patterns` skill for the full list. Key ones for statusline:
+Refer to the superpowers `testing-anti-patterns` skill for the full list. Key ones:
 
-- **Don't mock `_to_float`** — it's a pure function, test it through the widget
-- **Don't test ANSI codes literally** — test semantic content, strip ANSI for assertions
-- **Don't skip null-field tests** — Claude Code sends `null` for `used_percentage` early in sessions
+- **Don't mock pure functions** — test them through the component
+- **Don't skip null/missing field tests** — real systems send incomplete data
 - **Don't use `capsys` without `readouterr()`** — always capture before asserting
-
-### Running Tests
-
-```
-uv run pytest tests/mde/test_statusline.py -v
-uv run pytest tests/mde/test_widget_*.py -v
-uv run pytest tests/mde/ -k statusline -v    # all statusline-related tests
-```
 
 ---
 
 ## 5. Debugging Playbook
 
-### Common Failure Modes → `/systematic-debugging` Phases
+### Debugging Workflow (from `/systematic-debugging`)
 
-| Symptom | Likely Root Cause | Source File | Debug Phase |
-|---------|-------------------|-------------|-------------|
-| `"$inf/min"` in output | Division by zero — `duration_ms` is 0 or missing | `src/mde/statusline/render.py` | Hypothesis: missing guard on `_to_float` return |
-| `"0%"` when context is clearly used | `used_percentage` is `null` in JSON | `src/mde/statusline/render.py:71` | Hypothesis: `_to_int(None)` returns 0 — correct behavior, but verify upstream sends non-null |
-| ANSI codes visible as literal text | Terminal doesn't support ANSI or output is piped | `src/mde/statusline/render.py:22-27` | Hypothesis: add `isatty()` check before coloring |
-| Stale agent count (shows agents that stopped) | JSONL dedup logic not seeing latest `stopped` event | `src/mde/statusline/render.py:83-107` | Hypothesis: check JSONL append order, verify `_read_agent_state()` keeps latest per ID |
-| Toggle doesn't cycle | `_MODE_FILE` not writable or directory missing | `src/mde/statusline/toggle.py:23` | Hypothesis: `.artifacts/` directory doesn't exist — check `mkdir(parents=True)` |
-| Widget shows in wrong mode | Render function dispatches on mode but new widget not gated | `src/mde/statusline/render.py:45-51` | Hypothesis: new widget added to `_render_mode_a` but not gated by toggle |
+For each unexpected behavior:
 
-### Debugging Workflow
-
-For each symptom:
-
-1. **Reproduce** — Construct minimal stdin JSON that triggers the issue
-2. **Hypothesize** — Form a specific, testable hypothesis (see table above)
-3. **Gather evidence** — Read the source file at the suspected line
+1. **Reproduce** — Construct minimal input that triggers the issue
+2. **Hypothesize** — Form a specific, testable hypothesis
+3. **Gather evidence** — Read the source file at the suspected location
 4. **Test** — Write a failing test that reproduces the bug
 5. **Fix** — Make the minimal change to pass the test
-6. **Verify** — Run full test suite: `uv run pytest tests/mde/ -k statusline -v`
+6. **Verify** — Run full test suite: `uv run mde-py quality`
 
-### Example: Debugging Null `used_percentage`
+### Debugging Prompt Template
 
-```python
-# 1. Reproduce — construct minimal input
-data: dict[str, object] = {
-    "context_window": {"used_percentage": None},
-}
+```
+/systematic-debugging
 
-# 2. Hypothesis: _to_int(None) should return 0
-# 3. Evidence: render.py line 119-123 shows _to_int handles TypeError
-# 4. Test already exists: test_handles_null_used_percentage (line 154)
-# 5. Fix: already handled by _to_int fallback
-# 6. Verify:
-# uv run pytest tests/mde/test_statusline.py::TestStatuslineRender::test_handles_null_used_percentage -v
+[Component] shows [symptom] when [condition].
+
+Hypothesis: [specific guess about root cause].
+Evidence needed: [what to read/check to confirm].
 ```
 
 ---
@@ -533,35 +390,31 @@ data: dict[str, object] = {
 
 #### Stage 1: Spec Compliance
 
-| Check | Question | Evidence |
-|-------|----------|----------|
-| Widget count | Are all 4 widgets implemented? | `grep -r "def.*_widget" src/mde/statusline/` |
-| Widget signatures | Does each take `dict[str, object]` and return `str`? | Read each widget function |
-| Toggle support | Can each widget be individually toggled? | Check `toggle.py` for per-widget keys |
-| Mode integration | Do all 3 modes (A/B/C) render the new widgets? | Check `_render_mode_a/b/c` in `render.py` |
-| JSON schema | Do widgets use fields from the official Claude Code stdin schema? | Compare against `_sample_statusline_stdin()` |
+| Check | Question |
+|-------|----------|
+| Component count | Are all required components implemented? |
+| Signatures | Do interfaces match the plan? |
+| Integration | Does the feature connect to existing systems as designed? |
+| Test coverage | Does every component have tests? |
 
 #### Stage 2: Code Quality
 
-| Check | Question | Command |
-|-------|----------|---------|
-| `_to_float` pattern | Do all numeric conversions use `_to_float`/`_to_int`? | `uv run ruff check src/mde/statusline/` |
-| ANSI constants | Are colors from `_GREEN`/`_YELLOW`/`_RED`/`_RESET`? | Grep for hardcoded escape codes |
-| ruff ALL clean | No lint violations? | `uv run ruff check src/mde/statusline/ --select ALL` |
-| Type annotations | All functions annotated? | `uv run ty check src/mde/statusline/` |
-| Test coverage | Every widget has unit tests? | `uv run pytest tests/mde/ -k statusline --tb=short` |
+| Check | Command |
+|-------|---------|
+| Lint | `uv run ruff check src/` |
+| Types | `uv run ty check src/` |
+| Tests | `uv run pytest tests/ -v` |
+| Full quality gate | `uv run mde-py quality` |
 
 ### `/verification-before-completion` Gate
 
 **After both review stages pass:**
 
 ```
-uv run pytest tests/mde/ -k statusline -v
-uv run ruff check src/mde/statusline/ --select ALL
-uv run ty check src/mde/statusline/
+uv run mde-py quality
 ```
 
-All three must pass with zero errors/warnings before claiming review is complete.
+Must pass with zero errors/warnings before claiming review is complete.
 
 ---
 
@@ -571,47 +424,17 @@ All three must pass with zero errors/warnings before claiming review is complete
 
 The `/writing-skills` skill guides creation of new skills with proper frontmatter, trigger descriptions, and content structure.
 
-### Skill 1: `statusline-widget-testing`
-
-**When to create:** After implementing the first widget, to codify the testing pattern.
-
-**Creation prompt:**
+**Creation prompt template:**
 ```
 /writing-skills
 
-Create a skill called "statusline-widget-testing" that triggers when
-implementing or testing new statusline widgets.
+Create a skill called "[skill-name]" that triggers when
+[use case description].
 
 It should enforce:
-- TDD cycle (RED test first, GREEN minimal impl, REFACTOR)
-- Use _sample_statusline_stdin() as the base fixture
-- Test null/missing fields using _to_float/_to_int patterns
-- Test ANSI output semantically (strip codes, check content)
-- Run: uv run pytest tests/mde/test_statusline*.py -v
-```
-
-**Expected trigger description:**
-```
-Use when implementing or testing statusline widgets. Enforces TDD with
-_sample_statusline_stdin() fixtures and _to_float/_to_int null-safety patterns.
-```
-
-### Skill 2: `video-analysis-integration`
-
-**When to create:** When integrating mcptube or deep-research output into the design process.
-
-**Creation prompt:**
-```
-/writing-skills
-
-Create a skill called "video-analysis-integration" that triggers when
-integrating mcptube or deep-research output into feature design.
-
-It should enforce:
-- Extract actionable design patterns from video analysis
-- Map patterns to specific implementation tasks
-- Feed findings into /writing-plans as constraints
-- Verify patterns against existing codebase conventions
+- [Constraint 1]
+- [Constraint 2]
+- Run: uv run mde-py quality
 ```
 
 ### Improvement Cycle
@@ -622,8 +445,6 @@ Use skill → Find failure mode → /writing-skills to update → Use again
      └──────────────────────────────────────────────────────────┘
 ```
 
-Example: After using `statusline-widget-testing`, you discover that widgets rendering multi-line output break Mode A (single-line). Update the skill to add a constraint: "Mode A widgets must return single-line strings."
-
 ---
 
 ## 8. Deep Research Integration
@@ -633,42 +454,35 @@ Example: After using `statusline-widget-testing`, you discover that widgets rend
 ```
 /brainstorming
   ↓ (surfaces research questions)
-External research (WebSearch, mcptube, deep-research)
+External research (agent-fetch, mcptube, deep-research)
   ↓ (findings fed back)
 /brainstorming (refined with research)
   ↓
 /writing-plans (constraints from research baked in)
 ```
 
-### Applied: Statusline Enhancement Research
+### Research Workflow
 
 **Step 1 — `/brainstorming` surfaces questions:**
-- What widget patterns do starship/powerline/oh-my-posh use?
-- How do terminal UIs handle variable-width widget composition?
-- What are best practices for real-time metrics in terminal statuslines?
+- What patterns do existing tools in this domain use?
+- What are best practices for [problem type]?
+- What trade-offs exist between approaches?
 
 **Step 2 — External research:**
-```
-# WebSearch for widget patterns
-"starship prompt module system architecture"
-"powerline segment rendering pipeline"
-
-# mcptube for terminal UI videos
-# Analyze YouTube videos about terminal customization, prompt engineering
+```bash
+npx agent-fetch "https://example.com/docs/relevant-topic" --json
 ```
 
 **Step 3 — Findings fed into planning:**
-- Starship uses TOML-configurable modules with `format` strings → adopt per-widget format config
-- Powerline uses a segment pipeline with separators → consider separator chars between widgets
-- Real-time metrics need debouncing to avoid flicker → add minimum update interval
+- Document design decisions and their rationale
+- Map findings to specific implementation constraints
 
 **Step 4 — `/writing-plans` with research constraints:**
 ```
-Write an implementation plan for statusline widgets with these constraints
+Write an implementation plan for [feature] with these constraints
 from research:
-- Each widget is independently configurable (starship pattern)
-- Widgets compose left-to-right with " | " separators (existing pattern in render.py:148)
-- Minimum 100ms between re-renders to prevent flicker
+- [Constraint from finding 1]
+- [Constraint from finding 2]
 ```
 
 ---
@@ -677,27 +491,22 @@ from research:
 
 ### Every Gate Where `/verification-before-completion` Is Mandatory
 
-| Gate | When | Required Commands | Pass Criteria |
-|------|------|------------------|---------------|
-| **Post-TDD cycle** | After each RED-GREEN-REFACTOR | `uv run pytest tests/mde/test_statusline*.py -v` | All tests pass, new test included |
-| **Post-widget implementation** | After each widget is complete | `uv run ruff check src/mde/statusline/ --select ALL` | Zero violations |
-| **Post-integration** | After render pipeline updated | `uv run pytest tests/mde/ -k statusline -v` | All tests pass including integration |
-| **Pre-review** | Before requesting code review | `uv run ty check src/mde/statusline/` | Zero type errors |
-| **Post-review** | After review changes applied | All three commands below | All pass |
-| **Pre-merge** | Before finishing development branch | All three commands below | All pass |
+| Gate | When | Required Command | Pass Criteria |
+|------|------|-----------------|---------------|
+| **Post-TDD cycle** | After each RED-GREEN-REFACTOR | `uv run pytest tests/ -v` | All tests pass, new test included |
+| **Post-implementation** | After each component is complete | `uv run ruff check src/` | Zero violations |
+| **Post-integration** | After integration layer updated | `uv run pytest tests/ -v` | All tests pass including integration |
+| **Pre-review** | Before requesting code review | `uv run ty check src/` | Zero type errors |
+| **Post-review** | After review changes applied | `uv run mde-py quality` | All pass |
+| **Pre-merge** | Before finishing development branch | `uv run mde-py quality` | All pass |
 
-### The Three Verification Commands
+### The Quality Gate Command
 
 ```
-# 1. Tests
-uv run pytest tests/mde/ -k statusline -v
-
-# 2. Lint
-uv run ruff check src/mde/statusline/ --select ALL
-
-# 3. Types
-uv run ty check src/mde/statusline/
+uv run mde-py quality
 ```
+
+This runs lint, type check, and tests in one step. Use it at every gate.
 
 ### Iron Rule
 
@@ -712,12 +521,183 @@ uv run ty check src/mde/statusline/
 ```
 /verification-before-completion
 
-Run these verification commands and show me the output:
-1. uv run pytest tests/mde/ -k statusline -v
-2. uv run ruff check src/mde/statusline/ --select ALL
-3. uv run ty check src/mde/statusline/
+Run the quality gate and show me the output:
+  uv run mde-py quality
 
-Do not claim completion until all three pass with zero errors.
+Do not claim completion until it passes with zero errors.
+```
+
+---
+
+## 10. Resuming Existing Work
+
+When a PR already has commits, the subagent-driven-development sequence still applies in full.
+
+### Audit First
+
+Before touching any code:
+
+```bash
+git log --oneline main..HEAD     # What commits exist?
+git diff --stat main..HEAD       # What files changed?
+uv run mde-py quality            # Does it currently pass?
+```
+
+If `uv run mde-py quality` fails: **fix first, then review.** Do not add new code on top of failing quality gates.
+
+### Review Sequence Still Applies
+
+Existing work does NOT skip review stages:
+
+1. **Spec review** — Does the existing code match the plan?
+2. **Fix loop** — Address spec gaps
+3. **Quality review** — `uv run mde-py quality`
+4. **Fix loop** — Address quality findings
+5. **Completion** — `/finishing-a-development-branch`
+
+### Key Principle
+
+"There are already commits" is not a reason to skip any SDLC stage. Partial work needs the same rigor as new work.
+
+---
+
+## 11. Sequential PR Workflow
+
+### One PR at a Time
+
+**Never work on multiple PRs in parallel.**
+
+```
+implement → review → fix → verify → merge → pull → next PR
+```
+
+### After Merge
+
+```bash
+git pull origin main --ff-only
+```
+
+Fast-forward only. If it fails, investigate why — do not force.
+
+### If Multiple PRs Exist
+
+Merge simplest first:
+1. Data-only changes (no logic) before code changes
+2. Foundational changes before dependent changes
+3. Independent changes before interdependent changes
+
+### Why Sequential
+
+Parallel PRs create merge conflicts, require rebases, and make it hard to verify each change in isolation. One at a time is faster overall.
+
+---
+
+## 12. Step Announcements
+
+### Rule: Always Announce the Next Step
+
+After completing each workflow step, Claude MUST announce the next superpowers workflow step AND the specific skill to invoke.
+
+### Format
+
+```
+✓ [completed step]. Next workflow step: [SDLC stage from §1] → `/skill-name` — [what it does].
+```
+
+### Examples
+
+```
+✓ Plan written and approved. Next workflow step: Branch Setup → `/using-git-worktrees` — creates an isolated feature branch so commits don't land on main.
+```
+
+```
+✓ Feature branch created at .worktrees/my-feature. Next workflow step: Implementation → `/subagent-driven-development` — executes the plan with subagents managing file ownership.
+```
+
+```
+✓ All components implemented and tests pass. Next workflow step: Review → `/requesting-code-review` — prepares spec compliance and code quality review.
+```
+
+### Never Wait
+
+Claude must not wait for the user to ask "what's next?" — announce the next step proactively after every completed stage. Reference the §1 SDLC stage mapping when in doubt.
+
+---
+
+## 13. Skill-Driven Tool Usage
+
+### Rule: Invoke the Skill Before Running the Tool
+
+Before running `ruff`, `ty`, `uv`, or `pyright` for Python work, invoke the corresponding skill to load current best practices.
+
+| Tool | Skill to invoke | Why |
+|------|----------------|-----|
+| `ruff` | `/ruff` | Up-to-date rule configuration, correct invocation patterns |
+| `ty` | `/ty` | Current type checking best practices, common pitfalls |
+| `uv` | `/uv` | Correct package management patterns, avoid deprecated commands |
+
+### When This Applies
+
+Agents with `skills: [ruff, ty, uv]` in frontmatter MUST invoke these skills when their work touches Python code.
+
+### What Skills Provide
+
+- Current configuration guidance (pyproject.toml options, flags)
+- Common pitfalls and how to avoid them
+- Correct invocation patterns (e.g., `uv run ruff check` not `ruff check`)
+- Migration guidance from older tools
+
+### Example
+
+```
+# Before running ruff:
+/ruff
+
+# Now run ruff with confidence:
+uv run ruff check src/ --fix
+```
+
+---
+
+## 14. Zero Tolerance for Warnings
+
+### Rule: Read ALL Output, Not Just Exit Codes
+
+A command that exits 0 but prints warnings is NOT clean. Warnings must be addressed.
+
+### What to Look For
+
+- Deprecation notices
+- Non-zero counts in summary lines ("3 warnings", "1 note")
+- Lines beginning with `WARNING:`, `WARN:`, or `warning:`
+- Skipped tests or excluded files
+
+### Required Actions
+
+| Output type | Action |
+|-------------|--------|
+| Warning with clear fix | Fix it immediately |
+| Warning with unclear cause | Investigate, then fix or create GitHub Issue |
+| Deprecation notice | Update to the recommended alternative |
+| Non-zero warning count in passing run | Treat as a failure — investigate each |
+
+### The Only Documented Exception
+
+The `VIRTUAL_ENV` warning in git worktrees is benign — uv uses the correct project venv regardless. All other warnings require action. See `worktree-pr-workflow.md` for details.
+
+### Subagent Report Requirements
+
+Subagent reports MUST include the full output summary, not just "all passed." Example:
+
+```
+# Required format:
+uv run mde-py quality output:
+  ruff: 0 errors, 0 warnings
+  ty: 0 errors, 0 warnings
+  pytest: 42 passed, 0 failed, 0 warnings
+
+# Not acceptable:
+"All quality checks passed."
 ```
 
 ---

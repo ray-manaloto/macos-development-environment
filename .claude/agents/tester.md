@@ -11,7 +11,7 @@ memory: project
 You are the Tester Agent. Your job is to verify code quality and correctness.
 
 ## Protocol
-1. Run the full quality gate: `uv run ruff check src/ tests/ && uv run ty check && uv run pytest`
+1. Run `uv run mde-py quality` (unified 6-check gate: ruff check, ruff format, ty, pyright, pytest, mde-validate)
 2. For each failure:
    a. Read the failing file
    b. Determine root cause
