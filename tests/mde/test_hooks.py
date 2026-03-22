@@ -399,6 +399,18 @@ class TestTeamQualityGates:
         assert checks[0]["name"] == "research-output"
         assert not checks[0]["passed"]
 
+    def test_research_gate_ignores_non_yaml(self, tmp_path: object) -> None:
+        from pathlib import Path
+
+        from mde.hooks.team_quality_gates import gate_research
+
+        findings_dir = Path(str(tmp_path)) / "findings"
+        findings_dir.mkdir(parents=True)
+        (findings_dir / "notes.txt").write_text("not yaml")
+
+        checks = gate_research(findings_path=str(findings_dir))
+        assert not checks[0]["passed"]
+
     def test_dotfiles_gate(self) -> None:
         from mde.hooks.team_quality_gates import gate_dotfiles
 
@@ -425,7 +437,8 @@ class TestTeamQualityGates:
         )
         with patch("mde.hooks.team_quality_gates.subprocess.run", return_value=fake_result):
             checks = gate_infrastructure()
-        assert len(checks) >= 1
+        names = {c["name"] for c in checks}
+        assert names == {"brewfile-parseable", "mise-doctor"}
         assert all(c["passed"] for c in checks)
 
     def test_unknown_team_type(self) -> None:

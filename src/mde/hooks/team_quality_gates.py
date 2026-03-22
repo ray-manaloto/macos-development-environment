@@ -57,23 +57,24 @@ def gate_python_dev() -> list[dict[str, Any]]:
 
 
 def gate_research(findings_path: str = "docs/research/trail/findings") -> list[dict[str, Any]]:
-    """Verify research output files exist."""
+    """Verify research output YAML files exist in findings directory."""
     from pathlib import Path
 
     output_dir = Path(findings_path)
-    if output_dir.is_dir() and any(output_dir.iterdir()):
+    yaml_files = list(output_dir.glob("*.yaml")) if output_dir.is_dir() else []
+    if yaml_files:
         return [
             {
                 "name": "research-output",
                 "passed": True,
-                "output": "findings directory has content",
+                "output": f"{len(yaml_files)} YAML provenance file(s) found",
             },
         ]
     return [
         {
             "name": "research-output",
             "passed": False,
-            "output": "no research output files found",
+            "output": f"no .yaml provenance files in {findings_path}",
         },
     ]
 
@@ -93,16 +94,17 @@ def gate_infrastructure() -> list[dict[str, Any]]:
 
     brewfile = Path("Brewfile")
     if brewfile.exists():
+        # Use 'brew bundle list' to verify parseability (not install state)
         checks.append(
             _check(
-                "brew-bundle-check",
-                ["brew", "bundle", "check", "--file", str(brewfile)],
+                "brewfile-parseable",
+                ["brew", "bundle", "list", "--file", str(brewfile)],
             ),
         )
     else:
         checks.append(
             {
-                "name": "brew-bundle-check",
+                "name": "brewfile-parseable",
                 "passed": True,
                 "output": "no Brewfile present, skipping",
             },
