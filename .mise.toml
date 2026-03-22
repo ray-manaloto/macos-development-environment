@@ -293,5 +293,10 @@ nlm notebook list --json 2>&1 | head -5 && echo "✓ MCP auth OK" || echo "✗ M
 description = "Clone agent framework repos for offline research"
 run = "scripts/clone-agent-framework-repos.sh"
 
+[tasks.pre-commit]
+description = "Run pre-commit checks via hk"
+run = "hk run pre-commit"
+
 [tools]
 hk = "latest"
+pkl = "latest"
