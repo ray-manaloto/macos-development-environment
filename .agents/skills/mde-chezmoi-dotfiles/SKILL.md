@@ -21,14 +21,14 @@ this repo.
 - Editing any file under `.chezmoisource/`
 - Adding a shell alias, env var, or PATH entry
 - Injecting a secret from macOS Keychain or an age-encrypted file
-- Debugging drift: `chezmoi verify` exits non-zero or `mde-py validate --chezmoi` fails
+- Debugging drift: `chezmoi verify` exits non-zero or `uv run mde-py validate --all` reports chezmoi issues
 - Authoring or reviewing templates that use the `.remote` data variable
 
 ## Contract
 
 1. Never edit deployed files directly (e.g. `~/.tmux.conf`, `~/.oh-my-zsh/custom/*.zsh`).
 2. All changes go into `.chezmoisource/` first, then `chezmoi apply`.
-3. Drift is detected by `uv run mde-py validate --chezmoi`, which runs `chezmoi verify --exclude=scripts`.
+3. Drift is detected by `uv run mde-py validate --all` (includes chezmoi drift check via `chezmoi verify --exclude=scripts`).
 4. The Brewfile is managed by chezmoi: edit `.chezmoisource/Brewfile.tmpl`, not `~/Brewfile`.
 5. Scripts under `.chezmoisource/.chezmoiscripts/` run via chezmoi lifecycle hooks — do not run them manually.
 
@@ -47,7 +47,10 @@ this repo.
 | `dot_oh-my-zsh/custom/macos-env.zsh` | `~/.oh-my-zsh/custom/macos-env.zsh` |
 | `dot_tmux.conf` | `~/.tmux.conf` |
 | `dot_zprofile.d/macos-dev-env.zsh` | `~/.zprofile.d/macos-dev-env.zsh` |
-| `.chezmoi.toml.tmpl` | `~/.config/chezmoi/chezmoi.toml` |
+
+Configuration bootstrap (not a deployed target): `.chezmoi.toml.tmpl` is read by
+chezmoi at init to produce `~/.config/chezmoi/chezmoi.toml`. It is not listed by
+`chezmoi managed` and is not checked by `chezmoi verify`.
 
 Scripts (not deployed files):
 
@@ -165,8 +168,8 @@ chezmoi diff
 # 3. Apply to home directory
 chezmoi apply
 
-# 4. Validate — must pass
-uv run mde-py validate --chezmoi
+# 4. Validate — must pass (includes chezmoi drift check)
+uv run mde-py validate --all
 ```
 
 For Brewfile changes, `chezmoi apply` triggers the `run_onchange_before` script
@@ -182,8 +185,8 @@ chezmoi doctor
 # Check for drift (scripts excluded — they are not idempotent)
 chezmoi verify --exclude=scripts
 
-# Same check via mde quality gate
-uv run mde-py validate --chezmoi
+# Same check via mde quality gate (chezmoi is part of --all)
+uv run mde-py validate --all
 
 # Show all managed files
 chezmoi managed
