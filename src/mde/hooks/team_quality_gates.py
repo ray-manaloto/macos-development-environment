@@ -159,7 +159,10 @@ def team_quality_gate_hook() -> int:
     except (json.JSONDecodeError, ValueError):
         return 0
 
-    session_id = data.get("session_id", "")
+    if not isinstance(data, dict):
+        return 0
+
+    session_id = str(data.get("session_id", ""))
 
     with _tracer.start_as_current_span("mde.hook.team_quality_gate") as span:
         span.set_attribute("claude.session_id", session_id)

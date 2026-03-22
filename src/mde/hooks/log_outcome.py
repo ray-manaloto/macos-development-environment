@@ -56,7 +56,7 @@ def log_edit_outcome() -> int:
             "timestamp": datetime.now(tz=UTC).isoformat(),
             "tool": tool_name,
             "file": file_path,
-            "operation": "write" if tool_name == "Write" else "edit",
+            "operation": {"Write": "write", "Edit": "edit"}.get(str(tool_name), "unknown"),
         }
 
         try:

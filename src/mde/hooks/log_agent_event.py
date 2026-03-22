@@ -51,6 +51,7 @@ def log_agent_event() -> int:
 
         record = {
             "timestamp": datetime.now(tz=UTC).isoformat(),
+            "session_id": session_id,
             "agent_name": agent_type,
             "agent_id": agent_id,
             "event": event,

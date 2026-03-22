@@ -141,7 +141,9 @@ def validate_agents_hook() -> int:
         span.set_attribute("claude.tool_use_id", tool_use_id)
         span.set_attribute("hook.event", "PostToolUse")
 
-        tool_input = data.get("tool_input", {})
+        tool_input = data.get("tool_input") or {}
+        if not isinstance(tool_input, dict):
+            tool_input = {}
         file_path = tool_input.get("file_path", "")
         if not file_path or _AGENTS_DIR not in file_path:
             _logger.info(

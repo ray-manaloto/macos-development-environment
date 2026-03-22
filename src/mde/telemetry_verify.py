@@ -56,7 +56,7 @@ def _check_env_vars(settings_env: dict[str, str]) -> list[tuple[str, str, str]]:
     for var, expected in _REQUIRED_ENV.items():
         # Check settings env first, then real env
         value = settings_env.get(var, os.environ.get(var))
-        if value is None:
+        if value is None or value == "":
             results.append((var, "MISSING", "not set in settings or environment"))
         elif expected is not None and value != expected:
             results.append((var, "MISMATCH", f"expected {expected!r}, got {value!r}"))
