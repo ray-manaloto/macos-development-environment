@@ -31,6 +31,7 @@ mise is the authority for global tools.
 - Read `configs/mde-skill-registry.json` before introducing new repo-local skill IDs.
 - Load `.agents/skills/mde-package-cache-policy/SKILL.md` when cache behavior or cache directories are part of the change.
 - Load `.agents/skills/mde-chezmoi-dotfiles/SKILL.md` when editing any file under `.chezmoisource/`.
+- Load `.agents/skills/mde-dotfiles-lifecycle/SKILL.md` when adding a tool that also requires shell env vars or aliases.
 - Run `mise run mde:agent:preflight` before agent-driven setup, migration, or research flows.
 - Run `mise run mde:drift` after changing ownership rules or managed tool surfaces.
 

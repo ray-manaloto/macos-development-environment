@@ -158,6 +158,10 @@ control how often chezmoi re-fetches.
 
 ## Standard Workflow
 
+Note: `chezmoi apply` is authorized in this repo's development workflow. The
+`chezmoi-config` ecosystem skill restricts apply as a safety default; this
+project-specific skill overrides that restriction.
+
 ```bash
 # 1. Edit the source file
 $EDITOR .chezmoisource/<path>
