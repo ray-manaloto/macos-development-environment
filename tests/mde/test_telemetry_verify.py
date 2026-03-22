@@ -143,7 +143,11 @@ class TestVerifyTelemetry:
                 "OTEL_LOGS_EXPORTER": "otlp",
             },
         }
-        with patch("mde.telemetry_verify._load_settings", return_value=(settings, settings["env"])):
+        infra_ok = [("docker", "OK", "Docker is running"), ("collector-health", "OK", "healthy")]
+        with (
+            patch("mde.telemetry_verify._load_settings", return_value=(settings, settings["env"])),
+            patch("mde.telemetry_verify._check_collector_infrastructure", return_value=infra_ok),
+        ):
             result = verify_telemetry()
         assert result == 0
 

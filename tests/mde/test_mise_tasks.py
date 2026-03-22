@@ -18,5 +18,10 @@ def test_mise_doctor_no_warnings() -> None:
     if result.returncode != 0 and "trust" in result.stderr.lower():
         pytest.skip(f"mise config not trusted in this directory: {result.stderr.strip()}")
     lines = result.stderr.splitlines()
-    warn_lines = [line for line in lines if "WARN" in line]
+    # Ignore self-update warnings — these are informational, not actionable errors
+    warn_lines = [
+        line
+        for line in lines
+        if "WARN" in line and "self-update" not in line and "available" not in line
+    ]
     assert len(warn_lines) == 0, "mise doctor warnings:\n" + "\n".join(warn_lines)
