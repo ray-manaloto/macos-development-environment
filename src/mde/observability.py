@@ -126,11 +126,24 @@ def init_observability(
         import openlit
 
         _stderr = sys.stderr
-        sys.stderr = io.StringIO()  # suppress "Overriding provider" messages
+        _capture = io.StringIO()
+        sys.stderr = _capture
         try:
             openlit.init()
         finally:
             sys.stderr = _stderr
+        # Log captured stderr at debug level so it's auditable, not silently lost
+        captured = _capture.getvalue().strip()
+        if captured:
+            _init_logger = structlog.get_logger("mde.observability")
+            _init_logger.debug("openlit_init_stderr", output=captured)
+
+    # Ensure log file is flushed on process exit (abnormal exits may lose data)
+    import atexit
+
+    if _log_file_handle is not None:
+        atexit.register(_log_file_handle.flush)
+        atexit.register(_log_file_handle.close)
 
     _initialized = True
 

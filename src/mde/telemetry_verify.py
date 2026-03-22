@@ -52,16 +52,38 @@ def _check_env_vars(settings_env: dict[str, str]) -> list[tuple[str, str, str]]:
     Returns:
         List of (var_name, status, detail) tuples.
     """
+    _sensitive_patterns = ("KEY", "TOKEN", "SECRET", "PASSWORD")
     results: list[tuple[str, str, str]] = []
     for var, expected in _REQUIRED_ENV.items():
         # Check settings env first, then real env
         value = settings_env.get(var, os.environ.get(var))
+        # Redact sensitive values in output
+        is_sensitive = any(p in var.upper() for p in _sensitive_patterns)
+        display = "[REDACTED]" if is_sensitive else repr(value)
         if value is None or value == "":
             results.append((var, "MISSING", "not set in settings or environment"))
         elif expected is not None and value != expected:
-            results.append((var, "MISMATCH", f"expected {expected!r}, got {value!r}"))
+            results.append((var, "MISMATCH", f"expected {expected!r}, got {display}"))
         else:
-            results.append((var, "OK", f"set to {value!r}"))
+            results.append((var, "OK", f"set to {display}"))
+
+    # Warn if OTEL endpoint is non-localhost (PII/telemetry leak risk)
+    endpoint = settings_env.get(
+        "OTEL_EXPORTER_OTLP_ENDPOINT",
+        os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
+    )
+    if endpoint:
+        host = endpoint.replace("http://", "").replace("https://", "").split(":")[0]
+        _loopback = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}  # noqa: S104
+        if host and host not in _loopback:
+            results.append(
+                (
+                    "OTEL_EXPORTER_OTLP_ENDPOINT",
+                    "WARNING",
+                    f"non-localhost endpoint {host!r} — telemetry may leave this machine",
+                )
+            )
+
     return results
 
 

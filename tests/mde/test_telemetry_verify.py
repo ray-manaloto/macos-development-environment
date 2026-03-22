@@ -51,16 +51,29 @@ class TestCheckEnvVars:
         assert statuses["CLAUDE_CODE_ENABLE_TELEMETRY"] == "MISMATCH"
 
     def test_endpoint_any_value_ok(self) -> None:
-        """OTEL_EXPORTER_OTLP_ENDPOINT accepts any non-empty value."""
+        """OTEL_EXPORTER_OTLP_ENDPOINT accepts any non-empty localhost value."""
         env = {
             "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-            "OTEL_EXPORTER_OTLP_ENDPOINT": "https://custom:9999",
+            "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
             "OTEL_METRICS_EXPORTER": "otlp",
             "OTEL_LOGS_EXPORTER": "otlp",
         }
         results = _check_env_vars(env)
         statuses = {name: status for name, status, _ in results}
         assert statuses["OTEL_EXPORTER_OTLP_ENDPOINT"] == "OK"
+
+    def test_endpoint_non_localhost_warning(self) -> None:
+        """Non-localhost endpoint produces a WARNING."""
+        env = {
+            "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+            "OTEL_EXPORTER_OTLP_ENDPOINT": "https://remote-host:4317",
+            "OTEL_METRICS_EXPORTER": "otlp",
+            "OTEL_LOGS_EXPORTER": "otlp",
+        }
+        results = _check_env_vars(env)
+        warnings = [(n, s, d) for n, s, d in results if s == "WARNING"]
+        assert len(warnings) == 1
+        assert "non-localhost" in warnings[0][2]
 
     def test_falls_back_to_os_environ(self) -> None:
         """Falls back to os.environ when not in settings_env."""
