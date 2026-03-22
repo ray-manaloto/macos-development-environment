@@ -23,6 +23,8 @@ def test_claude_code_installed() -> None:
         text=True,
         timeout=10,
     )
+    if result.returncode != 0 and "trust" in result.stderr.lower():
+        pytest.skip(f"mise config not trusted in this directory: {result.stderr.strip()}")
     assert result.returncode == 0, f"mise current {_MISE_TOOL} failed:\n{result.stderr}"
     assert result.stdout.strip(), "claude-code version is empty"
 
