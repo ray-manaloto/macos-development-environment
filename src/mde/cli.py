@@ -271,6 +271,7 @@ _HOOKS_DISPATCH: dict[str, tuple[str, str]] = {
     "guard-install": ("mde.hooks.guard_install", "guard_install"),
     "session-start": ("mde.hooks.session_start", "session_start"),
     "post-compact": ("mde.hooks.post_compact", "post_compact"),
+    "team-quality-gate": ("mde.hooks.team_quality_gates", "team_quality_gate_hook"),
 }
 
 
