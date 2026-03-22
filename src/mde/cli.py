@@ -104,6 +104,7 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     hooks_sub.add_parser("guard-install", help="PreToolUse install guard")
     hooks_sub.add_parser("session-start", help="SessionStart context setup")
     hooks_sub.add_parser("post-compact", help="PostCompact research state save")
+    hooks_sub.add_parser("team-quality-gate", help="Per-team quality gate validation")
     _SUBPARSERS["hooks"] = hooks_p
 
     # research

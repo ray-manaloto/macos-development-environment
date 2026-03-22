@@ -24,6 +24,9 @@ class TeamType(str, Enum):
     INFRASTRUCTURE = "infrastructure"
 
 
+_SUBPROCESS_TIMEOUT = 120
+
+
 def _run_cmd(cmd: list[str]) -> tuple[bool, str]:
     """Run *cmd* and return ``(passed, combined_output)``."""
     try:
@@ -31,9 +34,12 @@ def _run_cmd(cmd: list[str]) -> tuple[bool, str]:
             cmd,
             capture_output=True,
             text=True,
+            timeout=_SUBPROCESS_TIMEOUT,
         )
     except FileNotFoundError:
         return False, f"command not found: {cmd[0]}"
+    except subprocess.TimeoutExpired:
+        return False, f"timed out after {_SUBPROCESS_TIMEOUT}s: {' '.join(cmd)}"
     else:
         output = (result.stdout + result.stderr).strip()
         return result.returncode == 0, output
