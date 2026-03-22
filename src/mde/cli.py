@@ -104,6 +104,7 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     hooks_sub.add_parser("guard-install", help="PreToolUse install guard")
     hooks_sub.add_parser("session-start", help="SessionStart context setup")
     hooks_sub.add_parser("post-compact", help="PostCompact research state save")
+    hooks_sub.add_parser("team-quality-gate", help="Per-team quality gate validation")
     _SUBPARSERS["hooks"] = hooks_p
 
     # research
@@ -271,6 +272,7 @@ _HOOKS_DISPATCH: dict[str, tuple[str, str]] = {
     "guard-install": ("mde.hooks.guard_install", "guard_install"),
     "session-start": ("mde.hooks.session_start", "session_start"),
     "post-compact": ("mde.hooks.post_compact", "post_compact"),
+    "team-quality-gate": ("mde.hooks.team_quality_gates", "team_quality_gate_hook"),
 }
 
 

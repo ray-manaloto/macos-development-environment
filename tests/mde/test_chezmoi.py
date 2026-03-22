@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 
 import pytest
@@ -9,6 +10,8 @@ import pytest
 
 def test_chezmoi_verify() -> None:
     """Verify chezmoi reports zero errors."""
+    if not shutil.which("chezmoi"):
+        pytest.skip("chezmoi not available")
     result = subprocess.run(
         ["chezmoi", "verify"],
         capture_output=True,
@@ -20,6 +23,8 @@ def test_chezmoi_verify() -> None:
 
 def test_chezmoi_managed_aliases() -> None:
     """The aliases zsh file must be managed by chezmoi."""
+    if not shutil.which("chezmoi"):
+        pytest.skip("chezmoi not available")
     result = subprocess.run(
         ["chezmoi", "managed", "--include=files"],
         capture_output=True,

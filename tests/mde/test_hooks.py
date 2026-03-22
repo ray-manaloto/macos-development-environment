@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+import subprocess
 import sys
 from unittest.mock import patch
 
@@ -326,3 +327,227 @@ class TestDispatchHooks:
         with patch.object(sys, "stdin", stdin):
             result = validate_agents_hook()
         assert result == 0
+
+
+class TestTeamQualityGates:
+    """Tests for per-team quality gate validation."""
+
+    def test_python_dev_gate_all_pass(self) -> None:
+        from mde.hooks.team_quality_gates import gate_python_dev
+
+        fake_result = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="ok",
+            stderr="",
+        )
+        with patch("mde.hooks.team_quality_gates.subprocess.run", return_value=fake_result):
+            checks = gate_python_dev()
+        assert len(checks) == 3
+        assert all(c["passed"] for c in checks)
+        names = {c["name"] for c in checks}
+        assert names == {"ruff", "ty", "pytest"}
+
+    def test_python_dev_gate_ruff_fails(self) -> None:
+        from mde.hooks.team_quality_gates import gate_python_dev
+
+        def side_effect(cmd: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
+            if "ruff" in cmd:
+                return subprocess.CompletedProcess(
+                    args=cmd,
+                    returncode=1,
+                    stdout="E501 line too long",
+                    stderr="",
+                )
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout="ok",
+                stderr="",
+            )
+
+        with patch("mde.hooks.team_quality_gates.subprocess.run", side_effect=side_effect):
+            checks = gate_python_dev()
+        ruff_check = next(c for c in checks if c["name"] == "ruff")
+        assert not ruff_check["passed"]
+        assert "E501" in ruff_check["output"]
+
+    def test_research_gate_with_findings(self, tmp_path: object) -> None:
+        from pathlib import Path
+
+        from mde.hooks.team_quality_gates import gate_research
+
+        findings_dir = Path(str(tmp_path)) / "findings"
+        findings_dir.mkdir(parents=True)
+        (findings_dir / "test.yaml").write_text("finding: true")
+
+        checks = gate_research(findings_path=str(findings_dir))
+        assert len(checks) == 1
+        assert checks[0]["passed"]
+        assert checks[0]["name"] == "research-output"
+
+    def test_research_gate_empty(self, tmp_path: object) -> None:
+        from pathlib import Path
+
+        from mde.hooks.team_quality_gates import gate_research
+
+        empty_dir = Path(str(tmp_path)) / "findings"
+        empty_dir.mkdir(parents=True)
+
+        checks = gate_research(findings_path=str(empty_dir))
+        assert len(checks) == 1
+        assert checks[0]["name"] == "research-output"
+        assert not checks[0]["passed"]
+
+    def test_research_gate_ignores_non_yaml(self, tmp_path: object) -> None:
+        from pathlib import Path
+
+        from mde.hooks.team_quality_gates import gate_research
+
+        findings_dir = Path(str(tmp_path)) / "findings"
+        findings_dir.mkdir(parents=True)
+        (findings_dir / "notes.txt").write_text("not yaml")
+
+        checks = gate_research(findings_path=str(findings_dir))
+        assert not checks[0]["passed"]
+
+    def test_dotfiles_gate(self) -> None:
+        from mde.hooks.team_quality_gates import gate_dotfiles
+
+        fake_result = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="all ok",
+            stderr="",
+        )
+        with patch("mde.hooks.team_quality_gates.subprocess.run", return_value=fake_result):
+            checks = gate_dotfiles()
+        assert len(checks) == 1
+        assert checks[0]["name"] == "validate"
+        assert checks[0]["passed"]
+
+    def test_infrastructure_gate_with_brewfile(self, tmp_path: object) -> None:
+        from pathlib import Path
+
+        from mde.hooks.team_quality_gates import gate_infrastructure
+
+        bf = Path(str(tmp_path)) / "Brewfile"
+        bf.write_text('brew "git"\n')
+
+        fake_result = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="ok",
+            stderr="",
+        )
+        with patch("mde.hooks.team_quality_gates.subprocess.run", return_value=fake_result):
+            checks = gate_infrastructure(brewfile_path=str(bf))
+        names = {c["name"] for c in checks}
+        assert names == {"brewfile-parseable", "mise-doctor"}
+        assert all(c["passed"] for c in checks)
+
+    def test_infrastructure_gate_no_brewfile(self, tmp_path: object) -> None:
+        from pathlib import Path
+
+        from mde.hooks.team_quality_gates import gate_infrastructure
+
+        missing = Path(str(tmp_path)) / "Brewfile"
+
+        fake_result = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="ok",
+            stderr="",
+        )
+        with patch("mde.hooks.team_quality_gates.subprocess.run", return_value=fake_result):
+            checks = gate_infrastructure(brewfile_path=str(missing))
+        brew_check = next(c for c in checks if c["name"] == "brewfile-parseable")
+        assert brew_check["passed"]
+        assert "skipping" in brew_check["output"]
+
+    def test_unknown_team_type(self) -> None:
+        from mde.hooks.team_quality_gates import run_team_quality_gate
+
+        result = run_team_quality_gate("unknown-team")
+        assert not result["passed"]
+        assert "error" in result
+        assert "unknown team_type" in result["error"]
+        assert result["checks"] == []
+
+    def test_run_team_quality_gate_structure(self) -> None:
+        from mde.hooks.team_quality_gates import run_team_quality_gate
+
+        fake_result = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="ok",
+            stderr="",
+        )
+        with patch("mde.hooks.team_quality_gates.subprocess.run", return_value=fake_result):
+            result = run_team_quality_gate("python-dev")
+        assert result["team_type"] == "python-dev"
+        assert isinstance(result["passed"], bool)
+        assert isinstance(result["checks"], list)
+        for check in result["checks"]:
+            assert "name" in check
+            assert "passed" in check
+            assert "output" in check
+
+    def test_hook_invalid_json(self) -> None:
+        from mde.hooks.team_quality_gates import team_quality_gate_hook
+
+        stdin = io.StringIO("not json")
+        with patch.object(sys, "stdin", stdin):
+            assert team_quality_gate_hook() == 0
+
+    def test_hook_missing_team_type(self) -> None:
+        from mde.hooks.team_quality_gates import team_quality_gate_hook
+
+        stdin = io.StringIO(json.dumps({"other": "data"}))
+        with patch.object(sys, "stdin", stdin):
+            assert team_quality_gate_hook() == 0
+
+    def test_hook_with_valid_team_type(self) -> None:
+        from mde.hooks.team_quality_gates import team_quality_gate_hook
+
+        fake_result = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="ok",
+            stderr="",
+        )
+        data = {"team_type": "python-dev"}
+        stdin = io.StringIO(json.dumps(data))
+        stdout = io.StringIO()
+        with (
+            patch.object(sys, "stdin", stdin),
+            patch.object(sys, "stdout", stdout),
+            patch("mde.hooks.team_quality_gates.subprocess.run", return_value=fake_result),
+        ):
+            exit_code = team_quality_gate_hook()
+        assert exit_code == 0
+        output = json.loads(stdout.getvalue())
+        assert output["passed"]
+        assert output["team_type"] == "python-dev"
+
+    def test_hook_returns_1_on_failure(self) -> None:
+        from mde.hooks.team_quality_gates import team_quality_gate_hook
+
+        fail_result = subprocess.CompletedProcess(
+            args=[],
+            returncode=1,
+            stdout="fail",
+            stderr="",
+        )
+        data = {"team_type": "dotfiles"}
+        stdin = io.StringIO(json.dumps(data))
+        stdout = io.StringIO()
+        with (
+            patch.object(sys, "stdin", stdin),
+            patch.object(sys, "stdout", stdout),
+            patch("mde.hooks.team_quality_gates.subprocess.run", return_value=fail_result),
+        ):
+            exit_code = team_quality_gate_hook()
+        assert exit_code == 1
+        output = json.loads(stdout.getvalue())
+        assert not output["passed"]
