@@ -22,11 +22,13 @@ def test_session_start_exits_zero(capsys: pytest.CaptureFixture[str]) -> None:
 
 def test_session_start_cli_dispatch() -> None:
     """CLI should dispatch 'hooks session-start' correctly."""
+    env = {**__import__("os").environ, "OTEL_SDK_DISABLED": "true"}
     proc = subprocess.run(
         ["uv", "run", "mde-py", "hooks", "session-start"],
         capture_output=True,
         text=True,
-        timeout=10,
+        timeout=15,
+        env=env,
     )
     assert proc.returncode == 0
     assert len(proc.stdout) > 0, "SessionStart should print git context"

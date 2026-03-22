@@ -139,6 +139,86 @@ def _check_hooks_dispatch() -> list[tuple[str, str, str]]:
     return results
 
 
+def _check_collector_infrastructure() -> list[tuple[str, str, str]]:
+    """Check that OTEL Collector Docker container is running and healthy.
+
+    Returns:
+        List of (check_name, status, detail) tuples.
+    """
+    import subprocess
+
+    results: list[tuple[str, str, str]] = []
+
+    # Check if Docker is available
+    try:
+        docker_check = subprocess.run(
+            ["docker", "info"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if docker_check.returncode != 0:
+            results.append(("docker", "MISSING", "Docker is not running"))
+            return results
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        results.append(("docker", "MISSING", "Docker CLI not found"))
+        return results
+
+    results.append(("docker", "OK", "Docker is running"))
+
+    # Check for OTEL Collector container
+    try:
+        ps_result = subprocess.run(
+            ["docker", "ps", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        otel_containers = []
+        for line in ps_result.stdout.strip().splitlines():
+            parts = line.split("\t")
+            if len(parts) >= 2 and "otel" in parts[1].lower():  # noqa: PLR2004
+                status = parts[2] if len(parts) > 2 else "unknown"  # noqa: PLR2004
+                otel_containers.append({"name": parts[0], "image": parts[1], "status": status})
+
+        if otel_containers:
+            results.extend(
+                (f"container:{c['name']}", "OK", f"{c['image']} ({c['status']})")
+                for c in otel_containers
+            )
+        else:
+            results.append(
+                (
+                    "otel-collector",
+                    "MISSING",
+                    "no OTEL Collector container running (image containing 'otel')",
+                )
+            )
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        results.append(("docker-ps", "FAIL", f"docker ps failed: {exc}"))
+
+    # Check OTEL Collector health endpoint
+    endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+    health_host = "localhost"
+    health_port = "13133"
+    if endpoint:
+        health_host = endpoint.replace("http://", "").replace("https://", "").split(":")[0]
+
+    try:
+        from urllib.request import urlopen
+
+        health_url = f"http://{health_host}:{health_port}/health"
+        resp = urlopen(health_url, timeout=2)  # noqa: S310
+        health_data = json.loads(resp.read().decode())
+        status_msg = health_data.get("status", "unknown")
+        uptime = health_data.get("uptime", "unknown")
+        results.append(("collector-health", "OK", f"{status_msg}, uptime: {uptime}"))
+    except Exception as exc:  # noqa: BLE001
+        results.append(("collector-health", "MISSING", f"health endpoint not responding: {exc}"))
+
+    return results
+
+
 def verify_telemetry() -> int:
     """Run all telemetry checks, print results, return 0/1."""
     settings, settings_env = _load_settings()
@@ -148,13 +228,18 @@ def verify_telemetry() -> int:
         ("Environment Variables", _check_env_vars(settings_env)),
         ("Plugin Conflicts", _check_plugins(settings)),
         ("Hooks Dispatch", _check_hooks_dispatch()),
+        ("Collector Infrastructure", _check_collector_infrastructure()),
     ]
 
     for section_name, results in sections:
         print(f"\n=== {section_name} ===", file=sys.stderr)
         for name, status, detail in results:
-            marker = "OK" if status == "OK" else "FAIL"
-            if status != "OK":
+            if status == "OK":
+                marker = "OK"
+            elif status == "WARNING":
+                marker = "WARN"
+            else:
+                marker = "FAIL"
                 all_passed = False
             print(f"  [{marker}] {name}: {status} — {detail}", file=sys.stderr)
 
