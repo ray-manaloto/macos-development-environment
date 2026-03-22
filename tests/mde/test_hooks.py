@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import ast
 import io
 import json
 import subprocess
 import sys
+from pathlib import Path
 from unittest.mock import patch
 
 
@@ -551,3 +553,145 @@ class TestTeamQualityGates:
         assert exit_code == 1
         output = json.loads(stdout.getvalue())
         assert not output["passed"]
+
+
+class TestHookOutputSchema:
+    """Validate hook stdout conforms to Claude Code's expected schema."""
+
+    def test_guard_install_allow_output(self) -> None:
+        """When not blocking, guard_install should produce no stdout."""
+        from mde.hooks.guard_install import guard_install
+
+        data = {"tool_input": {"command": "ls"}}
+        stdin = io.StringIO(json.dumps(data))
+        stdout = io.StringIO()
+        with patch.object(sys, "stdin", stdin), patch.object(sys, "stdout", stdout):
+            guard_install()
+        assert stdout.getvalue() == ""  # No output = allow
+
+    def test_guard_install_block_output_schema(self) -> None:
+        """When blocking, output must be valid SyncHookJSONOutput."""
+        from claude_agent_sdk.types import SyncHookJSONOutput
+
+        from mde.hooks.guard_install import guard_install
+
+        data = {"tool_input": {"command": "npm install -g foo"}}
+        stdin = io.StringIO(json.dumps(data))
+        stdout = io.StringIO()
+        with patch.object(sys, "stdin", stdin), patch.object(sys, "stdout", stdout):
+            guard_install()
+        output = stdout.getvalue()
+        assert output.strip()  # Should have produced output
+        parsed = json.loads(output)
+        allowed_fields = set(SyncHookJSONOutput.__annotations__)
+        assert set(parsed.keys()).issubset(allowed_fields)
+        # hookSpecificOutput is required for PreToolUse deny decisions
+        assert "hookSpecificOutput" in parsed
+
+    def test_team_quality_gate_output_schema(self) -> None:
+        """team_quality_gate_hook output must be valid JSON."""
+        from mde.hooks.team_quality_gates import team_quality_gate_hook
+
+        fake_result = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="ok",
+            stderr="",
+        )
+        data = {"team_type": "python-dev"}
+        stdin = io.StringIO(json.dumps(data))
+        stdout = io.StringIO()
+        with (
+            patch.object(sys, "stdin", stdin),
+            patch.object(sys, "stdout", stdout),
+            patch("mde.hooks.team_quality_gates.subprocess.run", return_value=fake_result),
+        ):
+            team_quality_gate_hook()
+        output = stdout.getvalue()
+        assert output.strip()
+        parsed = json.loads(output)  # Must be valid JSON
+        assert isinstance(parsed, dict)
+        assert "passed" in parsed
+        assert "team_type" in parsed
+
+    def test_team_quality_gate_unknown_type_output(self) -> None:
+        """Unknown team type should still produce valid JSON."""
+        from mde.hooks.team_quality_gates import team_quality_gate_hook
+
+        data = {"team_type": "unknown-type"}
+        stdin = io.StringIO(json.dumps(data))
+        stdout = io.StringIO()
+        with patch.object(sys, "stdin", stdin), patch.object(sys, "stdout", stdout):
+            team_quality_gate_hook()
+        output = stdout.getvalue()
+        if output.strip():
+            parsed = json.loads(output)  # Must be valid JSON
+            assert isinstance(parsed, dict)
+
+    def test_hooks_dispatch_matches_subparsers(self) -> None:
+        """Every _HOOKS_DISPATCH entry must have a matching subparser."""
+        from mde.cli import _HOOKS_DISPATCH, _build_parser
+
+        parser = _build_parser()
+        # Find the hooks subparser and extract registered action names
+        hooks_choices: set[str] = set()
+        subparsers = parser._subparsers
+        if subparsers is not None:
+            for action in subparsers._group_actions:
+                choices = getattr(action, "choices", None)
+                if choices is None:
+                    continue
+                for choice_key, choice_parser in choices.items():
+                    if choice_key == "hooks":
+                        sub = choice_parser._subparsers
+                        if sub is not None:
+                            for sub_action in sub._group_actions:
+                                sub_choices = getattr(sub_action, "choices", None)
+                                if sub_choices is not None:
+                                    hooks_choices = set(sub_choices.keys())
+        assert hooks_choices, "Could not find hooks subparser"
+        dispatch_keys = set(_HOOKS_DISPATCH.keys())
+        missing = dispatch_keys - hooks_choices
+        assert not missing, f"Dispatch keys without subparsers: {missing}"
+
+
+class TestNoSilentFailures:
+    """Ensure hooks don't silently swallow errors."""
+
+    def test_no_bare_except_pass_in_hooks(self) -> None:
+        """Hooks must not have bare 'except: pass' without logging."""
+        hooks_dir = Path("src/mde/hooks")
+        violations = [
+            f"{py_file.name}:{node.lineno}: bare 'except: pass' without logging"
+            for py_file in sorted(hooks_dir.glob("*.py"))
+            if py_file.name != "__init__.py"
+            for node in ast.walk(ast.parse(py_file.read_text()))
+            if isinstance(node, ast.ExceptHandler)
+            and node.type is None
+            and len(node.body) == 1
+            and isinstance(node.body[0], ast.Pass)
+        ]
+        assert not violations, "Silent failure patterns found:\n" + "\n".join(violations)
+
+    def test_no_except_pass_without_logging(self) -> None:
+        """Even typed except handlers should log, not just pass."""
+        hooks_dir = Path("src/mde/hooks")
+        violations: list[str] = []
+        for py_file in sorted(hooks_dir.glob("*.py")):
+            if py_file.name == "__init__.py":
+                continue
+            source = py_file.read_text()
+            tree = ast.parse(source)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ExceptHandler) and len(node.body) == 1:
+                    stmt = node.body[0]
+                    if isinstance(stmt, ast.Pass):
+                        # Check if there's a comment on the same line
+                        lines = source.splitlines()
+                        line = lines[stmt.lineno - 1] if stmt.lineno <= len(lines) else ""
+                        if "#" not in line:
+                            violations.append(
+                                f"{py_file.name}:{node.lineno}: 'except ... : pass' "
+                                "without logging or comment"
+                            )
+        assert not violations, "Silent failure patterns found:\n" + "\n".join(violations)
