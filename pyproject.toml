@@ -36,7 +36,6 @@ ignore = [
     "D213",     # conflicts with D212 (multi-line-summary-first-line)
     "COM812",   # conflicts with ruff formatter (missing-trailing-comma)
     "ISC001",   # conflicts with ruff formatter (single-line-implicit-string-concatenation)
-    "T201",     # print is intentional CLI output
     "PLC0415",  # lazy imports are deliberate for CLI startup speed
     "S607",     # partial executable paths unavoidable for system tools (mise, brew, etc.)
     "S603",     # subprocess calls with literal args are safe in this context
@@ -93,6 +92,32 @@ ignore = [
     "SLF001",   # accessing private members for test verification is expected
     "ARG002",   # unused fixture args are fine in tests
 ]
+# T201: print() is intentional user-facing CLI output in these modules
+"src/mde/cli.py" = ["T201"]
+"src/mde/quality.py" = ["T201"]
+"src/mde/telemetry_verify.py" = ["T201"]
+"src/mde/validate/__init__.py" = ["T201"]
+"src/mde/codegen/postprocess_skillsmp.py" = ["T201"]
+"src/mde/domain/*.py" = ["T201"]
+"src/mde/fix/*.py" = ["T201"]
+"src/mde/hooks/session_start.py" = ["T201"]
+"src/mde/hooks/post_compact.py" = ["T201"]
+"src/mde/hooks/validate_agents.py" = ["T201"]
+"src/mde/install/*.py" = ["T201"]
+"src/mde/learn/*.py" = ["T201"]
+"src/mde/lib/cache.py" = ["T201"]
+"src/mde/maintain/*.py" = ["T201"]
+"src/mde/research/cli.py" = ["T201"]
+"src/mde/research/skill_discover.py" = ["T201"]
+"src/mde/research/skillsmp.py" = ["T201"]
+"src/mde/research/clients/skill*.py" = ["T201"]
+"src/mde/secrets/*.py" = ["T201"]
+"src/mde/status/*.py" = ["T201"]
+"src/mde/statusline/render.py" = ["T201"]
+"src/mde/statusline/schema.py" = ["T201"]
+"src/mde/statusline/toggle.py" = ["T201"]
+"src/mde/statusline/widget_toggle.py" = ["T201"]
+"src/mde/teams/runner.py" = ["T201"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

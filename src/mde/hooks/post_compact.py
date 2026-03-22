@@ -30,8 +30,8 @@ def _repo_root() -> Path:
         )
         if result.returncode == 0 and result.stdout.strip():
             return Path(result.stdout.strip())
-    except (subprocess.TimeoutExpired, OSError):
-        pass
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        _logger.debug("repo_root_fallback", error=str(exc))
     return Path.cwd()
 
 
