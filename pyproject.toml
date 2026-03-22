@@ -87,8 +87,10 @@ ignore = [
     "S101",     # assert is expected in tests
     "S108",     # temp file paths in test fixtures are fine
     "D102",     # test methods don't need docstrings
+    "FBT003",   # boolean positional args in mock patches are idiomatic
     "INP001",   # test files don't need __init__.py
     "PLR2004",  # magic values in test assertions are readable
+    "SLF001",   # accessing private members for test verification is expected
     "ARG002",   # unused fixture args are fine in tests
 ]
 
