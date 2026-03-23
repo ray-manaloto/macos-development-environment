@@ -301,6 +301,22 @@ run = "uv run mde-py observability down"
 description = "Show LGTM observability stack status"
 run = "uv run mde-py observability status"
 
+[tasks."mde:memory:up"]
+description = "Start Honcho memory stack (API + PostgreSQL + Redis + deriver)"
+run = "uv run mde-py memory up"
+
+[tasks."mde:memory:down"]
+description = "Stop Honcho memory stack"
+run = "uv run mde-py memory down"
+
+[tasks."mde:memory:status"]
+description = "Show Honcho memory stack status"
+run = "uv run mde-py memory status"
+
+[tasks."mde:memory:verify"]
+description = "Health check all Honcho memory services"
+run = "uv run mde-py memory verify"
+
 [tasks."mde:refs:clone-frameworks"]
 description = "Clone agent framework repos for offline research"
 run = "scripts/clone-agent-framework-repos.sh"
