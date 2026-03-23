@@ -1,0 +1,166 @@
+id: honcho-api-only-mode
+timestamp: "2026-03-23T11:15:00Z"
+source:
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/main.py
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/utils/clients.py
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/embedding_client.py
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/config.py
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/routers/messages.py
+agent: researcher
+finding_type: adversarial-verification
+confidence: HIGH
+verdict: REFUTED
+
+finding: |
+  Initial research contradicted itself: claimed API-only mode works without keys BUT also said embedding provider must be configured. Investigation reveals the ACTUAL situation:
+
+  **INITIALIZATION PATH ANALYSIS:**
+  1. API startup → FastAPI lifespan imports routers
+  2. Routers import `from src.deriver import enqueue`
+  3. enqueue.py imports dream_scheduler but NOT LLM clients or embedding
+  4. BUT: The API router modules don't directly instantiate EmbeddingClient
+  5. HOWEVER: src/utils/clients.py is imported (via deriver code), which runs SELECTED_PROVIDERS validation at module load time
+
+  **CRITICAL BLOCKER: SELECTED_PROVIDERS validation (clients.py, lines ~470-480)**
+  ```python
+  SELECTED_PROVIDERS = [
+      ("Summary", settings.SUMMARY.PROVIDER),
+      ("Deriver", settings.DERIVER.PROVIDER),
+  ]
+  # Add all dialectic level providers
+  for level, level_settings in settings.DIALECTIC.LEVELS.items():
+      SELECTED_PROVIDERS.append((f"Dialectic ({level})", level_settings.PROVIDER))
+
+  for provider_name, provider_value in SELECTED_PROVIDERS:
+      if provider_value not in CLIENTS:
+          raise ValueError(f"Missing client for {provider_name}: {provider_value}")
+  ```
+
+  **THE PROBLEM:**
+  - This validation runs at module import time (when src/utils/clients.py is loaded)
+  - It checks if DERIVER.PROVIDER and SUMMARY.PROVIDER clients are initialized
+  - It does NOT check if DERIVER_ENABLED is False
+  - Default config: DERIVER_PROVIDER="google" (Gemini), SUMMARY_PROVIDER="google"
+  - If LLM_GEMINI_API_KEY is not set → ValueError is raised at startup
+  - This happens BEFORE the API can even start listening
+
+  **EMBEDDING CLIENT: NOT ACTUALLY A BLOCKER**
+  - EmbeddingClient uses lazy initialization (double-checked locking singleton pattern)
+  - Client is only created on first `_get_client()` call
+  - Can be created at runtime when first embedding is needed
+  - API can start without embedding keys
+
+  **CONFIRMED CONTRADICTIONS IN INITIAL RESEARCH:**
+  1. "API can run without keys" — PARTIALLY FALSE
+     - Embedding: yes, lazy-loaded
+     - LLM providers: NO, required at startup even if disabled
+
+  2. "Must configure embedding provider" — FALSE
+     - Embedding is lazy-loaded at runtime
+     - But LLM providers ARE required at startup
+
+  **API-ONLY MODE REQUIREMENTS:**
+  To run API without making LLM calls (e.g., DERIVER_ENABLED=false), you MUST still provide:
+  - At least one API key for the configured LLM provider (Gemini by default)
+    OR
+  - Change DERIVER_PROVIDER and SUMMARY_PROVIDER to a provider you have keys for
+    OR
+  - Patch clients.py to skip validation if both DERIVER_ENABLED=false AND SUMMARY_ENABLED=false
+
+  **WORKAROUND: Disable summary + deriver + dream**
+  ```
+  DERIVER_ENABLED=false
+  SUMMARY_ENABLED=false
+  DREAM_ENABLED=false
+  ```
+  BUT this still requires LLM keys because SELECTED_PROVIDERS validation happens at module load, before these settings are checked in route handlers.
+
+  **ROOT CAUSE:**
+  There's a logical bug: validation of SELECTED_PROVIDERS doesn't account for feature flags (ENABLED settings). The code assumes if a provider is configured, its client must exist, but doesn't consider that the provider might be disabled and never used.
+
+confident_about: |
+  - SELECTED_PROVIDERS validation happens at module import time (line ~475 in clients.py)
+  - This validation does NOT check DERIVER_ENABLED, SUMMARY_ENABLED, or DREAM_ENABLED
+  - EmbeddingClient is lazily initialized via _get_client() (singleton pattern with locking)
+  - Messages router imports deriver.enqueue which leads to clients.py import
+  - Deriver queue enqueue is added as background task, not called at startup
+  - No LLM calls are made during API request processing without explicitly calling them (e.g., from a route handler)
+
+gaps: |
+  - No testing data on whether the API actually fails to start without LLM keys
+  - Unclear if there's a conditional import or feature flag that skips SELECTED_PROVIDERS validation
+  - Dream scheduler might also trigger LLM initialization (not fully traced)
+  - Possible that DERIVER_ENABLED=false skips the entire deriver import (would need to check import guard)
+
+evidence: |
+  From src/utils/clients.py (SELECTED_PROVIDERS validation):
+  ```python
+  SELECTED_PROVIDERS = [
+      ("Summary", settings.SUMMARY.PROVIDER),
+      ("Deriver", settings.DERIVER.PROVIDER),
+  ]
+
+  for level, level_settings in settings.DIALECTIC.LEVELS.items():
+      SELECTED_PROVIDERS.append((f"Dialectic ({level})", level_settings.PROVIDER))
+
+  for provider_name, provider_value in SELECTED_PROVIDERS:
+      if provider_value not in CLIENTS:
+          raise ValueError(f"Missing client for {provider_name}: {provider_value}")
+  ```
+
+  From src/embedding_client.py (lazy initialization):
+  ```python
+  class EmbeddingClient:
+      """Singleton wrapper with deferred loading."""
+      _instance: "_EmbeddingClient | None" = None
+      _lock: threading.Lock = threading.Lock()
+
+      def _get_client(self) -> _EmbeddingClient:
+          """Get or create the underlying embedding client instance."""
+          if self._instance is None:
+              with self._lock:
+                  if self._instance is None:
+                      provider = settings.LLM.EMBEDDING_PROVIDER
+                      # ... lazy init happens here ...
+  ```
+
+  Module instantiation at end of embedding_client.py:
+  ```python
+  embedding_client = EmbeddingClient()
+  ```
+  (Note: This creates the WRAPPER, not the actual client)
+
+  From src/routers/messages.py (deriver import):
+  ```python
+  from src.deriver import enqueue
+  ```
+
+implication: |
+  **For users wanting API-only mode (storage without LLM reasoning):**
+
+  1. **Current behavior: FAILS at startup**
+     - Even with DERIVER_ENABLED=false, the API cannot start without LLM keys
+     - SELECTED_PROVIDERS validation is unconditional
+
+  2. **Workaround: Provide dummy LLM keys**
+     ```
+     LLM_GEMINI_API_KEY=dummy-key
+     DERIVER_ENABLED=false
+     SUMMARY_ENABLED=false
+     DREAM_ENABLED=false
+     ```
+     - This lets the API start (validates pass because key exists)
+     - Actual API requests to messages/peers/sessions work fine (no LLM calls in request path)
+     - Background deriver processing is disabled, so dummy key is never used
+
+  3. **Proper fix: Conditional validation**
+     - Only validate SELECTED_PROVIDERS for providers that are actually enabled
+     - Requires code change in clients.py
+
+  **For Honcho developers:**
+  - This is a design inconsistency: embedding is properly lazy-loaded, but LLM providers are eagerly validated
+  - Consider deferring SELECTED_PROVIDERS validation to first-use, similar to EmbeddingClient pattern
+  - Or make SELECTED_PROVIDERS conditional on feature flags (ENABLED settings)
+
+tags: [honcho, api-only, startup-validation, llm-keys-required, lazy-loading, contradiction]
+status: discovered

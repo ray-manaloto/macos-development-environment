@@ -84,6 +84,9 @@
 | [x] | Honcho v3.0.3 clients.py | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/utils/clients.py | CRITICAL — Thinking budget tokens sent to custom provider (unsupported by Ollama); structured output incompatible | honcho-ollama-viability |
 | [x] | Honcho v3.0.3 types.py | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/utils/types.py | CONFIRMED — "custom" provider in SupportedProviders literal; routed to AsyncOpenAI client | honcho-ollama-viability |
 | [x] | Honcho v3.0.3 embedding_client.py | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/embedding_client.py | LIMITATION — Embedding providers hardcoded by name (openai/gemini/openrouter); no custom URL support | honcho-ollama-viability |
+| [x] | Honcho v3.0.3 SELECTED_PROVIDERS validation | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/utils/clients.py | CRITICAL — LLM provider validation happens at module load; doesn't check ENABLED flags; blocks API startup without keys | honcho-api-only-mode |
+| [x] | Honcho v3.0.3 EmbeddingClient lazy loading | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/embedding_client.py | CONFIRMED — Singleton with double-checked locking; client created on first use, not at module load; no startup blocker | honcho-api-only-mode |
+| [x] | Honcho v3.0.3 messages router | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/routers/messages.py | CONFIRMED — Router imports deriver.enqueue (which chains to clients.py import and validation) | honcho-api-only-mode |
 
 ---
 
