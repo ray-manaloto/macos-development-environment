@@ -28,11 +28,17 @@ def get_config() -> HonchoClientConfig:
     except ValueError:
         msg = f"HONCHO_TIMEOUT must be a number, got: {raw_timeout!r}"
         raise ValueError(msg) from None
+    if timeout <= 0:
+        msg = f"HONCHO_TIMEOUT must be positive, got: {timeout}"
+        raise ValueError(msg)
     try:
         max_retries = int(raw_retries)
     except ValueError:
         msg = f"HONCHO_MAX_RETRIES must be an integer, got: {raw_retries!r}"
         raise ValueError(msg) from None
+    if max_retries < 0:
+        msg = f"HONCHO_MAX_RETRIES must be non-negative, got: {max_retries}"
+        raise ValueError(msg)
     return HonchoClientConfig(
         base_url=os.environ.get("HONCHO_BASE_URL", "http://localhost:8000"),
         workspace_id=os.environ.get("HONCHO_WORKSPACE_ID", "mde"),
@@ -57,7 +63,7 @@ def get_client(config: HonchoClientConfig | None = None) -> Honcho:
     )
 
 
-def test_connection(config: HonchoClientConfig | None = None) -> tuple[bool, str]:  # noqa: PLR0911, PT028
+def test_connection(config: HonchoClientConfig | None = None) -> tuple[bool, str]:  # noqa: C901, PLR0911, PT028
     """Test connectivity to the Honcho API.
 
     Returns (success, message) tuple. Uses the SDK's workspaces() list
@@ -67,6 +73,7 @@ def test_connection(config: HonchoClientConfig | None = None) -> tuple[bool, str
         from honcho import (
             AuthenticationError,
             NotFoundError,
+            PermissionDeniedError,
             RateLimitError,
             ServerError,
         )
@@ -90,6 +97,8 @@ def test_connection(config: HonchoClientConfig | None = None) -> tuple[bool, str
         return False, f"Timeout after {(config or get_config()).timeout}s"
     except AuthenticationError:
         return False, "Auth required but no API key configured"
+    except PermissionDeniedError:
+        return False, "Permission denied — API key lacks required scope"
     except NotFoundError:
         return False, "Server does not support API v3"
     except RateLimitError:

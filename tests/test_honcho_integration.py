@@ -59,6 +59,37 @@ class TestGetConfig:
         ):
             get_config()
 
+    def test_partial_env_vars(self) -> None:
+        """Test that setting some env vars doesn't affect defaults for others."""
+        from mde.domain.honcho import get_config
+
+        env = {"HONCHO_BASE_URL": "http://custom:9000"}
+        with patch.dict("os.environ", env, clear=True):
+            config = get_config()
+        assert config.base_url == "http://custom:9000"
+        assert config.workspace_id == "mde"  # default preserved
+        assert config.api_key is None  # default preserved
+        assert config.timeout == 10  # default preserved
+        assert config.max_retries == 0  # default preserved
+
+    def test_negative_timeout_raises_valueerror(self) -> None:
+        from mde.domain.honcho import get_config
+
+        with (
+            patch.dict("os.environ", {"HONCHO_TIMEOUT": "-5"}, clear=True),
+            pytest.raises(ValueError, match="HONCHO_TIMEOUT must be positive"),
+        ):
+            get_config()
+
+    def test_negative_max_retries_raises_valueerror(self) -> None:
+        from mde.domain.honcho import get_config
+
+        with (
+            patch.dict("os.environ", {"HONCHO_MAX_RETRIES": "-1"}, clear=True),
+            pytest.raises(ValueError, match="HONCHO_MAX_RETRIES must be non-negative"),
+        ):
+            get_config()
+
 
 class TestGetClient:
     """Tests for get_client() SDK construction."""
@@ -177,6 +208,17 @@ class TestTestConnection:
             ok, msg = test_connection()
         assert ok is False
         assert "Rate limited" in msg
+
+    def test_permission_denied_error(self) -> None:
+        from honcho import PermissionDeniedError
+
+        with patch("honcho.Honcho") as mock_cls:
+            mock_cls.return_value.workspaces.side_effect = PermissionDeniedError()
+            from mde.domain.honcho import test_connection
+
+            ok, msg = test_connection()
+        assert ok is False
+        assert "Permission denied" in msg
 
     def test_unexpected_error(self) -> None:
         with patch("honcho.Honcho") as mock_cls:
