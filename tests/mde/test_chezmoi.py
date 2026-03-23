@@ -8,6 +8,7 @@ import subprocess
 import pytest
 
 
+@pytest.mark.integration
 def test_chezmoi_verify() -> None:
     """Verify chezmoi reports zero errors."""
     if not shutil.which("chezmoi"):
@@ -21,6 +22,7 @@ def test_chezmoi_verify() -> None:
     assert result.returncode == 0, f"chezmoi verify failed:\n{result.stderr}"
 
 
+@pytest.mark.integration
 def test_chezmoi_managed_aliases() -> None:
     """The aliases zsh file must be managed by chezmoi."""
     if not shutil.which("chezmoi"):

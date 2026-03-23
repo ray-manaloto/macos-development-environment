@@ -1,0 +1,48 @@
+id: finding-monitoring-validation-2026-03-22
+timestamp: "2026-03-22T23:55:00Z"
+source: https://code.claude.com/docs/en/monitoring-usage
+agent: researcher
+finding_type: correction
+confidence: confirmed
+confident_about: >
+  OTEL_SERVICE_NAME is not a documented Claude Code monitoring variable and should be replaced
+  with OTEL_RESOURCE_ATTRIBUTES=service.name=mde-claude-code. Claude Code does NOT export
+  traces (OTEL_TRACES_EXPORTER is irrelevant). All 22 official env vars verified against
+  settings.json. The three planned changes (remove OTEL_SERVICE_NAME, add OTEL_LOG_TOOL_DETAILS,
+  remove OTEL_METRIC_EXPORT_INTERVAL) are all validated as correct per official docs.
+  Reference doc claude-code-monitoring-reference.md is accurate with one minor heading issue.
+gaps: >
+  It is unclear whether Claude Code actually reads OTEL_RESOURCE_ATTRIBUTES to override its
+  hardcoded service.name=claude-code resource attribute, or whether the OTEL SDK only
+  merges non-conflicting keys. Testing with the local collector after settings change
+  would confirm the effective service.name in exported data.
+evidence: >
+  Official docs text nodes extracted from code.claude.com/docs/en/monitoring-usage (JSX
+  React Server Components page). Key evidence: (1) service.name=claude-code listed under
+  'Service information' as hardcoded resource attribute. (2) OTEL_SERVICE_NAME absent
+  from all documented variable tables. (3) OTEL_RESOURCE_ATTRIBUTES documented under
+  'Multi-team organization support' with examples. (4) Docs quote: 'The default export
+  intervals are 60 seconds for metrics and 5 seconds for logs. During setup, you may want
+  to use shorter intervals for debugging purposes. Remember to reset these for production
+  use.' (5) OTEL_LOG_TOOL_DETAILS description confirmed: 'Enable logging of MCP
+  server/tool names and skill names in tool events (default: disabled)'. (6) No mention
+  of OTEL_TRACES_EXPORTER anywhere in docs — only metrics and logs/events are supported.
+implication: >
+  Remove OTEL_SERVICE_NAME from settings.json env block and replace with
+  OTEL_RESOURCE_ATTRIBUTES=service.name=mde-claude-code. Add OTEL_LOG_TOOL_DETAILS=1.
+  Remove OTEL_METRIC_EXPORT_INTERVAL to restore 60s production default (or set to 30000
+  as a compromise for active development). Also remove redundant OTEL_LOGS_EXPORT_INTERVAL=5000
+  (matches default). Update reference doc heading from 'Events / Traces' to
+  'Events (via OTel Logs API)' since traces are not exported.
+tags:
+  - claude-code
+  - opentelemetry
+  - monitoring
+  - settings-validation
+  - otel-service-name
+  - otel-resource-attributes
+  - otel-log-tool-details
+  - privacy
+  - metrics-schema
+  - events-schema
+status: discovered

@@ -153,6 +153,9 @@ exclude = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+markers = [
+    "integration: tests requiring external tools (mise, chezmoi, docker, gh)",
+]
 
 [dependency-groups]
 dev = [

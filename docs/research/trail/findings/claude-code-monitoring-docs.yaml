@@ -1,0 +1,54 @@
+id: claude-code-monitoring-docs
+timestamp: "2026-03-22T23:45:00Z"
+source: https://code.claude.com/docs/en/monitoring-usage
+agent: researcher
+finding_type: reference
+confidence: confirmed
+confident_about: |
+  Complete official documentation of Claude Code OpenTelemetry monitoring configuration.
+  All environment variables, metrics, events, attributes, and security considerations
+  extracted from the authoritative source. Verified completeness of all sections.
+gaps: |
+  - Specific version constraints for OTEL_METRIC_EXPORT_INTERVAL and OTEL_LOGS_EXPORT_INTERVAL
+    (documentation shows examples but no explicit minimum/maximum)
+  - Detailed examples of backend-specific filtering/redaction implementations
+  - Metrics cardinality impact examples with actual time series growth numbers
+  - Performance impact of enabling OTEL_LOG_USER_PROMPTS vs default disabled state
+evidence: |
+  Source: https://code.claude.com/docs/en/monitoring-usage (fetched 2026-03-22)
+
+  Key sections extracted:
+  - Quick start: 6 core configuration steps
+  - Configuration details: 23 environment variables documented
+  - Common configuration variables: Complete table with descriptions, defaults, valid values
+  - Metrics cardinality control: 3 variables for controlling attribute inclusion
+  - Dynamic headers: Script-based token refresh mechanism
+  - Available metrics and events: 8 metrics + 5 event types fully documented
+  - Event attributes: Complete schema for each event type (user_prompt, tool_result, api_request, api_error, tool_decision)
+  - Security and privacy: 6 distinct privacy considerations with mitigation strategies
+  - Backend considerations: Recommendations for metrics vs logs backends
+  - Resource attributes: Complete service/OS/hardware metadata included in all exports
+implication: |
+  Organizations implementing Claude Code monitoring now have a complete reference for:
+  1. Configuring telemetry exporters (OTLP, Prometheus, console)
+  2. Understanding all available metrics and their attributes for cost/usage analysis
+  3. Implementing event-based analysis and audit trails via prompt.id correlation
+  4. Controlling data sensitivity (redacting prompts, tool details, user emails)
+  5. Reducing metric cardinality for cost optimization in backends
+  6. Setting up dynamic authentication for enterprise OTLP collectors
+
+  Primary use case: This reference enables secure, compliant monitoring setup for
+  teams using Claude Code, with explicit privacy controls and backend flexibility.
+tags:
+  - claude-code-monitoring
+  - opentelemetry
+  - otel-configuration
+  - telemetry-reference
+  - metrics-schema
+  - events-logging
+  - security-privacy
+  - environment-variables
+  - cost-tracking
+  - usage-analytics
+status: discovered
+schema_version: "1.0"

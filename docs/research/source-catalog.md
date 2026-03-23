@@ -853,3 +853,9 @@ GitHub code search reveals 45+ personal dotfiles repos encoding framework expert
 | [x] | Invariant Gateway | https://github.com/invariantlabs-ai/invariant-gateway | 68 | STRONG — LLM proxy for drop-in observability | No |
 
 ---
+
+## Official Documentation — Claude Code Monitoring
+
+| Status | Document | URL | Verdict | In NB | Last Reviewed |
+|--------|----------|-----|---------|-------|---------------|
+| [x] | Claude Code Monitoring & OpenTelemetry | https://code.claude.com/docs/en/monitoring-usage | CRITICAL REFERENCE — Complete OTel configuration schema, 8 metrics, 5 event types, 23+ environment variables, security/privacy controls | No | 2026-03-22 |

@@ -7,6 +7,7 @@ import subprocess
 import pytest
 
 
+@pytest.mark.integration
 def test_mise_doctor_no_warnings() -> None:
     """Mise doctor must report zero warnings."""
     result = subprocess.run(
