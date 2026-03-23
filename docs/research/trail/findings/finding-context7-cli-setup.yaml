@@ -1,0 +1,89 @@
+id: finding-context7-cli-setup
+timestamp: "2026-03-23T07:35:00Z"
+source: https://github.com/upstash/context7
+agent: researcher
+finding_type: tool
+confidence: confirmed
+confident_about: |
+  Context7 is a production-ready platform for fetching up-to-date library documentation
+  into LLM context. The CLI (`ctx7`) is the primary interface for:
+  1. Resolving library names to Context7 IDs
+  2. Fetching version-specific documentation
+  3. Managing AI coding skills
+  4. Configuring Context7 MCP for Claude Code, Cursor, and OpenCode
+
+gaps: |
+  - Exact implementation details of the `npx ctx7 setup` interactive flow
+  - Performance/latency characteristics of doc fetching
+  - Rate limiting behavior with/without API key
+  - Skill file format specifications
+  - MCP server protocol details (beyond available tools)
+  - Library indexing algorithm and matching quality metrics
+
+evidence: |
+  GitHub repo: 50,215 stars, 2,375 forks, MIT licensed, actively maintained
+  (last push 2026-03-22, updated 2026-03-23)
+
+  SKILL.md documents three primary functions:
+  - Documentation retrieval: `ctx7 library <name> <query>` then `ctx7 docs <id> <query>`
+  - Skills management: install/search/suggest/list/remove/generate skills from GitHub repos
+  - MCP setup: `ctx7 setup` configures the MCP server interactively
+
+  README confirms:
+  - Works in two modes: CLI+Skills or MCP
+  - `npx ctx7 setup` is the recommended installation path
+  - Requires OAuth login for skill generation; docs work without login
+  - Optional free API key available at context7.com/dashboard for higher rate limits
+  - Resolves outdated training data problem by pulling current docs from live sources
+
+implication: |
+  For the macos-development-environment project:
+
+  1. ctx7 CLI should be added to mise config (not npm global install)
+     - Use registry backend for `ctx7` or similar available option
+     - Test that `uv run ctx7 setup` works in the MDE workflow
+
+  2. After setup, a Context7 skill or MCP integration enables automated
+     documentation fetching during code generation tasks
+
+  3. The "library ID" concept (/owner/repo format) is critical for prompt
+     engineering—document this in CLAUDE.md rules
+
+  4. Setup flow is interactive (OAuth), so automation may need --api-key flag
+     to skip browser authentication in CI/CD contexts
+
+  5. Skills can be custom-generated (requires login) or installed from repos
+     - Evaluate if mde-py should integrate ctx7 for self-documenting CLI
+
+  6. MCP mode integrates directly with Claude Code, Cursor, OpenCode without
+     explicit CLI calls—consider both CLI and MCP approaches for flexibility
+
+tags:
+  - ai-tooling
+  - documentation-automation
+  - mcp-server
+  - claude-integration
+  - context-window-optimization
+  - cli-tool
+  - library-indexing
+  - version-matching
+  - api-documentation
+  - skill-management
+
+status: installed
+
+setup_completed:
+  mise_config: '"npm:ctx7" = "latest" in chezmoi template (.chezmoisource/dot_config/mise/config.toml.tmpl)'
+  mise_backend: "npm with bun package_manager (global [settings.npm])"
+  npx_cache_cleaned: true
+  oauth_login: "completed via npx ctx7 setup --claude --yes (2026-03-23)"
+  skills_installed:
+    - context7-cli: "CLI reference for docs, skills management, setup (includes references/*.md)"
+    - find-docs: "Rich docs-lookup with version pinning, quota handling, query tips"
+  pre_existing:
+    mcp_server: "mde-mcp-context7 wrapper → @upstash/context7-mcp"
+    plugin: "context7-plugin from context7-marketplace (bundles context7-mcp skill, /docs command, docs-researcher agent)"
+    global_rule: "~/.claude/rules/context7.md (alwaysApply: true)"
+  plugin_analysis:
+    bundled: ["context7-mcp skill", "/context7:docs command", "docs-researcher agent"]
+    not_bundled: ["context7-cli skill", "find-docs skill"]

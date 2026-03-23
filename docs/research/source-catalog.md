@@ -859,3 +859,11 @@ GitHub code search reveals 45+ personal dotfiles repos encoding framework expert
 | Status | Document | URL | Verdict | In NB | Last Reviewed |
 |--------|----------|-----|---------|-------|---------------|
 | [x] | Claude Code Monitoring & OpenTelemetry | https://code.claude.com/docs/en/monitoring-usage | CRITICAL REFERENCE — Complete OTel configuration schema, 8 metrics, 5 event types, 23+ environment variables, security/privacy controls | No | 2026-03-22 |
+
+## GitHub Repos — Context7 & Documentation Tooling
+
+| Status | Repo | URL | Verdict | In NB |
+|--------|------|-----|---------|-------|
+| [x] | Upstash: context7 | https://github.com/upstash/context7 | STRONG — Production MCP server for live library docs, CLI with skill mgmt, 50k+ stars, MIT, actively maintained. Resolves outdated training data problem. Installable via `npx ctx7` or MCP. | No |
+| [x] | Upstash: context7-cli SKILL.md | https://github.com/upstash/context7/blob/master/skills/context7-cli/SKILL.md | STRONG — Documents full CLI API: library resolution, docs fetching, skill management, MCP setup. Authentication options (OAuth, API key, env var). | No |
+
