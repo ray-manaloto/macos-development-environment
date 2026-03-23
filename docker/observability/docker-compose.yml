@@ -44,7 +44,9 @@ services:
     volumes:
       - ./tempo-config.yaml:/etc/tempo/config.yaml:ro
       - tempo-data:/var/tempo
-    # No host ports — internal Docker network only (HIGH-S4)
+    ports:
+      # Published for integration tests and telemetry verify
+      - "127.0.0.1:3200:3200"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/ready"]
       interval: 5s
@@ -66,7 +68,9 @@ services:
     volumes:
       - ./loki-config.yaml:/etc/loki/config.yaml:ro
       - loki-data:/loki
-    # No host ports — internal Docker network only (HIGH-S4)
+    ports:
+      # Published for integration tests and telemetry verify
+      - "127.0.0.1:3100:3100"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
       interval: 5s
@@ -92,7 +96,7 @@ services:
       - "127.0.0.1:3000:3000"
     environment:
       # Password sourced from fnox via environment variable, never hardcoded
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD must be set — see fnox.toml}
       - GF_AUTH_ANONYMOUS_ENABLED=false
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]

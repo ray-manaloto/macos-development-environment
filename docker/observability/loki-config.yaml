@@ -4,6 +4,8 @@
 # via the Loki push API, stores them locally with 72h retention
 # (3 days — matches Tempo retention for consistency).
 
+# auth_enabled: false — acceptable for local single-user dev stack.
+# MUST enable auth if this stack is ever exposed beyond localhost.
 auth_enabled: false
 
 server:

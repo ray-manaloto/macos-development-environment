@@ -451,7 +451,9 @@ def _cmd_statusline(args: argparse.Namespace) -> int:
 
 
 def _cmd_observability(args: argparse.Namespace) -> int:
-    with _traced_command("observability") as ctx:
+    action = getattr(args, "observability_action", None)
+    with _traced_command("observability", action=action) as ctx:
+        ctx["span"].set_attribute("observability.action", str(action))
         from mde.domain.observability_stack import dispatch as obs_dispatch
 
         result = obs_dispatch(args)
