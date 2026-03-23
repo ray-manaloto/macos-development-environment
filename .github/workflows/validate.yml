@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv sync --frozen --dev
       - run: uv run ruff check src/mde/ tests/mde/
       - run: uv run ruff format --check src/mde/ tests/mde/
