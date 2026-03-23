@@ -138,6 +138,11 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     # statusline
     _add_statusline_subparsers(sub)
 
+    # observability
+    from mde.domain.observability_stack import add_subparsers as _add_obs_subparsers
+
+    _add_obs_subparsers(sub)
+
     return parser
 
 
@@ -445,6 +450,15 @@ def _cmd_statusline(args: argparse.Namespace) -> int:
         return result
 
 
+def _cmd_observability(args: argparse.Namespace) -> int:
+    with _traced_command("observability") as ctx:
+        from mde.domain.observability_stack import dispatch as obs_dispatch
+
+        result = obs_dispatch(args)
+        ctx["result"] = result
+        return result
+
+
 _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "validate": _cmd_validate,
     "update": _cmd_update,
@@ -465,4 +479,5 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "hooks": _cmd_hooks,
     "research": _cmd_research,
     "statusline": _cmd_statusline,
+    "observability": _cmd_observability,
 }
