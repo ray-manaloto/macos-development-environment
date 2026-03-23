@@ -1,31 +1,28 @@
-# LGTM Docker Compose stack for local observability.
-# Receives OTEL telemetry from Claude Code and mde Python, stores traces
-# in Tempo, logs in Loki, and visualizes both in Grafana.
+# LGTM observability stack for the mde development environment.
 #
-# Security: all ports bound to 127.0.0.1, containers hardened with
-# read-only filesystem, dropped capabilities, and no-new-privileges.
-# All images pinned by sha256 digest (HIGH-S2).
+# Components: OTEL Collector (receive + redact + fan-out), Tempo (traces),
+# Loki (logs), Grafana (visualization with auto-provisioned datasources).
+#
+# Security: all images pinned by digest, containers hardened with read-only
+# filesystem, dropped capabilities, and no-new-privileges. Only Collector
+# receiver ports and Grafana are published to localhost.
+
 name: mde-observability
 
 services:
-  # OTEL Collector: receive OTLP → redact secrets → fan-out to Tempo + Loki.
-  # Only container (besides Grafana) with host-published ports.
   collector:
     image: otel/opentelemetry-collector-contrib:0.107.0@sha256:b65527791431d76d058b2813748a3f4a8912540d7b23beac2f6b4e02c872f5b7
     volumes:
       - ./collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
     ports:
-      # gRPC + HTTP receivers bound to localhost only (HIGH-S1)
-      - "127.0.0.1:4317:4317"
-      - "127.0.0.1:4318:4318"
-      # Health check endpoint — used by mde telemetry verify command
-      - "127.0.0.1:13133:13133"
+      # Only Collector receiver ports are published — bound to localhost only
+      - "127.0.0.1:4317:4317"   # gRPC receiver
+      - "127.0.0.1:4318:4318"   # HTTP receiver
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/health"]
       interval: 5s
       timeout: 2s
       retries: 3
-    # Container hardening (HIGH-S3)
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -33,7 +30,6 @@ services:
       - ALL
     tmpfs:
       - /tmp
-    # Resource limits — 256m is sufficient for dev-volume Collector workloads
     mem_limit: 256m
     cpus: 0.5
     depends_on:
@@ -42,20 +38,18 @@ services:
       loki:
         condition: service_healthy
 
-  # Tempo: distributed tracing backend. Internal-only — no host ports (HIGH-S4).
-  # Receives traces from Collector via OTLP/HTTP on Docker network.
   tempo:
-    image: grafana/tempo:2.5.0@sha256:f0200a9bff6d14eb3a4332194f7b77c37ee1a3535e7e41db024d95aab6f1b4e8
+    image: grafana/tempo:2.6.1@sha256:ef4384fce6e8ad22b95b243d8fc165628cda655376fd50e7850536ad89d71d50
     command: ["-config.file=/etc/tempo/config.yaml"]
     volumes:
       - ./tempo-config.yaml:/etc/tempo/config.yaml:ro
       - tempo-data:/var/tempo
+    # No host ports — internal Docker network only (HIGH-S4)
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/ready"]
       interval: 5s
       timeout: 2s
       retries: 3
-    # Container hardening (HIGH-S3)
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -63,24 +57,21 @@ services:
       - ALL
     tmpfs:
       - /tmp
-    # Resource limits — 512m for trace ingestion and compaction
     mem_limit: 512m
     cpus: 0.5
 
-  # Loki: log aggregation backend. Internal-only — no host ports (HIGH-S4).
-  # Receives logs from Collector via native Loki exporter on Docker network.
   loki:
-    image: grafana/loki:2.9.8@sha256:8b5bd7748d0e4da66cd741ac276e485517514af0bea32167e27c0e1a95bcf8aa
-    command: ["-config.file=/etc/loki/local-config.yaml"]
+    image: grafana/loki:2.9.10@sha256:35b02acc67654ddc38273e519b4f26f3967a907b9db5489af300c21f37ee1ae7
+    command: ["-config.file=/etc/loki/config.yaml"]
     volumes:
-      - ./loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - ./loki-config.yaml:/etc/loki/config.yaml:ro
       - loki-data:/loki
+    # No host ports — internal Docker network only (HIGH-S4)
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
       interval: 5s
       timeout: 2s
       retries: 3
-    # Container hardening (HIGH-S3)
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -88,31 +79,26 @@ services:
       - ALL
     tmpfs:
       - /tmp
-    # Resource limits — 512m for log ingestion and TSDB indexing
     mem_limit: 512m
     cpus: 0.5
 
-  # Grafana: visualization dashboard. Auto-provisions Tempo + Loki datasources.
-  # Only visualization container with host-published port.
   grafana:
-    image: grafana/grafana:11.1.0@sha256:079600c9517b678c10cda6006b4487d3174512fd4c6cface37df7822756ed7a5
+    image: grafana/grafana:11.4.0@sha256:d8ea37798ccc41061a62ab080f2676dda6bf7815558499f901bdb0f533a456fb
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     ports:
-      # Grafana UI bound to localhost only (HIGH-S1)
+      # Grafana UI — bound to localhost only
       - "127.0.0.1:3000:3000"
     environment:
-      # Admin password sourced from fnox via env var — never hardcoded (CRIT-S2)
+      # Password sourced from fnox via environment variable, never hardcoded
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-}
-      # Disable anonymous access for security
       - GF_AUTH_ANONYMOUS_ENABLED=false
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
       interval: 5s
       timeout: 2s
       retries: 3
-    # Container hardening (HIGH-S3)
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -120,7 +106,6 @@ services:
       - ALL
     tmpfs:
       - /tmp
-    # Resource limits — 256m is sufficient for local Grafana with provisioned datasources
     mem_limit: 256m
     cpus: 0.25
     depends_on:
@@ -129,7 +114,6 @@ services:
       loki:
         condition: service_healthy
 
-# Named volumes for persistent storage across stack restarts
 volumes:
   tempo-data:
   loki-data:

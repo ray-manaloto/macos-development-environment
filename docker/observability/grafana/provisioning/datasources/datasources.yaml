@@ -1,9 +1,8 @@
-# Grafana datasource auto-provisioning for local LGTM dev stack.
-# Datasources use Docker service names — no host networking needed.
+# Auto-provisioned datasources for the mde LGTM observability stack.
+# Grafana reads this on startup — no manual datasource configuration needed.
 apiVersion: 1
 
 datasources:
-  # Tempo — trace storage, default datasource for Explore view
   - name: Tempo
     type: tempo
     access: proxy
@@ -11,7 +10,6 @@ datasources:
     isDefault: true
     editable: false
 
-  # Loki — log storage, queryable via LogQL in Explore view
   - name: Loki
     type: loki
     access: proxy
