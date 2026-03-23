@@ -1,0 +1,96 @@
+# OTEL Collector configuration for the mde LGTM observability stack.
+#
+# Pipeline: receive OTLP (gRPC + HTTP) -> redact secrets via transform
+# processor -> batch for efficiency -> fan-out to Tempo (traces) and
+# Loki (logs). A debug exporter is included for local troubleshooting.
+
+receivers:
+  otlp:
+    protocols:
+      # gRPC receiver — used by OTEL SDKs (e.g. Claude Code)
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      # HTTP receiver — used by loguru OTEL sink and browser clients
+      http:
+        endpoint: "0.0.0.0:4318"
+
+processors:
+  # Secret redaction — defense-in-depth before data reaches storage.
+  # Runs BEFORE batch so secrets never accumulate in batch buffers.
+  transform:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          # Delete attributes whose names match secret-like patterns.
+          # These attribute names commonly carry credentials in OTEL spans.
+          - delete_key(attributes, "api_key")
+          - delete_key(attributes, "token")
+          - delete_key(attributes, "secret")
+          - delete_key(attributes, "password")
+          - delete_key(attributes, "credential")
+          # process.command_args may contain inline secrets passed as CLI flags
+          - delete_key(attributes, "process.command_args")
+          # Redact known API key prefix patterns in ALL attribute values.
+          # Catches secrets that leak into arbitrary attribute values
+          # (e.g. error messages, tool inputs).
+          - replace_all_matches(attributes, "sk-ant-.*", "[REDACTED]")
+          - replace_all_matches(attributes, "ghp_.*", "[REDACTED]")
+          - replace_all_matches(attributes, "gho_.*", "[REDACTED]")
+          - replace_all_matches(attributes, "sk-.*", "[REDACTED]")
+    log_statements:
+      - context: log
+        statements:
+          # Delete attributes whose names match secret-like patterns
+          - delete_key(attributes, "api_key")
+          - delete_key(attributes, "token")
+          - delete_key(attributes, "secret")
+          - delete_key(attributes, "password")
+          - delete_key(attributes, "credential")
+          - delete_key(attributes, "process.command_args")
+          # Same value-pattern redaction for log attributes
+          - replace_all_matches(attributes, "sk-ant-.*", "[REDACTED]")
+          - replace_all_matches(attributes, "ghp_.*", "[REDACTED]")
+          - replace_all_matches(attributes, "gho_.*", "[REDACTED]")
+          - replace_all_matches(attributes, "sk-.*", "[REDACTED]")
+          # Redact patterns in log body text
+          - replace_pattern(body, "sk-ant-[A-Za-z0-9_-]+", "[REDACTED]")
+          - replace_pattern(body, "ghp_[A-Za-z0-9]+", "[REDACTED]")
+          - replace_pattern(body, "gho_[A-Za-z0-9]+", "[REDACTED]")
+          - replace_pattern(body, "sk-[A-Za-z0-9_-]+", "[REDACTED]")
+
+  # Dev-tuned batch settings. Default OTEL values (8192 records, 200ms)
+  # are for production throughput. Local dev has low volume — smaller
+  # batches reduce memory footprint and query latency.
+  batch:
+    send_batch_size: 64
+    timeout: 2s
+    send_batch_max_size: 128
+
+exporters:
+  # Tempo receives traces via OTLP/HTTP on the Docker internal network
+  otlphttp/tempo:
+    endpoint: "http://tempo:4318"
+  # Loki receives logs via its push API on the Docker internal network
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+  # Debug exporter for local troubleshooting — prints to collector stdout
+  debug:
+    verbosity: basic
+
+extensions:
+  # Health check endpoint for Docker healthcheck and telemetry verify
+  health_check:
+    endpoint: "0.0.0.0:13133"
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [transform, batch]
+      exporters: [otlphttp/tempo, debug]
+    logs:
+      receivers: [otlp]
+      processors: [transform, batch]
+      exporters: [loki, debug]

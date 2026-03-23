@@ -1,0 +1,43 @@
+# Loki configuration for the mde LGTM observability stack.
+#
+# Minimal single-instance config: receives logs from the Collector
+# via the Loki push API, stores them locally with 72h retention
+# (3 days — matches Tempo retention for consistency).
+
+# auth_enabled: false — acceptable for local single-user dev stack.
+# MUST enable auth if this stack is ever exposed beyond localhost.
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: "2024-01-01"
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  retention_period: 72h
+
+compactor:
+  working_directory: /loki/compactor
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150

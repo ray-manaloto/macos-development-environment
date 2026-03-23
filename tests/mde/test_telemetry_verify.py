@@ -3,15 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 from unittest.mock import patch
-
-if TYPE_CHECKING:
-    import pytest
 
 from mde.telemetry_verify import (
     _NON_TELEMETRY_VARS,
     _OFFICIAL_VARS,
+    _check_collector_pipelines,
     _check_env_vars,
     _check_hooks_dispatch,
     _check_plugins,
@@ -136,7 +133,7 @@ class TestVerifyTelemetry:
         assert isinstance(result, int)
         assert result in (0, 1)
 
-    def test_all_pass_with_correct_settings(self, tmp_path: pytest.TempPathFactory) -> None:
+    def test_all_pass_with_correct_settings(self) -> None:
         """Returns 0 when all settings are correct."""
         settings = {
             "enabledPlugins": {"hookify@claude-plugins-official": False},
@@ -155,7 +152,7 @@ class TestVerifyTelemetry:
             result = verify_telemetry()
         assert result == 0
 
-    def test_fails_with_missing_env(self, tmp_path: pytest.TempPathFactory) -> None:
+    def test_fails_with_missing_env(self) -> None:
         """Returns 1 when required env vars are missing."""
         settings: dict[str, object] = {
             "enabledPlugins": {"hookify@claude-plugins-official": False},
@@ -237,3 +234,64 @@ class TestCheckSettingsAgainstDocs:
         # No WARNING results — all our vars are either official or non-telemetry
         warnings = [(n, s, d) for n, s, d in results if s == "WARNING"]
         assert not warnings, f"Undocumented vars in settings.json: {warnings}"
+
+
+class TestCheckCollectorPipelines:
+    """Tests for _check_collector_pipelines."""
+
+    def test_passes_with_non_debug_exporters(self, tmp_path: Path) -> None:
+        """Pipelines with non-debug exporters return OK."""
+        config = tmp_path / "collector-config.yaml"
+        config.write_text(
+            """\
+service:
+  pipelines:
+    traces:
+      exporters: [otlp, debug]
+    metrics:
+      exporters: [otlp]
+    logs:
+      exporters: [otlphttp]
+"""
+        )
+        results = _check_collector_pipelines(config)
+        assert all(status == "OK" for _, status, _ in results)
+
+    def test_warns_debug_only_exporters(self, tmp_path: Path) -> None:
+        """Pipelines with only debug exporters return WARNING."""
+        config = tmp_path / "collector-config.yaml"
+        config.write_text(
+            """\
+service:
+  pipelines:
+    traces:
+      exporters: [debug]
+    metrics:
+      exporters: [otlp]
+"""
+        )
+        results = _check_collector_pipelines(config)
+        warnings = [(n, s, d) for n, s, d in results if s == "WARNING"]
+        assert len(warnings) == 1
+        assert "traces" in warnings[0][0]
+
+    def test_returns_error_for_missing_file(self, tmp_path: Path) -> None:
+        """Missing config file returns MISSING status."""
+        config = tmp_path / "nonexistent.yaml"
+        results = _check_collector_pipelines(config)
+        assert len(results) == 1
+        assert results[0][1] == "MISSING"
+
+    def test_returns_fail_for_malformed_yaml(self, tmp_path: Path) -> None:
+        """Malformed YAML returns FAIL status."""
+        config = tmp_path / "bad.yaml"
+        config.write_text("{{not: valid: yaml: [")
+        results = _check_collector_pipelines(config)
+        assert results[0][1] == "FAIL"
+
+    def test_returns_empty_for_no_pipelines(self, tmp_path: Path) -> None:
+        """Config with no pipelines returns empty results."""
+        config = tmp_path / "empty.yaml"
+        config.write_text("service:\n  extensions: [health_check]\n")
+        results = _check_collector_pipelines(config)
+        assert results == []

@@ -1,0 +1,124 @@
+# LGTM observability stack for the mde development environment.
+#
+# Components: OTEL Collector (receive + redact + fan-out), Tempo (traces),
+# Loki (logs), Grafana (visualization with auto-provisioned datasources).
+#
+# Security: all images pinned by digest, containers hardened with read-only
+# filesystem, dropped capabilities, and no-new-privileges. Only Collector
+# receiver ports and Grafana are published to localhost.
+
+name: mde-observability
+
+services:
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.107.0@sha256:b65527791431d76d058b2813748a3f4a8912540d7b23beac2f6b4e02c872f5b7
+    volumes:
+      - ./collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      # Only Collector receiver ports are published — bound to localhost only
+      - "127.0.0.1:4317:4317"   # gRPC receiver
+      - "127.0.0.1:4318:4318"   # HTTP receiver
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    mem_limit: 256m
+    cpus: 0.5
+    depends_on:
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+
+  tempo:
+    image: grafana/tempo:2.6.1@sha256:ef4384fce6e8ad22b95b243d8fc165628cda655376fd50e7850536ad89d71d50
+    command: ["-config.file=/etc/tempo/config.yaml"]
+    volumes:
+      - ./tempo-config.yaml:/etc/tempo/config.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      # Published for integration tests and telemetry verify
+      - "127.0.0.1:3200:3200"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/ready"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    mem_limit: 512m
+    cpus: 0.5
+
+  loki:
+    image: grafana/loki:2.9.10@sha256:35b02acc67654ddc38273e519b4f26f3967a907b9db5489af300c21f37ee1ae7
+    command: ["-config.file=/etc/loki/config.yaml"]
+    volumes:
+      - ./loki-config.yaml:/etc/loki/config.yaml:ro
+      - loki-data:/loki
+    ports:
+      # Published for integration tests and telemetry verify
+      - "127.0.0.1:3100:3100"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    mem_limit: 512m
+    cpus: 0.5
+
+  grafana:
+    image: grafana/grafana:11.4.0@sha256:d8ea37798ccc41061a62ab080f2676dda6bf7815558499f901bdb0f533a456fb
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      # Grafana UI — bound to localhost only
+      - "127.0.0.1:3000:3000"
+    environment:
+      # Password sourced from fnox via environment variable, never hardcoded
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD must be set — see fnox.toml}
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    mem_limit: 256m
+    cpus: 0.25
+    depends_on:
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+
+volumes:
+  tempo-data:
+  loki-data:
+  grafana-data:

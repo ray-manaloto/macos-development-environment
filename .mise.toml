@@ -289,6 +289,18 @@ echo "=== MCP (notebooklm-mcp-cli) ==="
 nlm notebook list --json 2>&1 | head -5 && echo "✓ MCP auth OK" || echo "✗ MCP auth expired — run: mise run mde:notebooklm:refresh"
 """
 
+[tasks."mde:observability:up"]
+description = "Start LGTM observability stack (Collector + Tempo + Loki + Grafana)"
+run = "uv run mde-py observability up"
+
+[tasks."mde:observability:down"]
+description = "Stop LGTM observability stack"
+run = "uv run mde-py observability down"
+
+[tasks."mde:observability:status"]
+description = "Show LGTM observability stack status"
+run = "uv run mde-py observability status"
+
 [tasks."mde:refs:clone-frameworks"]
 description = "Clone agent framework repos for offline research"
 run = "scripts/clone-agent-framework-repos.sh"

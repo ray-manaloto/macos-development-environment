@@ -1,0 +1,26 @@
+# Tempo configuration for the mde LGTM observability stack.
+#
+# Minimal config: receives OTLP/HTTP traces from the Collector,
+# stores them locally with 72h retention (3 days — sufficient for
+# local dev iteration without unbounded disk growth).
+
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        http:
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/traces
+    wal:
+      path: /var/tempo/wal
+
+compactor:
+  compaction:
+    block_retention: 72h
