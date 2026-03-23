@@ -19,10 +19,9 @@ services:
       - "127.0.0.1:4317:4317"   # gRPC receiver
       - "127.0.0.1:4318:4318"   # HTTP receiver
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/health"]
-      interval: 5s
-      timeout: 2s
-      retries: 3
+      # The OTEL Collector contrib image is scratch-based (no shell, wget, or curl).
+      # Health is validated externally by `mde-py observability verify` via port 13133.
+      test: ["NONE"]
     security_opt:
       - no-new-privileges:true
     read_only: true

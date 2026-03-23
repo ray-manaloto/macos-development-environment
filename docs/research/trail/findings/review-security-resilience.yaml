@@ -1,0 +1,440 @@
+id: review-security-resilience
+agent: reviewer-agent
+dimension: security-resilience
+timestamp: "2026-03-23T00:00:00Z"
+branch: feat/honcho-api-only
+reviewed_files:
+  - docker/memory/compose.yaml
+  - docker/memory/.env.example
+  - src/mde/domain/docker_aggregate.py
+  - src/mde/domain/memory_stack.py
+  - src/mde/domain/observability_stack.py
+  - .gitignore
+  - docs/research/trail/findings/ (spot-checked for secret leakage)
+
+findings:
+  # ─── CRITICAL ────────────────────────────────────────────────────────────────
+
+  - severity: CRITICAL
+    category: resilience
+    file: src/mde/domain/memory_stack.py
+    line: 42-46
+    finding: >
+      stack_up() has no TimeoutExpired handler. subprocess.run(..., timeout=120)
+      will raise subprocess.TimeoutExpired and propagate as an uncaught exception,
+      not a non-zero return code. The caller in docker_aggregate.stack_up()
+      expects an int return value; an exception here aborts the entire process
+      with a Python traceback instead of a clean error message and fallback to
+      the observability result.
+    exploit_scenario: >
+      Docker daemon is busy pulling images or the healthcheck start_period runs
+      long. After 120 s the call throws TimeoutExpired. The aggregate
+      stack_up() crashes entirely — observability stack result is never printed,
+      exit code is non-zero but the error shown is a raw Python traceback rather
+      than "ERROR: memory stack timed out". At 3 am an oncall engineer sees
+      "TimeoutExpired" with a subprocess stack trace and has no idea which
+      container is the problem.
+    recommendation: >
+      Wrap the subprocess.run call in stack_up(), stack_down(), and stack_status()
+      with except subprocess.TimeoutExpired identical to the pattern already used
+      in stack_verify() and _verify_observability(): print a human-readable
+      "TIMEOUT: memory stack" message and return 1.
+
+  # ─── HIGH ─────────────────────────────────────────────────────────────────
+
+  - severity: HIGH
+    category: secrets
+    file: docker/memory/compose.yaml
+    line: 57
+    finding: >
+      LLM_ANTHROPIC_API_KEY uses the fallback string "not-a-real-key--api-only-mode".
+      NOTE: the current value is clearly fake and unlikely to be confused with a real
+      Anthropic key (which starts with sk-ant-). However, it IS baked into a
+      git-committed file. Automated secret scanners (gitleaks, trufflehog, GitHub push
+      protection) pattern-match on the word "key" near a non-empty value and may flag
+      this as a leaked credential, causing CI false positives.
+      VERDICT: Low practical risk. The value is syntactically invalid as an Anthropic
+      key. No action required beyond confirming it is deliberately named to be
+      obviously fake (it is).
+    exploit_scenario: >
+      CI scanner flags compose.yaml as containing a potential API key. Developer
+      spends time triaging a false positive.
+    recommendation: >
+      No change required — "not-a-real-key--api-only-mode" is an adequate placeholder.
+      If scanner false positives occur, add a gitleaks or trufflehog allowlist entry
+      for this specific value.
+
+  - severity: HIGH
+    category: secrets
+    file: docker/memory/compose.yaml
+    line: 51
+    finding: >
+      LLM_GEMINI_API_KEY uses the compose `:?` error-stop syntax:
+      "${LLM_GEMINI_API_KEY:?Set LLM_GEMINI_API_KEY in docker/memory/.env}".
+      But DERIVER_ENABLED=false, SUMMARY_ENABLED=false, and DREAM_ENABLED=false
+      are all set — Gemini is never called. The mandatory-variable check forces
+      the user to supply a key that will never be used, and the error message
+      directs them to put it in the .env file. This contradicts the project's
+      Keychain/fnox secrets workflow, creates unnecessary credential exposure
+      (key exists in the container env even though it is never used), and means
+      the stack cannot start at all in an ephemeral CI environment without a
+      dummy key.
+    exploit_scenario: >
+      User/CI system must inject a real Gemini key to get past startup.  The
+      key is now in Docker inspect output (plaintext in container env). A future
+      maintainer re-enables EMBED_MESSAGES=true thinking the key is already
+      configured — but it is the CI/throwaway key, not the production key.
+    recommendation: >
+      Apply the same dummy-fallback pattern as LLM_ANTHROPIC_API_KEY:
+        LLM_GEMINI_API_KEY=${LLM_GEMINI_API_KEY:-NOT-A-REAL-KEY-API-ONLY-MODE}
+      Add a comment explaining that neither key is called while all LLM features
+      are disabled. When features are re-enabled in a later PR, switch back to
+      `:?` to make the key mandatory.
+
+  - severity: HIGH
+    category: resilience
+    file: src/mde/domain/docker_aggregate.py
+    line: 68-78
+    finding: >
+      stack_verify() calls memory_verify() then _verify_observability() and
+      ORs the return codes. However, if memory_verify() raises an unhandled
+      exception (e.g. FileNotFoundError when COMPOSE_FILE is missing, or an
+      unexpected subprocess error), the function crashes before
+      _verify_observability() runs at all. A partial verify result is never
+      surfaced; the operator gets a Python traceback and no observability
+      health data.
+    exploit_scenario: >
+      Oncall runs `mde-py docker verify` to check system health during an
+      incident. The memory stack compose file has been moved or deleted.
+      memory_verify() throws FileNotFoundError. Observability health is never
+      checked — the engineer may incorrectly conclude the entire system is down
+      when Grafana/Loki/Tempo are healthy.
+    recommendation: >
+      Wrap each verify call in a try/except Exception block, print a
+      "EXCEPTION in <stack> verify: <e>" message, set a non-zero rc, and
+      continue to the next stack. This mirrors the TimeoutExpired handling
+      pattern already in _verify_observability().
+
+  - severity: HIGH
+    category: auth
+    file: docker/memory/compose.yaml
+    line: 38
+    finding: >
+      AUTH_USE_AUTH defaults to false and is not documented as a security
+      risk in the compose file or .env.example. The port is bound to
+      127.0.0.1 (good), but this is the only mitigation. Any process on the
+      local machine — including compromised npm packages, browser extensions
+      running in localhost contexts, or malicious code executed via the Claude
+      Code session itself — can read or delete all Honcho workspaces, sessions,
+      and messages via unauthenticated HTTP to localhost:8000.
+    exploit_scenario: >
+      Malicious code injected via a compromised npm package (e.g. in an mde
+      dependency) calls curl http://localhost:8000/v3/workspaces and exfiltrates
+      all Claude Code session memory including source code snippets. No auth
+      token is required.
+    recommendation: >
+      Either:
+      (a) Enable AUTH_USE_AUTH=true with a randomly-generated JWT secret stored
+          in Keychain. Add a fnox-backed setup step to memory_stack.stack_up().
+      (b) If keeping auth disabled: add an explicit comment in compose.yaml and
+          .env.example warning that localhost:8000 is unauthenticated and any
+          local process can access session data. Document this as an accepted
+          risk with mitigation (localhost binding only).
+
+  # ─── MEDIUM ───────────────────────────────────────────────────────────────
+
+  - severity: MEDIUM
+    category: secrets
+    file: docker/memory/.env.example
+    line: 16
+    finding: >
+      .env.example ships with HONCHO_DB_PASSWORD=changeme. This is a well-known
+      default that appears in breach databases. If a user copies the file to .env
+      without changing the password and later exposes the Docker socket or
+      Postgres port (or future-you adds a public port mapping), the database is
+      trivially compromised. The compose.yaml already uses :? to require the
+      variable, but it does not prevent the literal string "changeme" from
+      satisfying that requirement.
+    exploit_scenario: >
+      New developer follows the setup steps, copies .env.example to .env, starts
+      the stack. HONCHO_DB_PASSWORD=changeme satisfies the :? check. Later a
+      team member briefly changes the port binding to 0.0.0.0 for debugging.
+      Any network-reachable host can log in as honcho with password "changeme".
+    recommendation: >
+      Remove the literal "changeme" default. Use a commented placeholder:
+        # HONCHO_DB_PASSWORD=<generate with: openssl rand -base64 24>
+      Or better: document that this value must come from Keychain via
+      `fnox get HONCHO_DB_PASSWORD` and remove the assignment entirely.
+
+  - severity: MEDIUM
+    category: resilience
+    file: src/mde/domain/memory_stack.py
+    line: 28-36
+    finding: >
+      HONCHO_DB_PASSWORD validation only happens inside memory_stack.stack_up(),
+      not in the compose launch itself. When stack_up() is called indirectly via
+      docker_aggregate.stack_up(), validation still runs — this is correct.
+      However, the validation only checks for an empty string. A user who sets
+      HONCHO_DB_PASSWORD to a whitespace-only value (e.g. a shell quoting error:
+      HONCHO_DB_PASSWORD=" ") will pass the Python check but the compose :?
+      check will also pass (the variable is non-empty), resulting in a database
+      that starts with a single-space password.
+    exploit_scenario: >
+      `export HONCHO_DB_PASSWORD=" "` (copy-paste with trailing space).
+      Python `if not password` evaluates to False (non-empty string). Compose
+      sees a non-empty value. PostgreSQL accepts the space-only password.
+      The password is now effectively empty for most tooling that strips
+      whitespace, but the DB started without error. Later `fnox get
+      HONCHO_DB_PASSWORD` returns the correct value — mismatch causes
+      authentication failures that are very confusing to debug.
+    recommendation: >
+      Use `password.strip()` in the validation check:
+        password = os.environ.get("HONCHO_DB_PASSWORD", "").strip()
+        if not password:
+
+  - severity: MEDIUM
+    category: resilience
+    file: docker/memory/compose.yaml
+    line: 31
+    finding: >
+      The entrypoint inline shell `sh -c "python scripts/provision_db.py && exec fastapi run ..."
+      has no error surfacing for the migration step. If provision_db.py exits
+      non-zero (e.g. migration conflict, network blip to honcho-db), the `&&`
+      short-circuits and exec never runs. The container exits with a non-zero
+      code. Docker marks it unhealthy after start_period=30s. The depends_on
+      healthcheck prevents honcho-api from affecting other services — this is
+      correct. BUT: the failure message from provision_db.py goes to container
+      logs only. Running `mde-py memory up` with `--wait` (which waits for
+      healthy) will block for 30s then return non-zero with no explanation
+      surfaced to the user.
+    exploit_scenario: >
+      First-run: honcho-db is slow on first extension install. provision_db.py
+      times out. Container exits. `mde-py memory up` returns rc=1 after 120s
+      timeout with "docker compose exited with 1" — no mention of the migration
+      failure. Oncall has to know to run `docker logs mde-memory-honcho-api-1`
+      to see the actual error. Under pressure at 3 am, they might restart the
+      whole machine instead of just the container.
+    recommendation: >
+      Either:
+      (a) Increase start_period in the healthcheck (already 30s — may be sufficient).
+      (b) Add a post-failure message in stack_up(): if result.returncode != 0,
+          print "HINT: Check logs with: docker logs mde-memory-honcho-api-1".
+      This is a resilience/DX issue, not a security issue per se.
+
+  - severity: MEDIUM
+    category: container
+    file: docker/memory/compose.yaml
+    line: 75-77
+    finding: >
+      tmpfs mounts cover /tmp, /app/__pycache__, and /app/alembic. The
+      alembic tmpfs is needed for provision_db.py to write migration scripts
+      before read_only: true is enforced. However, /app/alembic being tmpfs
+      means ALL files written there are lost on container restart. If Honcho
+      writes any persistent migration state to /app/alembic at runtime (not
+      just during provision_db.py), this state will be silently lost and
+      re-generated on next start. This is probably safe (alembic_version is
+      in PostgreSQL), but if Honcho's migration scripts are generated and
+      cached in /app/alembic at runtime, a container restart may trigger
+      spurious re-migrations or conflicts.
+    exploit_scenario: >
+      Honcho v3.x adds a new runtime alembic feature that writes scripts to
+      /app/alembic as a cache. Container is restarted. Scripts regenerate with
+      slightly different checksums. Alembic detects a mismatch and refuses
+      to run, causing container to fail on every restart until the DB is
+      manually stamped. This is a silent data integrity risk.
+    recommendation: >
+      Verify (via upstream issue or source read) that /app/alembic is ONLY
+      written during the provision_db.py startup phase and not at runtime.
+      If Honcho writes runtime artifacts there, move /app/alembic to a named
+      volume instead of tmpfs.
+
+  - severity: MEDIUM
+    category: secrets
+    file: docker/memory/compose.yaml
+    line: 36-52
+    finding: >
+      DB_CONNECTION_URI contains the HONCHO_DB_PASSWORD inline in the
+      connection string. This value is visible via `docker inspect` to any
+      process with access to the Docker socket, which on macOS (Docker Desktop)
+      means any process running as the same user. The password is also in
+      the process environment of the running container (visible in
+      /proc/<pid>/environ inside the container namespace and via docker inspect
+      on the host).
+    exploit_scenario: >
+      A supply-chain-compromised CLI tool installed via npm/mise runs
+      `docker inspect mde-memory-honcho-api-1` and extracts HONCHO_DB_PASSWORD
+      from the Env array. It then connects to localhost:5433 with the
+      honcho/honcho-password credentials and exfiltrates all session data.
+    recommendation: >
+      This is a fundamental Docker limitation (env vars are always inspectable).
+      Mitigations are:
+      (a) Document this as accepted risk given the localhost-only binding.
+      (b) Consider Docker secrets (Swarm mode) or bind-mounting a credentials
+          file if the threat model includes compromised local processes.
+      (c) Ensure the Docker socket is not accessible to container processes
+          (no /var/run/docker.sock mount — confirmed absent in this compose).
+
+  # ─── LOW ──────────────────────────────────────────────────────────────────
+
+  - severity: LOW
+    category: container
+    file: docker/memory/compose.yaml
+    line: 64
+    finding: >
+      The honcho-api healthcheck uses urllib.request.urlopen to fetch
+      /openapi.json. In a read_only: true container with cap_drop: ALL, this
+      is safe. However, the healthcheck Python one-liner has no timeout
+      argument. urllib.request.urlopen() uses a default socket timeout of
+      None (blocking forever) unless the global default is set. If the FastAPI
+      process hangs (deadlock, OOM about to be killed), the healthcheck will
+      block for up to the Docker timeout (5s), which is fine. But if the
+      container's localhost loopback is broken (rare but possible), the
+      healthcheck blocks the Docker daemon health evaluation indefinitely.
+    exploit_scenario: >
+      Rare: localhost loopback is misconfigured in the container network
+      namespace. The healthcheck hangs. Docker's 5s timeout saves it.
+      This is already mitigated by the timeout: 5s setting in the healthcheck
+      definition — but the Python code itself has no timeout, so Docker must
+      kill the healthcheck process externally.
+    recommendation: >
+      Add a timeout to the urlopen call:
+        urllib.request.urlopen('http://localhost:8000/openapi.json', timeout=4)
+      This ensures Python-level timeout before Docker has to SIGKILL the
+      process, giving cleaner error output in logs.
+
+  - severity: LOW
+    category: resilience
+    file: src/mde/domain/docker_aggregate.py
+    line: 18-37
+    finding: >
+      docker_aggregate.stack_up() starts observability first, then memory.
+      If observability fails (obs_rc non-zero), the memory stack still
+      starts (this is explicit in the code). The comment in the task
+      description asks whether this is correct. It IS a valid design
+      choice (memory can run independently), but it is not documented.
+      A future maintainer may treat the sequential, non-aborting behavior
+      as a bug and "fix" it by short-circuiting, breaking the independent
+      stack design.
+    exploit_scenario: >
+      Not a security issue. Operational: future maintainer adds
+      `if obs_rc: return obs_rc` before the memory block, breaking the
+      intent that the stacks are independent. Memory session data stops
+      being persisted silently while observability is degraded.
+    recommendation: >
+      Add a comment to stack_up() in docker_aggregate.py:
+        # Stacks are independent — always attempt both even if one fails.
+        # This is intentional: memory can run without observability and vice versa.
+
+  - severity: LOW
+    category: secrets
+    file: docs/research/trail/findings/*.yaml
+    line: null
+    finding: >
+      Spot-checked all 52 YAML research files. No real API keys, tokens,
+      or passwords found. honcho-sdk-usage.yaml contains `api_key=HONCHO_API_KEY`
+      as a code example variable reference (not a value). honcho-architecture.yaml
+      and honcho-config-env-vars.yaml contain only variable names, not values.
+      The .gitignore correctly excludes docker/memory/.env. No leakage detected.
+    exploit_scenario: N/A
+    recommendation: >
+      No action needed. Continue to keep real secrets out of YAML research files.
+
+  - severity: LOW
+    category: resilience
+    file: src/mde/domain/memory_stack.py
+    line: 53-57
+    finding: >
+      stack_down() has no TimeoutExpired handler on the subprocess.run call
+      (timeout=60). Same issue as stack_up() — an exception propagates as
+      a traceback rather than a clean error. Lower severity because teardown
+      failures are less likely to cascade.
+    exploit_scenario: >
+      `docker compose down` hangs (e.g. container ignores SIGTERM).
+      After 60s, TimeoutExpired propagates. The caller in
+      docker_aggregate.stack_down() sees an exception rather than rc=1 and
+      does not continue to stop the observability stack. Observability
+      containers keep running after a failed shutdown attempt.
+    recommendation: >
+      Same fix as stack_up(): catch TimeoutExpired, print diagnostic, return 1.
+
+  # ─── ADDITIONAL FINDINGS (reviewer-agent pass, 2026-03-23) ──────────────────
+
+  - severity: MEDIUM
+    category: secrets
+    file: src/mde/domain/memory_stack.py
+    line: 28-36
+    finding: >
+      HONCHO_DB_PASSWORD validation uses `if not password:`. In Python,
+      `not "   "` evaluates to False — a whitespace-only string (e.g. from a
+      copy-paste error or shell quoting issue like `export HONCHO_DB_PASSWORD=" "`)
+      passes this check. The compose `:?` also passes because the variable is
+      non-empty. PostgreSQL accepts the whitespace-only password. Same issue in
+      observability_stack.py:52-60 for GRAFANA_PASSWORD.
+    exploit_scenario: >
+      User sets HONCHO_DB_PASSWORD=" " by accident. Stack starts successfully.
+      The DB password is now whitespace-only — most tooling strips whitespace,
+      causing confusing auth failures later. Also: if port 5433 were exposed,
+      a space-only password is trivially guessable.
+    recommendation: >
+      Change to: `password = os.environ.get("HONCHO_DB_PASSWORD", "").strip()`
+      Apply same fix to GRAFANA_PASSWORD validation in observability_stack.py.
+
+  - severity: MEDIUM
+    category: auth
+    file: docker/memory/compose.yaml
+    line: 38-42
+    finding: >
+      The risk acceptance for AUTH_USE_AUTH=false cites only the 127.0.0.1
+      port binding as mitigation. This correctly blocks external network access.
+      However, containers on the same Docker bridge network (mde-memory_default)
+      can reach honcho-api on port 8000 without authentication regardless of
+      the host binding — Docker bridges bypass host-side port binding constraints
+      for intra-network traffic. Any future container added to the same
+      compose network (or a compromised Redis/Postgres image) gets unauthenticated
+      API access to all session data.
+    exploit_scenario: >
+      A supply-chain compromise of the pgvector or Redis image adds a reverse
+      shell. From inside the container, it sends HTTP requests to
+      http://honcho-api:8000/v3/workspaces and exfiltrates all stored Claude
+      Code session transcripts — no auth token required.
+    recommendation: >
+      Update the risk acceptance comment to explicitly acknowledge the
+      intra-network exposure. Either: (a) accept and document that blast radius
+      is local-only data, or (b) split honcho-api into its own isolated network
+      with only necessary peer access (honcho-db, honcho-redis as explicit
+      network aliases).
+
+  - severity: LOW
+    category: resilience
+    file: src/mde/domain/docker_aggregate.py
+    line: 99-110
+    finding: >
+      stack_verify() calls obs_verify() and mem_verify() without try/except
+      TimeoutExpired wrapping. The other three aggregate functions (stack_up,
+      stack_down, stack_status) all have TimeoutExpired catch blocks. The
+      individual stack_verify implementations DO catch TimeoutExpired internally,
+      so this path is very unlikely to trigger — but it is an inconsistency that
+      could become a real failure if the internal handlers are ever removed.
+    exploit_scenario: >
+      Future refactor removes TimeoutExpired handling from memory_stack.stack_verify().
+      docker_aggregate.stack_verify() propagates a traceback to the user instead of
+      a clean error.
+    recommendation: >
+      Add TimeoutExpired handling to docker_aggregate.stack_verify() for consistency
+      with the other three functions.
+
+summary:
+  critical: 0
+  high: 4
+  medium: 7
+  low: 5
+  total: 16
+
+top_priority_actions:
+  1: "Add TimeoutExpired handling to memory_stack.stack_up/stack_down/stack_status (HIGH resilience — crashes with Python traceback rather than clean rc=1)"
+  2: "Replace LLM_GEMINI_API_KEY :? with soft fallback — key is never used in API-only mode (HIGH secrets — forces unused real key into container env via docker inspect)"
+  3: "Add explicit validation + Keychain hint for LLM_GEMINI_API_KEY in memory_stack.stack_up() (HIGH — currently fails with cryptic docker compose error, not actionable user message)"
+  4: "Document AUTH_USE_AUTH=false intra-Docker-network exposure in compose.yaml risk comment (MEDIUM auth — intra-network bypass not acknowledged)"
+  5: "Fix whitespace-only password bypass: use password.strip() in both memory_stack and observability_stack (MEDIUM secrets — silently accepts invalid passwords)"
+  6: "Remove HONCHO_DB_PASSWORD=changeme from .env.example — use placeholder comment (MEDIUM secrets — well-known default in breach DBs)"
+  7: "Add failure hint message in stack_up() for non-zero rc: 'Check logs: docker logs mde-memory-honcho-api-1' (MEDIUM resilience — migration failures are not surfaced to user)"

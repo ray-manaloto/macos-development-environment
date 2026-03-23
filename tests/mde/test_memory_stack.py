@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import argparse
 import subprocess
+from typing import TYPE_CHECKING
 from unittest.mock import patch
+
+if TYPE_CHECKING:
+    import pytest
 
 from mde.domain.memory_stack import (
     dispatch,
@@ -101,6 +105,16 @@ class TestStackVerify:
             mock_run.return_value.stdout = ""
             result = stack_verify()
             assert result != 0
+
+    def test_unhealthy_includes_stderr(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """When a health check fails, stderr from the check should be printed."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 1
+            mock_run.return_value.stderr = "pg_isready: could not connect"
+            mock_run.return_value.stdout = ""
+            stack_verify()
+            captured = capsys.readouterr()
+            assert "pg_isready: could not connect" in captured.err
 
     def test_verify_timeout_returns_nonzero(self) -> None:
         with patch("subprocess.run") as mock_run:

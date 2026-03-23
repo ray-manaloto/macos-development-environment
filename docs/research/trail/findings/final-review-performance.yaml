@@ -1,0 +1,121 @@
+review_id: final-review-performance
+dimension: PERFORMANCE
+cycle: 3 (final round)
+reviewer: reviewer-agent
+date: 2026-03-23
+
+summary: >
+  All timeout values are appropriate for their workload. Sequential ordering in
+  docker_aggregate.py is correctly justified by telemetry ordering constraints.
+  Two minor findings: (1) verify capture_output output is captured but never
+  surfaced on failure — not a bug but a missed diagnostic opportunity; (2)
+  stop_orphan_collectors has no timeout guard at the call site in stack_up,
+  meaning a hung docker ps can block the full 10s before stack_up even starts.
+  Container resource limits are adequate for API-only mode.
+
+findings:
+
+  - id: perf-01
+    severity: P3 NICE-TO-HAVE
+    status: FINDING
+    file: src/mde/domain/memory_stack.py
+    lines: 141-158
+    title: verify capture_output never surfaced on failure
+    description: >
+      stack_verify() in memory_stack.py (and the mirror in observability_stack.py:167-183)
+      calls subprocess.run with capture_output=True, text=True — the output is assigned to
+      result.stdout / result.stderr — but on failure only the service name is printed
+      ("UNHEALTHY: honcho-api"), not the captured stderr. For redis-cli "ping" failures
+      or pg_isready failures, the container's error message (connection refused, auth fail,
+      etc.) would be extremely useful for diagnosis and is silently discarded.
+      This is not a correctness bug — returncode is checked correctly — but it degrades
+      the UX of a diagnostic command.
+    recommendation: >
+      On result.returncode != 0, print result.stderr.strip() (or result.stdout.strip()
+      if stderr is empty) to sys.stderr alongside "UNHEALTHY: <name>".
+    risk: low — affects only operator UX, not correctness
+
+  - id: perf-02
+    severity: P3 NICE-TO-HAVE
+    status: FINDING
+    file: src/mde/domain/observability_stack.py
+    lines: 21-42, 66
+    title: stop_orphan_collectors timeout not propagated — hung docker ps blocks stack_up
+    description: >
+      stop_orphan_collectors() internally uses timeout=10 on docker ps and timeout=30 on
+      each docker stop. However, the function itself does not propagate TimeoutExpired —
+      it silently returns on returncode != 0 from docker ps, but an internal timeout on
+      the docker ps or docker stop subprocess will bubble up as an unhandled
+      subprocess.TimeoutExpired into stack_up() (line 66). stack_up() only catches
+      TimeoutExpired around the docker compose up call (lines 69-75), NOT around the
+      stop_orphan_collectors() call at line 66. So a hung docker stop can kill stack_up
+      with an unhandled exception rather than a clean error message.
+    recommendation: >
+      Wrap the stop_orphan_collectors() call at observability_stack.py:66 in a
+      try/except subprocess.TimeoutExpired block, or catch it inside
+      stop_orphan_collectors() itself and print a warning before returning.
+    risk: low — only triggered when a legacy codex-otel-collector is running and docker stop hangs
+
+verified:
+
+  - id: perf-verified-01
+    title: Sequential ordering in docker_aggregate.py is correctly intentional
+    detail: >
+      stack_up() starts observability then memory (sequential). The docstring at lines 8-11
+      explicitly documents: "telemetry infrastructure is available to capture memory stack
+      startup." This is the correct tradeoff — parallelizing would race the telemetry
+      pipeline against the service being instrumented. VERIFIED.
+
+  - id: perf-verified-02
+    title: Timeout values are appropriate for their workload
+    detail: >
+      - 120s for `up --wait`: docker compose --wait polls until all healthchecks pass.
+        honcho-api has start_period=60s, so 120s gives the API 60s of headroom after
+        the healthcheck start_period. This is tight but acceptable for local dev.
+      - 60s for `down`: container graceful shutdown, adequate.
+      - 10s for `status`: docker compose ps is a metadata call, 10s is generous.
+      - 15s per service in verify: each check is a single lightweight probe
+        (urllib.request, pg_isready, redis-cli ping). 15s is appropriate.
+      VERIFIED.
+
+  - id: perf-verified-03
+    title: Container resource limits are adequate for API-only mode
+    detail: >
+      honcho-api: 512m / 0.5 CPU — FastAPI with SQLAlchemy, no embedding model loaded,
+      no LLM inference. 512m is sufficient for API-only mode.
+      honcho-db: 512m / 0.5 CPU — PostgreSQL 15 with max_connections=200 for local dev.
+      Shared buffers default ~128m, 512m total leaves 384m for connections and cache.
+      honcho-redis: 128m / 0.25 CPU — cache-only role with no persistence of
+      large payloads. 128m is appropriate.
+      VERIFIED.
+
+  - id: perf-verified-04
+    title: Healthcheck parameters are well-tuned
+    detail: >
+      honcho-api: interval=10s, timeout=5s, start_period=60s, retries=3.
+      The 60s start_period correctly accounts for migration (provision_db.py) +
+      FastAPI startup. After start_period, Docker begins checking; 3 retries at 10s
+      intervals gives 30s before marking unhealthy. Correct.
+      honcho-db: interval=5s, timeout=5s, retries=5 — pg_isready is fast.
+      Tight polling is appropriate for a dependency that honcho-api blocks on.
+      honcho-redis: interval=5s, timeout=5s, retries=5 — redis-cli ping is
+      near-instantaneous. Tight polling correct.
+      VERIFIED.
+
+  - id: perf-verified-05
+    title: No N+1 loops or unnecessary sequential subprocess calls in hot paths
+    detail: >
+      stack_verify() iterates over a fixed 3-element list of health checks. This is
+      not an N+1 pattern — the list is statically defined and bounded. The sequential
+      execution means total wall time ~= sum of timeouts in worst case (3 x 15s = 45s),
+      but each check is a distinct service probe that cannot be trivially parallelized
+      without threading. Acceptable for a manual diagnostic command.
+      VERIFIED.
+
+overall_verdict: PASS_WITH_MINOR_FINDINGS
+blocking: false
+notes: >
+  Neither finding is blocking. perf-01 is a UX gap (lost diagnostic output on failure).
+  perf-02 is a theoretical unhandled exception path that only triggers when a legacy
+  orphan container is running AND docker stop hangs. Neither affects correctness
+  of the happy path.

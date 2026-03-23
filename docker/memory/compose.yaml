@@ -2,9 +2,13 @@
 #
 # Honcho persistent memory stack for Claude Code sessions.
 #
-# HISTORY: Added in PR B (2026-03-23) to complement the observability stack
-# from PR A2. Provides semantic memory via the Honcho API — Claude Code's
-# official claude-honcho plugin connects to this at localhost:8000/v3.
+# HISTORY: Added in PR B (2026-03-23). Updated to API-only mode (PR C,
+# 2026-03-23) — deriver disabled to avoid multi-provider LLM key costs.
+#
+# MODE: API-only (storage + retrieval). The deriver (reasoning pipeline)
+# is commented out. Messages are stored immediately; semantic search and
+# LLM-powered reasoning are disabled until EMBED_MESSAGES=true + Gemini
+# key is configured, or the deriver is re-enabled with full LLM keys.
 #
 # ARCHITECTURE DECISION: Self-hosted instead of SaaS because session
 # transcripts contain source code. All data stays on-machine.
@@ -31,8 +35,28 @@ services:
     environment:
       - DB_CONNECTION_URI=postgresql+psycopg://honcho:${HONCHO_DB_PASSWORD:?Set HONCHO_DB_PASSWORD}@honcho-db:5432/honcho
       - CACHE_URL=redis://honcho-redis:6379/0?suppress=true
+      # SECURITY RISK ACCEPTANCE: Auth disabled for local dev.
+      # Mitigations: (1) 127.0.0.1 binding prevents network access,
+      # (2) no sensitive data stored in API-only mode (no embeddings/reasoning).
+      # Enable AUTH_USE_AUTH=true + AUTH_JWT_SECRET for shared/remote deployments.
       - AUTH_USE_AUTH=${AUTH_USE_AUTH:-false}
       - AUTH_JWT_SECRET=${AUTH_JWT_SECRET:-}
+      # API-only mode: disable all reasoning features.
+      # Gemini key required for startup validation even in API-only mode.
+      - EMBED_MESSAGES=${EMBED_MESSAGES:-false}
+      - DERIVER_ENABLED=false
+      - SUMMARY_ENABLED=false
+      - DREAM_ENABLED=false
+      # Honcho validates LLM provider clients at module import time
+      # (src/utils/clients.py SELECTED_PROVIDERS) even when features are
+      # disabled.  Default providers are "google" (Summary, Deriver) and
+      # "anthropic" (Dream, Dialectic medium/high/max).  Both keys use
+      # dummy defaults that pass startup validation but are never called
+      # since all features are disabled.
+      - LLM_GEMINI_API_KEY=${LLM_GEMINI_API_KEY:-not-a-real-key--api-only-mode}
+      - LLM_ANTHROPIC_API_KEY=${LLM_ANTHROPIC_API_KEY:-not-a-real-key--api-only-mode}
+      - SUMMARY_PROVIDER=google
+      - DERIVER_PROVIDER=google
     env_file:
       - path: .env
         required: false
@@ -42,10 +66,10 @@ services:
       honcho-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/openapi.json')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/openapi.json', timeout=3)"]
       interval: 10s
       timeout: 5s
-      start_period: 30s
+      start_period: 60s
       retries: 3
     security_opt:
       - no-new-privileges:true
@@ -55,47 +79,56 @@ services:
     tmpfs:
       - /tmp
       - /app/__pycache__
-      - /app/alembic
     mem_limit: 512m
     cpus: 0.5
     restart: unless-stopped
 
-  honcho-deriver:
-    # Background worker — Honcho's reasoning pipeline.
-    # Creates embeddings, summaries, and conclusions from stored messages.
-    # Requires LLM API keys in .env (LLM_ANTHROPIC_API_KEY, LLM_OPENAI_API_KEY, etc.)
-    image: ghcr.io/plastic-labs/honcho:v3.0.3@sha256:0d23755cfba8fac143d37a3c2f9d6bd01af9dee0854e3bebdfb5fb6196f71084
-    entrypoint: ["python", "-m", "src.deriver"]
-    environment:
-      - DB_CONNECTION_URI=postgresql+psycopg://honcho:${HONCHO_DB_PASSWORD:?Set HONCHO_DB_PASSWORD}@honcho-db:5432/honcho
-      - CACHE_URL=redis://honcho-redis:6379/0?suppress=true
-      - METRICS_ENABLED=true
-    env_file:
-      - path: .env
-        required: false
-    depends_on:
-      honcho-db:
-        condition: service_healthy
-      honcho-redis:
-        condition: service_healthy
-    healthcheck:
-      # python:3.13-slim-bookworm has no procps. Use pure Python /proc scan.
-      test: ["CMD", "python", "-c", "import os,sys; sys.exit(0 if any('src.deriver' in open(f'/proc/{p}/cmdline','rb').read().decode('utf-8','ignore') for p in os.listdir('/proc') if p.isdigit()) else 1)"]
-      interval: 30s
-      timeout: 5s
-      start_period: 15s
-      retries: 3
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    cap_drop:
-      - ALL
-    tmpfs:
-      - /tmp
-      - /app/__pycache__
-    mem_limit: 1g
-    cpus: 1.0
-    restart: unless-stopped
+  # honcho-deriver:
+  #   Background worker — Honcho's reasoning pipeline.
+  #   Creates embeddings, summaries, and conclusions from stored messages.
+  #   Requires LLM API keys (Anthropic, OpenAI, Gemini, Groq).
+  #
+  #   DISABLED: Running in API-only mode (storage + retrieval without
+  #   LLM-powered reasoning). Re-enable when LLM API keys are available
+  #   or Ollama integration is implemented. See:
+  #   - docs/research/trail/deep-reviews/honcho-llm-decoupling.md
+  #   - docs/research/trail/findings/honcho-ollama-viability.yaml
+  #
+  #   To re-enable: uncomment this block, provide LLM keys in .env,
+  #   and set EMBED_MESSAGES=true on honcho-api.
+  #
+  # honcho-deriver:
+  #   image: ghcr.io/plastic-labs/honcho:v3.0.3@sha256:0d23755cfba8fac143d37a3c2f9d6bd01af9dee0854e3bebdfb5fb6196f71084
+  #   entrypoint: ["python", "-m", "src.deriver"]
+  #   environment:
+  #     - DB_CONNECTION_URI=postgresql+psycopg://honcho:${HONCHO_DB_PASSWORD:?Set HONCHO_DB_PASSWORD}@honcho-db:5432/honcho
+  #     - CACHE_URL=redis://honcho-redis:6379/0?suppress=true
+  #     - METRICS_ENABLED=true
+  #   env_file:
+  #     - path: .env
+  #       required: false
+  #   depends_on:
+  #     honcho-db:
+  #       condition: service_healthy
+  #     honcho-redis:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "python", "-c", "import os,sys; sys.exit(0 if any('src.deriver' in open(f'/proc/{p}/cmdline','rb').read().decode('utf-8','ignore') for p in os.listdir('/proc') if p.isdigit()) else 1)"]
+  #     interval: 30s
+  #     timeout: 5s
+  #     start_period: 15s
+  #     retries: 3
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   read_only: true
+  #   cap_drop:
+  #     - ALL
+  #   tmpfs:
+  #     - /tmp
+  #     - /app/__pycache__
+  #   mem_limit: 1g
+  #   cpus: 1.0
+  #   restart: unless-stopped
 
   honcho-db:
     # PostgreSQL 15 with pgvector extension for vector similarity search.
