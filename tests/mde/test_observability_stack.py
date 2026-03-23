@@ -114,5 +114,5 @@ class TestComposeFile:
     """Test compose file path is correct."""
 
     def test_compose_file_path(self) -> None:
-        assert COMPOSE_FILE.name == "docker-compose.yml"
+        assert COMPOSE_FILE.name == "compose.yaml"
         assert "docker/observability" in str(COMPOSE_FILE)
