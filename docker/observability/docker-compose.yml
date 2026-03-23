@@ -18,6 +18,8 @@ services:
       # gRPC + HTTP receivers bound to localhost only (HIGH-S1)
       - "127.0.0.1:4317:4317"
       - "127.0.0.1:4318:4318"
+      # Health check endpoint — used by mde telemetry verify command
+      - "127.0.0.1:13133:13133"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/health"]
       interval: 5s
