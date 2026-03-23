@@ -1,0 +1,142 @@
+reviewer: reviewer-agent
+round: 3 (final)
+dimension: ARCHITECTURE
+verdict: APPROVE
+date: 2026-03-23
+
+---
+
+summary: |
+  The architecture is clean, well-scoped, and consistent with existing patterns.
+  No structural defects found. All three H-prefix fixes from prior rounds are
+  confirmed present and architecturally sound.
+
+architecture_questions:
+  1_docker_aggregate_abstraction:
+    verdict: APPROPRIATE — not over-engineered
+    rationale: |
+      docker_aggregate.py is a thin orchestration layer (162 lines).
+      It contains no business logic of its own — it only sequences two
+      sub-stack calls, captures TimeoutExpired, and reports aggregated failures.
+      That is exactly the KISS principle applied: the simplest code that
+      provides "start/stop/status/verify all stacks at once".
+      The module docstring explains the ordering rationale (telemetry-first on
+      up, telemetry-last on down), which is the only non-obvious decision.
+
+  2_delegation_pattern:
+    verdict: CONSISTENT and MAINTAINABLE
+    rationale: |
+      All four operations (up, down, status, verify) follow identical structure:
+        1. lazy-import the sub-stack function
+        2. print a header to stderr
+        3. call, catching TimeoutExpired
+        4. accumulate return codes
+        5. return 0 iff all passed
+      The pattern is mechanical enough that a third stack would be a copy-paste
+      extension with no ambiguity. The lazy imports (inside each function body)
+      avoid module-level circular-import risk since docker_aggregate imports
+      memory_stack and observability_stack, which do not import each other.
+
+  3_third_stack_extensibility:
+    verdict: STRAIGHTFORWARD
+    rationale: |
+      Adding a monitoring stack requires:
+        - One new lazy-import per function (4 total)
+        - One new print header per function (4 total)
+        - One new try/except block per function (4 total)
+        - One new entry in failed[] for stack_up/stack_down
+      The rule-of-three is satisfied (memory + observability + hypothetical third),
+      so the current pattern is the correct level of abstraction — no premature
+      factoring needed.
+
+  4_separation_of_responsibility:
+    verdict: CLEAN
+    rationale: |
+      docker_stacks.py   — path constants only (no logic)
+      observability_stack.py — LGTM Compose lifecycle, including orphan-collector
+                               cleanup (domain-specific side effect, correct here)
+      memory_stack.py    — Honcho Compose lifecycle, env validation
+      docker_aggregate.py — sequencing of the above two, no own state
+      Each module has one reason to change. There is no cross-contamination.
+
+  5_cli_integration_consistency:
+    verdict: CONSISTENT
+    rationale: |
+      _cmd_docker (cli.py:485-493) mirrors _cmd_memory (474-482) and
+      _cmd_observability (463-471) exactly:
+        - getattr for the action attribute
+        - _traced_command context manager
+        - span.set_attribute for the action
+        - lazy import + dispatch call
+        - result propagation via ctx["result"]
+      The _DISPATCH_TABLE entry is also in the same alphabetical block.
+      Pattern fidelity is complete.
+
+  6_test_file_organization:
+    verdict: LOGICAL
+    rationale: |
+      test_docker_aggregate.py — unit tests for the orchestration module (4 classes,
+        28 test cases covering all 4 operations + dispatch + failure modes)
+      test_observability_stack.py — expanded with TestStackVerify and updated
+        TestDispatch to cover the new stack_verify function and FileNotFoundError guard
+      test_cli_docker.py — integration-level wiring tests (CLI → dispatch path),
+        appropriately thin (3 tests)
+      The split mirrors the source structure. There is no test duplication:
+        - aggregate tests mock sub-stack functions
+        - stack tests mock subprocess directly
+        - CLI tests mock aggregate.dispatch directly
+
+  7_overall_coherence:
+    verdict: COHERENT
+    rationale: |
+      compose.yaml → .env.example document the infrastructure intent
+      docker_stacks.py provides the path backbone
+      memory_stack.py / observability_stack.py manage individual stacks
+      docker_aggregate.py composes them
+      cli.py exposes all three as CLI subcommands
+      tests mirror that structure 1:1
+      The change set tells a clear and complete story.
+
+prior_round_fixes_verified:
+  H1_verify_duplication_eliminated:
+    status: CONFIRMED
+    detail: |
+      stack_verify() exists in both observability_stack.py (lines 109-185) and
+      memory_stack.py (lines 83-158). docker_aggregate.stack_verify() delegates to
+      both (lines 107-126). The old inline _verify_observability() duplication
+      is gone. No copy-pasted verification logic exists.
+
+  H4_operation_ordering:
+    status: CONFIRMED
+    detail: |
+      Module docstring (lines 6-11) documents the ordering rationale explicitly.
+      up/status/verify: observability first (lines 25-52, 85-104, 107-126).
+      down: memory first (lines 55-82). All four operations are internally consistent.
+
+  H6_filenotfounderror_guard:
+    status: CONFIRMED
+    detail: |
+      dispatch() in all three modules (docker_aggregate:147-161,
+      observability_stack:206-220, memory_stack:179-193) contain the identical
+      FileNotFoundError guard. Tests cover this in all three test files.
+
+findings:
+  - severity: P3
+    location: src/mde/domain/docker_aggregate.py:150
+    description: |
+      The `# type: ignore[arg-type]` on `_ACTION_TABLE.get(action)` is present in
+      all three dispatcher modules for the same reason (action can be None, which
+      is not in the dict key type). This is acceptable as a known typing limitation
+      with argparse.Namespace, but the comment pattern is identical in all three
+      places without explanation. Not a bug — informational only.
+
+  - severity: P3
+    location: tests/mde/test_cli_docker.py:29-32
+    description: |
+      test_docker_no_action_shows_usage patches dispatch to return 1 but does
+      not assert that usage text was printed to stderr. The dispatch() function
+      prints "Usage: ..." when action is None, but the test only checks the
+      return code. Minor gap — the test verifies the exit code but not the UX.
+      Not blocking.
+
+no_blocking_issues: true

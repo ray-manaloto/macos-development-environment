@@ -1,0 +1,288 @@
+id: review-docker-compose
+timestamp: "2026-03-23T19:30:00Z"
+agent: reviewer
+dimension: docker-compose-best-practices
+reviewed_files:
+  - docker/memory/compose.yaml
+  - docker/memory/.env.example
+  - docker/compose.yaml
+sources_consulted:
+  - docs/research/trail/findings/honcho-api-only-mode.yaml  # v3.0.3 confirmed: no startup LLM key validation
+  - docs/research/trail/findings/honcho-config-env-vars.yaml  # v3.0.3 env var names
+  - docs/research/trail/deep-reviews/docker-infrastructure-adversarial-review.md
+  - src/mde/domain/memory_stack.py  # CLI invocation pattern
+  - src/mde/domain/docker_stacks.py  # MEMORY_COMPOSE path
+notes: |
+  Previous review-docker-compose.yaml (by docker-reviewer) contained two CRITICAL
+  findings about LLM key validation crashing the server at startup. Those findings
+  were based on the main branch src/utils/clients.py, NOT the v3.0.3 tag.
+  The v3.0.3-specific research (honcho-api-only-mode.yaml, confirmed from
+  v3.0.3/src/main.py and v3.0.3/src/embedding_client.py) shows NO startup
+  LLM key validation. Those two CRITICAL findings are INVALIDATED for v3.0.3.
+  This review supersedes the previous one with corrected analysis.
+
+findings:
+
+  - id: DCR-01
+    severity: CRITICAL
+    file: docker/memory/compose.yaml
+    line: 81
+    finding: >
+      `tmpfs: /app/migrations` shadows the image content at that path.
+      The Dockerfile copies migration files into the image at /app/migrations/:
+        COPY --chown=app:app migrations/ /app/migrations/
+      A Docker tmpfs mount creates an empty writable filesystem that OVERLAYS
+      (hides) the image layer content. When the container starts and the
+      entrypoint runs `python scripts/provision_db.py`, Alembic calls
+      `upgrade head` looking for version scripts in /app/migrations/versions/.
+      That directory is empty (shadowed by tmpfs), so Alembic finds no migrations
+      and either does nothing or raises an error, leaving the database schema
+      incomplete. The API server then starts against an empty/wrong schema.
+      The previous spec (which was reviewed in the deep-review) used
+      `/app/alembic` (a tmpfs for Alembic's own write cache), NOT `/app/migrations`.
+      The change to `/app/migrations` in the implementation is a regression that
+      breaks DB initialization on cold start.
+    recommendation: >
+      Remove `/app/migrations` from the tmpfs list. Replace with
+      `/app/migrations/__pycache__` if Alembic's Python compilation of env.py
+      needs a writable path. The migration source files at /app/migrations/versions/
+      are read-only by nature and must NOT be shadowed. Test with:
+        docker run --rm --read-only \
+          --tmpfs /tmp --tmpfs /app/__pycache__ --tmpfs /app/migrations/__pycache__ \
+          ghcr.io/plastic-labs/honcho:v3.0.3@sha256:0d23755cfba8fac143d37a3c2f9d6bd01af9dee0854e3bebdfb5fb6196f71084 \
+          sh -c "python scripts/provision_db.py"
+
+  - id: DCR-02
+    severity: HIGH
+    file: docker/memory/compose.yaml
+    line: 56
+    finding: >
+      `LLM_GEMINI_API_KEY=${LLM_GEMINI_API_KEY:?Set LLM_GEMINI_API_KEY...}`
+      uses `:?` (hard error if unset OR empty). The compose.yaml comment at
+      lines 44-55 explains this is required because "Honcho validates LLM
+      provider clients at module import time." This is INCORRECT for v3.0.3.
+      Research confirmed from v3.0.3/src/main.py and v3.0.3/src/embedding_client.py
+      that no LLM key validation occurs at startup; the embedding client uses lazy
+      initialization and keys are only checked when embedding is actually requested.
+      The `:?` syntax means: if a user follows the MODE 1 (API-only) instructions
+      and sets only HONCHO_DB_PASSWORD in .env (as the .env.example MODE 1 comment
+      implies), `docker compose up` will FAIL AT PARSE TIME with:
+        "variable is not set. Defaulting to a blank string."
+      or a fatal error before any container starts.
+      The contradictory requirement creates a confusing failure mode — the stack
+      refuses to start before any image is pulled or container created.
+      Note: Unlike LLM_ANTHROPIC_API_KEY (which has a dummy fallback via `:-`),
+      LLM_GEMINI_API_KEY has no fallback, so it MUST come from the environment
+      or docker/memory/.env.
+    recommendation: >
+      Change to `${LLM_GEMINI_API_KEY:-not-a-real-key--api-only-mode}` to match
+      the LLM_ANTHROPIC_API_KEY pattern on line 57, since v3.0.3 does not validate
+      keys at startup. Update the comment block (lines 44-55) to remove the
+      incorrect claim about import-time validation. Update .env.example MODE 1
+      description to clarify that a dummy Gemini key is used as a placeholder,
+      consistent with the Anthropic key behavior.
+
+  - id: DCR-03
+    severity: HIGH
+    file: docker/memory/compose.yaml
+    line: 69
+    finding: >
+      The healthcheck command `urllib.request.urlopen('http://localhost:8000/openapi.json')`
+      has no timeout argument. urlopen() defaults to the global socket timeout,
+      which is None (infinite block) unless set elsewhere. If the port is open
+      (TCP SYN/ACK succeeds) but the server is stuck (e.g., waiting for DB during
+      migration), urlopen will block indefinitely — never timing out, never failing.
+      Docker's healthcheck `timeout: 5s` kills the subprocess after 5s if it
+      doesn't exit, but a blocking urlopen inside Python will be killed by SIGKILL.
+      While Docker DOES kill the process, the check is not clean: SIGKILL won't
+      trigger Python cleanup and may produce confusing log output. More importantly,
+      the pattern obscures the root cause (server hung vs server not yet started).
+    recommendation: >
+      Add explicit timeout:
+        urllib.request.urlopen('http://localhost:8000/openapi.json', timeout=3)
+      This raises urllib.error.URLError after 3s on hung connections, allowing
+      a clean failure exit with a useful error message rather than SIGKILL.
+
+  - id: DCR-04
+    severity: HIGH
+    file: docker/memory/compose.yaml
+    lines: [68, 72]
+    finding: >
+      The healthcheck start_period of 30s may be insufficient for cold starts.
+      The entrypoint (`python scripts/provision_db.py && exec fastapi run ...`)
+      runs Alembic migrations before starting FastAPI. On a fresh database, this
+      involves: creating the pgvector extension, applying all migration revisions
+      in sequence, then starting the FastAPI server (which loads all modules,
+      establishes DB connection pool, etc.).
+      The timing math: start_period=30s, interval=10s, retries=3.
+      During start_period, healthcheck failures do NOT count against retries.
+      AFTER start_period expires, 3 failures * 10s = 30s before "unhealthy".
+      If migrations + FastAPI startup takes >30s on first run (plausible on slow
+      hardware or if pgvector extension creation is slow), the healthcheck begins
+      counting failures at exactly the wrong moment.
+      The `depends_on: condition: service_healthy` on honcho-api (from any
+      future dependent service) would block correctly, but `docker compose up --wait`
+      used in memory_stack.py:43 will report failure if the container goes
+      unhealthy within the window.
+    recommendation: >
+      Increase start_period to 60s. Given the migration entrypoint pattern,
+      90s is safer for cold starts on resource-constrained systems.
+
+  - id: DCR-05
+    severity: MEDIUM
+    file: docker/memory/compose.yaml
+    line: 57
+    finding: >
+      `LLM_ANTHROPIC_API_KEY=${LLM_ANTHROPIC_API_KEY:-not-a-real-key--api-only-mode}`
+      hardcodes a dummy fallback value directly in compose.yaml. This is visible
+      in `docker inspect`, container environment listings, and compose config output.
+      If a user sets `LLM_ANTHROPIC_API_KEY=` (empty string) in their .env,
+      the `:-` syntax correctly uses the fallback (empty string IS treated as
+      "unset" by `:-`). However, the dummy string itself could mislead log analysis
+      tools or security scanners looking for API key patterns. The pattern is
+      functional but the choice to put the dummy in compose.yaml (not .env.example)
+      means the fallback cannot be changed without editing compose.yaml.
+    recommendation: >
+      Minor: Document why the dummy is in compose.yaml rather than .env.example.
+      The current behavior is correct (v3.0.3 doesn't call this key at startup),
+      but add a comment next to line 57 explicitly stating that this key is only
+      needed for Dialectic medium/high/max reasoning levels, which are not
+      exercised in API-only mode.
+
+  - id: DCR-06
+    severity: MEDIUM
+    file: docker/memory/.env.example
+    lines: [7, 22]
+    finding: >
+      The MODE 1 (API-only) description on line 7 states:
+        "HONCHO_DB_PASSWORD + LLM_GEMINI_API_KEY (required for startup validation)"
+      But per v3.0.3 confirmed research, LLM_GEMINI_API_KEY is NOT required for
+      startup. The compose.yaml's :? syntax enforces it (creating a hard requirement
+      at the Compose layer), but the underlying Honcho v3.0.3 server does not
+      need it. This conflates a compose.yaml configuration choice with a Honcho
+      requirement, which is misleading. Users reading the .env.example may:
+      (a) think Gemini is a Honcho requirement, not a compose.yaml choice, or
+      (b) not understand why API-only mode needs an LLM key at all.
+      Additionally, LLM_GEMINI_API_KEY is listed as OPTIONAL in the section
+      header on line 19 but REQUIRED in the MODE 1 description on line 7 —
+      a direct contradiction within the same file.
+    recommendation: >
+      Update MODE 1 description to: "HONCHO_DB_PASSWORD only (LLM keys provided
+      as dummies by compose.yaml defaults — no real keys needed)."
+      Move LLM_GEMINI_API_KEY to the REQUIRED section or add a note explaining
+      the compose.yaml enforces a dummy value. Remove the "required for startup
+      validation" rationale since v3.0.3 uses lazy initialization.
+
+  - id: DCR-07
+    severity: MEDIUM
+    file: docker/memory/compose.yaml
+    lines: [43, 57]
+    finding: >
+      AUTH_JWT_SECRET is set via `${AUTH_JWT_SECRET:-}` (empty string fallback),
+      while HONCHO_DB_PASSWORD uses `:?` (hard error on empty). The asymmetry is
+      intentional (JWT secret is optional when auth is disabled), but the empty
+      string fallback means if a user accidentally sets AUTH_USE_AUTH=true in .env
+      without setting AUTH_JWT_SECRET, the compose var interpolation will pass
+      an empty string to the container. The Honcho AuthSettings validator checks
+      `if self.USE_AUTH and not self.JWT_SECRET`, and empty string IS falsy in
+      Python, so the validator WILL catch it — but only at runtime, after the
+      container starts. This is a runtime crash rather than a compose parse-time
+      failure, which is harder to debug.
+    recommendation: >
+      Low-risk in current config (AUTH_USE_AUTH defaults to false). Add a comment
+      next to AUTH_JWT_SECRET noting that enabling AUTH_USE_AUTH=true requires
+      AUTH_JWT_SECRET to be set, or change to `:?` when AUTH_USE_AUTH is true
+      (requires a conditional not easily expressed in compose YAML). At minimum,
+      document the dependency in .env.example.
+
+  - id: DCR-08
+    severity: MEDIUM
+    file: docker/memory/compose.yaml
+    line: 171
+    finding: >
+      `image: redis:8.2@sha256:9e38e6ea04a97f282e8f063c23f91ebb28e65b30be70d98fbf36e7001ac98824`
+      Redis 8.2 is an unusual version reference. Redis stable releases as of
+      mid-2025 were in the 7.x series (7.2, 7.4). Redis 8.x was announced but
+      the 8.2 tag may be a pre-release, RC, or future version. If this digest
+      was pinned from a valid pull, the sha256 pin makes the image reproducible
+      regardless of tag movement. However, using a version tag that doesn't
+      match the stable release series creates confusion — operators checking
+      "what Redis version am I running" would see "8.2" and question its stability.
+      The digest pin is good practice but should be documented with the actual
+      version verified from the image manifest.
+    recommendation: >
+      Verify: `docker manifest inspect redis:8.2@sha256:9e38e6... | jq '.config.Labels'`
+      to confirm what version is actually in the pinned image. Add a comment
+      noting when this digest was pinned and which Redis version it contains.
+      If Redis 8.2 is genuinely GA and stable, this is fine; document it.
+
+  - id: DCR-09
+    severity: LOW
+    file: docker/memory/compose.yaml
+    lines: [87, 101]
+    finding: >
+      The commented-out honcho-deriver block has its service key comment appear
+      twice: `# honcho-deriver:` at line 87 (inside the explanatory comment block)
+      and again at line 101 (the actual YAML service definition, also commented).
+      A reader must scroll through ~15 lines of prose comments to reach the actual
+      YAML. The YAML parser handles this correctly (comments are ignored), but
+      the structure is confusing — particularly the repeated `# honcho-deriver:`
+      which appears to be two partial service definitions.
+    recommendation: >
+      Consolidate: keep a single 2-3 line header comment above the actual YAML
+      block. Move the re-enable instructions to .env.example or a README section.
+      The honcho-deriver-config-guide.md deep review already documents this.
+
+  - id: DCR-10
+    severity: LOW
+    file: docker/memory/compose.yaml
+    line: 138
+    finding: >
+      `command: ["postgres", "-c", "max_connections=200"]` with `mem_limit: 512m`
+      is over-provisioned for a single-application local deployment. Each PostgreSQL
+      connection consumes ~5-10MB of shared memory overhead plus per-backend memory.
+      The application (single Honcho instance) has a SQLAlchemy connection pool
+      of approximately pool_size=5 + max_overflow=10 = 15 connections max.
+      200 connections is never reached but the setting implies it is expected —
+      misleading for capacity planning. The mem_limit of 512m will prevent any
+      real connection pressure, making the setting both unused and confusing.
+    recommendation: >
+      Either remove the max_connections override (PostgreSQL default of 100 is
+      sufficient for a single app) or lower to 30 to match the actual pool ceiling.
+
+  - id: DCR-11
+    severity: LOW
+    file: docker/compose.yaml
+    lines: [14, 19]
+    finding: >
+      The comment on line 14 shows:
+        `docker compose -f docker/compose.yaml up honcho-api  # start one service`
+      The memory sub-stack declares `name: mde-memory` (docker/memory/compose.yaml:19).
+      Per Compose v2 include: behavior, each included file's `name:` field sets
+      the project name for that sub-stack's services. Services from an included
+      file with its own `name:` are addressable only within that project namespace.
+      Running `docker compose -f docker/compose.yaml up honcho-api` from the root
+      orchestrator MAY fail or silently do nothing because `honcho-api` belongs
+      to the `mde-memory` project, not the root project. This should be tested
+      to verify the documented usage actually works.
+      Note: This was verified as PASS by the previous deep-review (Vector 8),
+      but that review focused on include: support, not cross-project service targeting.
+    recommendation: >
+      Test the documented command: `docker compose -f docker/compose.yaml up honcho-api`
+      to verify it works. If it fails, the workaround is:
+        docker compose -f docker/memory/compose.yaml up honcho-api
+      Update the comment to reflect the correct command.
+
+summary:
+  critical: 1
+  high: 3
+  medium: 4
+  low: 3
+  total: 11
+  blocker: >
+    DCR-01 (tmpfs shadows migration files) will silently break DB initialization
+    on cold start. Fix before deployment.
+  superseded_findings: >
+    Previous CRITICAL findings about import-time LLM key validation crashes are
+    INVALIDATED — based on main branch source, not v3.0.3. The v3.0.3 tag uses
+    lazy initialization with no startup LLM key validation.

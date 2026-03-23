@@ -1,0 +1,143 @@
+---
+review_round: 3
+dimension: security
+reviewer: reviewer-agent
+date: "2026-03-23"
+branch: feat/honcho-api-only
+files_reviewed:
+  - docker/memory/compose.yaml
+  - docker/memory/.env.example
+  - src/mde/domain/docker_aggregate.py
+  - src/mde/domain/memory_stack.py
+  - src/mde/domain/observability_stack.py
+
+---
+
+# Verification of Required Fixes
+
+H5_dummy_api_key:
+  status: VERIFIED
+  description: >
+    LLM_GEMINI_API_KEY and LLM_ANTHROPIC_API_KEY both use
+    `not-a-real-key--api-only-mode` as default (compose.yaml lines 56-57).
+    Previously `dummy-api-only-mode`. Fix correctly applied to both keys.
+
+DCR_02_gemini_key_operator:
+  status: VERIFIED
+  description: >
+    compose.yaml line 56: LLM_GEMINI_API_KEY uses `:-` (soft default),
+    not `:?` (hard required). Correct — user should be able to override
+    with a real key without the compose failing. Fix applied correctly.
+
+H12_auth_disabled_comment:
+  status: VERIFIED
+  description: >
+    compose.yaml lines 38-41: security risk acceptance comment present,
+    documents mitigations (127.0.0.1 binding, no sensitive data in
+    API-only mode) and upgrade path (AUTH_USE_AUTH=true + AUTH_JWT_SECRET).
+    Fix applied correctly.
+
+SR_01_timeout_handling:
+  status: VERIFIED
+  description: >
+    All subprocess.run calls now have explicit timeouts and TimeoutExpired
+    handlers. Verified across all three modules:
+    - memory_stack.py: stack_up(120s), stack_down(60s), stack_status(10s),
+      stack_verify loop(15s each check)
+    - observability_stack.py: stop_orphan_collectors(10s for ps, 30s for
+      stop), stack_up(120s), stack_down(60s), stack_status(10s),
+      stack_verify loop(15s each check)
+    - docker_aggregate.py: wraps TimeoutExpired from delegated calls at
+      the aggregate level
+    No TimeoutExpired call is silently swallowed — all print to stderr and
+    return 1.
+
+PQ_02_filenotfounderror_guard:
+  status: VERIFIED
+  description: >
+    All three dispatch() functions (memory_stack.py:186-193,
+    observability_stack.py:214-220, docker_aggregate.py:154-161)
+    catch FileNotFoundError and print an actionable message pointing to
+    Docker Desktop installation. Fix applied correctly.
+
+SR_04_strip_on_passwords:
+  status: VERIFIED
+  description: >
+    memory_stack.py line 28: password = os.environ.get("HONCHO_DB_PASSWORD", "").strip()
+    observability_stack.py line 52: password = os.environ.get("GRAFANA_PASSWORD", "").strip()
+    Both password reads use .strip(). Edge case analysis: .strip() on an
+    empty string returns empty string (no breakage). On a password that
+    legitimately contains leading/trailing whitespace (unusual but valid),
+    strip() would incorrectly accept a whitespace-only value or trim a real
+    password. However the trimmed value is only used for the truthiness check
+    (not passed to docker), so worst case is a false-positive empty-password
+    detection on whitespace-only env vars, which is correct behavior.
+    No regression introduced.
+
+DCR_01_no_migrations_tmpfs:
+  status: VERIFIED
+  description: >
+    compose.yaml lines 79-81: honcho-api tmpfs mounts are /tmp and
+    /app/__pycache__ only. /app/migrations is NOT in the tmpfs list.
+    This is correct — alembic migrations must read from disk. Fix applied.
+
+---
+
+# New Issues Introduced by Fixes
+
+NEW_01_stop_orphan_collectors_no_timeout_exception_handling:
+  severity: P2
+  status: FINDING
+  file: src/mde/domain/observability_stack.py
+  lines: 38-42
+  description: >
+    stop_orphan_collectors() has a timeout=30 on the `docker stop` call
+    (line 40) but does NOT catch subprocess.TimeoutExpired. If a container
+    hangs during stop, the exception propagates up to stack_up() which also
+    does NOT catch it (stack_up only catches TimeoutExpired from its own
+    subprocess.run at line 69-75). The orphan-stop call at line 66 is
+    outside that try block.
+  impact: >
+    A hung orphan container causes stack_up() to raise an uncaught
+    TimeoutExpired, which bubbles to docker_aggregate.py's stack_up()
+    where it IS caught (line 33-35). So the failure is not silent —
+    it will be reported as "TIMEOUT: observability stack_up" — but
+    the error message is misleading: it implies the Compose up timed out,
+    not that an orphan container removal hung.
+  recommendation: >
+    Wrap the docker stop call in stop_orphan_collectors with a try/except
+    subprocess.TimeoutExpired and print a targeted message, or add a
+    try/except around the stop_orphan_collectors() call in stack_up().
+
+NEW_02_verify_health_check_no_network_timeout:
+  severity: P3
+  status: FINDING
+  file: src/mde/domain/memory_stack.py
+  lines: 103-104
+  description: >
+    The honcho-api health check command (lines 103-104) calls
+    urllib.request.urlopen without a timeout argument inside the container.
+    The outer subprocess timeout=15 covers the docker exec invocation, but
+    if the container is running and the HTTP server is accepting connections
+    but not responding, urllib.request.urlopen will block indefinitely inside
+    the container until the 15s subprocess timeout fires. This is acceptable
+    behavior but differs from the compose.yaml healthcheck which passes
+    timeout=3. Minor inconsistency — the verify check is slightly more
+    permissive than the healthcheck definition.
+  recommendation: >
+    Add timeout=10 to urlopen for consistency with compose.yaml healthcheck.
+    Not a blocking issue.
+
+---
+
+# Summary
+
+required_fixes_verified: 7/7
+new_findings: 2
+blocking_new_findings: 0
+recommendation: >
+  All required fixes from rounds 1 and 2 are correctly applied. Two new
+  issues were introduced: NEW_01 is P2 (misleading error on orphan container
+  hang, not silent failure — aggregate catches it) and NEW_02 is P3
+  (cosmetic timeout inconsistency). Neither blocks merge. NEW_01 should be
+  tracked as a follow-up issue.

@@ -1,0 +1,291 @@
+id: review-test-coverage
+agent: reviewer
+dimension: test-coverage-gaps
+reviewed_files:
+  - tests/mde/test_docker_aggregate.py
+  - tests/mde/test_cli_docker.py
+  - tests/mde/test_memory_stack.py
+  - tests/mde/test_cli_memory.py
+  - src/mde/domain/docker_aggregate.py
+  - src/mde/domain/observability_stack.py
+
+findings:
+  - severity: CRITICAL
+    id: wrong-mock-target-for-stack-verify
+    file: tests/mde/test_docker_aggregate.py
+    lines: 155-181
+    finding: |
+      `TestStackVerify` (lines 155-181) patches `mde.domain.observability_stack.stack_verify`
+      and `mde.domain.memory_stack.stack_verify`. This IS the correct pattern for deferred
+      imports (functions imported inside the function body). However, the `TestObservabilityVerify`
+      class (lines 212-245) patches `subprocess.run` globally, which hits ALL subprocess calls
+      inside `observability_stack.stack_verify`. This means:
+
+        1. The test does NOT isolate `docker_aggregate.stack_verify` from its sub-modules.
+        2. `TestObservabilityVerify` is testing `observability_stack.stack_verify` (the sub-module
+           function), NOT `docker_aggregate.stack_verify`. Yet it lives in test_docker_aggregate.py,
+           creating a false impression that docker_aggregate.stack_verify is covered.
+        3. If the observability_stack.stack_verify implementation changes (e.g. stops using
+           subprocess directly), `TestObservabilityVerify` silently stops providing coverage
+           of `docker_aggregate.stack_verify`.
+    recommendation: |
+      Move `TestObservabilityVerify` to `tests/mde/test_observability_stack.py` where it
+      belongs. The `TestStackVerify` class in `test_docker_aggregate.py` correctly patches
+      the sub-module functions and should stand alone.
+
+  - severity: HIGH
+    id: stack-down-missing-timeout-tests
+    file: tests/mde/test_docker_aggregate.py
+    lines: 88-117
+    finding: |
+      `TestStackDown` has NO `TimeoutExpired` tests. The implementation in
+      `docker_aggregate.py:62-73` wraps both memory and observability calls in
+      `try/except subprocess.TimeoutExpired`, just like `stack_up`. Compare `TestStackUp`
+      which has `test_timeout_on_observability_returns_nonzero` and
+      `test_timeout_on_memory_returns_nonzero`. These branches in `stack_down` are
+      completely unexercised.
+    recommendation: Add timeout tests for both sub-stacks in TestStackDown.
+    test_code: |
+      def test_timeout_on_memory_returns_nonzero(self) -> None:
+          with (
+              patch(
+                  "mde.domain.memory_stack.stack_down",
+                  side_effect=subprocess.TimeoutExpired(cmd=[], timeout=60),
+              ),
+              patch("mde.domain.observability_stack.stack_down", return_value=0),
+          ):
+              assert stack_down() == 1
+
+      def test_timeout_on_observability_returns_nonzero(self) -> None:
+          with (
+              patch("mde.domain.memory_stack.stack_down", return_value=0),
+              patch(
+                  "mde.domain.observability_stack.stack_down",
+                  side_effect=subprocess.TimeoutExpired(cmd=[], timeout=60),
+              ),
+          ):
+              assert stack_down() == 1
+
+  - severity: HIGH
+    id: stack-status-missing-timeout-tests
+    file: tests/mde/test_docker_aggregate.py
+    lines: 120-149
+    finding: |
+      `TestStackStatus` has NO `TimeoutExpired` tests. The implementation in
+      `docker_aggregate.py:77-96` wraps both sub-stack calls in `try/except
+      subprocess.TimeoutExpired`, identical to `stack_up` and `stack_down`. Zero timeout
+      branches tested for `stack_status`.
+    recommendation: Add timeout tests mirroring TestStackUp's timeout tests.
+    test_code: |
+      def test_timeout_on_memory_returns_nonzero(self) -> None:
+          with (
+              patch("mde.domain.observability_stack.stack_status", return_value=0),
+              patch(
+                  "mde.domain.memory_stack.stack_status",
+                  side_effect=subprocess.TimeoutExpired(cmd=[], timeout=10),
+              ),
+          ):
+              assert stack_status() == 1
+
+      def test_timeout_on_observability_returns_nonzero(self) -> None:
+          with (
+              patch(
+                  "mde.domain.observability_stack.stack_status",
+                  side_effect=subprocess.TimeoutExpired(cmd=[], timeout=10),
+              ),
+              patch("mde.domain.memory_stack.stack_status", return_value=0),
+          ):
+              assert stack_status() == 1
+
+  - severity: HIGH
+    id: stack-verify-missing-timeout-coverage
+    file: tests/mde/test_docker_aggregate.py
+    lines: 152-181
+    finding: |
+      `docker_aggregate.stack_verify()` (docker_aggregate.py:99-110) does NOT wrap its
+      sub-stack calls in `try/except TimeoutExpired`. This is an asymmetry with `stack_up`,
+      `stack_down`, and `stack_status`. If `memory_stack.stack_verify()` or
+      `observability_stack.stack_verify()` raises `TimeoutExpired`, it will propagate
+      uncaught through `docker_aggregate.stack_verify` to the CLI's `dispatch()`, which
+      also does not catch it. The result is an unhandled exception rather than exit code 1.
+
+      There is no test exposing this — the `TestStackVerify` tests only test return values,
+      not exception propagation. This is a behavioral gap in the code, and a coverage gap
+      in the tests.
+    recommendation: |
+      Either add `try/except TimeoutExpired` in `docker_aggregate.stack_verify` (consistent
+      with the other three operations), OR add a test documenting that `TimeoutExpired`
+      propagates. Currently there is no test for this scenario at all.
+    test_code: |
+      def test_timeout_on_memory_propagates_or_returns_1(self) -> None:
+          # Documents current behavior: TimeoutExpired is NOT caught
+          with (
+              patch("mde.domain.observability_stack.stack_verify", return_value=0),
+              patch(
+                  "mde.domain.memory_stack.stack_verify",
+                  side_effect=subprocess.TimeoutExpired(cmd=[], timeout=15),
+              ),
+          ):
+              import pytest
+              with pytest.raises(subprocess.TimeoutExpired):
+                  stack_verify()  # fails today — fix is to catch and return 1
+
+  - severity: HIGH
+    id: dispatch-filenotfounderror-untested
+    file: tests/mde/test_docker_aggregate.py
+    lines: 184-209
+    finding: |
+      `dispatch()` catches `FileNotFoundError` (docker_aggregate.py:140-145) and prints
+      an error message + returns 1. This branch is never tested. If the error message
+      text or the return code were changed, no test would catch it.
+    recommendation: Add a test that makes the handler raise FileNotFoundError.
+    test_code: |
+      def test_dispatch_docker_not_found_returns_1(self, capsys: pytest.CaptureFixture[str]) -> None:
+          args = argparse.Namespace(docker_action="up")
+          with patch("mde.domain.docker_aggregate.stack_up", side_effect=FileNotFoundError):
+              result = dispatch(args)
+          assert result == 1
+          captured = capsys.readouterr()
+          assert "docker not found" in captured.err.lower() or "ERROR" in captured.err
+
+  - severity: HIGH
+    id: stack-down-missing-stderr-verification
+    file: tests/mde/test_docker_aggregate.py
+    lines: 88-117
+    finding: |
+      `TestStackDown` (unlike `TestStackUp.test_both_fail_message_includes_both_names`)
+      never uses `capsys` to verify stderr output. `stack_down` prints section headers
+      and timeout messages (docker_aggregate.py:61-72). If all output were accidentally
+      suppressed (e.g. `sys.stderr` redirected), no test would catch it.
+    recommendation: |
+      Add at least one test using `capsys` to verify that section headers are printed
+      on both success and failure paths.
+
+  - severity: MEDIUM
+    id: dispatch-over-mocking-action-table
+    file: tests/mde/test_docker_aggregate.py
+    lines: 184-209
+    finding: |
+      All four `test_dispatch_*` tests replace `_ACTION_TABLE` entirely with a lambda
+      returning 0. This verifies routing by key lookup but does NOT verify that the real
+      `_ACTION_TABLE` contains the correct function references. If `stack_verify` were
+      accidentally removed from the dict, all dispatch tests would still pass.
+    recommendation: |
+      Add one non-mocked test verifying the real table contents:
+    test_code: |
+      def test_action_table_contains_all_expected_functions(self) -> None:
+          from mde.domain.docker_aggregate import (
+              _ACTION_TABLE, stack_down, stack_status, stack_up, stack_verify,
+          )
+          assert set(_ACTION_TABLE.keys()) == {"up", "down", "status", "verify"}
+          assert _ACTION_TABLE["up"] is stack_up
+          assert _ACTION_TABLE["down"] is stack_down
+          assert _ACTION_TABLE["status"] is stack_status
+          assert _ACTION_TABLE["verify"] is stack_verify
+
+  - severity: MEDIUM
+    id: weak-assertions-result-not-equal-1
+    file: tests/mde/test_docker_aggregate.py
+    lines: 75-85
+    finding: |
+      `TestObservabilityVerify` uses `assert result == 1` (line 222) and
+      `assert result == 1` (line 237, 244) which is correct. However, note that
+      `test_memory_stack.py:103` uses `assert result != 0` rather than `assert result == 1`.
+      The production code consistently returns exactly 1 on failure, never 2 or -1.
+      Weak `!= 0` assertions would pass even if the function returned an error sentinel
+      like -1 or 127. This is not present in `test_docker_aggregate.py` itself, but the
+      pattern inconsistency between `test_memory_stack.py` and `test_docker_aggregate.py`
+      indicates one was written more carefully than the other.
+    recommendation: |
+      In test_memory_stack.py, replace `assert result != 0` at line 103 with
+      `assert result == 1` to match the precision of test_docker_aggregate.py.
+
+  - severity: MEDIUM
+    id: observability-stack-up-not-tested
+    file: tests/mde/test_docker_aggregate.py
+    lines: null
+    finding: |
+      `observability_stack.stack_up()` has no dedicated test file. The function
+      (observability_stack.py:45-72) validates `GRAFANA_PASSWORD`, checks compose file
+      existence, calls `stop_orphan_collectors()`, and runs docker compose. None of these
+      paths are tested:
+        - Missing GRAFANA_PASSWORD → should return 1
+        - Missing compose file → should return 1
+        - `stop_orphan_collectors()` side effects
+        - Successful start path
+      Compare: `memory_stack.stack_up` has dedicated tests for all these cases in
+      `test_memory_stack.py`. The observability stack has no equivalent file.
+    recommendation: |
+      Create `tests/mde/test_observability_stack.py` mirroring `test_memory_stack.py`
+      structure, covering at minimum: missing env var, missing compose file, success path,
+      and `stop_orphan_collectors` when containers are present vs absent.
+
+  - severity: MEDIUM
+    id: cli-docker-missing-status-and-verify
+    file: tests/mde/test_cli_docker.py
+    lines: 1-33
+    finding: |
+      `test_cli_docker.py` only tests `docker up`, `docker down`, and `docker` (no action).
+      It does NOT test `run(["docker", "status"])` or `run(["docker", "verify"])`.
+      Compare `test_cli_memory.py` which similarly only tests `memory up` and `memory down`.
+      Both files are missing status and verify CLI wiring tests. If these subcommands were
+      removed from `add_subparsers`, the CLI tests would not catch it.
+    recommendation: |
+      Add tests for status and verify actions in both test_cli_docker.py and
+      test_cli_memory.py:
+    test_code: |
+      def test_docker_status_dispatches(self) -> None:
+          with patch("mde.domain.docker_aggregate.dispatch", return_value=0) as mock_dispatch:
+              result = run(["docker", "status"])
+              assert result == 0
+              args = mock_dispatch.call_args[0][0]
+              assert args.docker_action == "status"
+
+      def test_docker_verify_dispatches(self) -> None:
+          with patch("mde.domain.docker_aggregate.dispatch", return_value=0) as mock_dispatch:
+              result = run(["docker", "verify"])
+              assert result == 0
+              args = mock_dispatch.call_args[0][0]
+              assert args.docker_action == "verify"
+
+  - severity: LOW
+    id: stack-down-order-not-verified
+    file: tests/mde/test_docker_aggregate.py
+    lines: 88-117
+    finding: |
+      `stack_down` is documented to shut down memory before observability
+      (docker_aggregate.py:8-9: "down: memory first, then observability"). No test verifies
+      this order. If it were accidentally swapped to match `stack_up` order, no test would
+      catch it. This is a deliberate design choice (final telemetry flushes) that warrants
+      a regression test.
+    recommendation: |
+      Add an order-verification test using side_effect to track call sequence:
+    test_code: |
+      def test_down_stops_memory_before_observability(self) -> None:
+          call_order: list[str] = []
+          with (
+              patch(
+                  "mde.domain.memory_stack.stack_down",
+                  side_effect=lambda: call_order.append("memory") or 0,
+              ),
+              patch(
+                  "mde.domain.observability_stack.stack_down",
+                  side_effect=lambda: call_order.append("observability") or 0,
+              ),
+          ):
+              stack_down()
+          assert call_order == ["memory", "observability"]
+
+summary:
+  total_findings: 11
+  by_severity:
+    CRITICAL: 1
+    HIGH: 5
+    MEDIUM: 4
+    LOW: 1
+  top_issues:
+    - "TestObservabilityVerify belongs in test_observability_stack.py, not test_docker_aggregate.py — creates false coverage impression"
+    - "stack_down and stack_status TimeoutExpired branches completely untested (stack_up has them, inconsistency)"
+    - "docker_aggregate.stack_verify does NOT catch TimeoutExpired — unhandled exception in production, no test exposing this"
+    - "dispatch() FileNotFoundError handler never tested"
+    - "No test file for observability_stack at all — compare memory_stack which has comprehensive tests"

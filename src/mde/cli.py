@@ -148,6 +148,11 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
 
     _add_memory_subparsers(sub)
 
+    # docker (aggregate: all stacks)
+    from mde.domain.docker_aggregate import add_subparsers as _add_docker_subparsers
+
+    _add_docker_subparsers(sub)
+
     return parser
 
 
@@ -477,6 +482,17 @@ def _cmd_memory(args: argparse.Namespace) -> int:
         return result
 
 
+def _cmd_docker(args: argparse.Namespace) -> int:
+    action = getattr(args, "docker_action", None)
+    with _traced_command("docker", action=action) as ctx:
+        ctx["span"].set_attribute("docker.action", str(action))
+        from mde.domain.docker_aggregate import dispatch as docker_dispatch
+
+        result = docker_dispatch(args)
+        ctx["result"] = result
+        return result
+
+
 _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "validate": _cmd_validate,
     "update": _cmd_update,
@@ -499,4 +515,5 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "statusline": _cmd_statusline,
     "observability": _cmd_observability,
     "memory": _cmd_memory,
+    "docker": _cmd_docker,
 }

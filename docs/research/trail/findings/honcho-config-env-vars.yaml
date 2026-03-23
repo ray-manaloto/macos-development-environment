@@ -1,0 +1,149 @@
+id: finding-honcho-v3-env-vars
+timestamp: "2026-03-23T17:21:00Z"
+source: "https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/config.py"
+agent: researcher
+finding_type: reference
+confidence: confirmed
+confident_about: |
+  Exact environment variable names for all Honcho v3.0.3 provider settings.
+  All SupportedProviders enum values. All ENABLED flags.
+  Default models and configuration for Deriver, Summary, and Dialectic levels.
+gaps: |
+  Groq API rate limits or pricing tiers not in config.
+  LanceDB multi-user concurrency characteristics not documented.
+  Observability for provider failures/fallbacks not covered.
+evidence: |
+  Direct extraction from config.py at v3.0.3 tag:
+  - DeriverSettings: DERIVER_ENABLED, DERIVER_PROVIDER, DERIVER_MODEL, DERIVER_BACKUP_PROVIDER, DERIVER_BACKUP_MODEL
+  - SummarySettings: SUMMARY_ENABLED, SUMMARY_PROVIDER, SUMMARY_MODEL, SUMMARY_BACKUP_PROVIDER, SUMMARY_BACKUP_MODEL
+  - DialecticSettings: DIALECTIC_LEVELS__<LEVEL>__PROVIDER (nested delimiter __)
+  - DreamSettings: DREAM_ENABLED, DREAM_PROVIDER, DREAM_MODEL, DREAM_BACKUP_PROVIDER, DREAM_BACKUP_MODEL
+  - SupportedProviders = Literal["anthropic", "openai", "google", "groq", "custom", "vllm"]
+  - LLM layer: LLM_ANTHROPIC_API_KEY, LLM_OPENAI_API_KEY, LLM_GEMINI_API_KEY, LLM_GROQ_API_KEY, etc.
+implication: |
+  Docker compose must set all three levels of the provider pyramid:
+  1. API Keys at LLM layer (mandatory): LLM_ANTHROPIC_API_KEY, LLM_OPENAI_API_KEY, LLM_GEMINI_API_KEY
+  2. Component selection at provider level (defines default models): DERIVER_PROVIDER, SUMMARY_PROVIDER, DREAM_PROVIDER
+  3. Dialectic level overrides (per-reasoning-level): DIALECTIC_LEVELS__minimal__PROVIDER, etc.
+
+  All ENABLED flags default to True (Deriver, Summary, Peer Card, Dream, Cache, Telemetry).
+  Must explicitly set to False in compose to disable components without removing them.
+
+  Backup providers allow graceful fallback when primary API fails.
+tags: [honcho, v3.0.3, environment-variables, provider-configuration, docker-compose, deriver, summary, dialectic, dream]
+status: discovered
+
+## Detailed Environment Variable Reference
+
+### Provider Selection Variables (Primary/Backup Pattern)
+
+**Deriver (Document Representation):**
+- `DERIVER_ENABLED` (default: `True`)
+- `DERIVER_PROVIDER` (default: `"google"`)
+- `DERIVER_MODEL` (default: `"gemini-2.5-flash-lite"`)
+- `DERIVER_BACKUP_PROVIDER` (optional, default: `None`)
+- `DERIVER_BACKUP_MODEL` (optional, default: `None`)
+
+**Summary (Session Summarization):**
+- `SUMMARY_ENABLED` (default: `True`)
+- `SUMMARY_PROVIDER` (default: `"google"`)
+- `SUMMARY_MODEL` (default: `"gemini-2.5-flash"`)
+- `SUMMARY_BACKUP_PROVIDER` (optional, default: `None`)
+- `SUMMARY_BACKUP_MODEL` (optional, default: `None`)
+
+**Dialectic (Reasoning at Multiple Levels):**
+- `DIALECTIC_LEVELS__minimal__PROVIDER` (default: `"google"`)
+- `DIALECTIC_LEVELS__minimal__MODEL` (default: `"gemini-2.5-flash-lite"`)
+- `DIALECTIC_LEVELS__minimal__THINKING_BUDGET_TOKENS` (default: `0`)
+- `DIALECTIC_LEVELS__minimal__MAX_TOOL_ITERATIONS` (default: `1`)
+- `DIALECTIC_LEVELS__low__PROVIDER` (default: `"google"`)
+- `DIALECTIC_LEVELS__low__MODEL` (default: `"gemini-2.5-flash-lite"`)
+- `DIALECTIC_LEVELS__low__THINKING_BUDGET_TOKENS` (default: `0`)
+- `DIALECTIC_LEVELS__low__MAX_TOOL_ITERATIONS` (default: `5`)
+- `DIALECTIC_LEVELS__medium__PROVIDER` (default: `"anthropic"`)
+- `DIALECTIC_LEVELS__medium__MODEL` (default: `"claude-haiku-4-5"`)
+- `DIALECTIC_LEVELS__medium__THINKING_BUDGET_TOKENS` (default: `1024`)
+- `DIALECTIC_LEVELS__medium__MAX_TOOL_ITERATIONS` (default: `2`)
+- `DIALECTIC_LEVELS__high__PROVIDER` (default: `"anthropic"`)
+- `DIALECTIC_LEVELS__high__MODEL` (default: `"claude-haiku-4-5"`)
+- `DIALECTIC_LEVELS__high__THINKING_BUDGET_TOKENS` (default: `1024`)
+- `DIALECTIC_LEVELS__high__MAX_TOOL_ITERATIONS` (default: `4`)
+- `DIALECTIC_LEVELS__max__PROVIDER` (default: `"anthropic"`)
+- `DIALECTIC_LEVELS__max__MODEL` (default: `"claude-haiku-4-5"`)
+- `DIALECTIC_LEVELS__max__THINKING_BUDGET_TOKENS` (default: `2048`)
+- `DIALECTIC_LEVELS__max__MAX_TOOL_ITERATIONS` (default: `10`)
+
+**Dream (Autonomous Hypothesis Generation):**
+- `DREAM_ENABLED` (default: `True`)
+- `DREAM_PROVIDER` (default: `"anthropic"`)
+- `DREAM_MODEL` (default: `"claude-sonnet-4-20250514"`)
+- `DREAM_BACKUP_PROVIDER` (optional, default: `None`)
+- `DREAM_BACKUP_MODEL` (optional, default: `None`)
+- `DREAM_DEDUCTION_MODEL` (specialist, default: `"claude-haiku-4-5"`)
+- `DREAM_INDUCTION_MODEL` (specialist, default: `"claude-haiku-4-5"`)
+
+### API Keys (LLM Layer)
+
+**Required if Provider is Selected:**
+- `LLM_ANTHROPIC_API_KEY` — for "anthropic" provider
+- `LLM_OPENAI_API_KEY` — for "openai" provider
+- `LLM_GEMINI_API_KEY` — for "google" provider
+- `LLM_GROQ_API_KEY` — for "groq" provider
+- `LLM_OPENAI_COMPATIBLE_API_KEY` — for custom OpenAI-compatible endpoints
+- `LLM_VLLM_API_KEY` (optional) — for vLLM endpoint
+- `LLM_VLLM_BASE_URL` (optional) — for vLLM endpoint (e.g., `http://localhost:8000/v1`)
+- `LLM_OPENAI_COMPATIBLE_BASE_URL` (optional) — for custom endpoint
+
+**Optional:**
+- `LLM_EMBEDDING_PROVIDER` (default: `"openai"`, options: `"openai"`, `"gemini"`, `"openrouter"`)
+
+### Component Feature Flags
+
+- `PEER_CARD_ENABLED` (default: `True`)
+- `CACHE_ENABLED` (default: `False`)
+- `TELEMETRY_ENABLED` (default: `False`)
+- `METRICS_ENABLED` (default: `False`)
+- `SENTRY_ENABLED` (default: `False`)
+- `AUTH_USE_AUTH` (default: `False`)
+
+### SupportedProviders Enum Values
+
+```python
+SupportedProviders = Literal["anthropic", "openai", "google", "groq", "custom", "vllm"]
+```
+
+Valid values for any `PROVIDER` variable:
+1. `"anthropic"` — Claude family (requires `LLM_ANTHROPIC_API_KEY`)
+2. `"openai"` — GPT family (requires `LLM_OPENAI_API_KEY`)
+3. `"google"` — Gemini family (requires `LLM_GEMINI_API_KEY`)
+4. `"groq"` — Groq cloud models (requires `LLM_GROQ_API_KEY`)
+5. `"custom"` — OpenAI-compatible endpoint (requires `LLM_OPENAI_COMPATIBLE_BASE_URL`)
+6. `"vllm"` — vLLM server (requires `LLM_VLLM_BASE_URL`)
+
+### Reasoning Levels (Dialectic)
+
+```python
+ReasoningLevel = Literal["minimal", "low", "medium", "high", "max"]
+```
+
+Each level has independent provider, model, thinking budget, and tool iteration counts.
+Configure via `DIALECTIC_LEVELS__<level>__<field>`.
+
+### Critical Defaults Summary
+
+| Component | Default Provider | Default Model | Feature Flag |
+|-----------|-----------------|---------------|--------------|
+| Deriver | google | gemini-2.5-flash-lite | DERIVER_ENABLED |
+| Summary | google | gemini-2.5-flash | SUMMARY_ENABLED |
+| Dream | anthropic | claude-sonnet-4-20250514 | DREAM_ENABLED |
+| Dialectic (minimal) | google | gemini-2.5-flash-lite | — |
+| Dialectic (medium/high/max) | anthropic | claude-haiku-4-5 | — |
+
+### Configuration Precedence (Honcho Honors This Order)
+
+1. Init settings (programmatic API call)
+2. Environment variables (`ENV_VAR_NAME`)
+3. .env file (same as environment)
+4. TOML config file (optional, at `config.toml`)
+5. Secrets files (optional, e.g., `/run/secrets/*`)
+6. Hardcoded defaults (in model definitions)

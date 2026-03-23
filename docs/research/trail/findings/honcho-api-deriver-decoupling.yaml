@@ -1,0 +1,70 @@
+id: honcho-api-deriver-decoupling
+timestamp: "2026-03-23T00:00:00Z"
+source: https://github.com/plastic-labs/honcho/blob/v3.0.3/README.md
+agent: researcher
+finding_type: insight
+confidence: confirmed
+confident_about: |
+  Honcho v3.0.3 has architectural decoupling between the API server and the reasoning worker (deriver):
+
+  TWO SEPARATE PROCESSES:
+  1. API Server: `uv run fastapi dev src/main.py`
+     - Handles storage and retrieval
+     - Stores messages immediately
+     - Does NOT perform reasoning
+     - Can start without deriver running
+     - Dependencies: PostgreSQL only
+
+  2. Background Worker (Deriver): `uv run python -m src.deriver`
+     - Processes queued messages asynchronously
+     - Generates representations, summaries, peer cards, dreaming tasks
+     - Requires all LLM API keys
+     - Can be scaled to multiple instances
+     - Optional but required for full functionality
+
+  KEY CAPABILITY: Deriver can be disabled via DERIVER_ENABLED=false
+gaps: |
+  - Unclear if main.py imports deriver code at startup
+  - Unknown if missing deriver causes API to degrade gracefully
+  - No documentation on API-only use cases (pure storage/retrieval without reasoning)
+  - Feature parity unknown if deriver is disabled
+evidence: |
+  1. README.md Step 6 "Launch Honcho" explicitly lists as separate steps:
+     "With the database set up... two components need to be running:"
+     - "Start the API server"
+     - "Start a background worker (deriver)" in separate terminal
+
+  2. Configuration shows DERIVER_ENABLED flag (commented by default)
+
+  3. README states deriver purpose clearly:
+     "The deriver generates representation, summaries, peer cards, and manages dreaming tasks.
+      You can increase the number of deriver's to improve runtime efficiency."
+
+  4. .env.template has full deriver configuration section separate from API settings
+
+  5. Architecture diagram shows agents -> API -> database + queue -> deriver -> reasoning results
+implication: |
+  BREAKTHROUGH: The API server CAN run without the deriver.
+  It will NOT perform background reasoning, but it will:
+  - Accept and store messages
+  - Provide basic retrieval (raw messages, no reasoning-derived insights)
+  - Work as a pure document/message store
+
+  However, without the deriver:
+  - No peer representations (learned profiles)
+  - No summaries
+  - No peer cards (biographical data)
+  - No dreaming (background synthesis)
+  - Users get raw message history, not "stateful agent memory"
+
+  This enables a DEGRADED mode deployment where:
+  1. API runs on your infrastructure (PostgreSQL only)
+  2. Deriver can run selectively (e.g., only when you have API keys)
+  3. Users get immediate message storage without waiting for reasoning
+
+  You could potentially:
+  - Use Honcho's managed service for reasoning (call external API)
+  - Or disable deriver entirely and use as dumb storage layer
+  - But this defeats the core value proposition (reasoning-powered memory)
+tags: [honcho, architecture, decoupling, api, deriver, optional-reasoning, degraded-mode]
+status: discovered

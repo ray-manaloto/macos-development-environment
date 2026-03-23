@@ -1,0 +1,249 @@
+id: review-python-quality
+agent: reviewer
+dimension: python-code-quality
+reviewed_files:
+  - src/mde/domain/docker_aggregate.py
+  - src/mde/domain/observability_stack.py
+  - src/mde/domain/memory_stack.py
+  - src/mde/cli.py
+  - tests/mde/test_docker_aggregate.py
+review_date: "2026-03-23"
+
+resolved_from_prior_review:
+  - "stack_verify() added to observability_stack.py — no longer a private duplicate in docker_aggregate"
+  - "FileNotFoundError guard added to docker_aggregate.dispatch() (line 140)"
+  - "Stack ordering now documented in module docstring (lines 7-11)"
+
+findings:
+  - id: PQ-01
+    severity: HIGH
+    file: src/mde/domain/docker_aggregate.py
+    line: 99
+    category: error-handling
+    finding: >
+      `stack_verify()` (lines 99-110) delegates to `obs_verify()` and
+      `memory_verify()` with NO exception handling — no `try/except
+      subprocess.TimeoutExpired`, no `FileNotFoundError` guard. All three sibling
+      functions (`stack_up`, `stack_down`, `stack_status`) wrap their sub-stack
+      calls in `try/except subprocess.TimeoutExpired`. `stack_verify` is the only
+      one that doesn't. If a container hangs during health-check and a
+      `TimeoutExpired` bubbles up from within `obs_verify()` or `memory_verify()`,
+      `stack_verify` propagates it as an uncaught exception and the entire
+      aggregate verify crashes with a traceback instead of printing "TIMEOUT" and
+      returning 1.
+    recommendation: >
+      Add the same `try/except subprocess.TimeoutExpired` guards used in
+      `stack_up` (lines 31-35 and 38-42):
+
+        ```python
+        print("=== Observability Stack ===", file=sys.stderr)
+        try:
+            obs_rc = obs_verify()
+        except subprocess.TimeoutExpired:
+            print("  TIMEOUT: observability stack_verify", file=sys.stderr)
+            obs_rc = 1
+
+        print("\n=== Memory Stack ===", file=sys.stderr)
+        try:
+            mem_rc = memory_verify()
+        except subprocess.TimeoutExpired:
+            print("  TIMEOUT: memory stack_verify", file=sys.stderr)
+            mem_rc = 1
+        ```
+
+  - id: PQ-02
+    severity: HIGH
+    file: src/mde/domain/observability_stack.py
+    line: 194
+    category: error-handling
+    finding: >
+      `observability_stack.dispatch()` (line 194) and `memory_stack.dispatch()`
+      (line 167) do NOT catch `FileNotFoundError`, but `docker_aggregate.dispatch()`
+      does (line 138-145). When users invoke `mde-py observability up` or
+      `mde-py memory up` directly (without going through the aggregate), and
+      `docker` is absent from PATH, both sub-stack dispatchers propagate the
+      `FileNotFoundError` as an uncaught traceback. The guard exists only in
+      the aggregate path, leaving the individual stack CLI commands broken with
+      an unhandled exception on any machine without Docker installed.
+    recommendation: >
+      Add `FileNotFoundError` handling to `dispatch()` in both
+      `observability_stack.py` and `memory_stack.py`, identical to the pattern
+      in `docker_aggregate.dispatch()` lines 138-145:
+
+        ```python
+        try:
+            return handler()
+        except FileNotFoundError:
+            print(
+                "ERROR: docker not found on PATH. Install Docker Desktop or add docker to PATH.",
+                file=sys.stderr,
+            )
+            return 1
+        ```
+
+  - id: PQ-03
+    severity: HIGH
+    file: src/mde/domain/observability_stack.py
+    line: 38
+    category: error-handling
+    finding: >
+      `stop_orphan_collectors()` calls `subprocess.run(["docker", "stop",
+      parts[0]], ...)` (lines 38-42) with NO `FileNotFoundError` handling and
+      NO return value check. If `docker stop` fails (e.g., race condition where
+      the container exits between the `ps` and the `stop`), the failure is
+      silently discarded. More critically, `stop_orphan_collectors()` is called
+      from `stack_up()` (line 66). If `docker` is not on PATH, the outer
+      `stack_up()` code checks `GRAFANA_PASSWORD` first (return 1) and checks
+      `COMPOSE_FILE.is_file()` next (return 1), but if those pass, `docker ps`
+      in `stop_orphan_collectors` will raise `FileNotFoundError` which propagates
+      through `stack_up` with no handling at that layer (docker_aggregate catches
+      it, but direct `mde-py observability up` does not — see PQ-02).
+      Additionally, `subprocess.run(["docker", "stop", ...])` does not pass
+      `check=False` explicitly, meaning its returncode is silently ignored.
+    recommendation: >
+      Wrap the `docker stop` call and the outer `docker ps` call with
+      `FileNotFoundError` handling (returning early is fine for the orphan
+      cleanup — it is non-critical). Consider checking returncode of `docker stop`
+      or at minimum documenting that failures are intentionally swallowed.
+
+  - id: PQ-04
+    severity: MEDIUM
+    file: src/mde/domain/docker_aggregate.py
+    line: 55
+    category: ux-consistency
+    finding: >
+      `stack_down()` returns `1 if (obs_rc or mem_rc) else 0` (line 74) but
+      does NOT report which stacks failed to stop. `stack_up()` (lines 44-51)
+      prints "Failed: observability, memory" with explicit attribution.
+      `stack_down` silently returns 1 with no indication of whether memory,
+      observability, or both failed. This asymmetry makes `stack_down` failures
+      harder to diagnose.
+    recommendation: >
+      Apply the same failure-attribution pattern from `stack_up` to `stack_down`:
+
+        ```python
+        if obs_rc or mem_rc:
+            failed = []
+            if mem_rc:
+                failed.append("memory")
+            if obs_rc:
+                failed.append("observability")
+            print(f"\nFailed to stop: {', '.join(failed)}", file=sys.stderr)
+            return 1
+        return 0
+        ```
+
+  - id: PQ-05
+    severity: MEDIUM
+    file: src/mde/domain/memory_stack.py
+    line: 92
+    category: correctness
+    finding: >
+      The `honcho-api` health check (lines 83-93) uses `python -c
+      'import urllib.request; urllib.request.urlopen(...)'` inside the container.
+      `urllib.request.urlopen` raises `urllib.error.URLError` on connection
+      failure, but the command exits with code 0 regardless because Python does
+      not propagate exceptions as non-zero exit codes by default — unless the
+      exception is unhandled. Actually this IS fine: an unhandled exception in
+      `-c` code does exit non-zero. However, the check hits `/openapi.json`
+      rather than a dedicated health endpoint. If the API is up but the OpenAPI
+      router fails (e.g., schema generation error), the health check returns
+      healthy. A `/health` or `/readyz` endpoint would be more accurate.
+      More critically, `urlopen` will follow redirects and may timeout with
+      the default (no explicit timeout), potentially hanging longer than the
+      outer 15-second `subprocess.run` timeout allows.
+    recommendation: >
+      Pass an explicit timeout to `urlopen`:
+        `urllib.request.urlopen('http://localhost:8000/openapi.json', timeout=10)`
+      Also consider switching to a dedicated `/health` endpoint if Honcho
+      exposes one, rather than `/openapi.json`.
+
+  - id: PQ-06
+    severity: MEDIUM
+    file: tests/mde/test_docker_aggregate.py
+    line: 152
+    category: test-coverage
+    finding: >
+      `TestStackVerify` tests (lines 152-181) do NOT test the `TimeoutExpired`
+      path for `stack_verify`, despite `TestStackUp` having explicit timeout
+      tests (lines 67-85). Since `stack_verify` currently has NO
+      `TimeoutExpired` handling (see PQ-01), the timeout behavior is both
+      untested AND broken: a `TimeoutExpired` from `obs_verify` or `memory_verify`
+      will propagate uncaught. Adding the tests before the fix would make the
+      bug visible; adding after the fix ensures the fix is verified.
+    recommendation: >
+      Add two tests mirroring `TestStackUp.test_timeout_on_observability_returns_nonzero`
+      and `test_timeout_on_memory_returns_nonzero`:
+
+        ```python
+        def test_timeout_on_observability_returns_nonzero(self) -> None:
+            with (
+                patch(
+                    "mde.domain.observability_stack.stack_verify",
+                    side_effect=subprocess.TimeoutExpired(cmd=[], timeout=15),
+                ),
+                patch("mde.domain.memory_stack.stack_verify", return_value=0),
+            ):
+                assert stack_verify() == 1
+
+        def test_timeout_on_memory_returns_nonzero(self) -> None:
+            with (
+                patch("mde.domain.observability_stack.stack_verify", return_value=0),
+                patch(
+                    "mde.domain.memory_stack.stack_verify",
+                    side_effect=subprocess.TimeoutExpired(cmd=[], timeout=15),
+                ),
+            ):
+                assert stack_verify() == 1
+        ```
+
+  - id: PQ-07
+    severity: LOW
+    file: src/mde/domain/docker_aggregate.py
+    line: 134
+    category: type-safety
+    finding: >
+      `handler = _ACTION_TABLE.get(action)  # type: ignore[arg-type]` (line 134)
+      suppresses the type error that `action` is `str | None` but the dict key
+      type is `str`. The `# type: ignore[arg-type]` is the same pattern used in
+      `observability_stack.dispatch()` (line 197) and `memory_stack.dispatch()`
+      (line 170), so it is consistent. The suppression is technically valid
+      because `dict.get(None)` returns `None` and the `if handler is None` guard
+      handles that. However, the underlying issue is that `action` should be
+      narrowed to `str` before the lookup. The ignore comment does not explain
+      why it is safe.
+    recommendation: >
+      Accept as consistent with codebase pattern. If fixing: add an explicit
+      `if action is None:` early return before the dict lookup to eliminate the
+      need for `# type: ignore`. Add an inline comment if keeping the ignore:
+      `# type: ignore[arg-type]  # action is str | None; .get(None) returns None, handled below`
+
+  - id: PQ-08
+    severity: LOW
+    file: src/mde/cli.py
+    line: 485
+    category: consistency
+    finding: >
+      `_cmd_docker` (lines 485-493) sets `ctx["span"].set_attribute("docker.action",
+      str(action))` using `str(action)` which converts `None` to the string
+      `"None"`. The sibling functions `_cmd_observability` (line 466) and
+      `_cmd_memory` (line 476) use the same pattern. This is consistent. The
+      trace attribute will be `"None"` when the subcommand is omitted, which
+      may confuse tracing dashboards. Not a production risk but a minor
+      observability hygiene issue.
+    recommendation: >
+      Skip setting the span attribute when `action is None`, or set it to an
+      empty string. Low priority given the same issue exists in sibling commands.
+
+summary: >
+  Two HIGH findings require action before merge: (1) `stack_verify()` in
+  docker_aggregate.py has no TimeoutExpired handling unlike all its sibling
+  functions — a timeout from an unhealthy container will crash the aggregate
+  verify with an unhandled exception (PQ-01); (2) the individual stack dispatch
+  functions in observability_stack.py and memory_stack.py have no FileNotFoundError
+  guard, leaving direct `mde-py observability` and `mde-py memory` invocations
+  broken without Docker installed (PQ-02). The missing timeout tests (PQ-06)
+  make PQ-01 invisible in the test suite. PQ-03 (stop_orphan_collectors silent
+  failure) and PQ-04 (stack_down attribution gap) are lower risk but straightforward
+  fixes. The type: ignore annotations (PQ-07) are consistent with the codebase
+  pattern and do not require changes.

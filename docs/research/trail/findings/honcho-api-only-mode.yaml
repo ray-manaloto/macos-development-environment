@@ -1,0 +1,89 @@
+id: honcho-api-only-mode
+timestamp: "2026-03-23T10:59:00Z"
+source:
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/main.py
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/config.py
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/embedding_client.py
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/crud/message.py
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/Dockerfile
+agent: researcher
+finding_type: adversarial-verification
+confidence: confirmed
+confident_about: |
+  Honcho v3.0.3 API server CAN run in storage-only mode without LLM API keys.
+  The contradictory claims are BOTH technically true but apply to different scenarios.
+  The apparent contradiction resolves into a nuanced truth about optional vs required features.
+gaps: |
+  Initial research conflated API startup with embedding generation.
+  The API does NOT require LLM keys at startup, but DOES require them when
+  EMBED_MESSAGES=true (the default) and a message is created.
+evidence: |
+  ### Module-level imports in API startup (src/main.py):
+  - Imports: FastAPI, routers, cache, database, telemetry
+  - NO imports of embedding_client or LLM providers at module level
+  - NO validation of LLM keys in AppSettings class
+  - LLMSettings has all keys as optional: ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.
+  - No @model_validator in AppSettings requiring LLM keys
+
+  ### EmbeddingClient uses LAZY INITIALIZATION (src/embedding_client.py):
+  - Class: EmbeddingClient uses singleton pattern with deferred loading
+  - _instance starts as None, only initialized on first call to _get_client()
+  - _get_client() uses double-checked locking, creating _EmbeddingClient on first embed() call
+  - API startup does NOT call embedding_client.embed() or .batch_embed()
+  - Global instance: embedding_client = EmbeddingClient() — wrapper only, no actual LLM connection
+
+  ### Message creation flow (src/crud/message.py):
+  - Line: if settings.EMBED_MESSAGES:
+    - If disabled, embedding_client.batch_embed() is NEVER called
+    - Embeddings only generated on-demand during message creation
+    - If LLM keys are missing AND EMBED_MESSAGES=true, embed() call fails with ValueError
+    - But database write COMPLETES before embeddings are attempted (advisory lock released)
+
+  - AppSettings has EMBED_MESSAGES: bool = True (default in src/config.py)
+    - Default is TRUE, which means API will fail if messages are created without keys
+    - But can be set to FALSE via EMBED_MESSAGES=false env var
+    - All other deriver features (summary, representation, dreams) also require keys
+
+  ### Dockerfile runtime:
+  - CMD: ["fastapi", "run", "--host", "0.0.0.0", "src/main.py"]
+  - Docker build and startup succeeds without LLM keys
+  - HEALTHCHECK tests /openapi.json (metadata endpoint, not embedding-dependent)
+  - API responds to requests with 0 LLM keys until a message is created
+
+  ### Deriver requirements (separate process):
+  - DeriverSettings.ENABLED = True (default) — but only if deriver process starts
+  - API server doesn't require deriver at all
+  - Deriver process itself will fail to start without LLM keys
+  - But API server (fastapi run) is independent
+implication: |
+  ORIGINAL CLAIM #1 ("API can run without LLM keys"): CONFIRMED under these conditions:
+    - Set EMBED_MESSAGES=false (disable message embedding generation)
+    - OR only use read-only endpoints (retrieve messages, workspaces, etc.)
+    - OR accept that first message creation will fail with "API key required"
+
+  ORIGINAL CLAIM #2 ("API requires embedding provider at startup"): REFUTED
+    - Embedding provider is NOT checked at startup
+    - Checked only when embedding is actually requested (lazy initialization)
+    - This enables graceful degradation pattern
+
+  VERDICT for user's use case:
+    IF user wants storage-only mode without LLM keys:
+      - YES: Set EMBED_MESSAGES=false in docker run
+      - YES: API will respond to all read endpoints
+      - YES: Messages can be created (stored) without embeddings
+      - YES: Deriver stays disabled (doesn't affect API)
+      - CAVEAT: No semantic search (embeddings), no reasoning (deriver is separate)
+
+    IF user wants to store then search/reason later:
+      - Add LLM keys later
+      - Re-enable EMBED_MESSAGES=true
+      - Restart API to regenerate embeddings for existing messages
+      - Start deriver to process queued reasoning tasks
+
+vendor_claim_context: |
+  From research PR B findings: "API server cannot start without at least embedding provider"
+  This is INCORRECT. The embedding provider is only needed when EMBED_MESSAGES=true AND
+  a message is actually being created. The API startup does not instantiate embedding clients.
+
+tags: [honcho, api-only, startup, lazy-initialization, embedding, optional-features, storage-only]
+status: discovered

@@ -25,7 +25,7 @@ def stack_up() -> int:
     """
     import subprocess
 
-    password = os.environ.get("HONCHO_DB_PASSWORD", "")
+    password = os.environ.get("HONCHO_DB_PASSWORD", "").strip()
     if not password:
         print(
             "ERROR: HONCHO_DB_PASSWORD not set. "
@@ -39,10 +39,14 @@ def stack_up() -> int:
         print(f"ERROR: Compose file not found: {COMPOSE_FILE}", file=sys.stderr)
         return 1
 
-    result = subprocess.run(
-        ["docker", "compose", "-f", str(COMPOSE_FILE), "up", "-d", "--wait"],
-        timeout=120,
-    )
+    try:
+        result = subprocess.run(
+            ["docker", "compose", "-f", str(COMPOSE_FILE), "up", "-d", "--wait"],
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired:
+        print("TIMEOUT: memory stack_up did not complete in time", file=sys.stderr)
+        return 1
     return result.returncode
 
 
@@ -50,10 +54,14 @@ def stack_down() -> int:
     """Stop the Honcho memory stack."""
     import subprocess
 
-    result = subprocess.run(
-        ["docker", "compose", "-f", str(COMPOSE_FILE), "down"],
-        timeout=60,
-    )
+    try:
+        result = subprocess.run(
+            ["docker", "compose", "-f", str(COMPOSE_FILE), "down"],
+            timeout=60,
+        )
+    except subprocess.TimeoutExpired:
+        print("TIMEOUT: memory stack_down did not complete in time", file=sys.stderr)
+        return 1
     return result.returncode
 
 
@@ -61,10 +69,14 @@ def stack_status() -> int:
     """Show Honcho memory stack container status."""
     import subprocess
 
-    result = subprocess.run(
-        ["docker", "compose", "-f", str(COMPOSE_FILE), "ps", "--format", "table"],
-        timeout=10,
-    )
+    try:
+        result = subprocess.run(
+            ["docker", "compose", "-f", str(COMPOSE_FILE), "ps", "--format", "table"],
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        print("TIMEOUT: memory stack_status did not complete in time", file=sys.stderr)
+        return 1
     return result.returncode
 
 
@@ -139,6 +151,8 @@ def stack_verify() -> int:
 
         if result.returncode != 0:
             print(f"  UNHEALTHY: {name}", file=sys.stderr)
+            if result.stderr:
+                print(f"    {result.stderr.strip()}", file=sys.stderr)
             failures += 1
         else:
             print(f"  HEALTHY: {name}", file=sys.stderr)
@@ -167,8 +181,15 @@ _ACTION_TABLE: dict[str, Callable[[], int]] = {
 def dispatch(args: argparse.Namespace) -> int:
     """Route to the correct memory subcommand handler."""
     action = getattr(args, "memory_action", None)
-    handler = _ACTION_TABLE.get(action)  # type: ignore[arg-type]
+    handler = _ACTION_TABLE.get(action)  # type: ignore[arg-type]  # action is str|None, get() accepts that
     if handler is None:
         print("Usage: mde-py memory {up,down,status,verify}", file=sys.stderr)
         return 1
-    return handler()
+    try:
+        return handler()
+    except FileNotFoundError:
+        print(
+            "ERROR: docker not found on PATH. Install Docker Desktop or add docker to PATH.",
+            file=sys.stderr,
+        )
+        return 1

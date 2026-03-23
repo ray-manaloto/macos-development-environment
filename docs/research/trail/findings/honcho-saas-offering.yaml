@@ -1,0 +1,48 @@
+id: honcho-saas-offering
+timestamp: "2026-03-23T00:00:00Z"
+source: https://honcho.dev
+agent: researcher
+finding_type: insight
+confidence: confirmed
+confident_about: |
+  Honcho offers a managed SaaS platform at app.honcho.dev with the following pricing structure:
+
+  HONCHO MEMORY (Ingestion):
+  - $2.00/M messages (Store + Neuromancer reasoning)
+  - context() queries: UNLIMITED, ~200ms latency
+  - Dreaming: Included
+
+  HONCHO REASONING (Per-query pricing):
+  - Minimal: $0.001/query (basic conclusions, instant)
+  - Low: $0.01/query (efficient synthesis, instant)
+  - Medium: $0.05/query (steerable reasoning, fast)
+  - High: $0.10/query (deep synthesis, async)
+  - Max: $0.50/query (research-grade, async)
+
+  SPECIAL PROGRAMS:
+  - Startups (<$5M raised): $1,000 free credits + 12 months subsidized pricing
+  - Enterprise: Custom plans with dedicated engineers
+
+  SIGN-UP OFFER:
+  - New users get $100 free credits upon signup
+gaps: |
+  - No information on monthly minimum or maximum per-workspace limits
+  - No pricing for advanced features like Dreaming at higher tiers
+  - No volume discount structure published
+  - Enterprise pricing not transparent (custom quotes only)
+evidence: |
+  1. honcho.dev homepage pricing section lists all tier prices
+  2. Sign-up at app.honcho.dev offers $100 in free credits
+  3. Special programs mentioned: startups.plasticlabs.ai for applications
+  4. Enterprise contact: cal.com/team/plasticlabs/enterprise
+implication: |
+  Honcho is a commercial platform with a clear freemium model:
+  - Testing/small projects: Use $100 free credits
+  - Production: $2/M messages + reasoning query costs
+  - Enterprise: Negotiate custom terms
+
+  This is NOT a typical open-source project — it's open-core with a paid managed service.
+  The GitHub repo is the self-hostable version but requires your own LLM API keys,
+  while the managed service provides multi-tenant infrastructure and usage-based billing.
+tags: [honcho, pricing, saas, managed-service, freemium, open-core]
+status: discovered
