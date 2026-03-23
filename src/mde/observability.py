@@ -122,8 +122,8 @@ def _orjson_serialize(record: Record) -> str:
     """
     level = record["level"]
     data = {
-        "text": record["message"],
-        "message": record["message"],
+        "text": record["message"],  # Legacy field for backward compatibility
+        "message": record["message"],  # Standard field for Loki/Grafana
         "level": level.name,
         "time": str(record["time"]),
         "extra": record["extra"],

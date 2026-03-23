@@ -9,6 +9,10 @@ import argparse
 import os
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 COMPOSE_FILE = (
     Path(__file__).resolve().parents[3] / "docker" / "observability" / "docker-compose.yml"
@@ -100,14 +104,18 @@ def add_subparsers(sub: argparse._SubParsersAction) -> None:
     obs_sub.add_parser("status", help="Show stack container status")
 
 
+_ACTION_TABLE: dict[str, Callable[[], int]] = {
+    "up": stack_up,
+    "down": stack_down,
+    "status": stack_status,
+}
+
+
 def dispatch(args: argparse.Namespace) -> int:
     """Route to the correct observability subcommand handler."""
     action = getattr(args, "observability_action", None)
-    if action == "up":
-        return stack_up()
-    if action == "down":
-        return stack_down()
-    if action == "status":
-        return stack_status()
-    print("Usage: mde-py observability {up,down,status}", file=sys.stderr)
-    return 1
+    handler = _ACTION_TABLE.get(action)  # type: ignore[arg-type]
+    if handler is None:
+        print("Usage: mde-py observability {up,down,status}", file=sys.stderr)
+        return 1
+    return handler()

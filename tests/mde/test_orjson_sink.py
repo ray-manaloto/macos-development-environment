@@ -44,7 +44,8 @@ class TestOrjsonFormat:
             "extra": {"key": "value"},
         }
 
-        result = _orjson_serialize(record)
+        # Passing a plain dict instead of a loguru Record for unit testing
+        result = _orjson_serialize(record)  # type: ignore[arg-type]
         assert result.endswith("\n")
         parsed = json.loads(result)
         assert parsed["message"] == "test message"
@@ -64,7 +65,7 @@ class TestOrjsonFormat:
             "extra": {"hook": "session_start", "exit_code": 0},
         }
 
-        parsed = json.loads(_orjson_serialize(record))
+        parsed = json.loads(_orjson_serialize(record))  # type: ignore[arg-type]
         assert parsed["extra"]["hook"] == "session_start"
         assert parsed["extra"]["exit_code"] == 0
 
@@ -79,7 +80,8 @@ class TestOrjsonFormat:
             "extra": {},
         }
 
-        result = _orjson_format(record)
+        # Passing a plain dict instead of a loguru Record for unit testing
+        result = _orjson_format(record)  # type: ignore[arg-type]
         # Braces should be doubled
         assert "{{" in result
         assert "}}" in result
