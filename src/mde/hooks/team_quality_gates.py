@@ -14,10 +14,8 @@ from collections.abc import Callable
 from enum import Enum
 from typing import Any
 
-from mde.observability import get_logger, get_tracer
-
-_logger = get_logger(__name__)
-_tracer = get_tracer(__name__)
+from mde.hooks._common import hook_span, parse_hook_stdin
+from mde.log import logger
 
 
 class TeamType(str, Enum):
@@ -155,29 +153,25 @@ def run_team_quality_gate(team_type: str) -> dict[str, Any]:
 def team_quality_gate_hook() -> int:
     """Entry point: read JSON from stdin, run per-team quality gate."""
     try:
-        data = json.load(sys.stdin)
+        data = parse_hook_stdin()
     except (json.JSONDecodeError, ValueError) as exc:
-        _logger.warning("hook_stdin_parse_failed", hook="team_quality_gate", error=str(exc))
+        logger.bind(hook="team_quality_gate", error=str(exc)).warning("hook_stdin_parse_failed")
         return 0
 
     if not isinstance(data, dict):
-        _logger.warning(
-            "hook_invalid_input",
+        logger.bind(
             hook="team_quality_gate",
             input_type=type(data).__name__,
-        )
+        ).warning("hook_invalid_input")
         return 0
 
     session_id = str(data.get("session_id", ""))
 
-    with _tracer.start_as_current_span("mde.hook.team_quality_gate") as span:
-        span.set_attribute("claude.session_id", session_id)
-        span.set_attribute("hook.event", "TeamQualityGate")
-
+    with hook_span("team_quality_gate", "TeamQualityGate", data) as span:
         team_type = data.get("team_type", "")
         if not team_type:
-            _logger.info(
-                "hook_completed", hook="team_quality_gate", skipped=True, session_id=session_id
+            logger.bind(hook="team_quality_gate", skipped=True, session_id=session_id).info(
+                "hook_completed"
             )
             return 0
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 _REQUIRED_ENV = {
@@ -15,6 +16,43 @@ _REQUIRED_ENV = {
 }
 
 _CONFLICTING_PLUGINS = {"hookify@claude-plugins-official"}
+
+# All env vars documented in official Claude Code monitoring docs
+# https://code.claude.com/docs/en/monitoring-usage
+_OFFICIAL_VARS: set[str] = {
+    "CLAUDE_CODE_ENABLE_TELEMETRY",
+    "OTEL_METRICS_EXPORTER",
+    "OTEL_LOGS_EXPORTER",
+    "OTEL_EXPORTER_OTLP_PROTOCOL",
+    "OTEL_EXPORTER_OTLP_ENDPOINT",
+    "OTEL_EXPORTER_OTLP_HEADERS",
+    "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+    "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
+    "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL",
+    "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
+    "OTEL_EXPORTER_OTLP_METRICS_CLIENT_KEY",
+    "OTEL_EXPORTER_OTLP_METRICS_CLIENT_CERTIFICATE",
+    "OTEL_METRIC_EXPORT_INTERVAL",
+    "OTEL_LOGS_EXPORT_INTERVAL",
+    "OTEL_LOG_USER_PROMPTS",
+    "OTEL_LOG_TOOL_DETAILS",
+    "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE",
+    "CLAUDE_CODE_OTEL_HEADERS_HELPER_DEBOUNCE_MS",
+    "OTEL_METRICS_INCLUDE_SESSION_ID",
+    "OTEL_METRICS_INCLUDE_VERSION",
+    "OTEL_METRICS_INCLUDE_ACCOUNT_UUID",
+    "OTEL_RESOURCE_ATTRIBUTES",
+}
+
+# Non-telemetry Claude Code env vars set in settings.json.
+# MUST NOT overlap with _OFFICIAL_VARS. Add new Claude Code feature flags here,
+# never to _OFFICIAL_VARS (which tracks only official monitoring docs).
+_NON_TELEMETRY_VARS: set[str] = {
+    "ENABLE_LSP_TOOL",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS",
+    "ENABLE_CLAUDEAI_MCP_SERVERS",
+    "ENABLE_TOOL_SEARCH",
+}
 
 
 def _load_settings() -> tuple[dict[str, object], dict[str, str]]:
@@ -91,7 +129,64 @@ def _check_env_vars(settings_env: dict[str, str]) -> list[tuple[str, str, str]]:
     return results
 
 
-def _check_plugins(settings: dict[str, object]) -> list[tuple[str, str, str]]:
+def _check_settings_against_docs(
+    settings_env: dict[str, str],
+) -> list[tuple[str, str, str]]:
+    """Validate settings.json env vars against official Claude Code monitoring docs.
+
+    Checks that every telemetry-related env var we configure is documented in the
+    official monitoring docs, and that protocol/endpoint port combinations are consistent.
+
+    Args:
+        settings_env: The env block from settings.json.
+
+    Returns:
+        List of (var_name, status, detail) tuples.
+    """
+    results: list[tuple[str, str, str]] = []
+
+    for var in sorted(settings_env):
+        if var in _NON_TELEMETRY_VARS:
+            continue
+        if var in _OFFICIAL_VARS:
+            results.append((var, "OK", "documented in official monitoring docs"))
+        else:
+            results.append((var, "WARNING", "not in official Claude Code monitoring docs"))
+
+    # Check protocol/endpoint port consistency (parse port as integer to avoid
+    # substring false positives like ":4317" matching in ":43170")
+    protocol = settings_env.get("OTEL_EXPORTER_OTLP_PROTOCOL", "")
+    endpoint = settings_env.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+    if protocol and endpoint:
+        import re
+
+        port_match = re.search(r":(\d+)(?:/|$)", endpoint.split("//", 1)[-1])
+        port = int(port_match.group(1)) if port_match else None
+        if protocol == "grpc" and port is not None and port != 4317:  # noqa: PLR2004
+            results.append(
+                (
+                    "protocol-endpoint",
+                    "WARNING",
+                    f"protocol mismatch: {protocol!r} typically uses port 4317, "
+                    f"but endpoint is {endpoint!r}",
+                )
+            )
+        elif (
+            protocol in ("http/json", "http/protobuf") and port is not None and port != 4318  # noqa: PLR2004
+        ):
+            results.append(
+                (
+                    "protocol-endpoint",
+                    "WARNING",
+                    f"protocol mismatch: {protocol!r} typically uses port 4318, "
+                    f"but endpoint is {endpoint!r}",
+                )
+            )
+
+    return results
+
+
+def _check_plugins(settings: Mapping[str, object]) -> list[tuple[str, str, str]]:
     """Check enabledPlugins for conflicting plugins.
 
     Returns:
@@ -226,6 +321,7 @@ def verify_telemetry() -> int:
 
     sections: list[tuple[str, list[tuple[str, str, str]]]] = [
         ("Environment Variables", _check_env_vars(settings_env)),
+        ("Official Docs Compliance", _check_settings_against_docs(settings_env)),
         ("Plugin Conflicts", _check_plugins(settings)),
         ("Hooks Dispatch", _check_hooks_dispatch()),
         ("Collector Infrastructure", _check_collector_infrastructure()),

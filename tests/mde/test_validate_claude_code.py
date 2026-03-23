@@ -10,6 +10,7 @@ import pytest
 _MISE_TOOL = "npm:@anthropic-ai/claude-code"
 
 
+@pytest.mark.integration
 def test_claude_code_installed() -> None:
     """claude-code is mise-managed and resolves a version.
 
@@ -33,6 +34,7 @@ def test_claude_code_installed() -> None:
         pytest.skip(f"{_MISE_TOOL} not installed (no version set)")
 
 
+@pytest.mark.integration
 def test_claude_code_version_is_current() -> None:
     """Installed version matches GitHub latest release.
 

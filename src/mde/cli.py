@@ -4,15 +4,29 @@ from __future__ import annotations
 
 import argparse
 import sys
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
-from mde.observability import get_logger, get_tracer, init_observability
+from mde.log import get_tracer, logger
+from mde.observability import init_observability
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Generator, Sequence
+    from typing import Any
 
-_logger = get_logger("mde.cli")
 _tracer = get_tracer("mde.cli")
+
+
+@contextmanager
+def _traced_command(command: str, **extra: object) -> Generator[dict[str, Any]]:
+    """Wrap a CLI command with tracing and structured logging."""
+    with _tracer.start_as_current_span(f"mde.cli.{command}") as span:
+        logger.bind(command=command, **extra).info("cmd_start")
+        ctx: dict[str, Any] = {"span": span, "result": 0}
+        yield ctx
+        result = ctx.get("result", 0)
+        span.set_attribute(f"{command}.passed", result == 0)
+        logger.bind(command=command, exit_code=result, **extra).info("cmd_complete")
 
 
 _SUBPARSERS: dict[str, argparse.ArgumentParser] = {}
@@ -153,7 +167,10 @@ def run(argv: Sequence[str] | None = None) -> int:
         parser.print_help()
         return 0
 
-    return _dispatch(args)
+    result = _dispatch(args)
+    # Drain loguru's async file sink before exit
+    logger.complete()
+    return result
 
 
 def _dispatch(args: argparse.Namespace) -> int:
@@ -167,8 +184,7 @@ def _dispatch(args: argparse.Namespace) -> int:
 
 
 def _cmd_validate(args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.validate") as span:
-        _logger.info("cmd_start", command="validate")
+    with _traced_command("validate") as ctx:
         from mde.validate import validate_all
 
         result = validate_all(
@@ -180,141 +196,117 @@ def _cmd_validate(args: argparse.Namespace) -> int:
             package_managers_only=getattr(args, "package_managers", False),
             skills_only=args.skills,
         )
-        span.set_attribute("validate.passed", result == 0)
-        _logger.info("cmd_complete", command="validate", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_update(_args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.update") as span:
-        _logger.info("cmd_start", command="update")
+    with _traced_command("update") as ctx:
         from mde.maintain.update import run_update
 
         result = run_update()
-        span.set_attribute("update.passed", result == 0)
-        _logger.info("cmd_complete", command="update", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_verify(_args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.verify") as span:
-        _logger.info("cmd_start", command="verify")
+    with _traced_command("verify") as ctx:
         from mde.validate import validate_all
 
         result = validate_all(fix=False, configs_only=False, json_output=False)
-        span.set_attribute("verify.passed", result == 0)
-        _logger.info("cmd_complete", command="verify", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_status(_args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.status") as span:
-        _logger.info("cmd_start", command="status")
+    with _traced_command("status") as ctx:
         from mde.status.dashboard import show_dashboard
 
         result = show_dashboard()
-        span.set_attribute("status.passed", result == 0)
-        _logger.info("cmd_complete", command="status", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_doctor(_args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.doctor") as span:
-        _logger.info("cmd_start", command="doctor")
+    with _traced_command("doctor") as ctx:
         from mde.status.health import run_doctor
 
         result = run_doctor()
-        span.set_attribute("doctor.passed", result == 0)
-        _logger.info("cmd_complete", command="doctor", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_drift(_args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.drift") as span:
-        _logger.info("cmd_start", command="drift")
+    with _traced_command("drift") as ctx:
         from mde.maintain.drift import check_drift
 
         result = check_drift()
-        span.set_attribute("drift.passed", result == 0)
-        _logger.info("cmd_complete", command="drift", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_secrets(args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.secrets") as span:
-        _logger.info("cmd_start", command="secrets", action=args.action)
+    with _traced_command("secrets", action=args.action) as ctx:
         from mde.secrets import dispatch_secrets
 
         result = dispatch_secrets(args.action)
-        span.set_attribute("secrets.action", args.action)
-        span.set_attribute("secrets.passed", result == 0)
-        _logger.info("cmd_complete", command="secrets", exit_code=result)
+        ctx["span"].set_attribute("secrets.action", args.action)
+        ctx["result"] = result
         return result
 
 
 def _cmd_learn(args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.learn") as span:
-        _logger.info("cmd_start", command="learn", action=args.action)
+    with _traced_command("learn", action=args.action) as ctx:
         from mde.learn import dispatch_learn
 
         result = dispatch_learn(args.action, query=args.query)
-        span.set_attribute("learn.action", args.action)
-        span.set_attribute("learn.passed", result == 0)
-        _logger.info("cmd_complete", command="learn", exit_code=result)
+        ctx["span"].set_attribute("learn.action", args.action)
+        ctx["result"] = result
         return result
 
 
 def _cmd_team(args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.team") as span:
-        _logger.info("cmd_start", command="team", team_name=args.name)
+    with _traced_command("team", team_name=args.name) as ctx:
         from mde.teams.runner import run_team
 
         result = run_team(args.name, dry_run=args.dry_run)
-        span.set_attribute("team.name", args.name)
-        span.set_attribute("team.passed", result == 0)
-        _logger.info("cmd_complete", command="team", exit_code=result)
+        ctx["span"].set_attribute("team.name", args.name)
+        ctx["result"] = result
         return result
 
 
 def _cmd_prune(_args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.prune") as span:
-        _logger.info("cmd_start", command="prune")
+    with _traced_command("prune") as ctx:
         from mde.maintain.prune import run_prune
 
         result = run_prune()
-        span.set_attribute("prune.passed", result == 0)
-        _logger.info("cmd_complete", command="prune", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_remediate(_args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.remediate") as span:
-        _logger.info("cmd_start", command="remediate")
+    with _traced_command("remediate") as ctx:
         from mde.maintain.remediate import run_remediate
 
         result = run_remediate()
-        span.set_attribute("remediate.passed", result == 0)
-        _logger.info("cmd_complete", command="remediate", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_refs(args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.refs") as span:
-        _logger.info("cmd_start", command="refs", action=args.action)
+    with _traced_command("refs", action=args.action) as ctx:
         from mde.domain.refs import dispatch_refs
 
         result = dispatch_refs(args.action, dry_run=args.dry_run)
-        span.set_attribute("refs.action", args.action)
-        span.set_attribute("refs.passed", result == 0)
-        _logger.info("cmd_complete", command="refs", exit_code=result)
+        ctx["span"].set_attribute("refs.action", args.action)
+        ctx["result"] = result
         return result
 
 
 def _cmd_install(args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.install") as span:
-        target = args.install_target
-        _logger.info("cmd_start", command="install", target=target)
-        span.set_attribute("install.target", str(target))
+    target = args.install_target
+    with _traced_command("install", target=target) as ctx:
+        ctx["span"].set_attribute("install.target", str(target))
         if target == "tmux":
             from mde.install.tmux import install_tmux
 
@@ -326,16 +318,14 @@ def _cmd_install(args: argparse.Namespace) -> int:
         else:
             print(f"Unknown install target: {target}", file=sys.stderr)
             result = 1
-        span.set_attribute("install.passed", result == 0)
-        _logger.info("cmd_complete", command="install", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_skill(args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.skill") as span:
-        action = args.skill_action
-        _logger.info("cmd_start", command="skill", action=action)
-        span.set_attribute("skill.action", str(action))
+    action = args.skill_action
+    with _traced_command("skill", action=action) as ctx:
+        ctx["span"].set_attribute("skill.action", str(action))
         if action == "sync":
             from pathlib import Path
 
@@ -353,16 +343,14 @@ def _cmd_skill(args: argparse.Namespace) -> int:
         else:
             print(f"Unknown skill action: {action}", file=sys.stderr)
             result = 1
-        span.set_attribute("skill.passed", result == 0)
-        _logger.info("cmd_complete", command="skill", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_telemetry(args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.telemetry") as span:
-        action = args.action
-        _logger.info("cmd_start", command="telemetry", action=action)
-        span.set_attribute("telemetry.action", action)
+    action = args.action
+    with _traced_command("telemetry", action=action) as ctx:
+        ctx["span"].set_attribute("telemetry.action", action)
         if action == "verify":
             from mde.telemetry_verify import verify_telemetry
 
@@ -370,8 +358,7 @@ def _cmd_telemetry(args: argparse.Namespace) -> int:
         else:
             print(f"Unknown telemetry action: {action}", file=sys.stderr)
             result = 1
-        span.set_attribute("telemetry.passed", result == 0)
-        _logger.info("cmd_complete", command="telemetry", exit_code=result)
+        ctx["result"] = result
         return result
 
 
@@ -394,31 +381,28 @@ def _cmd_hooks(args: argparse.Namespace) -> int:
     if entry is None:
         print(f"Unknown hooks action: {action}", file=sys.stderr)
         return 1
-    with _tracer.start_as_current_span("mde.cli.hooks") as span:
-        span.set_attribute("hook.action", action)
+    with _traced_command("hooks", action=action) as ctx:
+        ctx["span"].set_attribute("hook.action", action)
         import importlib
 
         module = importlib.import_module(entry[0])
         handler = getattr(module, entry[1])
         result = handler()
-        span.set_attribute("hook.passed", result == 0)
+        ctx["result"] = result
         return result
 
 
 def _cmd_research(args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.research") as span:
-        _logger.info("cmd_start", command="research")
+    with _traced_command("research") as ctx:
         from mde.research.cli import dispatch as research_dispatch
 
         result = research_dispatch(args)
-        span.set_attribute("research.passed", result == 0)
-        _logger.info("cmd_complete", command="research", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_quality(args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.quality") as span:
-        _logger.info("cmd_start", command="quality")
+    with _traced_command("quality") as ctx:
         from mde.quality import cli_main
 
         cli_args: list[str] = []
@@ -429,16 +413,14 @@ def _cmd_quality(args: argparse.Namespace) -> int:
         if getattr(args, "validate", False):
             cli_args.append("--validate")
         result = cli_main(cli_args)
-        span.set_attribute("quality.passed", result == 0)
-        _logger.info("cmd_complete", command="quality", exit_code=result)
+        ctx["result"] = result
         return result
 
 
 def _cmd_statusline(args: argparse.Namespace) -> int:
-    with _tracer.start_as_current_span("mde.cli.statusline") as span:
-        action = args.statusline_action
-        _logger.info("cmd_start", command="statusline", action=action)
-        span.set_attribute("statusline.action", str(action))
+    action = args.statusline_action
+    with _traced_command("statusline", action=action) as ctx:
+        ctx["span"].set_attribute("statusline.action", str(action))
         handlers: dict[str, tuple[str, str]] = {
             "render": ("mde.statusline.render", "render_statusline"),
             "toggle": ("mde.statusline.toggle", "toggle_mode"),
@@ -459,8 +441,7 @@ def _cmd_statusline(args: argparse.Namespace) -> int:
         else:
             print(f"Unknown statusline action: {action}", file=sys.stderr)
             result = 1
-        span.set_attribute("statusline.passed", result == 0)
-        _logger.info("cmd_complete", command="statusline", exit_code=result)
+        ctx["result"] = result
         return result
 
 

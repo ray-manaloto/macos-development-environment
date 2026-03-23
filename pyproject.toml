@@ -10,9 +10,9 @@ dependencies = [
     "claude-agent-sdk>=0.1.49",
     "httpx>=0.27",
     "claude-code-analytics>=0.1.1",
-    "structlog>=25.5.0",
-    "logfire>=4.29.0",
     "openlit>=1.38.1",
+    "loguru>=0.7.3",
+    "orjson>=3.11.7",
 ]
 
 [project.scripts]
@@ -153,6 +153,9 @@ exclude = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+markers = [
+    "integration: tests requiring external tools (mise, chezmoi, docker, gh)",
+]
 
 [dependency-groups]
 dev = [

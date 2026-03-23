@@ -13,9 +13,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from mde.observability import get_logger, get_tracer
+from mde.log import get_tracer, logger
 
-_logger = get_logger(__name__)
 _tracer = get_tracer(__name__)
 
 
@@ -31,7 +30,7 @@ def _repo_root() -> Path:
         if result.returncode == 0 and result.stdout.strip():
             return Path(result.stdout.strip())
     except (subprocess.TimeoutExpired, OSError) as exc:
-        _logger.debug("repo_root_fallback", error=str(exc))
+        logger.bind(error=str(exc)).debug("repo_root_fallback")
     return Path.cwd()
 
 
@@ -59,5 +58,5 @@ def post_compact() -> int:
             span.record_exception(exc)
             print(f"PostCompact: could not log event: {exc}", file=sys.stderr)
 
-        _logger.info("hook_completed", hook="post_compact")
+        logger.bind(hook="post_compact").info("hook_completed")
         return 0

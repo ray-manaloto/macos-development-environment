@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -9,9 +10,12 @@ if TYPE_CHECKING:
     import pytest
 
 from mde.telemetry_verify import (
+    _NON_TELEMETRY_VARS,
+    _OFFICIAL_VARS,
     _check_env_vars,
     _check_hooks_dispatch,
     _check_plugins,
+    _check_settings_against_docs,
     verify_telemetry,
 )
 
@@ -163,3 +167,73 @@ class TestVerifyTelemetry:
         ):
             result = verify_telemetry()
         assert result == 1
+
+
+class TestVarSets:
+    """Tests for _OFFICIAL_VARS and _NON_TELEMETRY_VARS invariants."""
+
+    def test_official_and_non_telemetry_are_disjoint(self) -> None:
+        """The two sets must never overlap — prevents silent set corruption."""
+        overlap = _OFFICIAL_VARS & _NON_TELEMETRY_VARS
+        assert not overlap, f"Sets overlap: {overlap}. Move vars to correct set."
+
+
+class TestCheckSettingsAgainstDocs:
+    """Tests for _check_settings_against_docs."""
+
+    def test_all_official_vars_ok(self) -> None:
+        """All vars from official docs should return OK."""
+        env = {
+            "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+            "OTEL_METRICS_EXPORTER": "otlp",
+            "OTEL_LOGS_EXPORTER": "otlp",
+        }
+        results = _check_settings_against_docs(env)
+        assert all(status == "OK" for _, status, _ in results)
+
+    def test_undocumented_var_warns(self) -> None:
+        """Var not in official docs should return WARNING."""
+        env = {"SOME_UNKNOWN_OTEL_VAR": "value"}
+        results = _check_settings_against_docs(env)
+        statuses = {name: status for name, status, _ in results}
+        assert statuses["SOME_UNKNOWN_OTEL_VAR"] == "WARNING"
+
+    def test_non_telemetry_vars_skipped(self) -> None:
+        """Non-telemetry vars (like ENABLE_LSP_TOOL) should be skipped."""
+        env = {"ENABLE_LSP_TOOL": "1"}
+        results = _check_settings_against_docs(env)
+        assert len(results) == 0  # skipped entirely
+
+    def test_protocol_endpoint_match_grpc(self) -> None:
+        """GRPC protocol with :4317 endpoint is consistent."""
+        env = {
+            "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
+            "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
+        }
+        results = _check_settings_against_docs(env)
+        # Should have OK for both vars + no protocol mismatch warning
+        warnings = [r for r in results if r[1] == "WARNING"]
+        assert len(warnings) == 0
+
+    def test_protocol_endpoint_mismatch(self) -> None:
+        """GRPC protocol with :4318 endpoint is a mismatch."""
+        env = {
+            "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
+            "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+        }
+        results = _check_settings_against_docs(env)
+        warnings = [r for r in results if r[1] == "WARNING"]
+        assert any("mismatch" in d.lower() for _, _, d in warnings)
+
+    def test_settings_json_matches_official_docs(self) -> None:
+        """Our actual settings.json env vars are all recognized by official docs."""
+        import json
+
+        repo_root = Path(__file__).resolve().parents[2]
+        settings_path = repo_root / ".claude" / "settings.json"
+        settings = json.loads(settings_path.read_text())
+        env = settings.get("env", {})
+        results = _check_settings_against_docs(env)
+        # No WARNING results — all our vars are either official or non-telemetry
+        warnings = [(n, s, d) for n, s, d in results if s == "WARNING"]
+        assert not warnings, f"Undocumented vars in settings.json: {warnings}"

@@ -10,9 +10,8 @@ from __future__ import annotations
 import subprocess
 import sys
 
-from mde.observability import get_logger, get_tracer
+from mde.log import get_tracer, logger
 
-_logger = get_logger(__name__)
 _tracer = get_tracer(__name__)
 
 
@@ -47,8 +46,10 @@ def session_start() -> int:
 
         except (subprocess.TimeoutExpired, OSError) as exc:
             span.record_exception(exc)
-            _logger.warning("session_start_git_unavailable", hook="session_start", error=str(exc))
+            logger.bind(hook="session_start", error=str(exc)).warning(
+                "session_start_git_unavailable"
+            )
             print(f"SessionStart: git context unavailable: {exc}", file=sys.stderr)
 
-        _logger.info("hook_completed", hook="session_start")
+        logger.bind(hook="session_start").info("hook_completed")
         return 0
