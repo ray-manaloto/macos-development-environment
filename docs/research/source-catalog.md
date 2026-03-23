@@ -112,3 +112,6 @@
 - Result: No pip/uv/venv in runtime container, all deps included in single file
 
 See deep review: `docs/research/trail/deep-reviews/python-docker-packaging-strategies.md`
+| [x] | Honcho v3.0.3 API startup analysis | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/main.py | VERIFIED: API startup does not instantiate LLM clients; no module-level imports of embedding_client | ADVERSARIAL |
+| [x] | Honcho v3.0.3 EmbeddingClient lazy init | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/embedding_client.py | VERIFIED: Uses singleton with deferred loading; _instance stays None until first embed() call | ADVERSARIAL |
+| [x] | Honcho v3.0.3 message creation flow | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/crud/message.py | VERIFIED: Embedding only triggered if settings.EMBED_MESSAGES=true; can be disabled via env var | ADVERSARIAL |
