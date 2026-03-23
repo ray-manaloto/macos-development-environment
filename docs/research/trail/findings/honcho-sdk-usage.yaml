@@ -1,0 +1,76 @@
+id: finding-honcho-sdk-usage
+timestamp: "2026-03-23T08:55:00Z"
+source: |
+  - https://docs.honcho.dev
+  - https://docs.honcho.dev/v3/documentation/introduction/quickstart
+  - https://docs.honcho.dev/v3/documentation/core-concepts/architecture
+  - https://github.com/plastic-labs/honcho
+agent: researcher
+finding_type: tool
+confidence: confirmed
+confident_about: |
+  1. **SDK Installation**: Python package `honcho-ai` available via pip/uv, TypeScript package `@honcho-ai/sdk` via npm/yarn/pnpm
+  2. **Client Initialization**: Honcho client created with workspace_id and api_key, points to api.honcho.dev by default
+  3. **Core Entities**: Workspaces (top-level containers) -> Peers (users/agents) -> Sessions (interaction threads) -> Messages (units of data)
+  4. **Core Operations**: Create peers with honcho.peer(), create sessions with honcho.session(), add messages with session.add_messages()
+  5. **Memory Access**: Query via chat endpoint (peer.chat()), get context (session.context()), search messages (peer.search()), get representations (session.representation())
+  6. **Session Management**: Sessions provide temporal boundaries, cross-session peer context, multi-peer support, async background reasoning with PostgreSQL storage
+gaps: |
+  1. Self-hosted instance configuration details (DB_CONNECTION_URI format, LLM provider setup requirements)
+  2. Complete API reference for metamessages vs regular messages distinction
+  3. Detailed collection/vector storage query syntax beyond search()
+  4. Batch operation details (mentioned max 100 messages per call, but full schema not captured)
+  5. Session metadata structure and filtering options
+evidence: |
+  **Installation** (from quickstart):
+  - Python: `pip install honcho-ai` or `uv add honcho-ai`
+  - TypeScript: `npm install @honcho-ai/sdk`
+
+  **Client Init** (Python example):
+  ```python
+  from honcho import Honcho
+  honcho = Honcho(workspace_id="first-honcho-test", api_key=HONCHO_API_KEY)
+  ```
+
+  **Peer Operations**:
+  - Create: `user = honcho.peer("user")`
+  - Chat: `response = alice.chat("What learning styles does the user respond to best?")`
+  - Search: `results = alice.search("Math Homework")`
+
+  **Session Operations**:
+  - Create: `session = honcho.session("session-1")`
+  - Add messages: `session.add_messages([alice.message("text"), tutor.message("text")])`
+  - Get context: `context = session.context(summary=True, tokens=10_000)`
+  - Convert to LLM format: `openai_messages = context.to_openai(assistant=tutor)`
+  - Get representation: `alice_representation = session.representation(alice)`
+
+  **Architecture** (from docs):
+  - Data flow: Messages written to PostgreSQL -> Background reasoning triggered -> Conclusions stored in vector collections -> Agents query for context
+  - Reasoning is async and non-blocking
+  - Workspace-level authentication and configuration
+  - Session-level perspective-taking configuration options
+  - Support for batch create up to 100 messages per call
+
+  **Self-Hosting** (from GitHub):
+  - Requires: Python 3.9+, uv 0.4.9+, PostgreSQL with pgvector
+  - Config: .env file with DB_CONNECTION_URI and LLM provider keys (Anthropic, OpenAI, Gemini, Groq)
+  - Docker Compose setup available via docker-compose.yml.example
+implication: |
+  For mde integration:
+  1. Honcho can be added as Python dependency (honcho-ai) alongside existing loguru logging
+  2. Self-hosted option enables local development without managed service for iterative work
+  3. Peer/Session/Message model maps cleanly to agent memory patterns (peer = agent state, session = interaction context)
+  4. Async reasoning architecture means no blocking on message writes - compatible with async event-driven design
+  5. Multiple LLM provider support (Anthropic, OpenAI, Gemini, Groq) allows flexible backend switching
+  6. Vector storage backend enables semantic search alongside traditional message history
+tags:
+  - honcho
+  - python-sdk
+  - agent-memory
+  - installation
+  - client-initialization
+  - core-operations
+  - session-management
+  - self-hosted
+  - llm-integration
+status: discovered

@@ -1,0 +1,27 @@
+id: finding-python-zipapp-standalone
+timestamp: "2026-03-23T09:30:00Z"
+source: https://docs.python.org/3/library/zipapp.html
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: |
+  Python's built-in zipapp module (PEP 441, py3.5+) creates .pyz files that are
+  executable Python zip archives. These are zip files with a __main__.py at the root
+  and an optional shebang line. python-m zipapp creates them from directories.
+gaps: |
+  - Zipapp itself has NO built-in dependency bundling; you must manually include
+    all dependencies in the archive directory before zipping
+  - External dependencies (pydantic, httpx, loguru, etc.) must be pre-installed
+    into the archive's site-packages or handled separately
+  - No built-in support for platform-specific wheels or compiled extensions
+evidence: |
+  From Python docs (3.14.3):
+  "python -m zipapp myapp -m 'myapp:main'" creates executable archive.
+  Archive can be run as "python myapp.pyz" or "python archive.pyz" directly.
+  Format: zip file with __main__.py entry point. Optional shebang for Unix execution.
+implication: |
+  Zipapp alone is NOT sufficient for mde healthcheck — we need shiv or wheels.
+  Zipapp is useful as a CONTAINER for dependencies but requires external tooling
+  to gather those dependencies first.
+tags: [python-packaging, zipapp, pep-441, standalone, docker-friendly]
+status: discovered

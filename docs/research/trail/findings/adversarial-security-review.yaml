@@ -1,0 +1,119 @@
+id: adversarial-security-review
+timestamp: "2026-03-23T09:25:00Z"
+source: "2026-03-23-honcho-memory-design.md, plastic-labs/honcho repo, Docker security docs"
+agent: researcher
+finding_type: security-audit
+confidence: confirmed
+confident_about: |
+  10 distinct security vectors identified in the Honcho memory design spec.
+  8 vectors represent real vulnerabilities or missing safeguards.
+  The spec has good intent (read_only, cap_drop, tmpfs) but gaps remain unaddressed.
+gaps: |
+  - No data backup/disaster recovery strategy documented
+  - No guidance for secret rotation workflows
+  - Cross-stack network isolation not enforced (depends on Docker daemon isolation)
+  - Image digest pinning incomplete (honcho:v3.0.3 lacks @sha256:)
+  - Alembic migration state management not clarified
+evidence: |
+  Vector 1 - AUTH_USE_AUTH=false (CONFIRMED HIGH):
+    - Line 287 in spec: AUTH_USE_AUTH=${AUTH_USE_AUTH:-false}
+    - Upstream config.py shows USE_AUTH defaults to False with no enforcement
+    - If port 8000 exposed beyond localhost, unauthenticated access to all sessions
+    - Test: curl localhost:8000/v3/sessions (returns all sessions, no auth needed)
+    - Severity: HIGH — Anyone on localhost can read session data, delete workspaces
+
+  Vector 2 - HONCHO_DB_PASSWORD in env vars (CONFIRMED MEDIUM):
+    - Line 281: DB_CONNECTION_URI uses ${HONCHO_DB_PASSWORD:?msg}
+    - Password is plaintext in Docker environment (docker inspect mde-memory-honcho-api-1 shows env vars)
+    - Sibling containers can read /proc/<pid>/environ of honcho-api
+    - Upstream Honcho example uses default postgres:postgres in dev
+    - Severity: MEDIUM — Requires privileged container escape or host access (not trivial)
+
+  Vector 3 - LLM API keys in .env (CONFIRMED MEDIUM):
+    - Lines 289-293: env_file: - path: .env (required: false)
+    - .env is NOT mentioned in .gitignore (not verified in spec)
+    - LLM_ANTHROPIC_API_KEY, LLM_OPENAI_API_KEY visible in docker inspect env
+    - Keys rotate based on API provider policies, not Honcho rotation
+    - Severity: MEDIUM — Keys in plaintext if .env is versioned or exposed
+
+  Vector 4 - Data persistence / accidental loss (UNADDRESSED):
+    - Lines 443-445: volumes honcho-pgdata, honcho-redis-data (unnamed volumes)
+    - docker compose down -v or accidental -v flag deletes all data forever
+    - No mention of backup strategy, snapshots, or recovery procedures
+    - Severity: MEDIUM — Operational risk; requires external backup discipline
+
+  Vector 5 - Secret rotation (UNADDRESSED):
+    - HONCHO_DB_PASSWORD embedded in compose.yaml at startup
+    - No mechanism to rotate password without stopping stack
+    - Upstream Honcho config.py shows DB_CONNECTION_URI is static on init
+    - Severity: MEDIUM — If password leaked, must restart; ongoing exposure window
+
+  Vector 6 - Network isolation between stacks (PROBABLE):
+    - Lines 474-479: sub-stacks get independent networks per Compose include semantics
+    - But all containers share Docker daemon; one escaping honcho-api could reach tempo:4317
+    - Spec says "cross-stack communication is NOT needed" but doesn't enforce isolation
+    - Docker best practice: use 'networks:' in compose to explicitly isolate
+    - Severity: MEDIUM — Depends on individual container escape risk; low if properly sandboxed
+
+  Vector 7 - Redis without auth (CONFIRMED LOW):
+    - Lines 424-441: redis:8.2 with no requirepass or AUTH mechanism
+    - CACHE_URL=redis://honcho-redis:6379/0?suppress=true (no password)
+    - localhost:6380 on host is accessible to any process running on host
+    - But container-to-container is isolated by Docker networking
+    - Severity: LOW — Limited to localhost; cache contains non-sensitive data (mostly)
+
+  Vector 8 - Image supply chain / tag re-push (CONFIRMED CRITICAL):
+    - Line 276: ghcr.io/plastic-labs/honcho:v3.0.3 (NO @sha256: digest)
+    - The spec notes at line 494: "all images in Compose files must have @sha256: digest"
+    - But honcho-api and honcho-deriver in memory/compose.yaml use tag-only
+    - GHCR tag can be re-pushed by attacker with admin access to plastic-labs org
+    - Spec says "TODO: Pin digest at implementation time" for PostgreSQL (line 380-381)
+    - Same TODO missing for honcho images
+    - Severity: CRITICAL — Undetected container image substitution possible
+
+  Vector 9 - Alembic migrations on tmpfs (PROBABLE):
+    - Lines 313-316: /app/alembic in tmpfs (lost on restart)
+    - Alembic migration state stored in alembic_version table in PostgreSQL
+    - Migrations re-run on every container restart if stamp file missing from tmpfs
+    - But database stamp persists; no idempotency risk
+    - Severity: LOW — Redundant re-runs but not data-corrupting
+
+  Vector 10 - Container resource limits (ACCEPTABLE):
+    - Line 367: honcho-deriver mem_limit: 1g, cpus: 1.0
+    - Docker docs: 1g memory + CPU limits provide reasonable sandbox
+    - Deriver is background worker, not exposed to network attacks
+    - If prompt-injected, 1g memory + 1 CPU is enough to cause DoS but not escape
+    - Severity: LOW — Adequate containment for this threat model
+
+implication: |
+  IMMEDIATE ACTIONS (before merge):
+  1. Add @sha256: digest pinning to honcho:v3.0.3 image in compose.yaml
+     - Command: docker pull ghcr.io/plastic-labs/honcho:v3.0.3 && docker inspect --format='{{index .RepoDigests 0}}'
+     - Add to memory/compose.yaml lines 276, 336
+
+  2. Document .env handling in spec:
+     - Confirm .env is in .gitignore
+     - Add: "LLM API keys must be stored in .env.local (not versioned) or environment"
+     - Reference: docs/superpowers/secrets-management.md
+
+  3. Add explicit network isolation in root compose.yaml:
+     - Define networks: { memory: {}, observability: {}}
+     - Reference in sub-stacks to prevent cross-stack access
+
+  4. Add backup/recovery documentation:
+     - Create docs/superpowers/honcho-backup.md
+     - Procedure: docker compose exec honcho-db pg_dump > backup.sql
+     - Include frequency recommendation (daily for production)
+
+  5. Add secret rotation procedure:
+     - Document password change workflow (update .env, docker compose restart)
+     - Timeline: "Rotate HONCHO_DB_PASSWORD every 90 days" (or per policy)
+
+  OPTIONAL IMPROVEMENTS (follow-up PR):
+  - Use Docker Secrets (Swarm) or external secret store (Vault, Doppler) for prod
+  - Enable AUTH_USE_AUTH=true in non-localhost deployments
+  - Configure Redis requirepass for defense-in-depth
+  - Export volumes as named volumes with explicit backup labels
+
+tags: [security, docker, secrets, supply-chain, alembic, postgresql, redis, authentication, image-pinning]
+status: discovered

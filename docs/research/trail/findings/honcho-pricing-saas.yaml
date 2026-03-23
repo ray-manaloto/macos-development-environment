@@ -1,0 +1,38 @@
+id: honcho-pricing-saas
+timestamp: "2026-03-23T10:35:00Z"
+source: https://github.com/plastic-labs/honcho
+agent: researcher
+finding_type: insight
+confidence: confirmed
+confident_about: |
+  Honcho's managed SaaS (app.honcho.dev) offers a free tier with $100 in credits.
+  No explicit tiered pricing model is publicly documented beyond the free credit allocation.
+  Paid tier details are not disclosed on public documentation.
+gaps: |
+  - No public pricing page exists (honcho.dev/pricing returns 404)
+  - Specific paid tier pricing, limits, or feature tiers are not documented
+  - Cost structure after free $100 credits are exhausted is unclear
+  - Per-API-call costs or subscription models are not specified
+evidence: |
+  From GitHub README (https://github.com/plastic-labs/honcho):
+  "Sign up for an account at https://app.honcho.dev and get started with $100 free credits.
+  When you sign up you'll be prompted to join an organization which will have a dedicated
+  instance of Honcho."
+
+  The README also mentions:
+  - Self-hosting available for testing/evaluation
+  - Managed service at app.honcho.dev (default)
+  - Base URL: https://api.honcho.dev (for managed SaaS)
+implication: |
+  For research/evaluation purposes, Honcho's managed SaaS is accessible via free $100 credits,
+  making it low-barrier to test. However, production deployment requires contacting sales
+  for pricing beyond the free tier. Self-hosting via Docker is available as an alternative
+  for those wanting to avoid SaaS costs entirely.
+tags:
+  - honcho
+  - pricing
+  - saas
+  - managed-service
+  - free-tier
+  - memory-system
+status: discovered

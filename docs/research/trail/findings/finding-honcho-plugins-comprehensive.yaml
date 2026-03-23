@@ -1,0 +1,111 @@
+id: finding-honcho-plugins-comprehensive
+timestamp: "2026-03-23T08:56:00Z"
+source: "https://github.com/plastic-labs/claude-honcho"
+agent: researcher
+finding_type: discovery
+confidence: confirmed
+confident_about: |
+  Honcho has a first-class plugin ecosystem for Claude Code and other AI agents.
+  Official plugins are maintained by plastic-labs and published in multiple registries.
+  Complete source catalog of all discovered URLs logged.
+gaps: |
+  - Official Anthropic plugin registry (anthropics/claude-code-plugins) returns 404
+  - awesome-claude-code repository does not exist at Anthropic
+  - skills.sh search for "honcho" returns insufficient_content (stub page)
+  - Unclear if Honcho MCP server exists separately or only as plugin hooks
+evidence: |
+  1. **Main Plugin Repository**: plastic-labs/claude-honcho
+     - URL: https://github.com/plastic-labs/claude-honcho
+     - Plugins: honcho (persistent memory), honcho-dev (SDK skills)
+     - Installation: `/plugin marketplace add plastic-labs/claude-honcho`
+     - Status: Updated 2026-03-22T05:08:54Z
+
+  2. **Claude Code Plugin (honcho)**
+     - Persistent memory for Claude Code sessions
+     - Survives context wipes, session restarts
+     - Git awareness (detects branch switches, commits)
+     - MCP Tools: search, chat, create_conclusion, get_config, set_config
+     - Skills: honcho:status, honcho:config, honcho:setup, honcho:interview
+     - Prerequisites: Bun runtime required
+     - Config: ~/.honcho/config.json (global, cross-project)
+     - API: Requires HONCHO_API_KEY from app.honcho.dev
+
+  3. **honcho-dev Plugin**
+     - Skills for building AI apps with Honcho SDK
+     - For developers creating agent applications
+     - Located at plugins/honcho-dev in claude-honcho repo
+
+  4. **Core Honcho Library**
+     - URL: https://github.com/plastic-labs/honcho
+     - PyPI: honcho-ai
+     - Homepage: https://docs.honcho.dev
+     - Latest: Updated 2026-03-22T19:52:55Z
+     - Official Python SDK for memory management
+     - Concepts: peers, sessions, conversation context
+     - Multi-agent capable
+
+  5. **Cursor Integration** (plastic-labs/cursor-honcho)
+     - honcho: Persistent memory for Cursor sessions
+     - honcho-dev: SDK development tools
+     - Similar architecture to Claude Code plugin
+
+  6. **OpenClaw Integration**
+     - plastic-labs/openclaw-honcho: "Make your OpenClaw happy, give it Honcho"
+     - Multiple community variants:
+       * ashneil12/openclaw-honcho-multiagent (multi-agent support)
+       * erosika/openclaw-honcho
+     - Plugin ID: openclaw-honcho
+     - Skills marketplace plugins available in dvcrn/openclaw-skills-marketplace
+
+  7. **Skills Marketplace Integrations** (from dvcrn/openclaw-skills-marketplace)
+     - spooktheducks/honcho-memory-mux: "Honcho API key management and extension"
+     - jkillr/honcho-memory: "Production-grade Honcho memory system"
+       * Replaces embedding-based retrieval with reasoned understanding
+       * Handles 1000+ messages, 6+ agent fleets
+       * Automated feed pipelines, cron automation
+     - ajspig/honcho-setup: "Install and migrate legacy file memory to Honcho"
+     - vvoruganti/honcho: "Install OpenClaw Honcho plugin"
+     - Multiple community implementations
+
+  8. **Other Integrations**
+     - VibeDeez/Honcho-Osaurus-Plugin: macOS Osaurus plugin for Honcho v3 REST API
+     - vintrocode/simple-honcho-discord-bot: Discord bot with Honcho context
+     - plastic-labs/honcho-memory-agent: Agent-focused memory system
+     - plastic-labs/nanobot-honcho: Ultra-lightweight assistant with persistent memory
+     - plastic-labs/teach-honcho: Educational integration
+     - plastic-labs/reachy-mini-honcho: Realtime chat with gpt-realtime + Honcho
+
+implication: |
+  1. **Production-Ready Plugin Ecosystem**: Honcho plugins are mature and actively maintained.
+     Claude Code users can add persistent, cross-session memory with a single plugin install.
+
+  2. **Multi-Platform Support**: Honcho works with Claude Code, Cursor, OpenClaw, and
+     community platforms. Same config file (~/.honcho/config.json) works across tools.
+
+  3. **Team Capabilities**: Built-in multi-user support via shared workspaces with per-user
+     session prefixing. No custom code needed for team setups.
+
+  4. **Memory Strategies Available**: Session strategies (per-directory, git-branch, chat-instance)
+     allow memory mapping to match workflow. Default per-directory is stable for typical use.
+
+  5. **For mde Project**: The /honcho:interview skill could capture user preferences once,
+     then persist them. Creates opportunity for agent memory integration without adding
+     external dependency (uses existing session hooks via plugin system).
+
+  6. **MCP Integration**: Tools available via MCP (search, chat, conclusions) can be accessed
+     by agents. This contrasts with file-based memory requiring manual reads.
+
+tags:
+  - honcho
+  - claude-code
+  - plugins
+  - persistent-memory
+  - agent-memory
+  - plastic-labs
+  - cursor
+  - openclaw
+  - mcp-integration
+  - memory-systems
+  - production-ready
+
+status: discovered

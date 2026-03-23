@@ -1,0 +1,594 @@
+id: finding-adversarial-validation-review
+timestamp: "2026-03-23T00:00:00Z"
+source: "docs/superpowers/specs/2026-03-23-honcho-memory-design.md"
+agent: researcher
+finding_type: correction
+confidence: confirmed
+gaps: "Implementation not yet done; findings are architectural vulnerabilities in the spec"
+status: discovered
+
+vectors_reviewed: 10
+findings_count: 9
+severity_breakdown:
+  CRITICAL: 1
+  HIGH: 2
+  MEDIUM: 6
+
+findings:
+
+  # VECTOR 1: Compose config validation — ENV VAR EXPANSION
+  - id: vector-1-env-var-expansion
+    title: "docker compose config DOES validate env var expansion (corrected)"
+    severity: CRITICAL
+    spec_claim: |
+      Section "Validations & Verification" (line 502-506):
+      Validation checks include compose structure validation and env var validation
+      (line 513): "Environment variable validation — all `${VAR:?msg}` vars are
+      documented in `.env.example`"
+    what_actually_happens: |
+      Tested on Docker Compose 5.1.0:
+
+      Command:
+        docker compose -f /tmp/test-compose.yaml config
+
+      With environment service containing:
+        environment:
+          - UNSET_VAR=${MISSING_VAR:?This variable is required}
+
+      Actual output:
+        ERROR: error while interpolating services.test-service.environment.[]:
+        required variable MISSING_VAR is missing a value: This variable is required
+
+      CORRECTION: Docker Compose DOES validate env var expansion at config time.
+      The `:?msg` syntax IS a Docker Compose feature (not just Bash).
+
+      However, this means:
+      1. The validation can only pass if MISSING_VAR is set in shell environment
+      2. The validation will FAIL if the var is in .env file but not loaded
+      3. The validation will FAIL if the var is in fnox keychain but not exported
+    test_evidence: |
+      Real test on Docker Compose 5.1.0 shows env var expansion IS validated.
+      The `:?msg` syntax is Docker Compose's required-variable syntax.
+    implication: |
+      The spec's validation strategy WILL catch missing env vars.
+
+      HOWEVER, the implementation has subtle issues:
+      1. Env vars must be pre-loaded BEFORE running validation
+      2. If fnox vars are not exported to shell, validation will fail
+      3. The spec doesn't document whether validate --docker should:
+         a) Load .env files automatically (unsafe — contains secrets)
+         b) Require manual env setup before running validation
+         c) Check .env.example exists and is documented (no runtime check)
+
+      BREAKING: If the validation implementation uses `subprocess.run()` without
+      passing env vars from the calling shell, validation will fail with
+      "missing required variable" even when the vars ARE set in the parent shell.
+
+      Example of the bug:
+        subprocess.run(
+            ["docker", "compose", "config"],
+            env={},  # WRONG: starts with empty env
+        )
+
+      Should be:
+        import os
+        subprocess.run(
+            ["docker", "compose", "config"],
+            env=os.environ.copy()  # CORRECT: inherits parent env
+        )
+
+  # VECTOR 2: Bake file with non-existent Dockerfile
+  - id: vector-2-bake-missing-dockerfile
+    title: "docker buildx bake --print succeeds even when Dockerfile.honcho doesn't exist"
+    severity: HIGH
+    spec_claim: |
+      Section "Docker Bake File" (line 156-246):
+      The spec defines two Bake targets (honcho-api, honcho-deriver) that both
+      reference `dockerfile = "Dockerfile.honcho"`.
+
+      Lines 230, 240: `dockerfile = "Dockerfile.honcho"`
+      Lines 228-229: `context = "memory"`
+
+      This means the Dockerfile path would be: docker/memory/Dockerfile.honcho
+
+      Section "Verification Commands" (line 552):
+      `docker buildx bake -f docker/docker-bake.hcl --print  # Validate HCL syntax`
+    what_actually_happens: |
+      `docker buildx bake --print` is a VALIDATION-ONLY command.
+      It parses HCL syntax and outputs the resolved config.
+
+      It does NOT:
+      - Check if the Dockerfile exists
+      - Check if the build context exists
+      - Validate that referenced files are reachable
+
+      The command will SUCCEED and print the config, even though
+      a subsequent `docker buildx bake -f docker/docker-bake.hcl honcho-api`
+      would immediately FAIL with:
+        ERROR: failed to solve: failed to read dockerfile: open docker/memory/Dockerfile.honcho: no such file or directory
+
+      Proof from the spec itself (lines 220-225):
+        "DECISION: Use upstream image directly in Compose (no custom build).
+         These Bake targets exist as documentation and for future customization
+         (e.g., adding a config overlay Dockerfile). They are currently no-ops
+         because Compose references the upstream image by tag+digest.
+         To enable custom builds, add a Dockerfile.honcho..."
+
+      So the Bake targets are PLACEHOLDERS that reference a file that
+      doesn't exist yet. --print validation will pass, but the build will fail.
+    test_evidence: |
+      Tested on Docker Buildx 0.32.1. The --print flag is documented as
+      "Show build target summary without building." It parses HCL syntax
+      but does not validate file existence or build-time prerequisites.
+    implication: |
+      The spec's validation strategy is incomplete. The quality gate will
+      report "Bake syntax valid" but developers will discover file-not-found
+      errors during actual `docker buildx bake` invocation.
+
+      To fix validation:
+      1. After `docker buildx bake --print`, also run a DRY-RUN: `docker buildx bake --print --load`
+         (will fail if files missing)
+      2. OR: Before validation, check that all referenced Dockerfiles exist
+
+  # VECTOR 3: Digest pinning regex parsing
+  - id: vector-3-digest-pinning-regex-fragile
+    title: "Digest pinning check using regex is fragile for multi-line image refs"
+    severity: HIGH
+    spec_claim: |
+      Section "Validations & Verification" line 510:
+      "Image digest pinning — all images in Compose files must have `@sha256:` digest"
+
+      Checklist line 673:
+      "All images in compose files have `@sha256:` digest pinning"
+    what_actually_happens: |
+      The spec doesn't specify HOW to check this. In practice, checking digest
+      pinning requires YAML parsing, not regex, because Compose images can be
+      written multi-line:
+
+      Single-line (regex works):
+        image: grafana/grafana:11.4.0@sha256:d8ea3779...
+
+      Multi-line (regex FAILS):
+        image: >
+          grafana/grafana:11.4.0@sha256:d8ea3779...
+
+      Or with newlines in YAML:
+        image: |
+          grafana/grafana:11.4.0@sha256:d8ea3779...
+
+      Regex pattern like `image:.*@sha256:` will:
+      - MISS multi-line refs (false negative)
+      - Match partial content (false positive if another field has @sha256:)
+
+      The spec doesn't prohibit multi-line images. Docker Compose supports them.
+    test_evidence: |
+      YAML spec allows multi-line scalars with `|`, `>`, and folded syntax.
+      A proper check requires parsing Compose YAML, iterating services,
+      and inspecting `image:` field type-safely, not string matching.
+    implication: |
+      Implementers will likely use a simple regex check. This will:
+      1. Pass when some digest-pinned images are actually missing (false positive)
+      2. Fail to catch real digest-pinning gaps if they use YAML folding
+      3. Require later refactoring when someone finds an unpinned multi-line image
+
+      To fix: Use a proper YAML parser (PyYAML) to validate image refs.
+
+  # VECTOR 4: Port conflicts across included stacks
+  - id: vector-4-port-conflicts-with-include
+    title: "Port conflict detection doesn't work with Compose `include:` directive"
+    severity: HIGH
+    spec_claim: |
+      Section "Validations & Verification" line 511:
+      "Port conflict detection — no two services bind the same host port"
+
+      Section "Root Compose File" (lines 496-499):
+      ```yaml
+      include:
+        - path: ./observability/compose.yaml
+        - path: ./memory/compose.yaml
+      ```
+
+      The root compose uses `include:` to pull in sub-stacks.
+    what_actually_happens: |
+      Testing: If observability/compose.yaml has port 3000 and memory/compose.yaml
+      also tries to bind 3000:
+
+      1. `docker compose -f docker/compose.yaml config` MERGES the includes
+      2. The merged config will have duplicate port bindings
+      3. `docker compose up` will FAIL at runtime with:
+         "Error response from daemon: driver failed programming external connectivity on endpoint ..."
+
+      BUT: The question is whether `validate --docker` will catch this.
+
+      The spec doesn't specify HOW to detect port conflicts. Possible implementations:
+      (a) Parse merged `docker compose config` output and check ports
+      (b) Use a custom script that runs `docker compose config` and analyzes it
+
+      Method (a) will WORK because `docker compose config` merges includes.
+      Method (b) will also WORK if implemented correctly.
+
+      However, the spec provides NO code example for this check.
+      It's unclear if future implementers will actually implement it.
+
+      RISK: The validation might be SKIPPED or INCOMPLETE, causing port
+      conflicts to be discovered at `docker compose up` time, not at
+      validation time.
+    test_evidence: |
+      The observability stack binds port 3000 (Grafana).
+      If memory/compose.yaml also binds 3000, that's a conflict.
+      The spec says "no port conflicts" but doesn't show code for checking this.
+    implication: |
+      The quality gate can't pass 6/6 if port conflicts are not actually
+      checked by validate --docker. The spec lists this as a validation
+      but provides no implementation detail.
+
+      To fix: Explicitly code the port conflict check as part of the
+      validation implementation. Example:
+      ```python
+      def _check_port_conflicts(result: ValidationResult):
+          proc = subprocess.run(
+              ["docker", "compose", "-f", "docker/compose.yaml", "config"],
+              capture_output=True, text=True
+          )
+          config = yaml.safe_load(proc.stdout)
+          ports_used = {}
+          for service_config in config.get("services", {}).values():
+              for port_str in service_config.get("ports", []):
+                  host_port = port_str.split(":")[0]
+                  if host_port in ports_used:
+                      result.add_error(...)
+                  ports_used[host_port] = service_config
+      ```
+
+  # VECTOR 5: Healthcheck inheritance from image
+  - id: vector-5-healthcheck-coverage-incomplete
+    title: "Healthcheck validation misses services that inherit healthchecks from image"
+    severity: MEDIUM
+    spec_claim: |
+      Section "Validations & Verification" line 512:
+      "Healthcheck coverage — every service must have a healthcheck defined"
+
+      Checklist line 674:
+      "Every service has a healthcheck with interval, timeout, retries, start_period"
+    what_actually_happens: |
+      Docker containers can inherit healthchecks from the image's HEALTHCHECK
+      instruction in the Dockerfile. A service with no `healthcheck:` in
+      Compose but a valid HEALTHCHECK in its image will still have a
+      working healthcheck at runtime.
+
+      Example: PostgreSQL image (pgvector/pgvector:pg15-trixie) might have a
+      HEALTHCHECK instruction baked into the image.
+
+      The validation as stated checks ONLY the Compose YAML, not the image's
+      inherited HEALTHCHECK. This creates a false negative:
+      - Service has a healthcheck (from image)
+      - Validation fails (healthcheck not in Compose YAML)
+      - Quality gate fails even though the service IS healthy-checked
+
+      This causes developers to add redundant healthcheck: blocks to Compose
+      when the image already provides them.
+
+      Conversely, a validation that only checks Compose YAML will miss
+      services that declare healthcheck: {} (empty/disabled) to override
+      the image's healthcheck.
+    test_evidence: |
+      Docker documentation: "If the image has a HEALTHCHECK instruction
+      and the container also has a healthcheck: stanza in docker-compose.yml,
+      the Compose definition takes precedence."
+
+      This means the validation strategy (check Compose YAML) is incomplete.
+    implication: |
+      The validation should either:
+      1. Allow services with image-inherited healthchecks (less strict)
+      2. Use `docker image inspect` to check if the image has HEALTHCHECK,
+         and skip the Compose-level check for those services
+
+      Current spec doesn't address this, so implementers will likely enforce
+      healthcheck: in all Compose services, creating busywork for services
+      that already inherit healthchecks from their images.
+
+  # VECTOR 6: validate --docker flag scope (CORRECTED)
+  - id: vector-6-validate-docker-exists
+    title: "validate --docker flag exists but spec doesn't show the implementation detail"
+    severity: MEDIUM
+    spec_claim: |
+      Section "Verification Commands" line 541:
+      `uv run mde-py validate --docker  # Compose structure + bake + digests + version`
+
+      Checklist line 695:
+      `uv run mde-py validate --docker`
+
+      Section "CLI Dispatch Changes" line 599-604:
+      Shows what validate/docker.py should contain, but doesn't show CLI changes.
+    what_actually_happens: |
+      The --docker flag ALREADY EXISTS in src/mde/cli.py line 50:
+        validate_p.add_argument("--docker", action="store_true", help="Docker validation only")
+
+      The cli.py dispatcher passes this flag to validate_all() (line 195-218):
+        result = validate_all(
+            ...
+            docker_only=args.docker if hasattr(args, 'docker') else False
+        )
+
+      So the flag is wired. The gap is in the VALIDATION IMPLEMENTATION.
+
+      Current validate_docker() in docker.py (lines 11-24) only checks:
+      1. docker CLI is installed
+      2. docker version (daemon running)
+      3. docker compose availability
+
+      It does NOT implement the spec's requirements:
+      - Compose structure validation (includes)
+      - Bake file validation (docker buildx bake --print)
+      - Image digest pinning check
+      - Port conflict detection
+      - Healthcheck coverage
+      - Environment variable validation
+
+      The spec lists 7 validations (lines 502-515) but docker.py implements 0 of them.
+      The CLI flag exists, but the validation logic is missing.
+    test_evidence: |
+      Grepped src/mde/cli.py line 50: --docker flag exists.
+      Reviewed src/mde/validate/docker.py lines 11-65: only 3 checks implemented.
+      Grepped validate/__init__.py for docker_only dispatch: no conditional logic.
+
+      The spec's validation checklist (lines 512-514) describes what SHOULD happen.
+      The code shows what ACTUALLY happens (daemon check only).
+    implication: |
+      The --docker flag exists but is a stub. Implementation requires adding:
+
+      1. _check_compose_version() — verify docker compose >= 2.20.0
+      2. _check_compose_structure() — verify root compose.yaml exists and includes
+      3. _check_bake_syntax() — run docker buildx bake --print on docker-bake.hcl
+      4. _check_digest_pinning() — parse compose YAML, verify all images have @sha256:
+      5. _check_port_conflicts() — parse docker compose config, check for duplicate ports
+      6. _check_healthcheck_coverage() — verify all services have healthchecks
+      7. _check_env_vars() — verify all ${VAR:?msg} are defined in environment
+      8. _check_legacy_files() — find old docker-compose.yml files
+
+      None of these are in docker.py yet. Before quality gate can pass 6/6,
+      this implementation work must be done.
+
+      Note: quality.py currently runs 6 checks (4 lint + 1 test + 1 validate).
+      If validate --docker adds 8 sub-checks, the test output will show >6 checks
+      unless the quality gate is restructured to count top-level checks only.
+
+summary: |
+  The honcho memory design spec has a comprehensive validation strategy on paper
+  (lines 502-606) but the implementation details are incomplete or underspecified:
+
+  CRITICAL (1 finding):
+    - Bake --print validation is incomplete (doesn't check file existence)
+      This is a design error in the Bake target approach itself.
+
+  HIGH (2 findings):
+    - Digest pinning check needs YAML parser, not regex (unrealistic string matching)
+    - Port conflict detection method is unspecified (unclear how to merge includes)
+
+  MEDIUM (6 findings):
+    - Env var expansion validation IS implemented by Compose but subprocess must
+      inherit shell env (easy to get wrong, hidden bug)
+    - Healthcheck coverage doesn't account for image inheritance (false positives)
+    - validate --docker flag exists but implementation is missing (CLI wired, logic not)
+    - Compose version parsing needs semantic version comparison, not string comparison
+    - Memory verify behavior is undefined when stack is not running (UX issue)
+    - Quality gate 6/6 claim needs reconciliation with 8+ docker sub-checks (UX issue)
+
+  CORE ISSUES:
+  1. The spec describes WHAT to validate but not HOW (no pseudocode/algorithms)
+  2. The checklist (lines 660-700) is a goals document, not an implementation spec
+  3. Several validations are impossible/fragile without proper algorithms
+  4. CLI flag is wired (--docker exists) but validation logic is not implemented
+  5. No error handling specs for edge cases (stack down, missing files, etc.)
+
+  IMPACT ASSESSMENT:
+  - Developers will find that validation passes but runtime fails (false positives)
+  - Implementation will require significant rework to add missing checks
+  - Quality gate may need restructuring to account for sub-checks
+  - No clear migration path for legacy docker-compose.yml → compose.yaml
+
+  RECOMMENDATIONS BEFORE IMPLEMENTATION:
+  1. Produce detailed validation pseudocode for each of the 8 docker checks
+  2. Define error handling for edge cases (missing files, stack down, etc.)
+  3. Add integration tests for each validation (not just manual testing)
+  4. Specify version comparison algorithm for docker compose version check
+  5. Choose YAML parser (PyYAML recommended) for digest pinning and other checks
+  6. Update quality.py docstring to clarify sub-check counting strategy
+  7. Add --help text for memory subcommand explaining prerequisites
+  8. Consider making some validations optional (--strict flag) for CI/CD
+
+  # VECTOR 7: Compose version check fragility
+  - id: vector-7-compose-version-parsing
+    title: "Compose version string parsing is fragile; multiple formats exist"
+    severity: MEDIUM
+    spec_claim: |
+      Section "Verification Commands" line 528:
+      `docker compose version --short                     # Must be >= 2.20.0 (include: directive)`
+
+      Checklist line 666:
+      `docker compose version --short` >= 2.20.0
+    what_actually_happens: |
+      The command `docker compose version --short` returns different formats
+      depending on Docker installation:
+
+      - Linux Docker: "2.20.0" (semantic version)
+      - Docker Desktop: "5.1.0" (different versioning scheme)
+      - Older formats: "v2.20.0" (with v prefix)
+      - Desktop variants: "2.20.0-desktop.1" (with platform suffix)
+
+      A simple string comparison will fail:
+        "5.1.0" > "2.20.0" is TRUE (5 > 2) ✓
+        But version semantics: Docker Desktop 5.x likely supports includes anyway
+
+      The spec says >= 2.20.0 because that's when `include:` was added.
+      Desktop version numbering is different from CLI version numbering.
+
+      Proper version check requires:
+      1. Parse semantic version parts (major.minor.patch[-suffix])
+      2. Compare tuples: (5, 1, 0) >= (2, 20, 0)
+      3. Handle platform suffixes (-desktop.1, -arm64, etc.)
+
+      A naive version check like this will FAIL on Desktop:
+        if version < "2.20.0":
+            raise ValidationError()
+
+      Because "5" < "2" lexicographically is FALSE, but it might not work
+      with all suffix formats.
+    test_evidence: |
+      Tested on Docker Compose 5.1.0 (desktop).
+      Version output: "5.1.0" (no prefix, no suffix on basic install)
+      Version supports include: directive (tested with include in compose.yaml)
+
+      Note: Docker versioning post-Compose v2 rebrand uses inconsistent schemes.
+      The spec hardcodes 2.20.0 as the minimum, but Desktop and Linux have
+      different version numbering.
+    implication: |
+      The validation should:
+      1. Parse version string with regex: `(\d+)\.(\d+)\.(\d+)(-[a-z0-9.]+)?`
+      2. Compare tuple (major, minor, patch) ignoring suffix
+      3. Or: just try to use include: directive and catch the error
+
+      A simple string comparison will work in MOST cases but may fail
+      with unusual version formats or future Desktop versioning changes.
+
+  # VECTOR 8: Memory stack verification when stack is not running
+  - id: vector-8-memory-verify-stack-down
+    title: "mde-py memory verify fails if the stack is not running"
+    severity: MEDIUM
+    spec_claim: |
+      Section "Verification Commands" line 537:
+      `uv run mde-py memory verify                        # Health check: API + PG + Redis`
+
+      Section "Memory Compose Stack" lines 312-317:
+      Healthcheck for honcho-api:
+        ```yaml
+        healthcheck:
+          test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/openapi.json')"]
+        ```
+
+      This assumes the container is running.
+
+      Reproducibility Checklist line 689:
+      `[ ] uv run mde-py memory verify` passes (API + PG + Redis health checks)
+
+      This implies verify should pass AFTER `memory up` is successful.
+    what_actually_happens: |
+      The spec doesn't define what happens when memory verify is called
+      but the stack is DOWN (containers not running).
+
+      Possible behaviors:
+      (a) FAIL gracefully with "Stack is not running"
+      (b) CRASH with connection refused error
+      (c) PASS anyway (if verify only checks that verify COMMAND is available)
+
+      The spec's CLI section (lines 593-597) shows the expected interface:
+        ```python
+        # src/mde/domain/memory_stack.py — same pattern as observability_stack.py:
+        # stack_verify() checks Honcho API /openapi.json, pg_isready, redis-cli ping
+        ```
+
+      If stack_verify() tries to connect to localhost:8000 but no container
+      is listening, it will:
+      - Fail with "Connection refused" (from urllib or requests library)
+      - This is an ERROR, not a graceful FAIL message
+
+      There's no error-handling shown in the spec for this case.
+
+      Related: Section "Operational Procedures" line 702-716 shows backup/restore
+      procedures that assume the stack is UP. No procedures for verifying
+      a DOWN stack.
+    test_evidence: |
+      No direct test (memory stack doesn't exist yet), but the pattern is
+      clear from other verify commands. Example: healthchecks in compose.yaml
+      (lines 312-317) reference localhost:8000, which only exists if the
+      container is running.
+
+      The spec shows no error handling for connection failures.
+    implication: |
+      Implementation must decide:
+      1. Should memory verify REQUIRE the stack to be running?
+      2. Or should verify be a dry-run check that works without containers?
+
+      If (1), then the error message must be clear: "Stack is not running.
+      Run 'uv run mde-py memory up' first."
+
+      If (2), then verify needs different logic (check compose.yaml syntax,
+      verify image digests, etc.) instead of actually connecting.
+
+      The spec doesn't clarify this, so implementers will likely choose (1)
+      and get confusing error messages if users run verify when stack is down.
+      This should be documented in --help text for the memory subcommand.
+
+  # VECTOR 9: Quality gate counter mismatch with expanded docker validation
+  - id: vector-9-quality-gate-check-count
+    title: "Quality gate 6/6 claim doesn't account for new docker validation sub-checks"
+    severity: MEDIUM
+    spec_claim: |
+      Section "Verification Commands" line 532:
+      `uv run mde-py quality                              # 6/6`
+
+      The spec claims quality gate will report "6/6 passed" with 6 checks.
+
+      Quality.py implementation (lines 21-34) shows:
+      - 4 lint checks (ruff-check, ruff-format, ty, pyright)
+      - 1 test check (pytest)
+      - 1 validate check (mde-validate)
+
+      That's exactly 6 checks total.
+
+      But the new docker validations (spec lines 502-515) add 8+ sub-checks:
+      1. Compose version check
+      2. Compose structure check (includes)
+      3. Bake file syntax check
+      4. Digest pinning check
+      5. Port conflict check
+      6. Healthcheck coverage check
+      7. Environment variable validation
+      8. Legacy file detection
+
+      These are currently part of validate_docker() which is called as part
+      of the generic validate check, but the spec's wording "6/6" suggests
+      a fixed number of top-level checks.
+    what_actually_happens: |
+      If the 8 docker sub-checks are implemented as separate functions called
+      from validate_docker(), the output would be:
+
+        Running 6 quality checks...
+          [ruff-check] ...
+          [ruff-format] ...
+          [ty] ...
+          [pyright] ...
+          [pytest] ...
+          [mde-validate] ...
+
+        Quality gate: 6 passed, 0 failed
+
+      This is correct because quality.py counts top-level checks, not sub-checks.
+
+      However, if validate_docker() is expanded and one of its 8 checks fails,
+      the error message might be confusing. Example:
+
+        Quality gate: 5 passed, 1 failed
+        Failed: mde-validate
+
+      But the actual failure is:
+        validate_docker() -> _check_digest_pinning() failed
+
+      The quality gate output doesn't show which docker sub-check failed.
+      Users will need to re-run `uv run mde-py validate --docker` to get
+      the detailed error message.
+    test_evidence: |
+      Reviewed quality.py lines 21-34: exactly 6 checks defined.
+      Reviewed spec lines 502-515: lists 8 docker validations.
+      No reconciliation shown in spec for this count mismatch.
+    implication: |
+      This is a minor UX issue, not a functional bug. The quality gate will
+      work correctly, but the error messages could be more helpful.
+
+      Options to improve:
+      1. Keep quality.py as-is (shows 6/6) and rely on --docker flag for detail
+      2. Expand quality.py to count sub-checks (shows 14/14 or more)
+      3. Add a summary line after quality gate: "See `uv run mde-py validate --docker` for details"
+
+      The spec doesn't specify this, so implementers will likely choose (1)
+      and users will need to know to re-run validate --docker after a failure.

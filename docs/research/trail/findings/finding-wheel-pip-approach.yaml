@@ -1,0 +1,38 @@
+id: finding-wheel-pip-approach
+timestamp: "2026-03-23T09:50:00Z"
+source: internal-analysis
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: |
+  Alternative approach: build mde as a wheel during Docker build, install it
+  with pip (or uv) in build stage, then only copy the installed package files
+  into the runtime container (removing pip/venv after install).
+
+  Process:
+  1. Multi-stage Docker build
+  2. Stage 1 (builder): install uv, build wheel from src/mde/, install with pip
+  3. Stage 2 (runtime): COPY only the installed site-packages from stage 1
+  4. Remove builder tools (uv, pip)
+  5. Run healthcheck as: python -m mde.healthcheck
+gaps: |
+  - Requires careful Docker multi-stage setup to avoid leaking pip/venv to runtime
+  - Still uses pip (not fully declarative in runtime container)
+  - More Docker complexity than simple COPY .pyz
+evidence: |
+  This is a standard Docker Python pattern for reducing image size while keeping
+  dependencies installed. Works because Python doesn't "know" how it got installed,
+  as long as the site-packages directory exists.
+implication: |
+  This is a viable alternative to shiv but requires:
+  - More Docker build setup (multi-stage)
+  - Cleanup logic to remove build tools
+  - Testing that the copied site-packages works standalone
+
+  ADVANTAGE over shiv: leverages existing pyproject.toml, uses standard
+  pip/uv tools, all quality gates apply to source code before wheel build.
+
+  DISADVANTAGE: more Docker complexity, harder to version the healthcheck
+  independently of the main mde package.
+tags: [wheel, pip, multi-stage-docker, build-artifact]
+status: discovered

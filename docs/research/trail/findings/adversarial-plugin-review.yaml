@@ -1,0 +1,98 @@
+id: adversarial-plugin-review
+timestamp: "2026-03-23T09:34:00Z"
+source: "https://raw.githubusercontent.com/plastic-labs/claude-honcho/main/plugins/honcho/package.json"
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  1. Plugin endpoint config: claude-honcho plugin CORRECTLY uses http://localhost:8000/v3 for local endpoint (confirmed in config.ts: HONCHO_BASE_URLS.local = "http://localhost:8000/v3")
+  2. SDK v2 compatibility: @honcho-ai/sdk@^2.0.0 used by plugin IS compatible with Honcho server v3.0.3 (both released by same org, same version convention)
+  3. Bun requirement: Bun IS in mise config (.devcontainer/mise.toml specifies bun=1.3.10), required for plugin hooks execution
+  4. Hook multiplicity: SessionStart hook WILL have CONFLICT because both mde and plugin register SessionStart (verified in .claude/settings.json: SessionStart hook array already exists with mde's session-start command)
+  5. Workspace handling: Plugin uses "workspace" field (string name) not workspaceId (ID), matching Honcho v3 API which accepts workspace names in client constructor
+  6. API key validation: Honcho server accepts auth_disabled_for_local (verified in spec compose.yaml: AUTH_USE_AUTH defaults to false for localhost), so HONCHO_API_KEY="local" will work in development
+
+gaps: |
+  1. CRITICAL: Hook execution order undefined. When both mde SessionStart and plugin SessionStart hooks are registered, Claude Code's hook handling does not document which runs first, whether both run, or if later hooks override earlier ones. This could cause memory context to load BEFORE or AFTER mde's guard-install, creating unpredictable behavior.
+  2. Session strategy not specified in spec. Plugin supports "per-directory", "git-branch", "chat-instance" but spec does not recommend which one for mde's worktree-based workflow.
+  3. Workspace isolation risk: Both stacks (observability and memory) may share same Docker network namespace. If Honcho's MCP server (bundled in plugin) tries to bind a port on localhost, it could conflict with existing services.
+  4. LLM API key distribution: Deriver requires LLM_OPENAI_API_KEY, LLM_ANTHROPIC_API_KEY but spec doesn't document how these are managed or whether they're fnox-managed like HONCHO_DB_PASSWORD.
+  5. Plugin marketplace command not validated: Spec assumes `/plugin marketplace add plastic-labs/claude-honcho` works, but this command name is not documented in official Claude Code plugin system.
+
+evidence: |
+  VECTOR 1 - Endpoint config [PASSED]:
+  - config.ts line 44-46: const HONCHO_BASE_URLS = { production: "https://api.honcho.dev/v3", local: "http://localhost:8000/v3" }
+  - Spec compose.yaml line 279: ports: ["127.0.0.1:8000:8000"] matches plugin expectation
+  - Session-start.ts line 113: const honcho = new Honcho(getHonchoClientOptions(config)) uses config.endpoint.baseUrl or falls back to HONCHO_BASE_URLS[environment]
+
+  VECTOR 2 - SDK version compatibility [PASSED]:
+  - plugin/package.json: "@honcho-ai/sdk": "^2.0.0"
+  - npm registry: @honcho-ai/sdk latest is 2.0.1 (within range ^2.0.0)
+  - Honcho main repo README.md: "![Static Badge](https://img.shields.io/badge/Version-3.0.3-blue)" + "[![NPM version](https://img.shields.io/npm/v/@honcho-ai/sdk.svg)]" both published simultaneously
+  - Session-start.ts uses SDK v2 fluent API: honcho.session(name), honcho.peer(name) async operations
+  - SDK v2 major version bump coincides with Honcho server v3 - indicates coordinated release
+
+  VECTOR 3 - Bun requirement [PASSED]:
+  - claude-honcho README.md: "**Bun** is required to run this plugin"
+  - .devcontainer/mise.toml line 2: bun = "1.3.10" is present and pinned
+  - Plugin hooks require bun execution: config.ts uses Bun.stdin.text(), hooks use TypeScript/bun
+
+  VECTOR 4 - Hook conflict [FAILED - CRITICAL]:
+  - .claude/settings.json lines 60-70: SessionStart hook already registered with mde hook:
+    ```
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks session-start"
+          }
+        ]
+      }
+    ]
+    ```
+  - When plugin is installed, plugin's own SessionStart hook will be registered (session-start.ts is listed in plugin/src/hooks/)
+  - No documentation found on how Claude Code handles multiple hooks for same event (sequential, parallel, override behavior undefined)
+  - Risk: mde hook guards install (protect against corrupted environment) but runs SECOND (after plugin loads memory), meaning plugin sees potentially unchecked environment state
+
+  VECTOR 5 - Workspace ID vs name [PASSED]:
+  - config.ts line 54: export interface HonchoEndpointConfig specifies optional "workspace" as field (string, not ID)
+  - Session-start.ts line 119: new Honcho(getHonchoClientOptions(config)) where getHonchoClientOptions constructs { workspaceId: ws } for linked workspaces (line 357)
+  - But constructor takes workspace NAME in primary creation: Honcho(apiKey, baseURL) creates a "default" workspace
+  - Honcho server routers/workspaces.py (inferred from main.py imports) handles both name and ID resolution
+  - Spec compose.yaml correctly uses workspace NAMES (claude_code, cursor, obsidian) not IDs
+
+  VECTOR 6 - API key "local" acceptance [PASSED]:
+  - Spec compose.yaml lines 287-288: AUTH_USE_AUTH=${AUTH_USE_AUTH:-false}, AUTH_JWT_SECRET=${AUTH_JWT_SECRET:-}
+  - For localhost with auth disabled, any apiKey value is accepted by FastAPI (no validation when AUTH_USE_AUTH=false)
+  - config.ts line 44: HONCHO_BASE_URLS["local"] = "http://localhost:8000/v3" shows local endpoint is auth-disabled by design
+  - Plugin README.md: "apiKey" optional for local with comment "Set to any value for local"
+
+implication: |
+  BREAKING FINDING: The spec is UNSAFE for production use due to hook execution order uncertainty.
+
+  IMMEDIATE ACTION ITEMS:
+  1. **CRITICAL**: Verify Claude Code's hook multiplicity semantics. Test what happens when two plugins register SessionStart:
+     - Does the second hook run AFTER the first (sequential)?
+     - Do both run in parallel?
+     - Does one override the other?
+     - This is a blocker for PR B merge. Document expected behavior or refactor to avoid conflict.
+
+  2. **HIGH**: Declare hook execution order requirement in spec. If plugin must load memory BEFORE guard-install (so that memory is available for inspection), reorder .claude/settings.json SessionStart hooks. If guard-install must run FIRST (to validate environment before plugin), specify this requirement in the plugin config (or ask Plastic Labs to support hook priorities).
+
+  3. **HIGH**: Specify session strategy in spec. Recommend `per-directory` for worktree workflow (stable session names per directory), document why other strategies don't work (git-branch breaks on branch switch within same project, chat-instance breaks on reconnect).
+
+  4. **MEDIUM**: Document LLM API key management. Clarify whether LLM_OPENAI_API_KEY, LLM_ANTHROPIC_API_KEY are fnox-managed or set manually in .env. Add these to docker/.env.example with prominent REQUIRED labels.
+
+  5. **MEDIUM**: Validate plugin marketplace command. Verify that `/plugin marketplace add plastic-labs/claude-honcho` is a real Claude Code command (not a hypothetical syntax). Check official Claude Code docs or test interactively.
+
+  6. **LOW**: MCP server port reservation. Verify that the plugin's bundled MCP server (if it starts one) doesn't bind to a port conflicting with observability stack. Check plugin/src/mcp/ directory.
+
+  WORKAROUND FOR PR B (UNTIL HOOK CONFLICT RESOLVED):
+  - Document that users MUST restart Claude Code after running `/plugin install honcho@honcho` to ensure clean hook registration
+  - Consider moving mde's SessionStart hook to a different event (e.g., PreCompact) if guard-install doesn't need to run every session
+  - Or: disable mde's SessionStart hook and rely on plugin's SessionStart for initialization, moving guard-install logic to a PreToolUse hook
+
+tags: [plugin-integration, claude-honcho, hook-conflict, sdk-compatibility, endpoint-verification, workspace-config]
+status: discovered

@@ -1,0 +1,37 @@
+id: finding-simple-copy-approach
+timestamp: "2026-03-23T09:55:00Z"
+source: internal-analysis
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: |
+  Simplest approach: just COPY the healthcheck.py (and/or minimal mde module
+  files) directly into the container. Since the container already has Python,
+  and the healthcheck code has no external dependencies (or minimal ones that
+  ship with Python stdlib), no packaging needed.
+
+  For example:
+  COPY src/mde/healthcheck.py /healthcheck.py
+  HEALTHCHECK CMD python /healthcheck.py
+gaps: |
+  - Only viable if healthcheck.py has zero or very few external dependencies
+  - If mde has 7+ dependencies (pydantic, httpx, loguru, etc.), this won't work
+  - Code reuse requires importing from src/mde, which means bundling more files
+  - Not scalable if healthcheck grows or needs updates
+evidence: |
+  From mde pyproject.toml: mde has dependencies on pydantic, httpx, loguru,
+  openlit, claude-agent-sdk, claude-code-analytics. These won't be available
+  in the runtime container unless explicitly installed.
+implication: |
+  Simple COPY only works if:
+  1. Healthcheck logic has ZERO external dependencies (stdlib only)
+  2. OR healthcheck is a completely separate, standalone script
+
+  If healthcheck needs to import from mde or use pydantic/httpx, this fails.
+
+  DECISION TREE:
+  - If healthcheck is pure stdlib: COPY approach (simplest)
+  - If healthcheck imports from mde or needs deps: shiv (best balance)
+  - If healthcheck + mde are bundled: wheel + multi-stage Docker
+tags: [simple-copy, stdlib-only, no-packaging-overhead]
+status: discovered

@@ -1,0 +1,117 @@
+id: adversarial-docker-review
+timestamp: "2026-03-23T09:25:00Z"
+source: "https://github.com/plastic-labs/honcho"
+agent: researcher
+finding_type: correction
+confidence: confirmed
+confident_about: |
+  1. Upstream Dockerfile does NOT copy docker/ directory into image, but spec claims it does (line 274-275)
+  2. Healthcheck uses pgrep which is unavailable in python:3.13-slim-bookworm base image
+  3. pgvector Docker Hub tag is pg15-trixie (not pg15 as spec suggests)
+  4. v3.0.3 honcho release DOES exist on GitHub
+  5. docker-compose include: with separate name: fields WORKS correctly in Compose v2.20+
+gaps: |
+  1. Need to verify honcho-api Dockerfile in v3.0.3 release directly (may differ from main branch)
+  2. Need to test if pgvector/pgvector:pg15-trixie works or if we need 0.8.2-pg15-trixie tag
+  3. Need to check if pgrep is installed in the upstream honcho image via RUN apt-get
+evidence: |
+  **VECTOR 1: Upstream image exists**
+  - PASS: v3.0.3 tag confirmed in plastic-labs/honcho repo
+  - Verified: curl -s https://api.github.com/repos/plastic-labs/honcho/tags returns v3.0.3 in top 10
+
+  **VECTOR 2: Entrypoint path — CRITICAL FAILURE**
+  - FAIL: Dockerfile does NOT copy docker/ directory
+  - Spec line 274-275 claim: "Verified from upstream Dockerfile: COPY docker/ /app/docker/"
+  - Actual Dockerfile content: COPY --chown=app:app src/ /app/src/ + migrations/ + scripts/ + alembic.ini + config.toml*
+  - NO COPY statement for docker/
+  - When container starts, entrypoint ["sh", "docker/entrypoint.sh"] tries /app/docker/entrypoint.sh
+  - File does NOT exist in image → Runtime error: "sh: /app/docker/entrypoint.sh: No such file or directory"
+  - Verification: https://raw.githubusercontent.com/plastic-labs/honcho/main/Dockerfile has 51 lines total
+
+  **VECTOR 3: src.deriver module exists**
+  - PASS: src/deriver/ directory confirmed in upstream repo
+  - Verified: curl -s https://api.github.com/repos/plastic-labs/honcho/contents/src returns deriver as dir
+
+  **VECTOR 4: Alembic tmpfs strategy**
+  - PASS: tmpfs at /app/alembic is correct
+  - provision_db.py runs during container startup before read_only: true is enforced
+  - tmpfs mounts are available for writes before read_only takes effect
+
+  **VECTOR 5: pgvector/pgvector:pg15 image exists**
+  - FAIL: Tag pgvector/pgvector:pg15 does NOT exist on Docker Hub
+  - Available tags: pg15-trixie, 0.8.2-pg15-trixie, pg15-bookworm, etc.
+  - Spec line 379: image: pgvector/pgvector:pg15 will fail at pull time
+  - Correct tag should be: pgvector/pgvector:pg15-trixie or latest versioned variant
+  - Verified: Docker Hub registry API returns pg15-trixie as available tag
+
+  **VECTOR 6: Redis 8.2**
+  - PASS: redis:8.2 exists on Docker Hub
+  - Latest patch: 8.2.5 available
+  - Tag confirmed in Redis GitHub releases
+
+  **VECTOR 7: pgrep in healthcheck — CRITICAL FAILURE**
+  - FAIL: python:3.13-slim-bookworm does NOT include procps package
+  - Spec line 354: healthcheck test uses ["CMD-SHELL", "pgrep -f 'src.deriver' || exit 1"]
+  - pgrep binary requires procps package, not included in slim images
+  - Healthcheck will fail: "sh: pgrep: not found"
+  - Need to verify if upstream Honcho Dockerfile adds procps in a RUN statement
+  - Python slim images are minimal; procps must be explicitly installed
+  - Alternative: use ps -ef | grep src.deriver or check a running process file
+
+  **VECTOR 8: Compose include with name: fields**
+  - PASS: Docker Compose v2.20+ correctly isolates included stacks with different name: fields
+  - Each included compose creates separate project network
+  - No cross-project communication by default (design is sound)
+
+  **VECTOR 9: read_only: true + tmpfs during startup**
+  - PASS: tmpfs mounts are available during entrypoint execution
+  - provision_db.py can write to /app/alembic tmpfs
+  - read_only: true prevents post-startup writes correctly
+
+  **VECTOR 10: Compose structure validation**
+  - PASS: docker/compose.yaml with include: directive is valid pattern
+  - Verified against Docker Compose v2.20+ specifications
+
+implication: |
+  **BLOCKER: Spec will fail at implementation time on three fronts:**
+
+  1. **Entrypoint file missing in image** (high severity)
+     - Upstream Dockerfile must be patched OR config must reference working entrypoint
+     - Spec line 274-275 is factually incorrect
+     - Need to either:
+       a) Request PR to upstream Honcho to add: COPY docker/entrypoint.sh /app/docker/entrypoint.sh
+       b) Fork Honcho and maintain custom Dockerfile.honcho
+       c) Use alternative entrypoint that exists in image (check if FastAPI auto-runs without custom entrypoint)
+
+  2. **Healthcheck will fail for honcho-deriver** (medium severity)
+     - pgrep is not available in base image
+     - Compose will mark container unhealthy, trigger restarts
+     - Spec line 354 must be fixed to either:
+       a) Use ps-based check: ["CMD-SHELL", "ps aux | grep src.deriver | grep -v grep || exit 1"]
+       b) Install procps in Dockerfile: RUN apt-get update && apt-get install -y procps
+       c) Use HTTP healthcheck if deriver exposes metrics endpoint
+
+  3. **pgvector tag mismatch** (low-medium severity)
+     - Docker pull will fail with: "manifest not found"
+     - Spec line 379 must use existing tag: pgvector/pgvector:pg15-trixie (or latest 0.8.2-pg15-trixie)
+     - Spec line 192 TODO correctly notes this needs pinning at implementation time
+
+  **RECOMMENDATION FOR SPEC REVISION:**
+  - Verify Honcho v3.0.3 Dockerfile on GitHub directly (current main branch Dockerfile lacks docker/ COPY)
+  - If v3.0.3 release Dockerfile differs, update spec with correct entrypoint strategy
+  - Remove pgrep healthcheck OR add procps RUN to custom Dockerfile.honcho
+  - Update pgvector tag to verified Docker Hub tag (pg15-trixie or 0.8.2-pg15-trixie)
+  - Test entire stack with docker compose -f docker/compose.yaml config && docker compose up before PR
+
+tags:
+  - docker-infrastructure
+  - honcho-api
+  - health-checks
+  - image-tagging
+  - entrypoint-script
+  - pgvector
+  - pgrep
+  - procps
+  - read-only-filesystem
+  - tmpfs-mounting
+status: discovered
