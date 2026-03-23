@@ -1,0 +1,28 @@
+# Tempo configuration for local LGTM dev stack.
+# Single-tenant, local filesystem storage — appropriate for dev workloads.
+
+# Listen for OTLP traces from the Collector on the Docker internal network
+server:
+  http_listen_port: 3200
+
+# OTLP receiver — Collector sends traces here via otlphttp exporter
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        http:
+          endpoint: "0.0.0.0:4318"
+
+# Local storage backend — sufficient for single-machine dev use
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/traces
+    wal:
+      path: /var/tempo/wal
+
+# 72h retention keeps disk usage bounded; 3 days is plenty for local dev iteration
+compactor:
+  compaction:
+    block_retention: 72h
