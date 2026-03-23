@@ -239,6 +239,31 @@ uv run python -m mde.codegen.postprocess_skillsmp && \
 uv run ruff format src/mde/research/clients/skillsmp_models.py
 """
 
+[tasks."mde:codegen:honcho"]
+description = "Generate Honcho config model from JSON Schema"
+run = """
+mkdir -p generated && \
+uv run datamodel-codegen \
+  --input docs/schemas/honcho-client.schema.json \
+  --input-file-type jsonschema \
+  --output generated/honcho_models.py \
+  --output-model-type pydantic_v2.BaseModel \
+  --target-python-version 3.12 \
+  --use-annotated \
+  --use-union-operator \
+  --field-constraints \
+  --use-default-kwarg \
+  --collapse-root-models \
+  --strict-nullable \
+  --use-one-literal-as-default \
+  --formatters ruff-format ruff-check && \
+cp generated/honcho_models.py src/mde/domain/honcho_models.py
+"""
+
+[tasks."mde:codegen:all"]
+description = "Run all codegen tasks"
+depends = ["mde:codegen:statusline", "mde:codegen:skillsmp", "mde:codegen:honcho"]
+
 [tasks."mde:lint"]
 description = "Run all linters: ruff + ty + pyright"
 run = "uv run mde-py quality --lint"

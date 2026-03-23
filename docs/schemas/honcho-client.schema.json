@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HonchoClientConfig",
+  "description": "Configuration for connecting to a Honcho API server.",
+  "type": "object",
+  "properties": {
+    "base_url": {
+      "type": "string",
+      "default": "http://localhost:8000",
+      "description": "Honcho API server URL."
+    },
+    "workspace_id": {
+      "type": "string",
+      "default": "mde",
+      "description": "Workspace ID for scoping all operations."
+    },
+    "api_key": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "API key. Null for no-auth (AUTH_USE_AUTH=false)."
+    },
+    "timeout": {
+      "type": "number",
+      "default": 10,
+      "exclusiveMinimum": 0,
+      "description": "Request timeout in seconds. Must be positive."
+    },
+    "max_retries": {
+      "type": "integer",
+      "default": 0,
+      "minimum": 0,
+      "description": "Max retry attempts. 0 for fail-fast."
+    }
+  },
+  "additionalProperties": false
+}
