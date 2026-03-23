@@ -37,7 +37,7 @@ Claude Code (OTEL SDK)     mde Python (loguru → OTEL sink)
                       │
                       ▼
             ┌─────────────────┐
-            │  OTEL Collector  │  :4317 (gRPC) / :4318 (HTTP) / :13133 (health)
+            │  OTEL Collector  │  127.0.0.1:4317 (gRPC) / :4318 (HTTP) / :13133 (health)
             │  (transform +    │
             │   fan-out)       │
             └────┬────────┬───┘
@@ -46,17 +46,23 @@ Claude Code (OTEL SDK)     mde Python (loguru → OTEL sink)
                  │        │
                  ▼        ▼
             ┌────────┐ ┌──────┐
-            │ Tempo  │ │ Loki │
+            │ Tempo  │ │ Loki │   (internal Docker network only — no host ports)
             │ :3200  │ │:3100 │
             └────┬───┘ └──┬───┘
                  │        │
                  ▼        ▼
             ┌─────────────────┐
-            │    Grafana       │  :3000
+            │    Grafana       │  127.0.0.1:3000
             │  (datasources    │
             │   auto-provisioned)
             └─────────────────┘
 ```
+
+**Network policy:** Only Collector receiver ports (4317/4318) and Grafana (3000)
+are published to the host, bound to `127.0.0.1`. Tempo (:3200), Loki (:3100),
+and the health endpoint (:13133) are internal to the Docker network. Grafana
+reaches Tempo/Loki via Docker service names (`http://tempo:3200`,
+`http://loki:3100`).
 
 ## Design Decisions
 
@@ -72,7 +78,6 @@ Claude Code (OTEL SDK)     mde Python (loguru → OTEL sink)
 
 - This is a local dev environment — single-machine, not production
 - Compose profiles allow selective startup (observability vs. future memory stack)
-- docker-bake.hcl as single build source of truth for reproducibility
 
 ### Why transform processor for secrets redaction
 
@@ -86,42 +91,111 @@ Claude Code (OTEL SDK)     mde Python (loguru → OTEL sink)
 - Adding Prometheus without a scrape target wastes resources
 - Can be added later via a `metrics` compose profile
 
+### Why `docker/observability/` as top-level directory
+
+- Separates infrastructure from source code (`src/`) and configuration (`configs/`)
+- `docker/` is the conventional location for Docker Compose projects
+- Not managed by chezmoi (chezmoi manages dotfiles, not project infrastructure)
+- Room for future `docker/memory/` or other compose stacks
+
+### Subcommand boundary: `observability` vs `telemetry`
+
+- **`observability`** manages Docker lifecycle: `up`, `down`, `status` — controls the stack
+- **`telemetry verify`** validates configuration correctness: env vars, settings, collector pipelines
+- `telemetry verify` calls the same health/identity checks but does not start/stop anything
+- Single source of truth for "is the stack healthy?" lives in `telemetry_verify.py` pure functions;
+  `observability status` calls these functions and also shows container details
+
 ## Components
 
 ### 1. Docker Infrastructure (`docker/observability/`)
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.yml` | LGTM stack with profiles |
-| `docker-bake.hcl` | Single build/pull source of truth |
+| `docker-compose.yml` | LGTM stack with profiles, resource limits, hardening |
 | `collector-config.yaml` | OTEL Collector: receive → transform → fan-out |
 | `grafana/provisioning/datasources/datasources.yaml` | Auto-provision Tempo + Loki datasources |
 
 **Collector pipeline:**
 - Receivers: `otlp` (gRPC :4317, HTTP :4318)
-- Processors: `transform` (redact sensitive attributes), `batch`
+- Processors: `transform` (redact sensitive attributes — see Redaction Rules below), `batch`
 - Exporters: `otlphttp` → Tempo, `loki` → Loki, `debug` (for local troubleshooting)
+
+**Batch processor (dev-tuned):**
+```yaml
+processors:
+  batch:
+    send_batch_size: 64
+    timeout: 2s
+    send_batch_max_size: 128
+```
+Default OTEL batch settings (8192 records, 200ms) are for production throughput.
+Local dev has low volume — smaller batches reduce memory footprint and query latency.
 
 **Image pinning:** All images use `@sha256:...` digests. No `:latest` tags.
 
 **Secrets:** `GRAFANA_PASSWORD` sourced from fnox via environment variable, never hardcoded.
+The `observability up` command verifies `GRAFANA_PASSWORD` is set and non-empty before
+starting the stack, failing with a clear error if missing.
+
+**Container hardening:**
+```yaml
+security_opt:
+  - no-new-privileges:true
+read_only: true
+cap_drop:
+  - ALL
+tmpfs:
+  - /tmp
+```
+Tempo and Loki get writable data volumes but read-only root filesystem. Grafana gets
+writable `/var/lib/grafana` volume.
+
+**Resource limits:**
+
+| Container | mem_limit | cpus |
+|-----------|-----------|------|
+| OTEL Collector | 256m | 0.5 |
+| Tempo | 512m | 0.5 |
+| Loki | 512m | 0.5 |
+| Grafana | 256m | 0.25 |
+
+**Retention (dev-appropriate):**
+- Tempo: `compactor.compaction.block_retention: 72h` (3 days)
+- Loki: `limits_config.retention_period: 72h`
+- Keeps disk usage bounded; 3 days is plenty for local dev iteration
+
+**Legacy cleanup:** The existing `configs/grafana-stack/docker-compose.yaml` is superseded
+by this stack and will be removed in this PR.
 
 ### 2. Mise Tasks + Stack Management (`src/mde/domain/observability_stack.py`)
 
 **CLI surface:** `uv run mde-py observability {up,down,status}`
 
-The `observability` subcommand is registered in `src/mde/cli.py`. Each action
-delegates to `src/mde/domain/observability_stack.py` for the business logic.
+The `observability` subcommand is registered in `src/mde/cli.py` following the
+`add_subparsers` pattern (same as `research` and `statusline`). The module
+`observability_stack.py` exposes `add_subparsers(sub)` and handler functions.
+`src/mde/domain/` already exists with `classify.py`, `preset.py`, `refs.py`,
+and `verify.py` — `observability_stack.py` is added alongside these.
+
+**CLI wiring:** The mise-agent owns both `observability_stack.py` AND the cli.py
+integration (adding the `observability` entry to `_DISPATCH_TABLE` and calling
+`add_subparsers`).
+
 Mise tasks are thin wrappers that call the CLI entry point:
 
 | Mise Task | CLI Command | Action |
 |-----------|-------------|--------|
-| `mde:observability:up` | `uv run mde-py observability up` | Stop orphan collectors → `docker compose up -d` |
+| `mde:observability:up` | `uv run mde-py observability up` | Verify GRAFANA_PASSWORD → stop orphan collectors → `docker compose up -d` |
 | `mde:observability:down` | `uv run mde-py observability down` | `docker compose down` |
 | `mde:observability:status` | `uv run mde-py observability status` | Show container names, health, ports |
 
 **Pre-start check:** Detect and stop the legacy `codex-otel-collector` container
 before starting the compose stack to avoid port conflicts on 4317/4318/13133.
+
+**Lazy imports:** `observability_stack.py` must follow the project's lazy-import
+convention — all Docker/subprocess imports inside function bodies, not at module
+top level, to avoid penalizing unrelated CLI commands.
 
 ### 3. Telemetry Verify Updates (`src/mde/telemetry_verify.py`)
 
@@ -136,11 +210,15 @@ New pure-function checks added to the existing verify command:
 ### 4. orjson Serialization (`src/mde/observability.py`)
 
 Wire `orjson.dumps()` into the loguru file sink as a custom format function.
-orjson is already declared as a dependency but not yet used.
+orjson is a hard dependency in `pyproject.toml` — import unconditionally at
+module level. `ImportError` means a broken install, not a graceful degradation.
 
+- Import `orjson` at module level (not inside function)
 - Custom format function: `orjson.dumps(record)` for the JSON file sink
-- Fallback: `serialize=True` (stdlib json) if orjson import fails; log a warning when fallback triggers
-- Unit test: assert orjson path is used by default; assert fallback works when orjson is unavailable
+- No try/except fallback — orjson is a hard dependency, not optional
+- Change is limited to the file sink (lines 136-143 of observability.py);
+  OTEL sink and stderr sink are unchanged
+- Unit test: assert orjson is used; assert serialization produces valid JSON
 
 ### 5. Integration Tests (`tests/mde/test_lgtm_integration.py`)
 
@@ -155,7 +233,15 @@ class TestLGTMIntegration:
 
 - Send test span via OTEL SDK → query Tempo HTTP API → verify span appears
 - Send test log via loguru → query Loki HTTP API → verify log appears
-- Skip via a `lgtm_stack_running` fixture that probes the Collector health endpoint; if unreachable, `pytest.skip("LGTM stack not running")`
+- **Skip mechanism:** `lgtm_stack_running` session-scoped fixture probes the
+  Collector health endpoint; if unreachable, `pytest.skip("LGTM stack not running")`
+- **CI compatibility:** `pytest -m "not integration"` excludes these tests in CI
+  where Docker is unavailable
+- **Retry/polling:** Use exponential-backoff polling (0.5s initial, 2x backoff,
+  15s max timeout) when querying Tempo/Loki APIs — the double-batching pipeline
+  (SDK 5s batch + Collector 2s batch) means data appears with ~7s latency
+- **Test isolation:** Each test uses a unique trace ID / log message to avoid
+  cross-test pollution in the shared stack
 
 ### 6. Documentation
 
@@ -168,18 +254,42 @@ class TestLGTMIntegration:
 
 | ID | Requirement | Implementation |
 |----|-------------|----------------|
-| CRIT-S1 | Redact secrets before storage | OTEL Collector transform processor strips sensitive attributes |
-| CRIT-S2 | Image pinning + credential management | All images pinned by digest; GRAFANA_PASSWORD from fnox |
-| HIGH-S2 | No `:latest` tags | Enforced in docker-bake.hcl |
+| CRIT-S1 | Redact secrets before storage | OTEL Collector transform processor (see Redaction Rules) |
+| CRIT-S2 | Image pinning + credential management | All images pinned by digest; GRAFANA_PASSWORD from fnox, validated before stack start |
+| HIGH-S1 | Localhost-only port binding | All published ports prefixed with `127.0.0.1:` |
+| HIGH-S2 | No `:latest` tags | All images use `@sha256:` digests |
+| HIGH-S3 | Container hardening | `no-new-privileges`, `read_only: true`, `cap_drop: ALL` |
+| HIGH-S4 | Minimal port exposure | Tempo/Loki internal only; only Collector + Grafana published |
+| MED-S1 | Data retention | 72h retention on Tempo and Loki to limit PII persistence |
+
+### Redaction Rules (CRIT-S1)
+
+The OTEL Collector `transform` processor strips these attribute patterns before
+data reaches Tempo/Loki storage:
+
+**Attribute name patterns (delete_key):**
+- `*.api_key`, `*.token`, `*.secret`, `*.password`, `*.credential`
+- `process.command_args` (may contain inline secrets)
+
+**Attribute value patterns (replace_pattern → `[REDACTED]`):**
+- Values matching known env var names: `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`,
+  `OPENAI_API_KEY`, `GRAFANA_PASSWORD` (reference `fnox.toml` for full list)
+- Values matching `sk-ant-*`, `ghp_*`, `gho_*`, `sk-*` (common API key prefixes)
+
+**Verification:** Integration test sends a span with a known secret pattern and
+asserts it does NOT appear in Tempo query results.
+
+Canonical pattern list: reuse `_sensitive_patterns` from `telemetry_verify.py:97`
+to keep DRY with the Python-side redaction.
 
 ## File Ownership (for parallel subagent execution)
 
 | Agent | Files Owned |
 |-------|-------------|
 | infra-agent | `docker/observability/**` |
-| mise-agent | `.mise.toml` (new tasks only), `src/mde/domain/observability_stack.py` |
-| python-agent | `src/mde/telemetry_verify.py`, `src/mde/observability.py` (serialization) |
-| test-agent | `tests/mde/test_lgtm_integration.py` |
+| mise-agent | `.mise.toml` (new tasks), `src/mde/domain/observability_stack.py`, `src/mde/cli.py` (observability subcommand wiring only) |
+| python-agent | `src/mde/telemetry_verify.py`, `src/mde/observability.py` (orjson serialization only) |
+| test-agent | `tests/mde/test_lgtm_integration.py`, `tests/conftest.py` (integration fixtures only) |
 | docs-agent | CLAUDE.md, `docs/research/trail/`, memory files |
 
 ## Verification Gates
