@@ -7,10 +7,8 @@ import re
 import sys
 from typing import Any
 
-from mde.observability import get_logger, get_tracer
-
-_logger = get_logger(__name__)
-_tracer = get_tracer(__name__)
+from mde.hooks._common import hook_span, parse_hook_stdin
+from mde.log import logger
 
 _BLOCK_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"\bnpm\s+install\s+(?:.*\s)?(-g|--global)\b"),
@@ -67,28 +65,20 @@ def check_install_command(command: str) -> dict[str, Any] | None:
 def guard_install() -> int:
     """Entry point: read JSON from stdin, block if ad-hoc install detected."""
     try:
-        data = json.load(sys.stdin)
+        data = parse_hook_stdin()
     except (json.JSONDecodeError, ValueError) as exc:
-        _logger.warning("hook_stdin_parse_failed", hook="guard_install", error=str(exc))
+        logger.bind(hook="guard_install", error=str(exc)).warning("hook_stdin_parse_failed")
         return 0
 
-    session_id = data.get("session_id", "")
-    tool_use_id = data.get("tool_use_id", "")
-
-    with _tracer.start_as_current_span("mde.hook.guard_install") as span:
-        span.set_attribute("claude.session_id", session_id)
-        span.set_attribute("claude.tool_use_id", tool_use_id)
-        span.set_attribute("hook.event", "PreToolUse")
-
+    with hook_span("guard_install", "PreToolUse", data) as span:
         tool_input = data.get("tool_input") or {}
         if not isinstance(tool_input, dict):
             tool_input = {}
         command = tool_input.get("command", "")
         if not command:
-            not_blocked = False
-            span.set_attribute("hook.blocked", not_blocked)
-            _logger.info(
-                "hook_completed", hook="guard_install", blocked="False", reason="no_command"
+            span.set_attribute("hook.blocked", False)  # noqa: FBT003
+            logger.bind(hook="guard_install", blocked="False", reason="no_command").info(
+                "hook_completed"
             )
             return 0
 
@@ -98,11 +88,11 @@ def guard_install() -> int:
         if result is not None:
             json.dump(result, sys.stdout)
 
-        _logger.info(
-            "hook_completed",
+        session_id = data.get("session_id", "")
+        logger.bind(
             hook="guard_install",
             blocked=str(blocked),
             command=command,
             session_id=session_id,
-        )
+        ).info("hook_completed")
         return 0

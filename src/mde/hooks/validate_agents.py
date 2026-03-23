@@ -24,11 +24,9 @@ from pydantic import ValidationError
 if TYPE_CHECKING:
     from pydantic_core import ErrorDetails
 
+from mde.hooks._common import hook_span, parse_hook_stdin
 from mde.hooks.agent_frontmatter_model import ClaudeCodeAgentFrontmatter
-from mde.observability import get_logger, get_tracer
-
-_logger = get_logger(__name__)
-_tracer = get_tracer(__name__)
+from mde.log import logger
 
 _AGENTS_DIR = ".claude/agents/"
 
@@ -129,26 +127,21 @@ def validate_agents_hook() -> int:
     validation failure (PostToolUse cannot block -- the edit already happened).
     """
     try:
-        data = json.load(sys.stdin)
+        data = parse_hook_stdin()
     except (json.JSONDecodeError, ValueError) as exc:
-        _logger.warning("hook_stdin_parse_failed", hook="validate_agents", error=str(exc))
+        logger.bind(hook="validate_agents", error=str(exc)).warning("hook_stdin_parse_failed")
         return 0
 
     session_id = data.get("session_id", "")
-    tool_use_id = data.get("tool_use_id", "")
 
-    with _tracer.start_as_current_span("mde.hook.validate_agents") as span:
-        span.set_attribute("claude.session_id", session_id)
-        span.set_attribute("claude.tool_use_id", tool_use_id)
-        span.set_attribute("hook.event", "PostToolUse")
-
+    with hook_span("validate_agents", "PostToolUse", data) as span:
         tool_input = data.get("tool_input") or {}
         if not isinstance(tool_input, dict):
             tool_input = {}
         file_path = tool_input.get("file_path", "")
         if not file_path or _AGENTS_DIR not in file_path:
-            _logger.info(
-                "hook_completed", hook="validate_agents", skipped=True, session_id=session_id
+            logger.bind(hook="validate_agents", skipped=True, session_id=session_id).info(
+                "hook_completed"
             )
             return 0
 
@@ -158,17 +151,16 @@ def validate_agents_hook() -> int:
         if errors:
             span.set_attribute("hook.validation_errors", len(errors))
             msg = "Agent frontmatter validation failed:\n" + "\n".join(f"  - {e}" for e in errors)
-            _logger.warning(
-                "validation_failed",
+            logger.bind(
                 hook="validate_agents",
                 file=file_path,
                 errors=errors,
                 session_id=session_id,
-            )
+            ).warning("validation_failed")
             print(msg, file=sys.stderr)
             return 1
 
-        _logger.info(
-            "hook_completed", hook="validate_agents", file=file_path, session_id=session_id
+        logger.bind(hook="validate_agents", file=file_path, session_id=session_id).info(
+            "hook_completed"
         )
         return 0

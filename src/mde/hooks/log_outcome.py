@@ -10,14 +10,11 @@ Appends structured JSONL to .artifacts/edit-outcomes.jsonl.
 from __future__ import annotations
 
 import json
-import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from mde.observability import get_logger, get_tracer
-
-_logger = get_logger(__name__)
-_tracer = get_tracer(__name__)
+from mde.hooks._common import hook_span, parse_hook_stdin
+from mde.log import logger
 
 _OUTCOME_FILE = Path(".artifacts/edit-outcomes.jsonl")
 
@@ -31,19 +28,12 @@ def _extract_file_path(tool_input: dict[str, object]) -> str:
 def log_edit_outcome() -> int:
     """Read tool JSON from stdin, log outcome to JSONL file."""
     try:
-        data = json.load(sys.stdin)
+        data = parse_hook_stdin()
     except (json.JSONDecodeError, ValueError) as exc:
-        _logger.warning("hook_stdin_parse_failed", hook="log_edit_outcome", error=str(exc))
+        logger.bind(hook="log_edit_outcome", error=str(exc)).warning("hook_stdin_parse_failed")
         return 0
 
-    session_id = data.get("session_id", "")
-    tool_use_id = data.get("tool_use_id", "")
-
-    with _tracer.start_as_current_span("mde.hook.log_edit_outcome") as span:
-        span.set_attribute("claude.session_id", session_id)
-        span.set_attribute("claude.tool_use_id", tool_use_id)
-        span.set_attribute("hook.event", "PostToolUse")
-
+    with hook_span("log_edit_outcome", "PostToolUse", data) as span:
         tool_name = data.get("tool_name", "unknown")
         tool_input = data.get("tool_input", {})
         if not isinstance(tool_input, dict):
@@ -68,11 +58,11 @@ def log_edit_outcome() -> int:
             # Never block on logging failures
             span.record_exception(exc)
 
-        _logger.info(
-            "hook_completed",
+        session_id = data.get("session_id", "")
+        logger.bind(
             hook="log_edit_outcome",
             tool=tool_name,
             file=file_path,
             session_id=session_id,
-        )
+        ).info("hook_completed")
         return 0
