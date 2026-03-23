@@ -17,6 +17,9 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
+# Generated codegen artifacts (intermediate — copy targets are committed)
+generated/
+
 # Docker environment files (contain LLM API keys and passwords)
 docker/.env
 docker/memory/.env
