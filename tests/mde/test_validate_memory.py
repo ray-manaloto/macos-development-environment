@@ -18,6 +18,7 @@ class TestMemoryValidation:
             init_sql.is_file.return_value = True
             result = validate_memory()
             assert len(result.findings) == 0
+            mock_compose.parent.__truediv__.assert_called_once_with("init.sql")
 
     def test_warns_when_compose_missing(self) -> None:
         with patch("mde.validate.memory.MEMORY_COMPOSE", spec=Path) as mock_compose:

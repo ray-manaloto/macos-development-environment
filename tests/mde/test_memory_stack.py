@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
 from unittest.mock import patch
 
 from mde.domain.memory_stack import (
@@ -25,7 +26,7 @@ class TestStackUp:
     def test_succeeds_with_db_password(self) -> None:
         with (
             patch.dict("os.environ", {"HONCHO_DB_PASSWORD": "test123"}),
-            patch("mde.domain.memory_stack.MEMORY_COMPOSE") as mock_cf,
+            patch("mde.domain.memory_stack.COMPOSE_FILE") as mock_cf,
             patch("subprocess.run") as mock_run,
         ):
             mock_cf.is_file.return_value = True
@@ -34,29 +35,54 @@ class TestStackUp:
             result = stack_up()
             assert result == 0
 
+    def test_fails_when_compose_file_missing(self) -> None:
+        with (
+            patch.dict("os.environ", {"HONCHO_DB_PASSWORD": "test123"}),
+            patch("mde.domain.memory_stack.COMPOSE_FILE") as mock_cf,
+        ):
+            mock_cf.is_file.return_value = False
+            result = stack_up()
+            assert result != 0
+
 
 class TestStackDown:
     """Test stack_down calls docker compose down."""
 
     def test_calls_docker_compose_down(self) -> None:
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("mde.domain.memory_stack.COMPOSE_FILE") as mock_cf,
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_cf.__str__ = lambda _self: "/fake/compose.yaml"  # type: ignore[assignment]
             mock_run.return_value.returncode = 0
             result = stack_down()
             assert result == 0
             call_args = mock_run.call_args[0][0]
-            assert "down" in call_args
+            assert call_args == ["docker", "compose", "-f", "/fake/compose.yaml", "down"]
 
 
 class TestStackStatus:
     """Test stack_status calls docker compose ps."""
 
     def test_calls_docker_compose_ps(self) -> None:
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("mde.domain.memory_stack.COMPOSE_FILE") as mock_cf,
+            patch("subprocess.run") as mock_run,
+        ):
+            mock_cf.__str__ = lambda _self: "/fake/compose.yaml"  # type: ignore[assignment]
             mock_run.return_value.returncode = 0
             result = stack_status()
             assert result == 0
             call_args = mock_run.call_args[0][0]
-            assert "ps" in call_args
+            assert call_args == [
+                "docker",
+                "compose",
+                "-f",
+                "/fake/compose.yaml",
+                "ps",
+                "--format",
+                "table",
+            ]
 
 
 class TestStackVerify:
@@ -73,6 +99,12 @@ class TestStackVerify:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 1
             mock_run.return_value.stdout = ""
+            result = stack_verify()
+            assert result != 0
+
+    def test_verify_timeout_returns_nonzero(self) -> None:
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = subprocess.TimeoutExpired(cmd=[], timeout=15)
             result = stack_verify()
             assert result != 0
 
