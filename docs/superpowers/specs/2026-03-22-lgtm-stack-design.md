@@ -108,11 +108,17 @@ Claude Code (OTEL SDK)     mde Python (loguru → OTEL sink)
 
 ### 2. Mise Tasks + Stack Management (`src/mde/domain/observability_stack.py`)
 
-| Task | Action |
-|------|--------|
-| `mde:observability:up` | Stop orphan collectors → `docker compose up -d` |
-| `mde:observability:down` | `docker compose down` |
-| `mde:observability:status` | Show container names, health, ports |
+**CLI surface:** `uv run mde-py observability {up,down,status}`
+
+The `observability` subcommand is registered in `src/mde/cli.py`. Each action
+delegates to `src/mde/domain/observability_stack.py` for the business logic.
+Mise tasks are thin wrappers that call the CLI entry point:
+
+| Mise Task | CLI Command | Action |
+|-----------|-------------|--------|
+| `mde:observability:up` | `uv run mde-py observability up` | Stop orphan collectors → `docker compose up -d` |
+| `mde:observability:down` | `uv run mde-py observability down` | `docker compose down` |
+| `mde:observability:status` | `uv run mde-py observability status` | Show container names, health, ports |
 
 **Pre-start check:** Detect and stop the legacy `codex-otel-collector` container
 before starting the compose stack to avoid port conflicts on 4317/4318/13133.
@@ -133,8 +139,8 @@ Wire `orjson.dumps()` into the loguru file sink as a custom format function.
 orjson is already declared as a dependency but not yet used.
 
 - Custom format function: `orjson.dumps(record)` for the JSON file sink
-- Fallback: `serialize=True` (stdlib json) if orjson import fails
-- Benchmark: verify orjson is faster than json.dumps for log records
+- Fallback: `serialize=True` (stdlib json) if orjson import fails; log a warning when fallback triggers
+- Unit test: assert orjson path is used by default; assert fallback works when orjson is unavailable
 
 ### 5. Integration Tests (`tests/mde/test_lgtm_integration.py`)
 
@@ -149,7 +155,7 @@ class TestLGTMIntegration:
 
 - Send test span via OTEL SDK → query Tempo HTTP API → verify span appears
 - Send test log via loguru → query Loki HTTP API → verify log appears
-- Skip with `pytest.mark.skipif` when Docker stack is not running
+- Skip via a `lgtm_stack_running` fixture that probes the Collector health endpoint; if unreachable, `pytest.skip("LGTM stack not running")`
 
 ### 6. Documentation
 
