@@ -314,6 +314,41 @@ def _check_collector_infrastructure() -> list[tuple[str, str, str]]:
     return results
 
 
+def _check_collector_pipelines(config_path: Path) -> list[tuple[str, str, str]]:
+    """Check OTEL Collector pipelines have non-debug exporters.
+
+    Args:
+        config_path: Path to the collector-config.yaml file.
+
+    Returns:
+        List of (pipeline_name, status, detail) tuples.
+    """
+    import yaml
+
+    results: list[tuple[str, str, str]] = []
+
+    if not config_path.is_file():
+        results.append(("collector-config", "MISSING", f"file not found: {config_path}"))
+        return results
+
+    try:
+        data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        results.append(("collector-config", "FAIL", f"YAML parse error: {exc}"))
+        return results
+
+    pipelines = (data or {}).get("service", {}).get("pipelines", {})
+    for name, pipeline in pipelines.items():
+        exporters = pipeline.get("exporters", [])
+        non_debug = [e for e in exporters if e != "debug"]
+        if non_debug:
+            results.append((f"pipeline:{name}", "OK", f"exporters: {exporters}"))
+        else:
+            results.append((f"pipeline:{name}", "WARNING", f"only debug exporter(s): {exporters}"))
+
+    return results
+
+
 def verify_telemetry() -> int:
     """Run all telemetry checks, print results, return 0/1."""
     settings, settings_env = _load_settings()
@@ -325,6 +360,15 @@ def verify_telemetry() -> int:
         ("Plugin Conflicts", _check_plugins(settings)),
         ("Hooks Dispatch", _check_hooks_dispatch()),
         ("Collector Infrastructure", _check_collector_infrastructure()),
+        (
+            "Collector Pipelines",
+            _check_collector_pipelines(
+                Path(__file__).resolve().parents[2]
+                / "docker"
+                / "observability"
+                / "collector-config.yaml"
+            ),
+        ),
     ]
 
     for section_name, results in sections:

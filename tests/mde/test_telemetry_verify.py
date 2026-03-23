@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 from mde.telemetry_verify import (
     _NON_TELEMETRY_VARS,
     _OFFICIAL_VARS,
+    _check_collector_pipelines,
     _check_env_vars,
     _check_hooks_dispatch,
     _check_plugins,
@@ -237,3 +238,50 @@ class TestCheckSettingsAgainstDocs:
         # No WARNING results — all our vars are either official or non-telemetry
         warnings = [(n, s, d) for n, s, d in results if s == "WARNING"]
         assert not warnings, f"Undocumented vars in settings.json: {warnings}"
+
+
+class TestCheckCollectorPipelines:
+    """Tests for _check_collector_pipelines."""
+
+    def test_passes_with_non_debug_exporters(self, tmp_path: pytest.TempPathFactory) -> None:
+        """Pipelines with non-debug exporters return OK."""
+        config = tmp_path / "collector-config.yaml"  # type: ignore[operator]
+        config.write_text(
+            """\
+service:
+  pipelines:
+    traces:
+      exporters: [otlp, debug]
+    metrics:
+      exporters: [otlp]
+    logs:
+      exporters: [otlphttp]
+"""
+        )
+        results = _check_collector_pipelines(config)  # type: ignore[arg-type]
+        assert all(status == "OK" for _, status, _ in results)
+
+    def test_warns_debug_only_exporters(self, tmp_path: pytest.TempPathFactory) -> None:
+        """Pipelines with only debug exporters return WARNING."""
+        config = tmp_path / "collector-config.yaml"  # type: ignore[operator]
+        config.write_text(
+            """\
+service:
+  pipelines:
+    traces:
+      exporters: [debug]
+    metrics:
+      exporters: [otlp]
+"""
+        )
+        results = _check_collector_pipelines(config)  # type: ignore[arg-type]
+        warnings = [(n, s, d) for n, s, d in results if s == "WARNING"]
+        assert len(warnings) == 1
+        assert "traces" in warnings[0][0]
+
+    def test_returns_error_for_missing_file(self, tmp_path: pytest.TempPathFactory) -> None:
+        """Missing config file returns MISSING status."""
+        config = tmp_path / "nonexistent.yaml"  # type: ignore[operator]
+        results = _check_collector_pipelines(config)  # type: ignore[arg-type]
+        assert len(results) == 1
+        assert results[0][1] == "MISSING"
