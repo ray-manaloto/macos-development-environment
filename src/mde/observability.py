@@ -16,10 +16,12 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import orjson
 from loguru import logger
 from opentelemetry._logs.severity import SeverityNumber as _SeverityNumber
 
 if TYPE_CHECKING:
+    from loguru import Record
     from opentelemetry._logs import Logger as _OtelLogger
     from opentelemetry.sdk._logs import LoggerProvider as _LoggerProvider
     from opentelemetry.trace import Tracer
@@ -112,6 +114,33 @@ def _grpc_to_http(endpoint: str) -> str:
     return endpoint.replace(":4317", ":4318")
 
 
+def _orjson_serialize(record: Record) -> str:
+    """Serialize a loguru record to a JSON line using orjson.
+
+    Returns a single JSON line (with trailing newline) containing selected fields.
+    This is the raw serialization; use ``_orjson_format`` as the loguru format callback.
+    """
+    level = record["level"]
+    data = {
+        "text": record["message"],
+        "message": record["message"],
+        "level": level.name,
+        "time": str(record["time"]),
+        "extra": record["extra"],
+    }
+    return orjson.dumps(data).decode("utf-8") + "\n"
+
+
+def _orjson_format(record: Record) -> str:
+    """Loguru ``format`` callback — orjson JSON with escaped braces.
+
+    Loguru calls ``.format_map()`` on the returned string, so literal
+    ``{`` / ``}`` in JSON must be doubled to avoid ``KeyError``.
+    """
+    raw = _orjson_serialize(record)
+    return raw.replace("{", "{{").replace("}", "}}")
+
+
 def init_observability(
     service_name: str = "mde",
     log_file: str = ".artifacts/mde-events.jsonl",
@@ -132,10 +161,10 @@ def init_observability(
     # Remove loguru default stderr handler
     logger.remove()
 
-    # Sink 1: JSON file (async, rotation, retention)
+    # Sink 1: JSON file (async, rotation, retention) — orjson for Rust-speed serialization
     logger.add(
         log_file,
-        serialize=True,
+        format=_orjson_format,
         enqueue=True,
         rotation="10 MB",
         retention=5,
