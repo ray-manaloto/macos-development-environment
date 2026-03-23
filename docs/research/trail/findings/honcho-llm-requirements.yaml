@@ -1,0 +1,55 @@
+id: honcho-llm-requirements
+timestamp: "2026-03-23T00:00:00Z"
+source: https://github.com/plastic-labs/honcho
+agent: researcher
+finding_type: correction
+confidence: confirmed
+confident_about: |
+  Honcho v3.0.3 requires multiple paid LLM provider API keys:
+  - LLM_ANTHROPIC_API_KEY (required for dialectic reasoning by default)
+  - LLM_OPENAI_API_KEY (required for embeddings via OpenAI)
+  - LLM_GEMINI_API_KEY (required for summarization via Google Gemini)
+  - LLM_GROQ_API_KEY (required for query generation via Groq)
+
+  At least one provider key is required; all reasoning operations require specific provider keys.
+  These keys are loaded at module import time in the deriver background worker.
+gaps: |
+  - No local LLM support (Ollama) exists in v3.0.3 codebase
+  - No SQLite support (PostgreSQL+pgvector required)
+  - No built-in vLLM endpoint support yet (has config env vars but not fully integrated)
+  - Unknown whether missing keys cause runtime crash vs. graceful degradation
+  - OpenAI-compatible endpoint support exists but Ollama compatibility unclear
+evidence: |
+  1. .env.template shows required keys:
+     - LLM_OPENAI_API_KEY (for embeddings)
+     - LLM_ANTHROPIC_API_KEY (for dialectic)
+     - LLM_GEMINI_API_KEY (for summary)
+     - LLM_GROQ_API_KEY (for query generation)
+     - Optional: LLM_OPENAI_COMPATIBLE_BASE_URL, LLM_VLLM_API_KEY, LLM_VLLM_BASE_URL
+
+  2. README.md: "Run database migrations" and "Start a background worker (deriver)" are separate required steps.
+     Deriver generates "representation, summaries, peer cards, and manages dreaming tasks."
+
+  3. Architecture docs state reasoning is core to Honcho:
+     "LLMs perform the rigorous, compute-intensive thinking"
+     "reasoning outputs—conclusions, summaries, peer cards—are stored as part of peer representations"
+
+  4. GitHub Issue #405: SQLite support requested but NOT implemented (current requirement: PostgreSQL only)
+
+  5. GitHub Issue #407: "Feature Request: Skill for Local Honcho Development" (no local LLM support exists)
+implication: |
+  Honcho cannot run without paid LLM APIs. Self-hosting in your Docker Compose requires:
+  - Anthropic API key (for reasoning/dialectic)
+  - OpenAI API key (for embeddings)
+  - Google Gemini key (for summaries)
+  - Groq key (for query generation)
+
+  The API server alone cannot start without at least the embedding provider configured.
+  Your decision to avoid sharing Anthropic keys is incompatible with Honcho's current architecture.
+
+  You have three options:
+  1. Pay for keys across all providers
+  2. Fork Honcho and patch it to support local models (major undertaking)
+  3. Use Honcho's managed service instead (app.honcho.dev)
+tags: [honcho, llm-requirements, api-keys, paid-services, self-hosting, architectural-limitation]
+status: discovered

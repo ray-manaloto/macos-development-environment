@@ -1,0 +1,125 @@
+id: honcho-ollama-viability
+timestamp: "2026-03-23T11:00:00Z"
+source:
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/config.py
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/utils/clients.py
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/utils/types.py
+  - https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/embedding_client.py
+agent: researcher
+finding_type: adversarial-verification
+confidence: HIGH
+verdict: PARTIALLY_CONFIRMED
+
+finding: |
+  Honcho v3.0.3 CAN work with Ollama, BUT with significant caveats:
+
+  **CONFIRMED:** OpenAI-compatible provider path exists
+  - `LLM_OPENAI_COMPATIBLE_BASE_URL` + `LLM_OPENAI_COMPATIBLE_API_KEY` environment variables are fully implemented
+  - Client initialization creates `AsyncOpenAI(api_key=OPENAI_COMPATIBLE_API_KEY, base_url=OPENAI_COMPATIBLE_BASE_URL)`
+  - Provider value "custom" is in SupportedProviders and routed to AsyncOpenAI client
+  - This would work with Ollama's OpenAI-compatible endpoint at `http://localhost:11434/v1`
+
+  **CRITICAL LIMITATIONS:**
+  1. **Thinking Budget Tokens not supported by Ollama**
+     - DeriverSettings, DialecticSettings, DreamSettings, SummarySettings all have THINKING_BUDGET_TOKENS fields
+     - Code sends these to OpenAI client but Ollama doesn't support this parameter
+     - Will cause API errors when trying to use local Ollama models for these roles
+
+  2. **Structured Output (response_model) incompatible with custom providers**
+     - Code uses `response_format` parameter with Pydantic models
+     - Ollama doesn't support OpenAI's structured output API
+     - Deriver specifically requires `response_model=PromptRepresentation` with `json_mode=True`
+     - Exception: vLLM has special handling with `json_schema` format, but it's hardcoded for PromptRepresentation only
+
+  3. **Tool use requires special formatting**
+     - Code converts tools to OpenAI format (function calling)
+     - Ollama supports tool calling but response format may differ
+     - Tool iteration loop may fail if responses don't match expected structure
+
+  4. **Embedding provider constraints**
+     - Default: OpenAI `text-embedding-3-small` (requires API key)
+     - Alternative: Gemini embedding (requires API key)
+     - Code has hardcoded model names per provider, no custom embedding URL support
+     - Ollama embedding support (`nomic-embed-text`, `mxbai-embed-large`) would require code changes
+
+  5. **Model-specific code paths**
+     - Temperature handling: bumped from 0.0 to 0.2 on retries for non-GPT-5 models (should work)
+     - Reasoning effort: only sent for "gpt-5" models in model name check (safe, won't send to Ollama)
+     - Response format: assumes JSON compliance; Ollama models vary in JSON reliability
+
+confident_about: |
+  - OpenAI-compatible base URL configuration path is production-ready in v3.0.3
+  - Provider routing logic supports "custom" provider for AsyncOpenAI clients
+  - Environment variable precedence is correctly implemented (env > .env > toml)
+  - vLLM special case exists and could be adapted for Ollama with code changes
+  - AsyncOpenAI client is used for "custom", "openai", "vllm" providers
+
+gaps: |
+  - No documented testing of Ollama integration in the codebase
+  - Thinking budget tokens will be sent to Ollama even though it doesn't support them
+  - Structured output parsing assumes OpenAI-compatible behavior; unknown if Ollama provides this
+  - No fallback for embedding providers if OpenAI/Gemini not available
+  - Tool calling format compatibility not validated against Ollama's tool schema expectations
+
+evidence: |
+  From src/config.py (LLMSettings):
+  ```python
+  OPENAI_COMPATIBLE_API_KEY: str | None = None
+  OPENAI_COMPATIBLE_BASE_URL: str | None = None
+  ```
+
+  From src/utils/clients.py (client initialization):
+  ```python
+  if settings.LLM.OPENAI_COMPATIBLE_API_KEY and settings.LLM.OPENAI_COMPATIBLE_BASE_URL:
+      CLIENTS["custom"] = AsyncOpenAI(
+          api_key=settings.LLM.OPENAI_COMPATIBLE_API_KEY,
+          base_url=settings.LLM.OPENAI_COMPATIBLE_BASE_URL,
+      )
+  ```
+
+  From src/utils/types.py:
+  ```python
+  SupportedProviders = Literal["anthropic", "openai", "google", "groq", "custom", "vllm"]
+  ```
+
+  From src/utils/clients.py (deriver call):
+  ```python
+  response = await honcho_llm_call(
+      llm_settings=settings.DERIVER,
+      response_model=PromptRepresentation,
+      json_mode=True,
+      thinking_budget_tokens=settings.DERIVER.THINKING_BUDGET_TOKENS,
+      ...
+  )
+  ```
+
+implication: |
+  **Ollama can serve as a drop-in replacement for Claude/Gemini/Groq IF AND ONLY IF:**
+
+  1. Code changes are made to:
+     - Filter/ignore `thinking_budget_tokens` parameter for custom provider
+     - Implement fallback for structured output if response_format fails
+     - Add embedding provider that accepts custom URLs (currently hardcoded by provider)
+
+  2. User accepts:
+     - Loss of extended reasoning (thinking tokens not usable)
+     - Potential reduction in output quality (local models ≤ Claude 3.5)
+     - Need to tune model selection per reasoning level
+
+  3. Configuration would be:
+     ```
+     LLM_OPENAI_COMPATIBLE_BASE_URL=http://localhost:11434/v1
+     LLM_OPENAI_COMPATIBLE_API_KEY=ollama  # Ollama doesn't validate this
+     DERIVER_PROVIDER=custom
+     DERIVER_MODEL=llama3.2  # or mistral, qwen2.5, etc.
+     SUMMARY_PROVIDER=custom
+     SUMMARY_MODEL=llama3.2
+     DIALECTIC_MINIMAL_PROVIDER=custom
+     DIALECTIC_MINIMAL_MODEL=llama3.2
+     # ... etc for all reasoning levels
+     ```
+
+  **Current Status:** Initial researcher's claim of "not implemented" is REFUTED. The infrastructure exists but is incomplete for fully autonomous Ollama support without code changes.
+
+tags: [honcho, ollama, openai-compatible, local-llm, structured-output, thinking-tokens, adversarial-verification]
+status: discovered

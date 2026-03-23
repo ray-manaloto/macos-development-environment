@@ -36,6 +36,20 @@
 
 ---
 
+## Memory System Alternatives Survey (2026-03-23)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | mem0 README | https://github.com/mem0ai/mem0 | Y Combinator S24; requires paid LLM APIs (OpenAI/Anthropic/Groq default); supports Ollama for embeddings only, not primary LLM | HIGH |
+| [x] | mem0 pyproject.toml | https://raw.githubusercontent.com/mem0ai/mem0/main/pyproject.toml | Dependencies: `openai>=1.90.0`, `groq>=0.3.0`, `ollama>=0.3.0`; LLM is non-negotiable in config | HIGH |
+| [x] | Letta README | https://github.com/letta-ai/letta | Formerly MemGPT; stateful agents with memory blocks; self-hosted FastAPI backend available | HIGH |
+| [x] | Letta pyproject.toml | https://raw.githubusercontent.com/letta-ai/letta/main/pyproject.toml | Dependencies: `anthropic>=0.75.0`, `openai>=2.11.0`, `mistralai>=1.8.1`; examples assume paid LLM endpoints | HIGH |
+| [x] | Zep README | https://github.com/getzep/zep | Community edition deprecated; cloud-only SaaS now; temporal knowledge graphs abandoned for open-source | HIGH |
+| [x] | Zep legacy status | https://github.com/getzep/zep/blob/main/README.md#community-edition-legacy | "Zep Community Edition is no longer supported and has been deprecated" — official statement | HIGH |
+| [x] | ChromaDB README | https://github.com/chroma-core/chroma | Apache 2.0; embedded + client-server modes; sentence-transformers for local embeddings (no API needed) | MEDIUM |
+| [x] | ChromaDB pyproject.toml | https://raw.githubusercontent.com/chroma-core/chroma/main/pyproject.toml | Core deps: `onnxruntime`, `numpy`, `tokenizers` (all local); zero cloud dependencies | MEDIUM |
+
+---
 
 ---
 
@@ -59,6 +73,17 @@
 | [x] | Docker Base Images & Pinning | https://docs.docker.com/build/building/base-images/ | CONFIRMED — Digest pinning critical for supply chain security; tag re-push risk documented | adversarial-security-review |
 | [x] | plastic-labs/honcho config.py | https://github.com/plastic-labs/honcho/blob/main/src/config.py | CRITICAL — USE_AUTH defaults False; model validator requires JWT_SECRET when enabled; NO enforcement on disabled | adversarial-security-review |
 | [x] | plastic-labs/honcho docker-compose.yml.example | https://github.com/plastic-labs/honcho/blob/main/docker-compose.yml.example | CRITICAL — Uses POSTGRES_HOST_AUTH_METHOD=trust in dev; password=postgres (unversioned); no requirepass on Redis | adversarial-security-review |
+
+---
+
+## Honcho v3.0.3 OpenAI-Compatible Integration (2026-03-23)
+
+| Status | Source | URL | Verdict | Finding ID |
+|--------|--------|-----|---------|------------|
+| [x] | Honcho v3.0.3 config.py | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/config.py | CONFIRMED — LLM_OPENAI_COMPATIBLE_BASE_URL and LLM_OPENAI_COMPATIBLE_API_KEY fully implemented | honcho-ollama-viability |
+| [x] | Honcho v3.0.3 clients.py | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/utils/clients.py | CRITICAL — Thinking budget tokens sent to custom provider (unsupported by Ollama); structured output incompatible | honcho-ollama-viability |
+| [x] | Honcho v3.0.3 types.py | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/utils/types.py | CONFIRMED — "custom" provider in SupportedProviders literal; routed to AsyncOpenAI client | honcho-ollama-viability |
+| [x] | Honcho v3.0.3 embedding_client.py | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/embedding_client.py | LIMITATION — Embedding providers hardcoded by name (openai/gemini/openrouter); no custom URL support | honcho-ollama-viability |
 
 ---
 
