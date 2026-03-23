@@ -17,8 +17,6 @@ if TYPE_CHECKING:
 
 COMPOSE_FILE = MEMORY_COMPOSE
 
-_SERVICES = ("honcho-api", "honcho-db", "honcho-redis")
-
 
 def stack_up() -> int:
     """Start the Honcho memory stack.
