@@ -16,3 +16,8 @@ __pycache__/
 *.pyc
 *.egg-info/
 .pytest_cache/
+
+# Docker environment files (contain LLM API keys and passwords)
+docker/.env
+docker/memory/.env
+docker/observability/.env

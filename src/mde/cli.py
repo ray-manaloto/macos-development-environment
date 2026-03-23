@@ -143,6 +143,11 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
 
     _add_obs_subparsers(sub)
 
+    # memory
+    from mde.domain.memory_stack import add_subparsers as _add_memory_subparsers
+
+    _add_memory_subparsers(sub)
+
     return parser
 
 
@@ -461,6 +466,17 @@ def _cmd_observability(args: argparse.Namespace) -> int:
         return result
 
 
+def _cmd_memory(args: argparse.Namespace) -> int:
+    action = getattr(args, "memory_action", None)
+    with _traced_command("memory", action=action) as ctx:
+        ctx["span"].set_attribute("memory.action", str(action))
+        from mde.domain.memory_stack import dispatch as mem_dispatch
+
+        result = mem_dispatch(args)
+        ctx["result"] = result
+        return result
+
+
 _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "validate": _cmd_validate,
     "update": _cmd_update,
@@ -482,4 +498,5 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "research": _cmd_research,
     "statusline": _cmd_statusline,
     "observability": _cmd_observability,
+    "memory": _cmd_memory,
 }

@@ -1,0 +1,34 @@
+id: finding-shiv-dependencies
+timestamp: "2026-03-23T09:35:00Z"
+source: https://github.com/linkedin/shiv
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: |
+  shiv (LinkedIn tool) is a CLI utility that builds self-contained Python zipapps
+  WITH all dependencies included. It automates what zipapp requires manual work for.
+  shiv reads a requirements file or accepts pip install args, installs everything
+  into a temp dir, then creates a .pyz file with all dependencies bundled.
+
+  Key: shiv outputs a .pyz that is executable with just python — no pip/venv needed.
+gaps: |
+  - shiv itself must be installed (can be done in build stage of Docker)
+  - Requires Python 3.8+ (mde requires 3.12+, so no issue)
+  - Build happens on the host machine, not in Docker (cross-platform issue potential)
+  - Output .pyz is platform-specific if it includes native extensions
+evidence: |
+  From shiv GitHub README:
+  "shiv -c flake8 -o ~/bin/flake8 flake8" creates executable pyz with flake8 + deps
+  Supports pip install options: "-r requirements.txt", package names, etc.
+  Output can be executable shebang (#!/usr/bin/env python3) or plain .pyz
+implication: |
+  shiv is the BEST FIT for mde healthcheck if we:
+  1. Build the .pyz in CI/Bake during docker build (multi-stage)
+  2. Install shiv in build stage, use it to bundle healthcheck module
+  3. COPY final .pyz into runtime container (python:3.13-slim-bookworm)
+  4. Run as: HEALTHCHECK CMD python /healthcheck.pyz
+
+  This satisfies all requirements: no pip/uv in runtime, quality gates apply
+  to the healthcheck.py source before shiv packages it.
+tags: [shiv, zipapp, self-contained, dependencies, docker-friendly, linked-in]
+status: discovered

@@ -10,6 +10,7 @@ from mde.validate.brew import validate_brew
 from mde.validate.chezmoi import validate_chezmoi
 from mde.validate.docker import validate_docker
 from mde.validate.json_validator import validate_json_files
+from mde.validate.memory import validate_memory
 from mde.validate.mise import validate_mise
 from mde.validate.package_managers import validate_package_managers
 from mde.validate.shell import validate_shell_scripts
@@ -64,6 +65,7 @@ def validate_all(
         result.merge(validate_chezmoi())
         result.merge(validate_brew())
         result.merge(validate_docker())
+        result.merge(validate_memory())
         result.merge(validate_package_managers())
         result.merge(validate_skill_frontmatter())
         result.merge(validate_skill_sync())

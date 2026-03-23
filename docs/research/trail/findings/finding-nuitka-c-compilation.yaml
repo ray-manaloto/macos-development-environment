@@ -1,0 +1,31 @@
+id: finding-nuitka-c-compilation
+timestamp: "2026-03-23T09:45:00Z"
+source: https://nuitka.net/
+agent: researcher
+finding_type: technique
+confidence: probable
+confident_about: |
+  Nuitka is a Python-to-C compiler. It translates Python code to C, then compiles
+  to a binary. Produces faster binaries with some startup time improvement.
+  Primarily used for performance optimization, not packaging.
+gaps: |
+  - Requires C compiler (gcc/clang) in build environment — adds build dependency
+  - Not primarily a packaging tool (no built-in dependency bundling)
+  - Still requires Python runtime on target for imports/stdlib
+  - Complex setup for Docker multi-stage builds
+  - Main use case is performance, not distribution
+evidence: |
+  From Nuitka documentation: Translates Python to C and compiles for performance.
+  Main appeal is speed optimization. Also can create standalone executables but
+  that requires bundling (similar complexity to PyInstaller).
+implication: |
+  Nuitka is NOT RECOMMENDED for this use case:
+  - Adds unnecessary complexity (C compiler in Docker build)
+  - No advantage over shiv for healthcheck (healthcheck doesn't need performance
+    optimization — it's a simple I/O check)
+  - Still requires packaging solution on top (doesn't solve dependencies)
+  - Build time longer than alternatives
+
+  Best for: performance-critical Python code. Not distribution/packaging.
+tags: [nuitka, c-compiler, performance, not-recommended]
+status: discovered

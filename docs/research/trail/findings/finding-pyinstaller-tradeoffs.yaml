@@ -1,0 +1,39 @@
+id: finding-pyinstaller-tradeoffs
+timestamp: "2026-03-23T09:40:00Z"
+source: https://github.com/pyinstaller/pyinstaller
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: |
+  PyInstaller bundles Python app + interpreter + all dependencies into a single
+  binary or folder. It works on Windows, macOS, Linux. NOT a cross-compiler —
+  must run on target OS to build for that OS.
+
+  Main advantage: produces a standalone binary/folder, truly no Python required
+  on the target system.
+gaps: |
+  - BINARY SIZE: PyInstaller bundles entire Python interpreter (100-200MB+)
+  - BUILD TIME: Compilation/bundling takes longer than shiv
+  - DOCKER BLOAT: Final image would be larger (binary + interpreter redundant
+    since container already has python:3.13-slim base)
+  - COMPLEXITY: Requires analysis hook configuration for dynamic imports,
+    third-party packages may need custom hooks
+  - License compatibility: PyInstaller outputs may have GPL concerns depending
+    on hooks used
+evidence: |
+  From PyInstaller docs:
+  "PyInstaller bundles a Python application and all its dependencies into a
+  single package. The user can run the packaged app without installing a Python
+  interpreter or any modules."
+  "Works out-of-the-box with Python 3.8-3.14"
+implication: |
+  PyInstaller is OVERKILL for Docker healthcheck use case:
+  - Container already has Python interpreter (python:3.13-slim)
+  - Bundling interpreter adds 100MB+ bloat unnecessarily
+  - Binary built on macOS won't work in Linux container (not cross-compiler)
+  - For Docker: shiv is better — pure Python, smaller, leverages base Python
+
+  PyInstaller would be better for: distributing standalone CLI tools to users
+  without Python installed, cross-platform native apps.
+tags: [pyinstaller, binary, interpreter-bundling, overkill-for-docker]
+status: discovered

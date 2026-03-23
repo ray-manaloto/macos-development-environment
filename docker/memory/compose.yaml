@@ -1,0 +1,160 @@
+# docker/memory/compose.yaml
+#
+# Honcho persistent memory stack for Claude Code sessions.
+#
+# HISTORY: Added in PR B (2026-03-23) to complement the observability stack
+# from PR A2. Provides semantic memory via the Honcho API — Claude Code's
+# official claude-honcho plugin connects to this at localhost:8000/v3.
+#
+# ARCHITECTURE DECISION: Self-hosted instead of SaaS because session
+# transcripts contain source code. All data stays on-machine.
+#
+# DEPENDENCY: The claude-honcho plugin must be installed in Claude Code
+# and configured with endpoint.environment = "local" to connect here.
+
+name: mde-memory
+
+services:
+  honcho-api:
+    # Honcho API server — FastAPI app serving the v3 REST API.
+    # The claude-honcho plugin sends HTTP requests to localhost:8000/v3.
+    #
+    # ENTRYPOINT: The upstream Dockerfile does NOT copy docker/ into the image.
+    # The image's built-in CMD is: ["fastapi", "run", "--host", "0.0.0.0", "src/main.py"]
+    # But we need to run migrations first. The image DOES contain scripts/provision_db.py.
+    # Solution: inline shell that runs migrations then exec's FastAPI.
+    image: ghcr.io/plastic-labs/honcho:v3.0.3@sha256:0d23755cfba8fac143d37a3c2f9d6bd01af9dee0854e3bebdfb5fb6196f71084
+    entrypoint: ["sh", "-c", "python scripts/provision_db.py && exec fastapi run --host 0.0.0.0 src/main.py"]
+    ports:
+      # SECURITY: Bound to 127.0.0.1 ONLY. Primary mitigation for AUTH_USE_AUTH=false.
+      - "127.0.0.1:8000:8000"
+    environment:
+      - DB_CONNECTION_URI=postgresql+psycopg://honcho:${HONCHO_DB_PASSWORD:?Set HONCHO_DB_PASSWORD}@honcho-db:5432/honcho
+      - CACHE_URL=redis://honcho-redis:6379/0?suppress=true
+      - AUTH_USE_AUTH=${AUTH_USE_AUTH:-false}
+      - AUTH_JWT_SECRET=${AUTH_JWT_SECRET:-}
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      honcho-db:
+        condition: service_healthy
+      honcho-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/openapi.json')"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+      - /app/__pycache__
+      - /app/alembic
+    mem_limit: 512m
+    cpus: 0.5
+    restart: unless-stopped
+
+  honcho-deriver:
+    # Background worker — Honcho's reasoning pipeline.
+    # Creates embeddings, summaries, and conclusions from stored messages.
+    # Requires LLM API keys in .env (LLM_ANTHROPIC_API_KEY, LLM_OPENAI_API_KEY, etc.)
+    image: ghcr.io/plastic-labs/honcho:v3.0.3@sha256:0d23755cfba8fac143d37a3c2f9d6bd01af9dee0854e3bebdfb5fb6196f71084
+    entrypoint: ["python", "-m", "src.deriver"]
+    environment:
+      - DB_CONNECTION_URI=postgresql+psycopg://honcho:${HONCHO_DB_PASSWORD:?Set HONCHO_DB_PASSWORD}@honcho-db:5432/honcho
+      - CACHE_URL=redis://honcho-redis:6379/0?suppress=true
+      - METRICS_ENABLED=true
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      honcho-db:
+        condition: service_healthy
+      honcho-redis:
+        condition: service_healthy
+    healthcheck:
+      # python:3.13-slim-bookworm has no procps. Use pure Python /proc scan.
+      test: ["CMD", "python", "-c", "import os,sys; sys.exit(0 if any('src.deriver' in open(f'/proc/{p}/cmdline','rb').read().decode('utf-8','ignore') for p in os.listdir('/proc') if p.isdigit()) else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+      - /app/__pycache__
+    mem_limit: 1g
+    cpus: 1.0
+    restart: unless-stopped
+
+  honcho-db:
+    # PostgreSQL 15 with pgvector extension for vector similarity search.
+    # PORT 5433 on host to avoid conflict with local PostgreSQL.
+    image: pgvector/pgvector:pg15-trixie@sha256:73baaa709cd08ca631f516fa39949588ec5c82383d58746ea46aaf66cb1472a4
+    command: ["postgres", "-c", "max_connections=200"]
+    environment:
+      - POSTGRES_DB=honcho
+      - POSTGRES_USER=honcho
+      - POSTGRES_PASSWORD=${HONCHO_DB_PASSWORD:?Set HONCHO_DB_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - honcho-pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U honcho -d honcho"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    mem_limit: 512m
+    cpus: 0.5
+    restart: unless-stopped
+
+  honcho-redis:
+    # Redis cache for Honcho API and deriver worker.
+    # PORT 6380 on host to avoid conflict with local Redis.
+    image: redis:8.2@sha256:9e38e6ea04a97f282e8f063c23f91ebb28e65b30be70d98fbf36e7001ac98824
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - honcho-redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    mem_limit: 128m
+    cpus: 0.25
+    restart: unless-stopped
+
+volumes:
+  honcho-pgdata:
+  honcho-redis-data:

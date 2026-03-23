@@ -8,15 +8,14 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING
+
+from mde.domain.docker_stacks import OBSERVABILITY_COMPOSE
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-COMPOSE_FILE = (
-    Path(__file__).resolve().parents[3] / "docker" / "observability" / "docker-compose.yml"
-)
+COMPOSE_FILE = OBSERVABILITY_COMPOSE
 
 
 def stop_orphan_collectors() -> None:

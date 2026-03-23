@@ -1,0 +1,32 @@
+# docker/compose.yaml
+#
+# Root orchestrator for all mde Docker stacks.
+#
+# PATTERN: Uses Compose `include:` directive (v2.20+) to pull in sub-stacks.
+# Each sub-stack is self-contained with its own services, volumes, and configs.
+# This file is the single entry point for `docker compose` commands.
+#
+# WHY NOT a single flat file: Sub-stacks have independent lifecycles.
+# Observability can run without memory, and vice versa. The include pattern
+# lets each team/PR own its stack without merge conflicts.
+#
+# USAGE:
+#   docker compose -f docker/compose.yaml up                  # start all
+#   docker compose -f docker/compose.yaml up honcho-api        # start one service
+#
+# BREAKING CHANGE from PR A2:
+#   Old: docker compose -f docker/observability/docker-compose.yml up
+#   New: docker compose -f docker/compose.yaml up
+#   The observability stack file was renamed from docker-compose.yml to compose.yaml.
+#   All Python code paths updated in src/mde/domain/observability_stack.py.
+
+# NETWORKING: Each included sub-stack gets its own default network (scoped by
+# project name). Services within a stack can reach each other by hostname.
+# Cross-stack communication is NOT needed — observability and memory are
+# independent. If cross-stack access is ever needed (e.g., Honcho exporting
+# metrics to OTEL collector), define a shared external network here and
+# reference it in both sub-stack compose files.
+
+include:
+  - path: ./observability/compose.yaml
+  - path: ./memory/compose.yaml

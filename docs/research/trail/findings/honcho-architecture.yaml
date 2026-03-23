@@ -1,0 +1,315 @@
+id: finding-honcho-architecture
+timestamp: "2026-03-23T08:55:00Z"
+source: https://github.com/plastic-labs/honcho
+agent: researcher
+finding_type: insight
+confidence: confirmed
+confident_about: |
+  Honcho is a production-ready open-source memory layer for agents. Core architecture consists of:
+  - FastAPI server handling REST API endpoints
+  - PostgreSQL with pgvector for storage and vector operations
+  - Redis for caching
+  - Background deriver worker for async reasoning
+  - Python SDK (honcho-ai) and TypeScript SDK (@honcho-ai/sdk)
+gaps: |
+  Detailed type signatures in Python SDK not fully extracted (requires reading sdks/python directly).
+  Full router endpoint documentation would require reading each router file.
+evidence: |
+  README section: "The Honcho project is split between several repositories with this one hosting
+  the core service logic. This is implemented as a FastAPI server/API to store data about
+  an application's state." Version 3.0.3 confirmed in README badge and pyproject.toml.
+
+  Docker Compose shows: api service, deriver service, database (pgvector/pgvector:pg15),
+  redis:8.2, prometheus, and grafana services.
+
+  Models file (src/models.py) confirms SQLAlchemy ORM with tables: workspaces, peers, sessions,
+  messages, message_embeddings, collections, documents.
+
+  Main.py imports routers: workspaces, peers, sessions, messages, conclusions, keys, webhooks.
+  All routes prefixed with /v3.
+implication: |
+  For self-hosted deployment, the infrastructure requires:
+  1. Postgres 15+ with pgvector extension (pg15-pgvector package)
+  2. Redis 8.2+
+  3. Python 3.9+ runtime with uv package manager
+  4. Multiple LLM provider API keys (Anthropic, OpenAI, Google Gemini, Groq)
+  5. Two long-running processes: FastAPI server and deriver worker
+
+  Integration with applications via honcho-ai Python package or @honcho-ai/sdk TypeScript.
+  For memory features in mde-py, consider Python SDK for direct integration.
+tags:
+  - honcho
+  - agent-memory
+  - self-hosted
+  - fastapi
+  - postgresql
+  - redis
+  - python-sdk
+status: discovered
+
+# DATA MODEL
+data_model:
+  core_entities:
+    - Workspace: top-level data isolation unit, contains peers and sessions
+    - Peer: unified representation of users or AI agents, has metadata and configuration
+    - Session: represents conversation/interaction between multiple peers with configurable observation
+    - Message: atomic data unit at session level, sourced from a peer, vector-embedded
+    - Collection: named groups of vector-embedded documents for RAG, scoped to observer/observed peer pair
+    - Document: vector-embedded data within a collection, has levels (explicit, deductive, inductive)
+    - MessageEmbedding: OpenAI text-embedding-3-small (1536 dims), HNSW indexed for similarity search
+
+  relationships:
+    - Workspace contains Peers (1:N)
+    - Workspace contains Sessions (1:N)
+    - Peers and Sessions have many-to-many relationship (via session_peers table)
+    - Messages belong to Sessions and are sourced from Peers
+    - Collections are scoped to observer/observed peer pair within Workspace
+    - Documents belong to Collections
+
+  metadata_strategy:
+    - h_metadata: user-facing metadata (JSONB)
+    - internal_metadata: system metadata (JSONB), not exposed to client
+    - configuration: entity-specific configuration (JSONB)
+
+# API ENDPOINTS (v3)
+api_endpoints:
+  workspaces:
+    - POST /v3/workspaces - Create workspace
+    - GET /v3/workspaces/{workspace_id} - Get workspace
+    - GET /v3/workspaces - List workspaces
+    - PUT /v3/workspaces/{workspace_id} - Update workspace
+    - DELETE /v3/workspaces/{workspace_id} - Delete workspace
+
+  peers:
+    - POST /v3/workspaces/{workspace_id}/peers - Create peer
+    - GET /v3/workspaces/{workspace_id}/peers/{peer_id} - Get peer
+    - GET /v3/workspaces/{workspace_id}/peers - List peers
+    - PUT /v3/workspaces/{workspace_id}/peers/{peer_id} - Update peer
+    - DELETE /v3/workspaces/{workspace_id}/peers/{peer_id} - Delete peer
+    - POST /v3/workspaces/{workspace_id}/peers/{peer_id}/chat - Chat endpoint (dialectic API)
+    - GET /v3/workspaces/{workspace_id}/peers/{peer_id}/representation - Get peer representation
+    - GET /v3/workspaces/{workspace_id}/peers/{peer_id}/search - Search peer messages
+
+  sessions:
+    - POST /v3/workspaces/{workspace_id}/sessions - Create session
+    - GET /v3/workspaces/{workspace_id}/sessions/{session_id} - Get session
+    - GET /v3/workspaces/{workspace_id}/sessions - List sessions
+    - PUT /v3/workspaces/{workspace_id}/sessions/{session_id} - Update session
+    - DELETE /v3/workspaces/{workspace_id}/sessions/{session_id} - Delete session
+    - POST /v3/workspaces/{workspace_id}/sessions/{session_id}/peers - Add peer to session
+    - GET /v3/workspaces/{workspace_id}/sessions/{session_id}/context - Get session context (up to token limit)
+    - GET /v3/workspaces/{workspace_id}/sessions/{session_id}/search - Search session messages
+
+  messages:
+    - POST /v3/workspaces/{workspace_id}/sessions/{session_id}/messages - Add messages
+    - GET /v3/workspaces/{workspace_id}/sessions/{session_id}/messages - List session messages
+    - GET /v3/workspaces/{workspace_id}/peers/{peer_id}/messages - List peer messages
+
+  conclusions:
+    - GET /v3/workspaces/{workspace_id}/peers/{peer_id}/conclusions - Get peer conclusions
+    - POST /v3/workspaces/{workspace_id}/peers/{peer_id}/conclusions - Create conclusion
+
+  keys:
+    - POST /v3/workspaces/{workspace_id}/keys - Create API key
+    - GET /v3/workspaces/{workspace_id}/keys - List API keys
+    - DELETE /v3/workspaces/{workspace_id}/keys/{key_id} - Delete API key
+
+  webhooks:
+    - POST /v3/workspaces/{workspace_id}/webhooks - Register webhook
+    - GET /v3/workspaces/{workspace_id}/webhooks - List webhooks
+    - DELETE /v3/workspaces/{workspace_id}/webhooks/{webhook_id} - Delete webhook
+
+  metrics:
+    - GET /metrics - Prometheus metrics endpoint
+
+# PYTHON SDK
+python_sdk:
+  package_name: honcho-ai
+  current_version: "2.0.1"
+  install: "pip install honcho-ai || uv add honcho-ai"
+  pypi: https://pypi.org/project/honcho-ai/
+
+  key_classes:
+    - Honcho: main client class
+    - Peer: represents conversation participant
+    - Session: represents conversation/interaction
+    - AsyncHoncho: async variant of Honcho client
+
+  initialization:
+    - "Honcho(api_key, workspace_id, environment, base_url)"
+    - "AsyncHoncho(api_key, workspace_id, environment, base_url)"
+
+  core_methods:
+    peer_operations:
+      - "honcho.peer(peer_id) -> Peer"
+      - "peer.chat(query, target=None, session_id=None) -> str"
+      - "peer.search(query) -> list"
+      - "peer.set_metadata(dict)"
+      - "peer.get_representation() -> dict"
+
+    session_operations:
+      - "honcho.session(session_id) -> Session"
+      - "session.add_messages(list[Message])"
+      - "session.add_peers(list[Peer])"
+      - "session.get_context(summary=bool, tokens=int) -> Context"
+      - "session.get_messages() -> list[Message]"
+      - "session.set_metadata(dict)"
+
+    message_creation:
+      - "peer.message(content) -> Message"
+      - "peer_object.message(content, metadata={})"
+
+    context_utilities:
+      - "context.to_openai(assistant=peer_id) -> list[dict]"
+      - "context.to_anthropic(assistant=peer_id) -> list[dict]"
+
+  polling:
+    - "honcho.poll_deriver_status() - wait for background processing"
+
+# CONFIGURATION
+configuration:
+  setup_steps:
+    - "Clone: git clone https://github.com/plastic-labs/honcho.git"
+    - "Install deps: uv sync"
+    - "Setup DB: cp docker-compose.yml.example docker-compose.yml && docker compose up -d database"
+    - "Configure env: cp .env.template .env && edit with API keys"
+    - "Run migrations: uv run alembic upgrade head"
+    - "Start API: uv run fastapi dev src/main.py"
+    - "Start deriver (separate terminal): uv run python -m src.deriver"
+
+  environment_variables_required:
+    - DB_CONNECTION_URI: "postgresql+psycopg://user:pass@host:5432/db" (required, must have postgresql+psycopg prefix)
+    - LLM_ANTHROPIC_API_KEY: "for dialectic (reasoning) by default" (required if using default)
+    - LLM_OPENAI_API_KEY: "optional, for embeddings if EMBED_MESSAGES=true"
+    - LLM_GEMINI_API_KEY: "for summary/deriver by default" (required if using default)
+    - LLM_GROQ_API_KEY: "for query generation by default" (required if using default)
+
+  environment_variables_optional:
+    - AUTH_USE_AUTH: "false by default, set true for production"
+    - AUTH_JWT_SECRET: "generate with: python scripts/generate_jwt_secret.py"
+    - SENTRY_ENABLED: "false by default"
+    - LOG_LEVEL: "INFO by default"
+    - EMBED_MESSAGES: "true by default"
+    - MAX_EMBEDDING_TOKENS: "8192 by default"
+    - CACHE_URL: "redis://localhost:6379/0 for caching"
+    - NAMESPACE: "honcho by default"
+
+  docker_compose_services:
+    api:
+      image: "honcho:latest (built from Dockerfile)"
+      depends_on: ["database", "redis"]
+      ports: ["8000:8000"]
+      entrypoint: "sh docker/entrypoint.sh"
+
+    deriver:
+      image: "honcho:latest (built from Dockerfile)"
+      depends_on: ["database", "redis"]
+      entrypoint: "python -m src.deriver"
+      purpose: "Background worker for reasoning, summaries, representations"
+
+    database:
+      image: "pgvector/pgvector:pg15"
+      ports: ["5432:5432"]
+      healthcheck: "pg_isready -U postgres"
+
+    redis:
+      image: "redis:8.2"
+      ports: ["6379:6379"]
+      healthcheck: "redis-cli ping"
+
+    prometheus:
+      image: "prom/prometheus:v3.2.1"
+      ports: ["9090:9090"]
+      purpose: "Metrics collection (optional)"
+
+    grafana:
+      image: "grafana/grafana:11.4.0"
+      ports: ["3000:3000"]
+      purpose: "Visualization (optional)"
+
+  configuration_files:
+    - ".env.template: environment variable template (copy to .env)"
+    - "config.toml.example: TOML configuration (alternative to .env)"
+    - "docker-compose.yml.example: docker compose template"
+    - "Configuration priority: env vars > .env file > config.toml > defaults"
+
+  config_toml_sections:
+    app: "log level, session limits, embedding settings, namespace"
+    db: "connection URI, pool settings, schema"
+    auth: "JWT authentication, enabled/disabled"
+    llm: "provider API keys, default token limits, embedding settings"
+    deriver: "background worker config, reasoning model settings, provider selection"
+    peer_card: "peer card generation settings"
+    dialectic: "reasoning endpoint config, per-level settings (minimal/low/medium/high/max)"
+    summary: "session summarization settings"
+    dream: "dream processing (optional advanced feature)"
+    cache: "Redis cache configuration"
+    vector_store: "pgvector, turbopuffer, or lancedb backend"
+    sentry: "error tracking"
+    metrics: "Prometheus metrics"
+    telemetry: "CloudEvents analytics"
+
+# CORE REASONING PIPELINE
+reasoning_pipeline:
+  deriver:
+    purpose: "Background worker that processes messages to derive facts about peers"
+    frequency: "Configurable polling interval (default 1.0s)"
+    tasks:
+      - representation: "Update peer representations in session context"
+      - summary: "Create session summaries (short and long)"
+      - peer_cards: "Generate peer card insights"
+      - dreams: "Advanced multi-day reasoning across sessions"
+
+  dialectic:
+    name: "Chat API endpoint"
+    path: "POST /v3/workspaces/{workspace_id}/peers/{peer_id}/chat"
+    purpose: "Query natural language about peer insights, hydrate prompts, get 2nd opinion"
+    reasoning_levels:
+      - minimal: "Quick response, minimal reasoning"
+      - low: "Basic reasoning"
+      - medium: "Moderate reasoning"
+      - high: "Deep reasoning"
+      - max: "Maximum reasoning with extended thinking"
+    configurable_per_level:
+      - provider: "which LLM provider to use"
+      - model: "which model variant"
+      - thinking_budget_tokens: "for extended thinking (0 = disabled)"
+      - max_tool_iterations: "how many times to call tools"
+      - max_output_tokens: "response length limit"
+
+  vectorization:
+    provider: "OpenAI (configurable)"
+    model: "text-embedding-3-small"
+    dimensions: "1536"
+    search_method: "HNSW index on pgvector (cosine similarity)"
+    automatic: "All messages embedded by default"
+    retrieval: "Used for context window management and search"
+
+# SELF-HOSTING DEPLOYMENT NOTES
+deployment_notes:
+  minimum_requirements:
+    - Python 3.9+
+    - uv package manager (0.4.9+)
+    - PostgreSQL 15+ with pgvector extension
+    - Redis 8.2+
+    - At least 3 API keys: Anthropic, Google Gemini, Groq (or alternatives)
+
+  production_considerations:
+    - Enable AUTH_USE_AUTH with JWT_SECRET for authentication
+    - Use Sentry for error tracking (SENTRY_ENABLED=true)
+    - Configure Prometheus metrics collection (METRICS_ENABLED=true)
+    - Set up Grafana for monitoring
+    - Consider external vector store (turbopuffer or lancedb) for scale
+    - Configure webhook endpoints for event notifications
+    - Use environment variables for all secrets (never in config.toml)
+
+  scaling:
+    - Run multiple deriver workers for parallel processing
+    - Redis caching reduces database load
+    - Vector index (HNSW) optimized for similarity search at scale
+    - Async support in Python SDK for high-throughput applications
+
+  fly_deployment:
+    - Sample fly.toml included in repo
+    - Requires separate Postgres database setup
+    - Use: flyctl launch --no-deploy, flyctl secrets import, flyctl deploy

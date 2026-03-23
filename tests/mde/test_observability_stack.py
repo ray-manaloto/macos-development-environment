@@ -52,7 +52,7 @@ class TestStackUp:
             patch("subprocess.run") as mock_run,
         ):
             mock_cf.is_file.return_value = True
-            mock_cf.__str__ = lambda _self: "/fake/docker-compose.yml"
+            mock_cf.__str__ = lambda _self: "/fake/compose.yaml"  # type: ignore[assignment]
             mock_run.return_value.returncode = 0
             mock_run.return_value.stdout = ""
             result = stack_up()
@@ -114,5 +114,5 @@ class TestComposeFile:
     """Test compose file path is correct."""
 
     def test_compose_file_path(self) -> None:
-        assert COMPOSE_FILE.name == "docker-compose.yml"
+        assert COMPOSE_FILE.name == "compose.yaml"
         assert "docker/observability" in str(COMPOSE_FILE)
