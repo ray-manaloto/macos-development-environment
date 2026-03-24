@@ -1,0 +1,237 @@
+id: adversarial-review-best-stack-synthesis-2026-03-24
+timestamp: "2026-03-24T23:25:00Z"
+source: |
+  adversarial-review-existing-tech-2026-03-24.yaml
+  sentinelone-adversarial-engine-search-2026-03-24.yaml
+  skill-marketplace-adversarial-2026-03-24.yaml
+  multi-model-sdk-evaluation-2026-03-24.yaml
+  https://github.com/dspy-ai/dspy
+  https://github.com/lmsys/FastChat
+  https://github.com/dottxt-ai/outlines
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: |
+  **Recommended pre-existing stack for multi-model adversarial review:**
+
+  Compose 4 proven open-source projects + 200-300 lines of glue code.
+  NO new SDK required. User mandate: "assemble existing → build new (LAST RESORT)"
+
+  Core Stack:
+  1. **DSPy** — Debate orchestration foundation
+  2. **Outlines** — Structured output enforcement
+  3. **Anthropic SDK** — Baseline LLM provider
+  4. **Custom SubprocessLMProvider** — CLI tool adapter
+
+  Estimated implementation: 2-3 days (code + tests)
+
+gaps: |
+  1. **No framework combines all four components.**
+     - DSPy doesn't know about structured output constraints (Outlines handles that)
+     - Neither framework ships with subprocess/CLI backends
+     - Neither has full debate/consensus orchestration patterns built-in
+
+  2. **Debate patterns must be custom-built.**
+     - DSPy provides building blocks (ChainOfThought, MultiChainComparison)
+     - Consensus logic (voting, agreement %, fallback) is user-specific
+     - Judge prompt templates must be created
+
+  3. **SentinelOne reference is not available.**
+     - Product doesn't exist publicly
+     - Must build from first principles + reference LMSYS/OpenAI/Anthropic patterns
+
+evidence: |
+  **ANALYSIS BASIS:**
+
+  Task #1 Findings:
+  - SentinelOne adversarial consensus engine: NOT FOUND (endpoint security vendor, not LLM eval)
+  - Skill marketplaces: Zero pre-built adversarial review skills
+  - Closest existing skill: claude-octopus (consensus gates for multi-agent, not structured debate)
+
+  Task #2 Findings:
+  - DSPy: STRONGEST framework (16K★, Stanford, debate patterns, extensible LM provider)
+  - PydanticAI: Runner-up (orchestration, multi-model, less debate-specific)
+  - vLLM: Infrastructure layer (self-hosted inference, not orchestration)
+  - alpaca_eval: Specialized but stale (judge patterns, not full debate)
+
+  **RECOMMENDED ARCHITECTURE:**
+
+  ```
+  src/mde/domain/adversarial_review.py
+  ├── SubprocessLMProvider(dspy.LM)
+  │   ├── __call__(prompt, **kwargs) → dict
+  │   │   ├── Shell to `claude`, `ollama`, etc.
+  │   │   ├── Parse stdout as JSON
+  │   │   └── Return structured response
+  │   ├── get_cached_response(prompt_hash)
+  │   └── cache management (Redis or file-based)
+  │
+  ├── DebateOrchestrator(BaseOrchestrator)
+  │   ├── prompt_template: JinjaTemplate (system prompt + context)
+  │   ├── models: List[LMProvider] (Claude, Gemini, Groq, local)
+  │   ├── num_rounds: int (default 2: initial + rebuttal)
+  │   ├── consensus_threshold: float (default 0.75)
+  │   ├── run(task) → DebateResult
+  │   │   ├── Round 1: Parallel model responses (initial position)
+  │   │   ├── Round 2: Cross-challenge (each sees others' responses)
+  │   │   ├── Judge: Structured vote on winner (via Outlines)
+  │   │   ├── Consensus: Agreement % + fallback to human review if < threshold
+  │   │   └── Return: DebateResult(winner, confidence, reasoning)
+  │   └── explain(debate_result) → str (formatted report)
+  │
+  ├── ConsensusScoringSystem
+  │   ├── vote(judge_output) → int (score 1-10)
+  │   ├── aggregate(votes: List[int]) → (mean, std_dev, agreement%)
+  │   ├── is_consensus_reached(agreement%, threshold) → bool
+  │   └── fallback_action(low_agreement) → escalate | retry | accept_first
+  │
+  └── EvaluationMetrics
+      ├── debate_duration (execution time)
+      ├── agreement_quality (% consensus reached)
+      ├── reasoning_quality (judge explainability score)
+      └── model_bias (variance in voting patterns)
+  ```
+
+  **LIBRARY COMPOSITION:**
+
+  | Layer | Component | Library | Role |
+  |-------|-----------|---------|------|
+  | Orchestration | Debate engine | DSPy ChainOfThought + MultiChainComparison | Structured prompting, multi-model comparison |
+  | Orchestration | Consensus logic | Custom (50-100 lines) | Voting, agreement, fallback decisions |
+  | I/O Adapter | Subprocess bridge | Custom SubprocessLMProvider (100-150 lines) | Shells to `claude`, `ollama`, etc. |
+  | Output | Structured parsing | Outlines (if needed) | Enforces JSON/function response format |
+  | LLM Baseline | API providers | Anthropic SDK | Baseline for API-based models (Claude, etc.) |
+  | Infrastructure | Caching | functools.lru_cache or Redis | Debate reproducibility |
+  | Testing | Framework | pytest + fixtures | Unit tests for debate logic |
+
+  **DETAILED COMPOSITION RATIONALE:**
+
+  **1. DSPy as Foundation (NOT full orchestration)**
+     - What it provides:
+       - `ChainOfThought` for prompting with reasoning
+       - `MultiChainComparison` for head-to-head model comparison
+       - Extensible `LM` abstraction (allows custom backends)
+       - Few-shot optimization (BootstrapFewShot) for debate prompt tuning
+       - Retrieval-Augmented Generation (Retrieve) for context injection
+     - What you add:
+       - Debate orchestration (Round 1, Round 2, consensus logic)
+       - Custom SubprocessLMProvider to plug in CLI tools
+       - Judge scoring + voting system
+     - Cost: 150 lines orchestration logic
+     - Alternative not used: PydanticAI (less debate patterns, more agent-focused)
+
+  **2. Outlines for Output Constraint (OPTIONAL but recommended)**
+     - What it provides:
+       - Token-constrained generation (force valid JSON)
+       - Function calling enforcement
+       - Structured output with type safety
+     - Why optional: Judge prompt can naturally return JSON without Outlines
+     - Why recommended: Prevents malformed judge responses, improves reliability
+     - Cost: Single `outlines.generate.json` wrapper around judge call
+     - Only needed if using non-structured models (Ollama, llama.cpp)
+
+  **3. Custom SubprocessLMProvider (~150 lines)**
+     ```python
+     class SubprocessLMProvider(dspy.LM):
+         """Bridges DSPy → local CLI tools"""
+         def __call__(self, prompt, **kwargs):
+             # Shell to subprocess
+             result = subprocess.run(
+                 ["claude", "-p", prompt],
+                 capture_output=True,
+                 text=True,
+                 timeout=30
+             )
+             # Parse stdout as JSON
+             response = json.loads(result.stdout)
+             return response
+     ```
+     - Integrates with: DSPy LM abstraction
+     - Supports: `claude` CLI, `ollama`, `llama.cpp`, any HTTP endpoint
+     - Caching: Via DSPy's built-in LM cache
+     - Error handling: Subprocess timeout, JSON parse failure, rate limiting
+
+  **4. Consensus & Fallback Logic (~100 lines)**
+     ```python
+     def consensus_vote(self, judge_responses):
+         """Aggregate judge votes → consensus decision"""
+         scores = [resp["score"] for resp in judge_responses]
+         agreement = max(Counter(scores).values()) / len(scores)
+         winner = max(set(scores), key=scores.count)
+
+         if agreement >= self.consensus_threshold:
+             return winner, agreement
+         else:
+             # Fallback: escalate, retry, or accept first
+             return self.handle_low_consensus(scores, agreement)
+     ```
+     - Handles: 2-5 judge models in parallel
+     - Voting: majority vote, weighted voting, or Condorcet
+     - Fallback: escalate to human review, retry with different judges, accept first model
+     - Metrics: tracks agreement quality per debate type
+
+  **5. Anthropic SDK as Baseline**
+     - Provides: Python client for Claude API
+     - Why included: Baseline for API-based models (not all users have local setup)
+     - No lock-in: Can swap with OpenAI/Groq/Gemini SDKs (same interface)
+
+  **NOT INCLUDED (why):**
+
+  - **alpaca_eval**: Too specialized (only pairwise judge patterns), stale (2025-10)
+  - **Marvin**: Single-model, not suitable for multi-model
+  - **Guidance**: Overcomplicated prompt DSL, not needed for debate
+  - **vLLM**: Infrastructure only (needs separate HTTP server), optional for local inference
+  - **PydanticAI**: More agent-focused; DSPy's comparison patterns are cleaner for debate
+  - **Instructor**: Output extraction only, not orchestration
+
+implication: |
+  **IMPLEMENTATION ROADMAP (composing existing + minimal new code):**
+
+  **Phase 1: DSPy Foundation (Day 1)**
+  - Install: `pip install dspy-ai`
+  - Create SubprocessLMProvider: 150 lines
+  - Test: Unit test provider with `claude` CLI
+  - Gate: Verify provider returns valid dspy.ChainOfThought outputs
+
+  **Phase 2: Debate Orchestration (Day 1-2)**
+  - Implement DebateOrchestrator: 100-150 lines
+  - Debate workflow: Round 1 (parallel) → Round 2 (cross-challenge) → Judge vote
+  - Judge prompts: Template-based Jinja2 (customizable per task type)
+  - Test: Debate integration test (3 models, 1 round, consensus check)
+  - Gate: DebateResult parses correctly, agreement% computed
+
+  **Phase 3: Consensus & Fallback (Day 2)**
+  - ConsensusScoringSystem: 50-100 lines
+  - Voting logic: majority vote + agreement threshold
+  - Fallback: escalate (return low_confidence flag) or retry with different judges
+  - Test: Consensus edge cases (2 vs. 1 voting, 75% threshold)
+  - Gate: Fallback logic tested; metrics logged
+
+  **Phase 4: Integration & Polish (Day 2-3)**
+  - Integrate with mde CLI: `uv run mde-py adversarial-review <task>`
+  - Add caching: Debate reproducibility via functools.lru_cache
+  - Structured output: Add Outlines if using non-API models
+  - Documentation: Debate prompt library, consensus strategy guide
+  - Test: End-to-end test (3 models, 2 rounds, structured output)
+  - Gate: Quality checks (ruff, type checking, pytest, docstrings)
+
+  **Total Implementation Time: 2-3 days**
+  - 150 lines: SubprocessLMProvider
+  - 100 lines: DebateOrchestrator
+  - 100 lines: ConsensusScoringSystem
+  - 100 lines: Judge prompts + templates
+  - 150 lines: Tests + integration
+  - **~600 lines total, NOT a new library**
+
+  **Cost Comparison:**
+  - Building from scratch: 2-4 weeks, 2000+ lines, new library maintenance
+  - Composing existing: 2-3 days, 600 lines, zero new library maintenance
+  - User preference honored: "assemble existing → build new (LAST RESORT)" ✓
+
+  **Skill/Plugin Publishing:**
+  - Package as Claude Code skill: `~/.claude/skills/adversarial-review/`
+  - Publish to skills.sh marketplace (optional)
+  - Share with team: Copy skill folder, customize prompts per domain
+
+tags: [adversarial-review, dspy-composition, synthesis, recommended-stack, subprocess-adapter, consensus-gates, implementation-roadmap, 2-3-day-estimate, 600-lines-total, no-new-library]
+status: discovered

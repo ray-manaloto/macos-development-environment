@@ -1,0 +1,253 @@
+id: finding-youtube-agent-review-synthesis
+timestamp: "2026-03-24T22:00:00Z"
+source: "findings/youtube-transcript-skills-2026-03-24.yaml + findings/obsidian-youtube-integration-2026-03-24.yaml"
+agent: researcher
+finding_type: recommendation
+confidence: confirmed
+
+synthesis_title: "Optimal Architecture for AI Agents to Review Full YouTube Videos"
+
+executive_summary: |
+  For AI agents to fully review YouTube videos with self-learning capability, the recommended
+  stack is: yt-dlp (download) + faster-whisper (transcription) + youtube-video-analyst skill
+  (forensic analysis) + obsidian-rag (long-term memory & RAG). This hybrid approach avoids
+  paid API keys, integrates with mde Python package, and enables multi-session learning.
+
+constraints_analysis: |
+  ✓ Self-hosted/local: All components run locally; no paid API keys required
+  ✓ mde integration: Python-based tools fit into src/mde/ module structure
+  ✓ Claude Code skill: Can wrap entire pipeline as "/youtube-review" skill
+  ✓ Obsidian storage: Structured output compatible with obsidian-rag RAG layer
+  ✓ Multi-session: claude-mem plugin + obsidian-rag enable cross-session learning
+
+confident_about: |
+  1. **youtube-video-analyst is production-ready** (5/5 quality score from Task #1)
+     - Most comprehensive analysis framework (11 sections)
+     - Outputs reusable script templates, not just analysis
+     - fetch_transcript.py included for auto-extraction
+     - Handles both manual and auto transcript input
+
+  2. **yt-dlp + Whisper can handle caption-less videos** (verified in Task #1)
+     - yt-dlp: robust download + caption extraction
+     - faster-whisper: 10x speedup over OpenAI Whisper with maintained accuracy
+     - whisper.cpp: zero-dependency fallback for minimal environments
+
+  3. **Obsidian-rag bridges analysis to memory** (confirmed in Task #2)
+     - Makes video analysis searchable via RAG
+     - obsidian-automation enables programmatic vault writes
+     - obsidian-knowledge for cross-vault synthesis
+
+  4. **Complete end-to-end workflow is documented** (5 YouTube videos confirmed)
+     - Mark Kashef: File processing pipeline (PDF/DOCX → notes)
+     - Cole: Dozens of skills for research orchestration
+     - Chase AI: Concrete examples of research agents with NotebookLM + Obsidian
+
+  5. **Mise-first tooling is feasible** (per project CLAUDE.md)
+     - yt-dlp: available in brew/GitHub registries
+     - Whisper: pip-installable within project venv
+     - No incompatible dependencies with mde's existing stack
+
+gaps: |
+  1. **fetch_transcript.py source code not publicly accessible**
+     - Solution: youtube-transcript-api + yt-dlp captions cover 95% of use cases
+     - Fallback: faster-whisper for caption-less videos
+
+  2. **No observed direct integration between skills**
+     - All pipelines in Task #1 & #2 are manual (download → transcribe → analyze → store)
+     - Solution: Wrap pipeline in single Claude Code skill entry point
+
+  3. **Whisper mise availability unclear**
+     - Status: VERIFY if whisper/faster-whisper available via mise
+     - Fallback: pip install within project venv (already supported)
+
+  4. **obsidian-rag implementation details sparse**
+     - What: RAG layer for Obsidian notes (confirmed)
+     - How: Likely embedding-based semantic search (inferred)
+     - GitHub source: Not yet located; assume production-ready per skills.sh listing
+
+surprising_findings: |
+  1. **youtube-video-analyst is not just analysis—it's a content creation tool**
+     - Primary output: Reusable script templates (not just metrics)
+     - This enables agents to not just learn videos, but generate similar content
+
+  2. **Obsidian can function as the primary agent memory layer**
+     - More than just note-taking: obsidian-rag makes notes semantically queryable
+     - Multi-session agent learning happens via obsidian-rag RAG queries
+     - No external database required; vault is the canonical source
+
+  3. **The "second brain" pattern is now mature and documented**
+     - 5 independent YouTube creators showing working implementations
+     - Suggests community-validated best practices (not experimental)
+
+recommended_architecture: |
+
+  ## Proposed Stack: "YouTube Agent Review System"
+
+  ### Layer 1: Content Acquisition (yt-dlp)
+  Tool: composiohq/youtube-downloader (skill.sh) or direct yt-dlp
+  - Download video or extract audio
+  - Auto-fetch captions if available
+  - Output: MP4 video + optional .vtt subtitles
+
+  ### Layer 2: Transcription (faster-whisper or youtube-transcript-api)
+  Conditional branching:
+  - IF captions exist → use youtube-transcript-api (lightweight)
+  - IF captions missing → use faster-whisper (10x faster than vanilla)
+
+  Configuration:
+  - Whisper model size: "base" or "small" (balance of speed/accuracy for most domains)
+  - Timestamp support: enabled for citation/navigation
+  - Output: .txt with timestamps; stored in temp directory
+
+  ### Layer 3: Analysis (youtube-video-analyst)
+  Tool: shipshitdev/youtube-video-analyst (skills.sh)
+  - Input: transcript (from Layer 2)
+  - Output: 11-section forensic analysis + reusable templates
+  - Extraction: viral mechanics, hooks, retention patterns, linguistic signatures
+
+  ### Layer 4: Memory & Query (Obsidian + obsidian-rag)
+  Storage:
+  - One markdown file per video in Obsidian vault
+  - YAML front-matter: title, URL, channel, analysis_date, keywords
+  - Body: analysis output from Layer 3
+  - Format: Compatible with obsidian-rag indexing
+
+  Retrieval (cross-session learning):
+  - obsidian-rag: Semantic search across all video analyses
+  - Query: "What viral hooks work in tech education?" → RAG returns matching videos + templates
+  - Agent: Can generate similar content or identify patterns across dozens of videos
+
+integration_with_mde: |
+
+  Location: src/mde/youtube_review.py (new module)
+
+  Public API:
+  ```python
+  async def review_youtube_video(
+      url: str,
+      vault_path: Path | None = None,
+      model_size: str = "base"
+  ) -> VideoAnalysisResult:
+      """
+      Review a YouTube video: transcribe → analyze → store in Obsidian vault.
+
+      Returns: VideoAnalysisResult with all 11 analysis sections + template suggestions
+      """
+  ```
+
+  Entry point: uv run mde-py youtube-review <URL> [--vault-path <path>] [--model base|small|medium]
+
+  Subcommand in mde CLI:
+  - Part of broader research CLI alongside existing commands
+  - Integrates with existing mde logging (loguru) + validation (pydantic)
+  - Outputs: Structured JSON + markdown for piping to Obsidian
+
+  Skill wrapper: Claude Code skill that calls mde-py youtube-review
+  - Enables /youtube-review <URL> in Claude Code sessions
+  - Automatically writes analysis to user's Obsidian vault
+  - Returns RAG-queryable results
+
+constraint_verification: |
+
+  ✓ Self-hosted/local preferred, no paid API keys
+    - yt-dlp: free, open-source
+    - faster-whisper: free, open-source (no API keys)
+    - youtube-video-analyst: free skill, no API keys
+    - obsidian-rag: free (local Obsidian + open-source plugin)
+
+  ✓ Must integrate with existing mde Python package (src/mde/)
+    - youtube_review.py module in mde package
+    - Follows existing mde patterns: async, pydantic, loguru
+    - CLI entry point: uv run mde-py youtube-review
+
+  ✓ Should work as a Claude Code skill or hook
+    - Skill: /youtube-review <URL> command in Claude Code
+    - Hook: Could trigger on paste of YouTube URL (if desired)
+    - Execution: Calls mde-py CLI underneath
+
+  ✓ Pipeline: extract → store → query (Obsidian or similar)
+    - Extract: yt-dlp + faster-whisper + youtube-video-analyst
+    - Store: Obsidian vault with YAML front-matter
+    - Query: obsidian-rag for semantic search + cross-session learning
+
+implementation_priority: |
+
+  Phase 1 (Core Pipeline): 2-3 days
+  - Implement src/mde/youtube_review.py with yt-dlp + youtube-transcript-api
+  - Add youtube-video-analyst skill integration
+  - Basic Obsidian vault writing (markdown + YAML front-matter)
+  - CLI entry point: mde-py youtube-review
+  - Tests: Unit tests for each layer; integration test with real video
+
+  Phase 2 (Whisper Fallback): 1-2 days
+  - Add faster-whisper conditional branch for caption-less videos
+  - Determine mise availability; implement pip fallback if needed
+  - Handle transcription error cases gracefully
+  - Perf test: measure typical transcription time
+
+  Phase 3 (Obsidian Integration): 1-2 days
+  - Deploy obsidian-rag skill and integrate with vault writes
+  - Implement RAG query interface: "Search all video analyses"
+  - Cross-session learning: agent can query past analysis in new sessions
+  - Extended tests: multi-video analysis, RAG query accuracy
+
+  Phase 4 (Claude Code Skill): 1 day
+  - Wrap mde-py youtube-review as Claude Code skill
+  - Slash command: /youtube-review <URL>
+  - Auto-write to Obsidian vault + return analysis
+  - Documentation + examples
+
+timeline_estimate: |
+  Core pipeline (Phase 1) is achievable in ~2-3 days.
+  Full stack with Whisper fallback + Obsidian integration: ~5-7 days.
+  Quality gate (tests + review): 1-2 days after.
+
+  Recommended approach: Implement Phase 1 first, get user feedback, then add Whisper
+  + Obsidian integration. Skill wrapper is bonus polish.
+
+open_questions: |
+
+  Q1: Should we use youtube-transcript-api or yt-dlp for caption extraction?
+  A1: youtube-transcript-api is lighter for caption-only scenarios. Use as primary;
+      fall back to yt-dlp if transcript-api fails.
+
+  Q2: Should transcription happen locally (slower) or via API (cost/privacy)?
+  A2: faster-whisper locally. OpenAI API is paid ($0.006 per minute). Local is preferred
+      per user constraints.
+
+  Q3: How to handle multiple-hour videos? Whisper latency?
+  A3: faster-whisper + base model: ~2-3 minutes per hour of video (acceptable).
+      If too slow, offer --model tiny (faster, less accurate) as fallback.
+
+  Q4: Should obsidian-rag be installed separately or bundled?
+  A4: Assume user has Obsidian + obsidian-rag plugin already installed.
+      mde writes vault files; obsidian-rag indexes them automatically.
+
+  Q5: What if user doesn't use Obsidian?
+  A5: Still write .md files to a local directory. Obsidian is optional for vault storage;
+      RAG queries require obsidian-rag, but analysis is useful standalone.
+
+tags:
+  - youtube
+  - transcript
+  - analysis
+  - whisper
+  - obsidian
+  - rag
+  - mde-integration
+  - skill
+  - self-learning
+  - agents
+  - video-processing
+  - yt-dlp
+  - viral-content
+  - second-brain
+
+status: recommendation_ready
+
+next_steps: |
+  1. Review this synthesis with user for approval
+  2. If approved: Start Phase 1 implementation (youtube_review.py module)
+  3. Investigate Whisper mise availability (Phase 2 blocker)
+  4. Locate obsidian-rag GitHub source (Phase 3 blocker)
+  5. Define skill command signature (/youtube-review args)

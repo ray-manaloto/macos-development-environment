@@ -1,0 +1,447 @@
+id: finding-claude-code-hooks-baseline-v2-1-81
+timestamp: "2026-03-24T20:30:00Z"
+source: "https://code.claude.com/docs/en/hooks"
+agent: researcher
+finding_type: reference
+confidence: confirmed
+confident_about: |
+  Complete inventory of all 22 hook events in Claude Code v2.1.81 as documented in
+  the official hooks reference. Each event is documented with its purpose, when it
+  fires, available stdin fields, blocking behavior, and matcher field configuration.
+  Comparison with Agent SDK shows CLI hooks are superset of SDK hooks.
+
+gaps: |
+  - Exact JSON schema for each event's stdin fields not yet extracted from HTML (docs
+    page uses rendered React, not embedded JSON schemas)
+  - Exit code behavior table for all 22 events not yet fully documented
+  - Precise field types (string vs int vs bool) for stdin fields requires SDK type definitions
+  - HTTP hook response handling specific to each event requires additional research
+  - Async/prompt/agent hook-specific behavior patterns need detailed examples
+
+evidence: |
+  Official hooks reference page (code.claude.com/docs/en/hooks) documents:
+
+  1. LIFECYCLE HOOKS (5 events)
+     - SessionStart: Fires when session starts
+     - InstructionsLoaded: Fires when instructions/.claude/CLAUDE.md loaded
+     - SessionEnd: Fires when session ends
+     - PreCompact: Fires before context compaction
+     - PostCompact: Fires after context compaction
+
+  2. INTERACTION HOOKS (5 events)
+     - UserPromptSubmit: Fires when user submits prompt
+     - PreToolUse: Fires before any tool execution (can block)
+     - PostToolUse: Fires after successful tool execution
+     - PostToolUseFailure: Fires after tool execution fails
+     - Stop: Fires when user clicks stop button (can block completion)
+
+  3. AGENT/TEAM HOOKS (4 events)
+     - SubagentStart: Fires when subagent starts (Agent SDK: documented in SDK)
+     - SubagentStop: Fires when subagent stops
+     - TeammateIdle: Fires when teammate agent goes idle (can block)
+     - TaskCompleted: Fires when a task completes (can block)
+
+  4. PERMISSION & SECURITY HOOKS (2 events)
+     - PermissionRequest: Fires when permission requested (can block with decision)
+     - ConfigChange: Fires when config changes (can block)
+
+  5. FILE SYSTEM HOOKS (2 events)
+     - WorktreeCreate: Fires when worktree created (can output operations)
+     - WorktreeRemove: Fires when worktree removed
+
+  6. NOTIFICATION & ELICITATION HOOKS (3 events)
+     - Notification: Fires for notifications (no output/decision)
+     - Elicitation: Fires to request LLM-based input (can return response)
+     - ElicitationResult: Fires after elicitation response (can output)
+
+  7. SPECIAL HOOKS (1 event)
+     - StopFailure: Fires when stop command fails (new in v2.1.81)
+
+implication: |
+  For hook implementation in MDE:
+
+  1. Design hk.pkl hook definitions around these 22 events, not assumptions
+  2. Blocking vs non-blocking behavior differs by event (not all events can block)
+  3. Some events (Elicitation, WorktreeCreate) have special "output" mode (not just exit codes)
+  4. Matcher field behavior is event-specific (some match tool names, some don't)
+  5. Agent SDK provides types for 12 events; CLI adds 10 additional events
+  6. Hook configuration can be command, HTTP, prompt-based, or agent-based (4 execution modes)
+  7. Async hooks (Configure an async hook section) supported for non-blocking events only
+
+  Research phases needed:
+  - Phase 2: Extract full stdin JSON schema for each event (requires SDK type definitions)
+  - Phase 3: Document exit code behavior matrix (which events support exit code 1/2 blocking)
+  - Phase 4: Catalog matcher field behavior per event
+  - Phase 5: Elicitation + WorktreeCreate special output formats
+
+tags:
+  - claude-code-hooks
+  - event-reference
+  - hook-lifecycle
+  - agent-sdk
+  - v2.1.81
+  - blocking-behavior
+  - stdin-fields
+  - matcher-patterns
+
+status: discovered
+
+# Detailed Event Inventory
+events:
+  - name: SessionStart
+    event_type: lifecycle
+    fires_when: "Claude Code session begins"
+    can_block: false
+    decision_control: "Can set exit code but not block session start"
+    matcher_behavior: "Not applicable - fires unconditionally"
+    stdin_fields_documented: false
+    notes: "Has 'Persist environment variables' subsection suggesting env var output"
+    related_sdk_type: "SessionStartHookInput"
+
+  - name: InstructionsLoaded
+    event_type: lifecycle
+    fires_when: "Instructions file (.claude/CLAUDE.md or /instructions) loaded"
+    can_block: false
+    decision_control: "Can set exit code but not block loading"
+    matcher_behavior: "Not applicable - fires unconditionally"
+    stdin_fields_documented: false
+    related_sdk_type: null
+
+  - name: SessionEnd
+    event_type: lifecycle
+    fires_when: "Claude Code session ends"
+    can_block: false
+    decision_control: "No decision control (terminal event)"
+    matcher_behavior: "Not applicable - fires unconditionally"
+    stdin_fields_documented: false
+    related_sdk_type: null
+
+  - name: PreCompact
+    event_type: lifecycle
+    fires_when: "Before context window compaction occurs"
+    can_block: false
+    decision_control: "Hook runs but cannot prevent compaction"
+    matcher_behavior: "Not applicable - fires unconditionally"
+    stdin_fields_documented: false
+    related_sdk_type: "PreCompactHookInput"
+    notes: "Used for observability/logging of compaction events"
+
+  - name: PostCompact
+    event_type: lifecycle
+    fires_when: "After context window compaction occurs"
+    can_block: false
+    decision_control: "No decision control (post-event)"
+    matcher_behavior: "Not applicable - fires unconditionally"
+    stdin_fields_documented: false
+    related_sdk_type: "PostCompactHookInput"
+
+  - name: UserPromptSubmit
+    event_type: interaction
+    fires_when: "User submits prompt to Claude Code"
+    can_block: true
+    decision_control: "Can block/allow prompt execution with exit code"
+    matcher_behavior: "Not documented (likely no matcher for this event)"
+    stdin_fields_documented: false
+    related_sdk_type: "UserPromptSubmitHookInput"
+    notes: "Blocks prompt from being sent to model if exit code=1"
+
+  - name: PreToolUse
+    event_type: interaction
+    fires_when: "Before ANY tool execution (Bash, Python, etc)"
+    can_block: true
+    decision_control: "Can block/allow tool execution with exit code"
+    matcher_behavior: "Matcher field matches tool name (e.g., 'Bash', 'Python', 'Claude API')"
+    stdin_fields_documented: false
+    related_sdk_type: "PreToolUseHookInput"
+    notes: "Example hook in templates uses matcher='Bash' for prevent-direct-push.py"
+
+  - name: PostToolUse
+    event_type: interaction
+    fires_when: "After tool execution succeeds"
+    can_block: false
+    decision_control: "Can set exit code but not block execution (post-event)"
+    matcher_behavior: "Matcher field matches tool name"
+    stdin_fields_documented: false
+    related_sdk_type: "PostToolUseHookInput"
+
+  - name: PostToolUseFailure
+    event_type: interaction
+    fires_when: "After tool execution fails"
+    can_block: false
+    decision_control: "No blocking capability (post-event)"
+    matcher_behavior: "Matcher field matches tool name"
+    stdin_fields_documented: false
+    related_sdk_type: "PostToolUseFailureHookInput"
+
+  - name: PermissionRequest
+    event_type: security
+    fires_when: "User permission is requested (file access, etc)"
+    can_block: true
+    decision_control: "Can approve/deny with special decision format (Permission update entries)"
+    matcher_behavior: "Documented: matches permission type/resource being requested"
+    stdin_fields_documented: false
+    related_sdk_type: "PermissionRequestHookInput"
+    notes: "Has special 'Permission update entries' subsection for decision output"
+
+  - name: ConfigChange
+    event_type: security
+    fires_when: "Claude Code configuration changes"
+    can_block: true
+    decision_control: "Can block config change with exit code"
+    matcher_behavior: "Matcher field matches config key being changed"
+    stdin_fields_documented: false
+    related_sdk_type: null
+
+  - name: SubagentStart
+    event_type: agent
+    fires_when: "Subagent process starts"
+    can_block: false
+    decision_control: "Cannot block subagent startup"
+    matcher_behavior: "Matcher field matches subagent name"
+    stdin_fields_documented: false
+    related_sdk_type: "SubagentStartHookInput"
+
+  - name: SubagentStop
+    event_type: agent
+    fires_when: "Subagent process stops"
+    can_block: false
+    decision_control: "No decision control (post-event)"
+    matcher_behavior: "Matcher field matches subagent name"
+    stdin_fields_documented: false
+    related_sdk_type: "SubagentStopHookInput"
+
+  - name: TeammateIdle
+    event_type: agent
+    fires_when: "Teammate agent becomes idle (no active task)"
+    can_block: true
+    decision_control: "Can block/allow idle with exit code"
+    matcher_behavior: "Matcher field matches teammate agent name"
+    stdin_fields_documented: false
+    related_sdk_type: null
+    notes: "New in agent teams feature (v2.1.75+)"
+
+  - name: TaskCompleted
+    event_type: agent
+    fires_when: "A task is marked completed"
+    can_block: true
+    decision_control: "Can block/verify completion with exit code"
+    matcher_behavior: "Matcher field matches task name/pattern"
+    stdin_fields_documented: false
+    related_sdk_type: null
+
+  - name: Stop
+    event_type: interaction
+    fires_when: "User clicks stop/interrupt button"
+    can_block: true
+    decision_control: "Can block/allow stop with exit code"
+    matcher_behavior: "Not documented (likely no matcher)"
+    stdin_fields_documented: false
+    related_sdk_type: "StopHookInput"
+    notes: "Special: allows hook to prevent user-initiated stops"
+
+  - name: StopFailure
+    event_type: interaction
+    fires_when: "Stop operation fails"
+    can_block: false
+    decision_control: "No decision control (post-event)"
+    matcher_behavior: "Not documented"
+    stdin_fields_documented: false
+    related_sdk_type: null
+    notes: "NEW in v2.1.81; distinct from Stop event"
+
+  - name: Notification
+    event_type: system
+    fires_when: "System notification is triggered"
+    can_block: false
+    decision_control: "No blocking, no decision control"
+    matcher_behavior: "Matcher field matches notification type"
+    stdin_fields_documented: false
+    related_sdk_type: null
+    notes: "Read-only observability hook; no output capability"
+
+  - name: WorktreeCreate
+    event_type: filesystem
+    fires_when: "Git worktree created"
+    can_block: false
+    decision_control: "Cannot block creation but can output operations"
+    matcher_behavior: "Matcher field matches worktree pattern"
+    stdin_fields_documented: false
+    related_sdk_type: null
+    notes: "Special: has 'WorktreeCreate output' subsection (not just exit codes)"
+
+  - name: WorktreeRemove
+    event_type: filesystem
+    fires_when: "Git worktree removed"
+    can_block: false
+    decision_control: "No decision control (post-event)"
+    matcher_behavior: "Matcher field matches worktree pattern"
+    stdin_fields_documented: false
+    related_sdk_type: null
+
+  - name: Elicitation
+    event_type: system
+    fires_when: "Hook needs to request user/LLM input"
+    can_block: false
+    decision_control: "No blocking; has special 'Elicitation output' subsection"
+    matcher_behavior: "Not documented"
+    stdin_fields_documented: false
+    related_sdk_type: null
+    notes: "Special: output is 'Elicitation output' not exit codes; used by prompt-based hooks"
+
+  - name: ElicitationResult
+    event_type: system
+    fires_when: "Elicitation response is received"
+    can_block: false
+    decision_control: "No blocking; has special 'ElicitationResult output' subsection"
+    matcher_behavior: "Matcher field matches elicitation type"
+    stdin_fields_documented: false
+    related_sdk_type: null
+    notes: "Special: output is 'ElicitationResult output' not exit codes"
+
+# Hook Execution Modes (from documentation)
+hook_execution_modes:
+  - mode: command
+    description: "Shell command execution (sh/bash/zsh)"
+    supported_by: "All events"
+    notes: "Receives stdin JSON, must use exit code for blocking"
+
+  - mode: http
+    description: "HTTP POST request to endpoint"
+    supported_by: "All events"
+    notes: "Receives JSON in request body, HTTP response status controls behavior"
+
+  - mode: prompt
+    description: "LLM prompt-based hook (Claude evaluates)"
+    supported_by: "Most events; special handling for Elicitation"
+    notes: "Uses Elicitation event for user input, returns structured response"
+
+  - mode: agent
+    description: "Run hook as full agent subprocess"
+    supported_by: "Non-blocking events"
+    notes: "Runs asynchronously; cannot block main Claude Code flow"
+
+# Key Behavioral Patterns
+blocking_behavior_matrix:
+  blocking_events:
+    - name: UserPromptSubmit
+      blocks_what: "Prompt sending to model"
+      exit_code_1: "Block (do not send prompt)"
+      exit_code_2: "Unsure (need research)"
+
+    - name: PreToolUse
+      blocks_what: "Tool execution"
+      exit_code_1: "Block (prevent tool)"
+      exit_code_2: "Unsure (need research)"
+
+    - name: PermissionRequest
+      blocks_what: "Permission grant"
+      exit_code_1: "Deny permission"
+      exit_code_2: "Unsure (need research)"
+
+    - name: ConfigChange
+      blocks_what: "Configuration change"
+      exit_code_1: "Block (prevent change)"
+      exit_code_2: "Unsure (need research)"
+
+    - name: Stop
+      blocks_what: "Stop/interrupt operation"
+      exit_code_1: "Block stop (continue running)"
+      exit_code_2: "Unsure (need research)"
+
+    - name: TeammateIdle
+      blocks_what: "Teammate idle state"
+      exit_code_1: "Block idle (force active)"
+      exit_code_2: "Unsure (need research)"
+
+    - name: TaskCompleted
+      blocks_what: "Task completion"
+      exit_code_1: "Block/reject completion"
+      exit_code_2: "Unsure (need research)"
+
+  non_blocking_events:
+    - SessionStart
+    - InstructionsLoaded
+    - SessionEnd
+    - PreCompact
+    - PostCompact
+    - PostToolUse
+    - PostToolUseFailure
+    - SubagentStart
+    - SubagentStop
+    - Notification
+    - WorktreeCreate
+    - WorktreeRemove
+    - StopFailure
+
+# SDK Hook Events (Agent SDK subset)
+agent_sdk_events:
+  - PreToolUse
+  - PostToolUse
+  - PostToolUseFailure
+  - UserPromptSubmit
+  - Stop
+  - SubagentStop
+  - PreCompact
+  - Notification
+  - SubagentStart
+  - PermissionRequest
+  - SessionStart
+  - PostCompact
+
+cli_only_events_not_in_sdk:
+  - InstructionsLoaded
+  - SessionEnd
+  - ConfigChange
+  - WorktreeCreate
+  - WorktreeRemove
+  - PreCompact (may be in SDK)
+  - PostCompact (may be in SDK)
+  - TeammateIdle
+  - TaskCompleted
+  - StopFailure
+  - Elicitation
+  - ElicitationResult
+
+# Hook Configuration Schema (from templates)
+hook_config_json_structure:
+  description: "Hook configuration object in hk.json/.claude/hooks.json"
+  properties:
+    hooks:
+      type: object
+      description: "Maps event name to hook array"
+      example: |
+        {
+          "PreToolUse": [
+            {
+              "matcher": "Bash",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "path/to/script.py"
+                }
+              ]
+            }
+          ]
+        }
+
+# Next Research Phases
+research_roadmap:
+  phase_2_stdin_schemas:
+    description: "Extract complete JSON stdin field schemas for each event"
+    method: "Review Agent SDK Python types in claude_agent_sdk.types module"
+    expected_output: "JSON schema or TypeScript interface for each event"
+
+  phase_3_exit_code_matrix:
+    description: "Document exit code behavior (0=allow, 1=block, 2=?) for all blocking events"
+    method: "Test each blocking event or find official docs section"
+    expected_output: "Comprehensive exit code behavior table"
+
+  phase_4_matcher_behavior:
+    description: "Document matcher field behavior per event"
+    method: "Review hooks reference 'Matcher patterns' section and 'Match MCP tools'"
+    expected_output: "Matcher pattern examples for each event type"
+
+  phase_5_special_outputs:
+    description: "Document Elicitation output and WorktreeCreate output formats"
+    method: "Search docs for 'Elicitation output' and 'WorktreeCreate output' sections"
+    expected_output: "JSON schema for non-exit-code hook outputs"

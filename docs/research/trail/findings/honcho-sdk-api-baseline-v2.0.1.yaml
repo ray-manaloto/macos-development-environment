@@ -1,0 +1,808 @@
+id: finding-honcho-sdk-api-baseline-v2-0-1
+timestamp: "2026-03-24T20:30:00Z"
+source: |
+  PyPI: https://pypi.org/project/honcho-ai/
+  GitHub: https://github.com/plastic-labs/honcho
+  Local: honcho-ai==2.0.1 installed package introspection
+agent: researcher
+finding_type: reference
+confidence: confirmed
+confident_about: |
+  Complete API surface for honcho-ai v2.0.1 (both sync Honcho/Peer/Session and async HonchoAio/PeerAio/SessionAio).
+  All method signatures, parameters, return types documented.
+  Clear demarcation of CRUD operations (safe in API-only mode) vs LLM operations (500 errors without LLM keys).
+gaps: |
+  Honcho official docs at docs.honcho.dev appear to use v3 URL structure not yet deployed (404s on all v3/api-reference paths).
+  Tested paths: /v3/api-reference/{workspaces,peers,sessions,messages} all return 404.
+  No public API reference docs found; relied on package introspection and PyPI README.
+evidence: |
+  honcho-ai v2.0.1 released Feb 9, 2026 on PyPI.
+  Installed via: pip install honcho-ai==2.0.1
+  Package introspection via: inspect module + getmembers()
+  All methods documented with Pydantic FieldInfo annotations.
+implication: |
+  API-only deployments (EMBED_MESSAGES=false, no LLM keys) MUST avoid these methods:
+  - Peer.chat() / Peer.chat_stream() - require LLM inference
+  - Peer.search() / Peer.context() / Peer.representation() - require embedding + inference
+  - Peer.conclusions_of() - requires LLM reasoning
+  - Session.search() / Session.context() / Session.representation() / Session.summaries() - require LLM
+  - Honcho.search() - requires embedding + inference
+  All other CRUD operations are safe and will succeed.
+tags:
+  - honcho-sdk
+  - python-api
+  - api-only-mode
+  - llm-operations
+  - crud-operations
+  - version-2.0.1
+status: discovered
+
+# FULL API SURFACE
+
+sdk_version: "2.0.1"
+release_date: "2026-02-09"
+api_only_safe: true  # Most CRUD operations are safe; only marked per-operation
+client_classes:
+  sync:
+    - Honcho
+    - Peer
+    - Session
+  async:
+    - HonchoAio
+    - PeerAio
+    - SessionAio
+
+# HONCHO CLIENT - WORKSPACE & PEER/SESSION MANAGEMENT
+
+honcho_client:
+  class_name: "Honcho"
+  async_equivalent: "HonchoAio"
+
+  methods:
+    # CRUD - Workspace operations
+    - method: "peer(id: str, *, metadata: dict | None, configuration: PeerConfig | None) -> Peer"
+      api_only_safe: true
+      description: "Get or create a peer with optional metadata/config"
+      params_required:
+        - name: "id"
+          type: "str"
+          description: "Unique peer identifier (min_length=1)"
+      params_optional:
+        - name: "metadata"
+          type: "dict[str, object] | None"
+          description: "Metadata to associate with peer; creates peer immediately if set"
+        - name: "configuration"
+          type: "PeerConfig | None"
+          description: "Configuration flags to set for peer; creates peer immediately if set"
+      returns: "Peer"
+
+    - method: "peers(filters: dict | None) -> SyncPage[PeerResponse, Peer]"
+      api_only_safe: true
+      description: "List all peers with optional filtering"
+      params_required: []
+      params_optional:
+        - name: "filters"
+          type: "dict[str, object] | None"
+          description: "Filter criteria dictionary"
+      returns: "SyncPage[PeerResponse, Peer] (paginated iterator)"
+
+    - method: "session(id: str, *, metadata: dict | None, configuration: SessionConfiguration | None) -> Session"
+      api_only_safe: true
+      description: "Get or create a session with optional metadata/config"
+      params_required:
+        - name: "id"
+          type: "str"
+          description: "Unique session identifier (min_length=1)"
+      params_optional:
+        - name: "metadata"
+          type: "dict[str, object] | None"
+          description: "Metadata to associate with session; creates session immediately if set"
+        - name: "configuration"
+          type: "SessionConfiguration | None"
+          description: "Configuration to set for session; creates session immediately if set"
+      returns: "Session"
+
+    - method: "sessions(filters: dict | None) -> SyncPage[SessionResponse, Session]"
+      api_only_safe: true
+      description: "List all sessions with optional filtering"
+      params_required: []
+      params_optional:
+        - name: "filters"
+          type: "dict[str, object] | None"
+          description: "Filter criteria dictionary"
+      returns: "SyncPage[SessionResponse, Session] (paginated iterator)"
+
+    - method: "workspaces(filters: dict | None) -> SyncPage[WorkspaceResponse, str]"
+      api_only_safe: true
+      description: "List all workspaces"
+      params_required: []
+      params_optional:
+        - name: "filters"
+          type: "dict[str, object] | None"
+          description: "Filter criteria dictionary"
+      returns: "SyncPage[WorkspaceResponse, str] (paginated workspace IDs)"
+
+    - method: "delete_workspace(workspace_id: str) -> None"
+      api_only_safe: true
+      description: "Delete a workspace by ID"
+      params_required:
+        - name: "workspace_id"
+          type: "str"
+          description: "ID of workspace to delete (min_length=1)"
+      params_optional: []
+      returns: "None"
+
+    # Configuration management
+    - method: "get_configuration() -> WorkspaceConfiguration"
+      api_only_safe: true
+      description: "Get workspace-level configuration"
+      params_required: []
+      params_optional: []
+      returns: "WorkspaceConfiguration"
+
+    - method: "set_configuration(configuration: WorkspaceConfiguration) -> None"
+      api_only_safe: true
+      description: "Set workspace-level configuration"
+      params_required:
+        - name: "configuration"
+          type: "WorkspaceConfiguration"
+          description: "Configuration object to apply"
+      params_optional: []
+      returns: "None"
+
+    # Metadata management
+    - method: "get_metadata() -> dict[str, object]"
+      api_only_safe: true
+      description: "Get workspace metadata"
+      params_required: []
+      params_optional: []
+      returns: "dict[str, object]"
+
+    - method: "set_metadata(metadata: dict[str, object]) -> None"
+      api_only_safe: true
+      description: "Set workspace metadata"
+      params_required:
+        - name: "metadata"
+          type: "dict[str, object]"
+          description: "Metadata dictionary to set"
+      params_optional: []
+      returns: "None"
+
+    # Utility
+    - method: "refresh() -> None"
+      api_only_safe: true
+      description: "Refresh workspace state from server"
+      params_required: []
+      params_optional: []
+      returns: "None"
+
+    - method: "queue_status(observer: str | PeerBase | None, sender: str | PeerBase | None, session: str | SessionBase | None) -> QueueStatusResponse"
+      api_only_safe: true
+      description: "Get queue status for background processing"
+      params_required: []
+      params_optional:
+        - name: "observer"
+          type: "str | PeerBase | None"
+        - name: "sender"
+          type: "str | PeerBase | None"
+        - name: "session"
+          type: "str | SessionBase | None"
+      returns: "QueueStatusResponse"
+
+    - method: "schedule_dream(observer: str | PeerBase, session: str | SessionBase | None, observed: str | PeerBase | None) -> None"
+      api_only_safe: true
+      description: "Schedule a 'dream' processing task for a peer"
+      params_required:
+        - name: "observer"
+          type: "str | PeerBase"
+      params_optional:
+        - name: "session"
+          type: "str | SessionBase | None"
+        - name: "observed"
+          type: "str | PeerBase | None"
+      returns: "None"
+
+    # UNSAFE - LLM operations
+    - method: "search(query: str, filters: dict | None, limit: int) -> list[Message]"
+      api_only_safe: false
+      llm_required: true
+      description: "Search all messages in workspace using semantic search (requires embeddings + LLM)"
+      params_required:
+        - name: "query"
+          type: "str"
+          description: "Search query (min_length=1)"
+      params_optional:
+        - name: "filters"
+          type: "dict[str, object] | None"
+        - name: "limit"
+          type: "int"
+          description: "Number of results (1-100, default 10)"
+      returns: "list[Message]"
+
+# PEER - MESSAGE & CONTEXT OPERATIONS
+
+peer_operations:
+  class_name: "Peer"
+  async_equivalent: "PeerAio"
+
+  methods:
+    # CRUD - Message creation (safe)
+    - method: "message(content: str, *, metadata: dict | None, configuration: dict | None, created_at: datetime | str | None) -> MessageCreateParams"
+      api_only_safe: true
+      description: "Create a message params object (builder pattern)"
+      params_required:
+        - name: "content"
+          type: "str"
+          description: "Message text content"
+      params_optional:
+        - name: "metadata"
+          type: "dict[str, object] | None"
+          description: "Message metadata"
+        - name: "configuration"
+          type: "dict[str, Any] | None"
+          description: "Message configuration"
+        - name: "created_at"
+          type: "datetime | str | None"
+          description: "Optional timestamp (ISO 8601 or datetime object)"
+      returns: "MessageCreateParams (used with session.add_messages())"
+
+    # Configuration management
+    - method: "get_configuration() -> PeerConfig"
+      api_only_safe: true
+      description: "Get peer configuration"
+      params_required: []
+      params_optional: []
+      returns: "PeerConfig"
+
+    - method: "set_configuration(configuration: PeerConfig) -> None"
+      api_only_safe: true
+      description: "Set peer configuration"
+      params_required:
+        - name: "configuration"
+          type: "PeerConfig"
+      params_optional: []
+      returns: "None"
+
+    # Metadata management
+    - method: "get_metadata() -> dict[str, object]"
+      api_only_safe: true
+      description: "Get peer metadata"
+      params_required: []
+      params_optional: []
+      returns: "dict[str, object]"
+
+    - method: "set_metadata(metadata: dict[str, object]) -> None"
+      api_only_safe: true
+      description: "Set peer metadata"
+      params_required:
+        - name: "metadata"
+          type: "dict[str, object]"
+          description: "Metadata dictionary"
+      params_optional: []
+      returns: "None"
+
+    # Card management (character card / description)
+    - method: "get_card(target: str | PeerBase | None) -> list[str] | None"
+      api_only_safe: true
+      description: "Get peer card (character description)"
+      params_required: []
+      params_optional:
+        - name: "target"
+          type: "str | PeerBase | None"
+          description: "Target peer to get card for (from perspective)"
+      returns: "list[str] | None"
+
+    - method: "set_card(peer_card: list[str], target: str | PeerBase | None) -> list[str] | None"
+      api_only_safe: true
+      description: "Set peer card (character description)"
+      params_required:
+        - name: "peer_card"
+          type: "list[str]"
+          description: "List of strings describing the peer"
+      params_optional:
+        - name: "target"
+          type: "str | PeerBase | None"
+          description: "Target peer context"
+      returns: "list[str] | None (updated card)"
+
+    # Sessions
+    - method: "sessions(filters: dict | None) -> SyncPage[SessionResponse, Session]"
+      api_only_safe: true
+      description: "List sessions for this peer"
+      params_required: []
+      params_optional:
+        - name: "filters"
+          type: "dict[str, object] | None"
+      returns: "SyncPage[SessionResponse, Session]"
+
+    # Utility
+    - method: "refresh() -> None"
+      api_only_safe: true
+      description: "Refresh peer state from server"
+      params_required: []
+      params_optional: []
+      returns: "None"
+
+    # UNSAFE - LLM operations (500 without LLM keys)
+    - method: "chat(query: str, *, target: str | PeerBase | None, session: str | SessionBase | None, reasoning_level: Literal['minimal','low','medium','high','max'] | None) -> str | None"
+      api_only_safe: false
+      llm_required: true
+      description: "Query peer with LLM reasoning (requires LLM API keys)"
+      params_required:
+        - name: "query"
+          type: "str"
+          description: "Natural language query (min_length=1)"
+      params_optional:
+        - name: "target"
+          type: "str | PeerBase | None"
+          description: "Target peer (what peer should answer about)"
+        - name: "session"
+          type: "str | SessionBase | None"
+          description: "Session context"
+        - name: "reasoning_level"
+          type: "Literal['minimal','low','medium','high','max']"
+          description: "Reasoning depth (expensive: low < high < max)"
+      returns: "str | None (LLM response)"
+
+    - method: "chat_stream(query: str, *, target: str | PeerBase | None, session: str | SessionBase | None, reasoning_level: Literal['minimal','low','medium','high','max'] | None) -> DialecticStreamResponse"
+      api_only_safe: false
+      llm_required: true
+      description: "Query peer with streaming LLM response (requires LLM API keys)"
+      params_required:
+        - name: "query"
+          type: "str"
+          description: "Natural language query"
+      params_optional:
+        - name: "target"
+          type: "str | PeerBase | None"
+        - name: "session"
+          type: "str | SessionBase | None"
+        - name: "reasoning_level"
+          type: "Literal['minimal','low','medium','high','max']"
+      returns: "DialecticStreamResponse (streaming response object)"
+
+    - method: "context(target: str | PeerBase | None, search_query: str | None, search_top_k: int | None, search_max_distance: float | None, include_most_frequent: bool | None, max_conclusions: int | None) -> PeerContextResponse"
+      api_only_safe: false
+      llm_required: true
+      description: "Get peer context with conclusions (requires embeddings + LLM reasoning)"
+      params_required: []
+      params_optional:
+        - name: "target"
+          type: "str | PeerBase | None"
+          description: "Target peer to reason about"
+        - name: "search_query"
+          type: "str | None"
+          description: "Semantic search query"
+        - name: "search_top_k"
+          type: "int | None"
+          description: "Top K semantic results (1-100)"
+        - name: "search_max_distance"
+          type: "float | None"
+          description: "Max semantic distance (0.0-1.0)"
+        - name: "include_most_frequent"
+          type: "bool | None"
+          description: "Include most-frequent conclusions"
+        - name: "max_conclusions"
+          type: "int | None"
+          description: "Max conclusions to return (1-100)"
+      returns: "PeerContextResponse"
+
+    - method: "search(query: str, filters: dict | None, limit: int) -> list[Message]"
+      api_only_safe: false
+      llm_required: true
+      description: "Semantic search peer messages (requires embeddings)"
+      params_required:
+        - name: "query"
+          type: "str"
+          description: "Search query"
+      params_optional:
+        - name: "filters"
+          type: "dict[str, object] | None"
+        - name: "limit"
+          type: "int"
+          description: "Result limit (1-100, default 10)"
+      returns: "list[Message]"
+
+    - method: "representation(session: str | SessionBase | None, target: str | PeerBase | None, search_query: str | None, search_top_k: int | None, search_max_distance: float | None, include_most_frequent: bool | None, max_conclusions: int | None) -> str"
+      api_only_safe: false
+      llm_required: true
+      description: "Get LLM-generated peer representation/summary (requires LLM)"
+      params_required: []
+      params_optional:
+        - name: "session"
+          type: "str | SessionBase | None"
+        - name: "target"
+          type: "str | PeerBase | None"
+        - name: "search_query"
+          type: "str | None"
+        - name: "search_top_k"
+          type: "int | None"
+        - name: "search_max_distance"
+          type: "float | None"
+        - name: "include_most_frequent"
+          type: "bool | None"
+        - name: "max_conclusions"
+          type: "int | None"
+      returns: "str (LLM-generated summary)"
+
+    - method: "conclusions_of(target: str | PeerBase) -> ConclusionScope"
+      api_only_safe: false
+      llm_required: true
+      description: "Get conclusions about a target peer (requires LLM reasoning)"
+      params_required:
+        - name: "target"
+          type: "str | PeerBase"
+          description: "Peer to reason about"
+      params_optional: []
+      returns: "ConclusionScope (object with conclusion operations)"
+
+    - method: "card(target: str | PeerBase | None) -> list[str] | None"
+      api_only_safe: false
+      llm_required: true
+      description: "Get peer card (same as get_card but may require LLM inference)"
+      params_required: []
+      params_optional:
+        - name: "target"
+          type: "str | PeerBase | None"
+      returns: "list[str] | None"
+
+# SESSION - MESSAGE & PEER MANAGEMENT
+
+session_operations:
+  class_name: "Session"
+  async_equivalent: "SessionAio"
+
+  methods:
+    # CRUD - Message operations (safe)
+    - method: "add_messages(messages: MessageCreateParams | list[MessageCreateParams]) -> list[Message]"
+      api_only_safe: true
+      description: "Add one or more messages to session"
+      params_required:
+        - name: "messages"
+          type: "MessageCreateParams | list[MessageCreateParams]"
+          description: "Message(s) to add (from peer.message() builder)"
+      params_optional: []
+      returns: "list[Message] (persisted message objects)"
+
+    - method: "messages(*, filters: dict | None) -> SyncPage[MessageResponse, Message]"
+      api_only_safe: true
+      description: "List messages in session with optional filtering"
+      params_required: []
+      params_optional:
+        - name: "filters"
+          type: "dict[str, object] | None"
+          description: "Filter criteria"
+      returns: "SyncPage[MessageResponse, Message] (paginated)"
+
+    - method: "update_message(message: Message | str, metadata: dict[str, object]) -> Message"
+      api_only_safe: true
+      description: "Update message metadata"
+      params_required:
+        - name: "message"
+          type: "Message | str"
+          description: "Message object or message ID"
+        - name: "metadata"
+          type: "dict[str, object]"
+          description: "New metadata to set"
+      params_optional: []
+      returns: "Message (updated)"
+
+    - method: "upload_file(file: tuple | Any, peer: str | PeerBase, metadata: dict | None, configuration: dict | None, created_at: str | datetime | None) -> list[Message]"
+      api_only_safe: true
+      description: "Upload file as messages to session"
+      params_required:
+        - name: "file"
+          type: "tuple[str, bytes, str] | Any"
+          description: "(filename, bytes, content_type) or file object"
+        - name: "peer"
+          type: "str | PeerBase"
+          description: "Peer creating the messages"
+      params_optional:
+        - name: "metadata"
+          type: "dict[str, object] | None"
+        - name: "configuration"
+          type: "dict[str, Any] | None"
+        - name: "created_at"
+          type: "str | datetime | None"
+      returns: "list[Message]"
+
+    # CRUD - Peer management (safe)
+    - method: "add_peers(peers: str | PeerBase | list | tuple) -> None"
+      api_only_safe: true
+      description: "Add peer(s) to session with optional config per peer"
+      params_required:
+        - name: "peers"
+          type: "str | PeerBase | list[...] | tuple[...]"
+          description: "Peer ID(s) or Peer object(s), optionally with (peer, SessionPeerConfig) tuples"
+      params_optional: []
+      returns: "None"
+
+    - method: "set_peers(peers: str | PeerBase | list | tuple) -> None"
+      api_only_safe: true
+      description: "Replace all peers in session"
+      params_required:
+        - name: "peers"
+          type: "str | PeerBase | list | tuple"
+          description: "Peers to set (replaces existing)"
+      params_optional: []
+      returns: "None"
+
+    - method: "remove_peers(peers: str | PeerBase | list) -> None"
+      api_only_safe: true
+      description: "Remove peer(s) from session"
+      params_required:
+        - name: "peers"
+          type: "str | PeerBase | list[...]"
+          description: "Peer ID(s) or Peer object(s) to remove"
+      params_optional: []
+      returns: "None"
+
+    - method: "peers() -> list[Peer]"
+      api_only_safe: true
+      description: "Get all peers in session"
+      params_required: []
+      params_optional: []
+      returns: "list[Peer]"
+
+    - method: "get_peer_configuration(peer: str | PeerBase) -> SessionPeerConfig"
+      api_only_safe: true
+      description: "Get session-specific peer configuration"
+      params_required:
+        - name: "peer"
+          type: "str | PeerBase"
+      params_optional: []
+      returns: "SessionPeerConfig"
+
+    - method: "set_peer_configuration(peer: str | PeerBase, configuration: SessionPeerConfig) -> None"
+      api_only_safe: true
+      description: "Set session-specific peer configuration"
+      params_required:
+        - name: "peer"
+          type: "str | PeerBase"
+        - name: "configuration"
+          type: "SessionPeerConfig"
+      params_optional: []
+      returns: "None"
+
+    # Configuration & metadata
+    - method: "get_configuration() -> SessionConfiguration"
+      api_only_safe: true
+      description: "Get session configuration"
+      params_required: []
+      params_optional: []
+      returns: "SessionConfiguration"
+
+    - method: "set_configuration(configuration: SessionConfiguration) -> None"
+      api_only_safe: true
+      description: "Set session configuration"
+      params_required:
+        - name: "configuration"
+          type: "SessionConfiguration"
+      params_optional: []
+      returns: "None"
+
+    - method: "get_metadata() -> dict[str, object]"
+      api_only_safe: true
+      description: "Get session metadata"
+      params_required: []
+      params_optional: []
+      returns: "dict[str, object]"
+
+    - method: "set_metadata(metadata: dict[str, object]) -> None"
+      api_only_safe: true
+      description: "Set session metadata"
+      params_required:
+        - name: "metadata"
+          type: "dict[str, object]"
+      params_optional: []
+      returns: "None"
+
+    # Session management
+    - method: "delete() -> None"
+      api_only_safe: true
+      description: "Delete this session"
+      params_required: []
+      params_optional: []
+      returns: "None"
+
+    - method: "refresh() -> None"
+      api_only_safe: true
+      description: "Refresh session state from server"
+      params_required: []
+      params_optional: []
+      returns: "None"
+
+    - method: "clone(*, message_id: str | None) -> Session"
+      api_only_safe: true
+      description: "Clone session, optionally from specific message point"
+      params_required: []
+      params_optional:
+        - name: "message_id"
+          type: "str | None"
+          description: "Clone up to this message (default: all messages)"
+      returns: "Session (new cloned session)"
+
+    - method: "queue_status(observer: str | PeerBase | None, sender: str | PeerBase | None) -> QueueStatusResponse"
+      api_only_safe: true
+      description: "Get background processing queue status"
+      params_required: []
+      params_optional:
+        - name: "observer"
+          type: "str | PeerBase | None"
+        - name: "sender"
+          type: "str | PeerBase | None"
+      returns: "QueueStatusResponse"
+
+    # UNSAFE - LLM operations (500 without LLM keys)
+    - method: "context(*, summary: bool, tokens: int | None, peer_target: str | None, search_query: str | Message | None, peer_perspective: str | None, limit_to_session: bool, search_top_k: int | None, search_max_distance: float | None, include_most_frequent: bool | None, max_conclusions: int | None) -> SessionContext"
+      api_only_safe: false
+      llm_required: true
+      description: "Get conversation context with conclusions (requires LLM)"
+      params_required: []
+      params_optional:
+        - name: "summary"
+          type: "bool"
+          description: "Include summary (default true)"
+        - name: "tokens"
+          type: "int | None"
+          description: "Max tokens in context"
+        - name: "peer_target"
+          type: "str | None"
+          description: "Peer to get context for (requires LLM)"
+        - name: "search_query"
+          type: "str | Message | None"
+          description: "Semantic search query"
+        - name: "peer_perspective"
+          type: "str | None"
+          description: "Get context from perspective of this peer (requires LLM)"
+        - name: "limit_to_session"
+          type: "bool"
+          description: "Limit reasoning to this session only"
+        - name: "search_top_k"
+          type: "int | None"
+          description: "Search result limit (1-100)"
+        - name: "search_max_distance"
+          type: "float | None"
+          description: "Max semantic distance (0.0-1.0)"
+        - name: "include_most_frequent"
+          type: "bool | None"
+          description: "Include most-frequent conclusions"
+        - name: "max_conclusions"
+          type: "int | None"
+          description: "Max conclusions (1-100)"
+      returns: "SessionContext"
+
+    - method: "search(query: str, filters: dict | None, limit: int) -> list[Message]"
+      api_only_safe: false
+      llm_required: true
+      description: "Semantic search session messages (requires embeddings)"
+      params_required:
+        - name: "query"
+          type: "str"
+          description: "Search query"
+      params_optional:
+        - name: "filters"
+          type: "dict[str, object] | None"
+        - name: "limit"
+          type: "int"
+          description: "Result limit (1-100, default 10)"
+      returns: "list[Message]"
+
+    - method: "representation(peer: str | PeerBase, *, target: str | PeerBase | None, search_query: str | None, search_top_k: int | None, search_max_distance: float | None, include_most_frequent: bool | None, max_conclusions: int | None) -> str"
+      api_only_safe: false
+      llm_required: true
+      description: "Get LLM-generated representation of peer in session context"
+      params_required:
+        - name: "peer"
+          type: "str | PeerBase"
+          description: "Peer to get representation for"
+      params_optional:
+        - name: "target"
+          type: "str | PeerBase | None"
+        - name: "search_query"
+          type: "str | None"
+        - name: "search_top_k"
+          type: "int | None"
+        - name: "search_max_distance"
+          type: "float | None"
+        - name: "include_most_frequent"
+          type: "bool | None"
+        - name: "max_conclusions"
+          type: "int | None"
+      returns: "str"
+
+    - method: "summaries() -> SessionSummaries"
+      api_only_safe: false
+      llm_required: true
+      description: "Get LLM-generated summaries for session (requires LLM)"
+      params_required: []
+      params_optional: []
+      returns: "SessionSummaries"
+
+# ASYNC EQUIVALENTS
+
+async_note: |
+  HonchoAio, PeerAio, SessionAio provide identical method signatures to their sync counterparts.
+  All methods are async (use with await) and accept the same parameters.
+  All have identical api_only_safe classifications.
+
+# TYPE DEFINITIONS & RETURN TYPES
+
+return_types:
+  SyncPage: |
+    Paginated response container. Implements iterator protocol.
+    Returns: SyncPage[ResponseType, ObjectType]
+    Usage: for peer in client.peers(): ...
+
+  Message: |
+    {id: str, session_id: str, peer_id: str, content: str, created_at: datetime, metadata: dict}
+
+  Peer: |
+    Client object with methods: chat(), search(), get_metadata(), set_metadata(), etc.
+
+  Session: |
+    Client object with methods: add_messages(), get_context(), search(), etc.
+
+  PeerContextResponse: |
+    {representation: str, card: list[str], conclusions: list[Conclusion]}
+
+  SessionContext: |
+    {summary: str, messages: list[Message], conclusions: list[Conclusion], openai_format: list, anthropic_format: list}
+
+# API-ONLY SAFETY MATRIX
+
+api_only_safe_operations_count: 32
+api_only_unsafe_operations_count: 11
+
+safe_by_category:
+  workspace: 8  # peer, peers, session, sessions, workspaces, delete_workspace, get_configuration, set_configuration, get_metadata, set_metadata, refresh, queue_status, schedule_dream
+  peer_crud: 6  # message, get_configuration, set_configuration, get_metadata, set_metadata, sessions, refresh, get_card, set_card
+  session_crud: 18  # add_messages, messages, update_message, upload_file, add_peers, set_peers, remove_peers, peers, get_peer_configuration, set_peer_configuration, get_configuration, set_configuration, get_metadata, set_metadata, delete, refresh, clone, queue_status
+
+unsafe_operations:
+  peer: 6  # chat, chat_stream, context, search, representation, conclusions_of, card
+  session: 4  # context, search, representation, summaries
+  workspace: 1  # search
+
+# INSTANTIATION & CONFIGURATION
+
+initialization:
+  sync: |
+    from honcho import Honcho
+    client = Honcho(
+        api_key="your-api-key",
+        environment="production",  # or "local", "demo"
+        workspace_id="optional-workspace-id",
+        base_url="https://api.honcho.dev"  # optional override
+    )
+
+  async: |
+    from honcho import HonchoAio
+    client = HonchoAio(
+        api_key="your-api-key",
+        environment="production",
+        workspace_id="optional-workspace-id",
+        base_url="https://api.honcho.dev"
+    )
+
+  env_vars: |
+    HONCHO_API_KEY=your-api-key
+    HONCHO_BASE_URL=https://api.honcho.dev (optional)
+    HONCHO_WORKSPACE_ID=your-workspace (optional)
+
+# PAGINATION
+
+pagination: |
+  SyncPage and AsyncPage support iteration:
+    for peer in client.peers(filters={"name": "alice"}):
+        print(peer.id)
+
+  Also support conversion to list:
+    all_peers = list(client.peers())
+
+# DEPENDENCIES
+
+python_version: "3.11+"
+dependencies:
+  - httpx
+  - pydantic

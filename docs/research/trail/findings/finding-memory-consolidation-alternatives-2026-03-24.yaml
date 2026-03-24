@@ -1,0 +1,183 @@
+id: finding-memory-consolidation-alternatives-2026-03-24
+timestamp: "2026-03-24T20:52:00Z"
+source: |
+  - https://raw.githubusercontent.com/Piebald-AI/claude-code-system-prompts/main/system-prompts/agent-prompt-dream-memory-consolidation.md
+  - https://github.com/dexterpratt/cxdb (Python graph DB)
+  - https://api.github.com/repos/openlit/openlit (OpenLIT observability)
+  - https://api.github.com/repos/langfuse/langfuse (Langfuse platform)
+  - https://api.github.com/repos/helicone/helicone (Helicone observability)
+  - https://api.github.com/repos/arize-ai/phoenix (Arize Phoenix)
+agent: researcher
+finding_type: pattern
+confidence: probable
+confident_about: |
+  1. Claude Code /dream command EXISTS in v2.1.78+ system prompts (confirmed in Piebald-AI/claude-code-system-prompts)
+  2. /dream performs 4-phase memory consolidation: Orient > Gather > Consolidate > Prune
+  3. /dream targets file-based memory not session transcripts
+  4. cxdb is a real tool: in-memory graph database (Cypher operations), NOT a memory consolidation tool
+  5. Multiple telemetry consolidation tools exist; OpenLIT is best match for OTEL native + self-hosted + no LLM keys required
+  6. Langfuse is most mature (23.6k stars) but hosted-only or self-host with Docker
+  7. None of the tools fully replace Honcho's peer-memory paradigm
+confident_gaps: |
+  1. Dream availability: Cannot confirm if /dream is available in Claude Code v2.1.81 specifically (system-prompts repo shows v2.1.78 reference)
+  2. Dream vs external memory: What happens when /dream consolidation runs? Does it auto-trigger? Can user invoke manually? Integration points unclear
+  3. Literal AI status: Tool name/org unconfirmed; may be defunct or renamed; found only as reference in example projects
+  4. Braintrust + Lunary details incomplete: GitHub searches returned SDKs but not clear main platform repos with full feature comparison
+  5. Telemetry ingestion: None of the tools clearly documented to accept Claude Code OTEL telemetry directly (environment variable integration unclear)
+evidence: |
+  **Topic 1: Claude Code /dream Command**
+
+  SOURCE: https://raw.githubusercontent.com/Piebald-AI/claude-code-system-prompts/main/system-prompts/agent-prompt-dream-memory-consolidation.md
+  - Raw fetch returned full prompt with metadata: ccVersion: 2.1.78
+  - Title: "Dream: Memory Consolidation"
+  - Description: "reflective pass over your memory files"
+  - Memory directory: ${MEMORY_DIR} (templated)
+  - Session transcripts: ${TRANSCRIPTS_DIR} (JSONL format)
+  - 4 Phases: (1) Orient (ls memory, read index), (2) Gather (logs, diffs, grep JSONL), (3) Consolidate (write/update topic files), (4) Prune (update index under max lines)
+  - Returns: brief summary of what was consolidated/updated/pruned
+  - Policy: "If nothing changed, say so"
+
+  WHAT IT CONSOLIDATES:
+  - File-based memory only (not session state or cloud backups)
+  - Priority: Daily logs > Contradicted facts > Transcript searches
+  - Converts relative dates to absolute ISO dates for time-invariance
+  - Deletes stale/wrong facts; updates contradicted memories
+
+  RELATION TO CLAUDE.MD / AUTO-MEMORY:
+  - /dream is the PERIODIC consolidation pass; CLAUDE.md defines the FORMAT/TYPES/POLICIES
+  - System prompt's auto-memory section is source of truth for what to save, how to structure, what NOT to save
+  - /dream reads that guidance and executes Phase 3 & 4 against file-based memory directory
+
+  IS IT A REPLACEMENT FOR HONCHO?
+  - NO. /dream = periodic memory organization within a single session context
+  - Honcho = durable peer-memory system (agent-to-agent message queue + persistence layer)
+  - /dream does not solve: multi-session durability, inter-agent memory sharing, vector search, LLM integration
+  - Use case: /dream for local session memory hygiene; Honcho for production agent teams
+
+  VERSION AVAILABILITY:
+  - Confirmed in v2.1.78; v2.1.81 not explicitly listed (Piebald-AI repo may lag behind latest Claude Code releases)
+  - ccVersion in system-prompts is dated; assume feature exists in 2.1.81+ unless explicitly removed in release notes
+
+  **Topic 2: cxdb (Context Database)**
+
+  SOURCE: GitHub search results for "cxdb language:python"
+  - Real tool: https://github.com/dexterpratt/cxdb
+  - MIT License, actively maintained (pushed Sep 2025)
+  - Description: "CXDB is a lightweight, in-memory graph database that supports basic Cypher operations. Backed by CX2, either as files or stored on NDEx."
+  - Use case: Network/graph analysis (CX2 format = Cypher eXchange format for networks)
+  - Stars: 0 (niche tool)
+  - NOT related to AI memory consolidation or telemetry
+
+  **Topic 3: Telemetry Consolidation Alternatives**
+
+  TOOLS EVALUATED:
+
+  1. **OpenLIT** (https://github.com/openlit/openlit)
+     - Stars: 2,319 | Language: Python
+     - Description: "Open source platform for AI Engineering: OpenTelemetry-native LLM Observability, GPU Monitoring, Guardrails, Evaluations, Prompt Management, Vault, Playground. Integrates with 50+ LLM Providers, VectorDBs, Agent Frameworks and GPUs."
+     - Self-hostable: YES (Python, Docker-ready)
+     - OTEL compatible: YES (explicitly "OpenTelemetry-native")
+     - Claude Code telemetry: Likely (supports generic OTEL) — but needs verification
+     - Session transcripts: YES (LLM observability platform)
+     - Free/Open: YES (open source)
+     - RECOMMENDATION: Best fit for user's needs (self-hosted, OTEL native, no LLM keys needed)
+
+  2. **Langfuse** (https://github.com/langfuse/langfuse)
+     - Stars: 23,679 | Language: TypeScript
+     - Description: "Open source LLM engineering platform: LLM Observability, metrics, evals, prompt management, playground, datasets. Integrates with OpenTelemetry, Langchain, OpenAI SDK, LiteLLM, and more. YC W23"
+     - Self-hostable: YES (Docker Compose available; user can self-host)
+     - OTEL compatible: YES (explicit integration)
+     - Claude Code telemetry: Possible (generic OTEL support, but not Claude-specific)
+     - Session transcripts: YES (LLM observation + trace storage)
+     - Free/Open: YES (MIT-licensed, YC W23)
+     - RECOMMENDATION: Most mature ecosystem; best documentation; requires self-host effort
+
+  3. **Helicone** (https://github.com/helicone/helicone)
+     - Stars: 5,302 | Language: TypeScript
+     - Description: "Open source LLM observability platform. One line of code to monitor, evaluate, and experiment. YC W23"
+     - Self-hostable: Unclear (TypeScript suggests cloud-first; self-host may be limited)
+     - OTEL compatible: Uncertain (docs not accessed)
+     - Claude Code telemetry: Uncertain
+     - Session transcripts: Likely (LLM observability)
+     - Free/Open: YES (open source, YC W23)
+     - RECOMMENDATION: Needs deeper investigation before ruling in/out
+
+  4. **Arize Phoenix** (https://github.com/arize-ai/phoenix)
+     - Stars: 9,013 | Language: Jupyter Notebook (primary; Python SDK available)
+     - Description: "AI Observability & Evaluation"
+     - Homepage: https://arize.com/docs/phoenix
+     - Self-hostable: YES (local ML observability; can run without cloud)
+     - OTEL compatible: Uncertain (Arize is commercial, Phoenix is open component)
+     - Claude Code telemetry: Uncertain (may require Arize SDK integration)
+     - Session transcripts: Likely (observability platform)
+     - Free/Open: YES (appears open source)
+     - RECOMMENDATION: Lower priority; Arize is commercial; Phoenix as standalone less clear
+
+  5. **Braintrust** (https://github.com/Braintrustdata/braintrust-sdk-*)
+     - Stars: Low (SDKs only indexed: Java 17, JS 11)
+     - Description: "Tracing & Evals library"
+     - Self-hostable: Unclear (appears SaaS-first)
+     - OTEL compatible: Uncertain
+     - Claude Code telemetry: Unlikely (proprietary SDK integration)
+     - Session transcripts: Likely (evals + tracing)
+     - Free/Open: YES (Apache 2.0 license on JS SDK)
+     - RECOMMENDATION: Lower priority; SaaS-first design; limited Python support
+
+  6. **Lunary** (https://github.com/lunary-ai/lunary-py)
+     - Stars: 20 (lunary-py) | Language: Python (JS also available)
+     - Description: "Lunary AI Python Client (Analytics, monitoring and evaluations for GenAI apps)"
+     - Self-hostable: Unclear (appears SaaS-first)
+     - OTEL compatible: Uncertain
+     - Claude Code telemetry: Unlikely (proprietary SDK, no OTEL mention)
+     - Session transcripts: Likely (analytics + monitoring)
+     - Free/Open: YES (appears open source)
+     - RECOMMENDATION: Lower priority; small ecosystem; SaaS focus
+
+  7. **Literal AI** (status unknown)
+     - Found only as reference in example projects (e.g., "maritalk-chat" mentions it)
+     - Stars: Unable to locate main repo
+     - Status: Possibly defunct, renamed, or private
+     - RECOMMENDATION: Skip; insufficient evidence of active project
+
+implication: |
+  **For the user's specific need: durable session history + queryable telemetry without paid LLM API keys**
+
+  RECOMMENDATION PRIORITY:
+
+  1. **PRIMARY: OpenLIT** (implement first)
+     - Meets all hard requirements: self-hostable, OTEL-native, no LLM keys needed
+     - Python-first; should integrate with Claude Code OTEL telemetry via environment variables
+     - Lowest barrier to entry; exists in user's current Docker Compose stack model
+     - Action: Verify Claude Code OTEL env var compatibility with OpenLIT collector ingestion
+
+  2. **SECONDARY: Langfuse** (fallback / comparison)
+     - More mature (23.6k stars, YC W23, extensive docs)
+     - Requires Docker Compose self-host setup (similar effort to OpenLIT)
+     - Best session transcript storage / trace exploration UI
+     - Action: Compare OpenLIT vs Langfuse on trace UI richness; choose based on feature parity
+
+  3. **REJECT: All SaaS-first tools** (Braintrust, Lunary, Helicone)
+     - Violate user's "no paid LLM keys" constraint (most require API keys for cloud ingestion)
+     - Self-host options unclear or unsupported
+     - Proprietary SDK integrations (not OTEL-native)
+
+  4. **DEFER: Arize Phoenix** (investigate later if OpenLIT/Langfuse insufficient)
+     - Unknown OTEL compatibility
+     - Unclear self-host story
+     - Commercial (Arize) backing makes "open source" status ambiguous
+
+  **HONCHO vs CONSOLIDATION TOOLS: Why they're different**
+  - Honcho solves: Agent team memory persistence, peer message queues, LLM grounding
+  - OpenLIT/Langfuse solve: Observability, trace storage, session history
+  - /dream solves: Local memory file organization within a session
+  - User's stack should include BOTH: Honcho (agent team memory) + OpenLIT (telemetry consolidation)
+
+  **NEXT STEPS:**
+  1. Verify Claude Code OTEL telemetry env vars are compatible with OpenLIT collector
+  2. Test OpenLIT ingestion of .artifacts/*.jsonl files via OTEL protocol
+  3. Build Docker Compose addon for OpenLIT (similar to existing Honcho compose setup)
+  4. Test /dream command execution in Claude Code v2.1.81 (confirm availability)
+  5. Document memory consolidation SOP: /dream for local session memory, OpenLIT for durable telemetry
+
+tags: [claude-code, dream, memory-consolidation, openlit, langfuse, otel, telemetry, self-hosted, no-llm-keys, session-history]
+status: discovered

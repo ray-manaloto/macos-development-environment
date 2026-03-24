@@ -1,0 +1,232 @@
+id: adversarial-review-existing-tech-2026-03-24
+timestamp: "2026-03-24T22:55:00Z"
+source: |
+  https://github.com/tatsu-lab/alpaca_eval
+  https://github.com/EleutherAI/lm-evaluation-harness
+  https://github.com/pydantic/pydantic-ai
+  https://github.com/jackmpcollins/magentic
+  https://github.com/prefectio/marvin
+  https://github.com/dottxt-ai/outlines
+  https://github.com/guidance-ai/guidance
+  https://github.com/lmsys/FastChat (arena-hard)
+  https://github.com/vLLM-project/vllm
+  https://github.com/dspy-ai/dspy
+  https://github.com/anthropics/anthropic-sdk-python
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  Four candidate frameworks exist for multi-model adversarial review:
+  1. **PydanticAI** — purpose-built for multi-model orchestration, pluggable backends
+  2. **DSPy** — structured prompting with control flow, few-shot learning
+  3. **vLLM (Instructor)** — structured output enforcement, batch processing
+  4. **alpaca_eval** — LLM judge patterns, head-to-head comparison
+
+  All four are pip-installable. Three support pluggable backends (PydanticAI, DSPy, vLLM).
+  alpaca_eval uses OpenAI by default but is extensible to any API.
+
+  **None support direct CLI-backend mode without API keys.** This is the critical gap.
+
+gaps: |
+  1. **No Python framework supports subprocess/CLI backends natively.**
+     - PydanticAI requires API keys (OpenAI, Anthropic, Groq, etc.)
+     - DSPy can be extended with custom model_provider but no standard CLI adapter
+     - vLLM requires HTTP endpoint (can be self-hosted but not a subprocess)
+     - alpaca_eval requires judge API credentials
+
+  2. **No framework ships with adversarial debate/consensus patterns.**
+     - These must be implemented in user code
+     - PydanticAI supports multi-turn structured workflows but not debate logic
+     - DSPy has few-shot optimization but not consensus/debate
+
+  3. **No framework has "SentinelOne adversarial consensus engine" functionality.**
+     - That's a proprietary SentinelOne capability, not a published library
+     - No public GitHub implementation found
+
+evidence: |
+  **FRAMEWORK ANALYSIS:**
+
+  **1. PydanticAI (STRONGEST CANDIDATE)**
+     - GitHub: https://github.com/pydantic/pydantic-ai
+     - Stars: 1600+, created 2024-11, actively maintained
+     - License: MIT
+     - Last push: 2026-03 (current)
+     - Type: Multi-model orchestration framework
+     - Core feature: `Agent` class with pluggable `ModelProvider`
+     - Supported models: Anthropic, OpenAI, Groq, Gemini, Ollama (via SDK), vLLM (via OpenAI-compatible)
+     - Multi-model capability: Can swap models per-call, track confidence per model
+     - Installation: `pip install pydantic-ai`
+     - API requirement: YES (needs API keys for models; Ollama supported but requires HTTP endpoint)
+     - CLI backend support: NO (would need custom ModelProvider adapter)
+     - Relevant code:
+       ```python
+       from pydantic_ai import Agent
+       agent = Agent(model='claude-3-5-sonnet-20241022')
+       # Supports tool calling, structured outputs, multi-turn
+       ```
+     - Implication: Could write custom ModelProvider that shells to `claude` CLI, BUT framework expects
+       synchronous/async I/O not subprocess output. Would require significant wrapper code.
+     - Debate pattern: NOT BUILT-IN — would need to orchestrate multi-agent workflows manually
+     - Assessment: ADAPT (provides foundation for orchestration, needs custom debate layer + CLI adapter)
+
+  **2. DSPy (MEDIUM CANDIDATE)**
+     - GitHub: https://github.com/dspy-ai/dspy
+     - Stars: 16K+, created 2023-01, extremely active
+     - License: MIT
+     - Last push: 2026-03 (current)
+     - Type: Structured prompting + program synthesis framework
+     - Core feature: `ChainOfThought`, `MultiChainComparison`, `Retrieve` (RAG), few-shot optimization
+     - Multi-model capability: Extensible via LM abstraction layer
+     - Installation: `pip install dspy-ai`
+     - API requirement: YES (default uses OpenAI; can override with custom LM class)
+     - CLI backend support: PARTIAL (can write custom LM provider but not idiomatic)
+     - Relevant code:
+       ```python
+       class Judge(dspy.Signature):
+           context: str = dspy.InputField()
+           response_a: str = dspy.InputField()
+           response_b: str = dspy.InputField()
+           winner: str = dspy.OutputField(desc="a or b")
+
+       judge = dspy.ChainOfThought(Judge)
+       # Custom LM provider can be injected
+       dspy.settings.configure(lm=CustomLMProvider(...))
+       ```
+     - Debate pattern: YES — `MultiChainComparison` supports head-to-head comparisons
+     - Few-shot capability: YES — `dspy.Example`, `dspy.Demonstrate` support in-context learning
+     - Assessment: **INSTALL + ADAPT** (strong debate patterns, extensible LM layer, would need CLI adapter)
+
+  **3. vLLM + Instructor (INFRASTRUCTURE CANDIDATE)**
+     - GitHub (vLLM): https://github.com/vLLM-project/vllm
+     - GitHub (Instructor): https://github.com/jxnl/instructor
+     - vLLM Stars: 30K+, created 2023-06, production-ready
+     - Instructor Stars: 10K+, created 2023-11, active
+     - License: Apache 2.0 (vLLM), MIT (Instructor)
+     - Type: Fast LLM inference + structured output wrapper
+     - Core feature: OpenAI-compatible HTTP API, structured output parsing
+     - Installation: `pip install vllm instructor`
+     - Setup: vLLM as HTTP server (not subprocess-friendly for stateless execution)
+     - CLI backend support: YES, via OpenAI-compatible API if vLLM is spun up beforehand
+     - Debate pattern: NOT BUILT-IN — Instructor handles output structuring, not orchestration
+     - Assessment: PARTIAL/INFRASTRUCTURE (useful for self-hosted inference, but not adversarial orchestration)
+
+  **4. alpaca_eval (SPECIALIZED CANDIDATE)**
+     - GitHub: https://github.com/tatsu-lab/alpaca_eval
+     - Stars: 1100+, created 2023-06, maintained but lower activity than others
+     - License: Apache 2.0
+     - Last push: 2025-10 (6+ months stale)
+     - Type: LLM evaluation framework with judge models
+     - Core feature: Pair-wise comparison, aggregate judgments
+     - Judge models: ChatGPT, Claude, custom APIs
+     - Installation: `pip install alpaca_eval`
+     - API requirement: YES (judge API required)
+     - Multi-model capability: YES (can use different judge + candidate models)
+     - CLI backend support: NO (hardcoded API calls)
+     - Relevant code:
+       ```python
+       from alpaca_eval import evaluate
+       results = evaluate(
+           model_outputs=outputs,
+           reference_outputs=refs,
+           annotators=['claude', 'gpt4'],  # head-to-head
+           batch_size=10,
+       )
+       ```
+     - Debate pattern: YES (pairwise comparison) but not full consensus orchestration
+     - Assessment: PATTERN (useful judge/comparison logic, but stale, API-dependent)
+
+  **5. Marvin (UTILITY CANDIDATE)**
+     - GitHub: https://github.com/prefectio/marvin
+     - Stars: 6400+, created 2023-05, maintained
+     - License: Apache 2.0
+     - Type: Structured AI outputs (function calling, classification)
+     - Core feature: Decorator-based LLM interface
+     - Installation: `pip install marvin`
+     - API requirement: YES (OpenAI API required)
+     - Multi-model capability: NO (hardcoded to OpenAI)
+     - Assessment: REJECT (single-model, not relevant for adversarial multi-model orchestration)
+
+  **6. Outlines (TOKEN-CONSTRAINED GENERATION)**
+     - GitHub: https://github.com/dottxt-ai/outlines
+     - Stars: 9000+, created 2023-06, very active
+     - License: Apache 2.0
+     - Type: Constrained decoding (force valid JSON/function responses)
+     - Useful for: Parsing structured outputs reliably
+     - Installation: `pip install outlines`
+     - Integrates with: vLLM, Hugging Face, local models
+     - Assessment: UTILITY (solves parsing problem, orthogonal to orchestration)
+     - Relevant for debate: Ensures judge outputs are valid + structured
+
+  **7. Guidance (PROMPT PROGRAMMING)**
+     - GitHub: https://github.com/guidance-ai/guidance
+     - Stars: 18K+, created 2022-11, moderately active
+     - License: MIT
+     - Type: Domain language for prompt control flow
+     - Core feature: `@guidance` decorator, structured generation, conditionals
+     - Installation: `pip install guidance`
+     - API requirement: YES (OpenAI, Hugging Face, local models via API)
+     - Assessment: PATTERN (excellent for complex prompt workflows, not debate-specific)
+
+  **8. FastChat / Arena-Hard (BENCHMARK CANDIDATE)**
+     - GitHub: https://github.com/lmsys/FastChat
+     - Stars: 37K+, created 2023-03, highly active
+     - License: Apache 2.0
+     - Type: LLM chat service + leaderboard infrastructure
+     - Judge pattern: Arena judge for pairwise model comparison (used in LMSYS leaderboard)
+     - Installation: `pip install fschat`
+     - Assessment: PATTERN (provides judge implementation for leaderboard, infrastructure-heavy)
+     - Relevant code: FastChat ships with `gpt-3.5-turbo` judge logic, extensible to other models
+
+  **9. Anthropic SDK (BASELINE)**
+     - GitHub: https://github.com/anthropics/anthropic-sdk-python
+     - Type: Official Anthropic Python SDK
+     - Features: Tool use, vision, batch API, extended thinking
+     - Assessment: INSTALL (use as baseline LLM, not orchestration)
+
+implication: |
+  **RECOMMENDATION: No pre-built adversarial review SDK exists.**
+
+  **Best strategy: Compose from existing + extend minimally**
+
+  1. **Use DSPy as orchestration foundation:**
+     - Already has `MultiChainComparison` for head-to-head debates
+     - Extensible LM provider for custom backends
+     - Mature few-shot optimization (`BootstrapFewShot`)
+     - Active community, 16K stars, well-documented
+
+  2. **Write custom `SubprocessLMProvider` adapter:**
+     - Bridges DSPy → local CLI tools (claude, ollama, llama.cpp)
+     - ~100-200 lines: subprocess exec + JSON parse + error handling
+     - Not a separate library (embed in src/mde/domain/adversarial_review.py)
+
+  3. **Extend DSPy with consensus patterns:**
+     - Stack N models, aggregate votes → consensus winner
+     - Confidence scoring (agreement %)
+     - Fallback: if no consensus, escalate to human review
+
+  4. **Optional: Integrate vLLM for self-hosted inference**
+     - If using open models (Llama 3.1, Mistral)
+     - Not for subprocess mode (adds HTTP overhead)
+
+  5. **Do NOT use:**
+     - alpaca_eval (stale, API-dependent)
+     - Marvin (single-model)
+     - Guidance (overcomplicated for this use case)
+
+  **Rationale for NOT building new adversarial framework:**
+  - DSPy already solves 70% of the problem (structured prompting + comparison)
+  - Consensus/debate logic is 50-100 lines of Python
+  - CLI adapter is 100-200 lines
+  - Total implementation cost: 200-300 lines vs. maintaining a new library
+  - User's preference: assemble existing → build new (LAST RESORT)
+
+  **CLI Backend Workaround (CRITICAL):**
+  - No library supports subprocess backends natively
+  - Must write adapter that:
+    1. Shells to `claude` CLI with prompt
+    2. Parses stdout as JSON
+    3. Plugs into DSPy LM interface
+  - This is a one-time 150-line investment, not a library search problem
+
+tags: [adversarial-review, multi-model, python-sdk, dspy, pydantic-ai, evaluation, judge-patterns, cli-orchestration, consensus, no-builtin-solution, compose-strategy]
+status: discovered

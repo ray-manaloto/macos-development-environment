@@ -1,0 +1,68 @@
+id: finding-dspy-baml-evaluation
+timestamp: "2026-03-24T22:35:00Z"
+source: |
+  https://github.com/stanfordnlp/dspy
+  https://dspy.ai
+  https://github.com/BoundaryML/baml
+  https://github.com/jxnl/instructor
+  https://github.com/BerriAI/litellm
+agent: researcher
+finding_type: evaluation
+confidence: probable
+confident_about: |
+  1. DSPy is production-ready, pip-installable, and designed for modular AI system composition
+  2. BAML is a schema-first language that compiles to Python, supports multiple models
+  3. Instructor provides structured output extraction via Pydantic, not full orchestration
+  4. None of these frameworks are documented as supporting CLI-based model backends
+gaps: |
+  CRITICAL (must resolve):
+  - Can DSPy use subprocess CLI providers (codex, gemini) instead of API keys?
+  - Can BAML configure backends to use CLIs instead of API keys?
+  - Does LiteLLM support wrapping subprocess CLI commands?
+  - What is the actual dependency footprint for each?
+
+  MEDIUM:
+  - Do any support adversarial debate / multi-agent patterns?
+  - What is the runtime overhead of compilation/interpretation?
+  - Are there working examples of CLI-based multi-model orchestration?
+evidence: |
+  From github.com/stanfordnlp/dspy:
+  - "pip install dspy" or "pip install dspy-ai" available
+  - Framework designed for "programming rather than prompting"
+  - Supports "optimizing prompts and weights"
+  - Recent papers on prompt optimization (Jul'25 GEPA, Oct'23 DSPy core paper)
+  - Used for classifiers, RAG pipelines, Agent loops
+
+  From github.com/BoundaryML/baml:
+  - "LLM Prompts are functions" - BAML language compiles to Python/TS/Ruby/Go
+  - README shows: "client 'openai/gpt-4o-mini'" hardcoded in examples
+  - Features: "full typesafety, streaming, retries, wide model support"
+  - No evidence of CLI/subprocess backend support in README excerpt
+
+  From github.com/jxnl/instructor:
+  - "Get reliable JSON from any LLM using Pydantic"
+  - from_provider("openai/gpt-4o-mini") pattern in docs
+  - Structured output extraction tool, NOT multi-model orchestration
+
+  From context7 memory:
+  - User has CLI subscriptions (Claude Max, Codex CLI, Gemini CLI)
+  - User specifically wants NO programmatic API keys
+  - Previous Honcho attempt crashed without API keys in env
+
+implication: |
+  RECOMMENDATION: DSPy is the most promising candidate for multi-model orchestration,
+  but critical blocker remains: can it be configured to use CLI-based providers
+  instead of requiring OPENAI_API_KEY / GOOGLE_API_KEY environment variables?
+
+  SECONDARY RESEARCH NEEDED:
+  1. Check if DSPy can be configured with custom LM clients that call subprocess CLIs
+  2. Investigate if LiteLLM (unified API wrapper) can wrap CLI commands
+  3. Look for existing "CLI provider" implementations in Python ecosystem
+
+  ALTERNATIVE PATHS:
+  - Build thin wrapper around Honcho SDK that uses CLI auth instead of API keys
+  - Create custom orchestration layer that wraps codex/gemini CLIs directly
+  - Use Instructor only for structured output, build orchestration manually
+
+tags: [dspy, baml, orchestration, api-key-requirement, cli-backends, multi-model, litellm, instructor]
+status: discovered
