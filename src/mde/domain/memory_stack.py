@@ -157,6 +157,16 @@ def stack_verify() -> int:
         else:
             print(f"  HEALTHY: {name}", file=sys.stderr)
 
+    # SDK connectivity check (uses honcho-ai SDK, not subprocess)
+    from mde.domain.honcho import test_connection
+
+    ok, msg = test_connection()
+    if ok:
+        print(f"  HEALTHY: honcho-sdk ({msg})", file=sys.stderr)
+    else:
+        print(f"  UNHEALTHY: honcho-sdk ({msg})", file=sys.stderr)
+        failures += 1
+
     return 1 if failures else 0
 
 

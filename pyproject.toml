@@ -8,11 +8,12 @@ dependencies = [
     "pyyaml>=6.0",
     "tomli>=2.0; python_version < '3.11'",
     "claude-agent-sdk>=0.1.49",
-    "httpx>=0.27",
+    "httpx>=0.28",
     "claude-code-analytics>=0.1.1",
     "openlit>=1.38.1",
     "loguru>=0.7.3",
     "orjson>=3.11.7",
+    "honcho-ai>=2.0.0,<3.0.0",
 ]
 
 [project.scripts]
@@ -27,7 +28,7 @@ build-backend = "uv_build"
 target-version = "py312"
 line-length = 100
 src = ["src"]
-extend-exclude = [".agents/skills"]
+extend-exclude = [".agents/skills", "generated"]
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -82,6 +83,13 @@ ignore = [
     "E501",     # generated file — long descriptions from schema
     "COM812",   # generated file — trailing comma style
 ]
+"src/mde/domain/honcho_models.py" = [
+    "D100",     # generated file — no module docstring
+    "D101",     # generated file — no class docstrings
+    "ERA001",   # generated file — codegen header comments
+    "E501",     # generated file — long descriptions from schema
+    "COM812",   # generated file — trailing comma style
+]
 "tests/**/*.py" = [
     "S101",     # assert is expected in tests
     "S108",     # temp file paths in test fixtures are fine
@@ -132,7 +140,7 @@ python-version = "3.12"
 
 [tool.ty.src]
 include = ["src/mde"]
-exclude = [".agents/skills", "src/mde/hooks/agent_frontmatter_model.py"]
+exclude = [".agents/skills", "src/mde/hooks/agent_frontmatter_model.py", "generated", "src/mde/domain/honcho_models.py"]
 
 [tool.ty.rules]
 # Enable ALL rules that default to "ignore" — no silent type errors
@@ -146,7 +154,9 @@ unused-ignore-comment = "warn"
 # ── pyright ──
 [tool.pyright]
 exclude = [
-    "src/mde/hooks/agent_frontmatter_model.py",  # generated file — constr/conint calls in type exprs
+    "src/mde/hooks/agent_frontmatter_model.py",
+    "generated",
+    "src/mde/domain/honcho_models.py",
 ]
 
 # ── pytest ──
