@@ -25,17 +25,23 @@ def validate_chezmoi() -> ValidationResult:
         )
         return result
 
-    _check_chezmoi_verify(result)
+    _check_chezmoi_verify_files(result)
+    _check_chezmoi_script_drift(result)
     _check_chezmoi_doctor(result)
 
     return result
 
 
-def _check_chezmoi_verify(result: ValidationResult) -> None:
-    """Run chezmoi verify to detect drift."""
+def _check_chezmoi_verify_files(result: ValidationResult) -> None:
+    """Run chezmoi verify for managed files only (not scripts).
+
+    Scripts are excluded because run_onchange/run_once scripts are
+    *executed*, not deployed as files — they always show as "new" in
+    verify.  Script drift is checked separately via chezmoi diff.
+    """
     try:
         proc = subprocess.run(
-            ["chezmoi", "verify", "--exclude=scripts"],
+            ["chezmoi", "verify", "--include=files"],
             capture_output=True,
             text=True,
             timeout=30,
@@ -43,9 +49,34 @@ def _check_chezmoi_verify(result: ValidationResult) -> None:
         if proc.returncode != 0:
             result.add(
                 path="chezmoi",
-                message="chezmoi verify detected drift",
+                message="chezmoi verify detected file drift",
                 severity=Severity.ERROR,
                 rule="chezmoi.drift",
+            )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+
+def _check_chezmoi_script_drift(result: ValidationResult) -> None:
+    """Detect pending script changes via chezmoi diff.
+
+    run_onchange scripts re-run when their content changes.  If diff
+    shows script changes, it means a chezmoi apply is needed to execute
+    the updated scripts.
+    """
+    try:
+        proc = subprocess.run(
+            ["chezmoi", "diff", "--include=scripts"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if proc.stdout.strip():
+            result.add(
+                path="chezmoi",
+                message="chezmoi scripts have pending changes (run chezmoi apply)",
+                severity=Severity.WARNING,
+                rule="chezmoi.script-drift",
             )
     except (subprocess.TimeoutExpired, FileNotFoundError):
         pass
