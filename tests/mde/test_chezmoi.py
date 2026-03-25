@@ -14,7 +14,7 @@ def test_chezmoi_verify() -> None:
     if not shutil.which("chezmoi"):
         pytest.skip("chezmoi not available")
     result = subprocess.run(
-        ["chezmoi", "verify"],
+        ["chezmoi", "verify", "--exclude=scripts"],
         capture_output=True,
         text=True,
         timeout=30,

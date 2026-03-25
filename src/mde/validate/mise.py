@@ -55,7 +55,7 @@ def _check_mise_fmt(root: Path, result: ValidationResult) -> None:
             result.add(
                 path=str(mise_toml),
                 message="mise fmt --check failed: TOML needs formatting",
-                severity=Severity.WARNING,
+                severity=Severity.ERROR,
                 rule="mise.fmt",
                 fixable=True,
             )
@@ -78,7 +78,7 @@ def _check_mise_doctor(result: ValidationResult) -> None:
                     result.add(
                         path="mise",
                         message=f"mise doctor: {line.strip()}",
-                        severity=Severity.WARNING,
+                        severity=Severity.ERROR,
                         rule="mise.doctor",
                     )
     except (subprocess.TimeoutExpired, FileNotFoundError):

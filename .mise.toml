@@ -262,7 +262,11 @@ cp generated/honcho_models.py src/mde/domain/honcho_models.py
 
 [tasks."mde:codegen:all"]
 description = "Run all codegen tasks"
-depends = ["mde:codegen:statusline", "mde:codegen:skillsmp", "mde:codegen:honcho"]
+depends = [
+  "mde:codegen:statusline",
+  "mde:codegen:skillsmp",
+  "mde:codegen:honcho",
+]
 
 [tasks."mde:lint"]
 description = "Run all linters: ruff + ty + pyright"
