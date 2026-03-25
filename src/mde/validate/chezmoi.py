@@ -20,7 +20,7 @@ def validate_chezmoi() -> ValidationResult:
         result.add(
             path="chezmoi",
             message="chezmoi is not installed",
-            severity=Severity.WARNING,
+            severity=Severity.ERROR,
             rule="chezmoi.not-installed",
         )
         return result
