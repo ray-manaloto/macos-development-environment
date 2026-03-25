@@ -110,6 +110,19 @@
     "engineering@knowledge-work-plugins": true,
     "remember@claude-plugins-official": true,
     "design@knowledge-work-plugins": true,
-    "nimble@knowledge-work-plugins": true
+    "nimble@knowledge-work-plugins": true,
+    "voltagent-lang@voltagent-subagents": true,
+    "voltagent-dev-exp@voltagent-subagents": true,
+    "voltagent-qa-sec@voltagent-subagents": true,
+    "chezmoi-toolkit@rsm-subagents": true,
+    "mise-toolkit@rsm-subagents": true
+  },
+  "extraKnownMarketplaces": {
+    "rsm-subagents": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/rsm-subagents"
+      }
+    }
   }
 }

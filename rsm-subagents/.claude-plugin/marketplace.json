@@ -14,7 +14,16 @@
       "description": "Comprehensive mise expertise: tool management, task orchestration, environment configuration, and mise-first policy enforcement",
       "version": "0.1.0",
       "category": "devtools",
-      "tags": ["mise", "tool-management", "task-runner", "dotfiles", "jdx"],
+      "tags": ["mise", "tool-management", "task-runner", "environment", "jdx"],
+      "repository": "https://github.com/ray-manaloto/rsm-subagents"
+    },
+    {
+      "name": "chezmoi-toolkit",
+      "source": "./plugins/chezmoi-toolkit",
+      "description": "Comprehensive chezmoi expertise: dotfile management, templates, secrets, migration, troubleshooting, AI agent config, and source-first workflow enforcement",
+      "version": "0.1.0",
+      "category": "devtools",
+      "tags": ["chezmoi", "dotfiles", "templates", "secrets", "encryption", "migration", "ai-agent-config"],
       "repository": "https://github.com/ray-manaloto/rsm-subagents"
     }
   ]

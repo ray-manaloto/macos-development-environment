@@ -1,6 +1,14 @@
 ---
 name: chezmoi-config
-description: Comprehensive chezmoi dotfile management skill for creating, modifying, and maintaining dotfile templates, configuration files, scripts, and external resources. Use when working with chezmoi for creating new dotfile templates (.tmpl files) with Go template syntax, managing .chezmoi.toml.tmpl configuration and .chezmoidata, configuring .chezmoiexternal files for external resources, writing run_once/run_onchange/run_before/run_after scripts, integrating password managers for secrets, managing cross-platform configurations, and handling conditional logic based on OS/architecture/hostname. This skill includes comprehensive reference documentation for all chezmoi features and can consult the latest chezmoi documentation via Context7.
+description: >
+  Comprehensive chezmoi dotfile management skill for creating, modifying, and
+  maintaining dotfile templates, configuration files, scripts, and external
+  resources. Use when the user asks to "create a chezmoi template", "add a .tmpl
+  file", "write Go template syntax", "manage .chezmoi.toml.tmpl", "configure
+  .chezmoiexternal", "write run_once/run_onchange scripts", "integrate 1Password
+  with chezmoi", "add password manager to dotfiles", "manage cross-platform
+  configs", or "add OS-conditional logic". Also use when editing .chezmoidata
+  files or working with chezmoi template variables.
 ---
 
 # Chezmoi Configuration Management
@@ -414,3 +422,11 @@ Use this skill whenever you're:
 - Organizing .chezmoidata files
 
 For specific concerns, refer to the detailed reference documentation listed above.
+
+## Related Skills
+
+- **chezmoi-workflows** — Apply templates, sync across machines, daily operations
+- **chezmoi-troubleshooting** — Debug template rendering, doctor interpretation
+- **chezmoi-advanced-config** — Encryption, monorepo, git automation
+- **chezmoi-agent-config** — AI agent config templating with chezmoi
+- **chezmoi-migration** — First-time setup and migration from other tools

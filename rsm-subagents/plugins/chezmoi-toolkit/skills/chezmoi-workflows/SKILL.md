@@ -1,10 +1,20 @@
 ---
 name: chezmoi-workflows
-description: Dotfile backup and sync with chezmoi. TRIGGERS - chezmoi, dotfiles, sync dotfiles, backup configs, cross-machine sync.
-allowed-tools: Read, Edit, Bash
+description: >
+  Dotfile backup, sync, and daily operations with chezmoi. Use when the user asks
+  to "sync dotfiles", "backup configs", "cross-machine sync", "chezmoi add",
+  "chezmoi diff", "chezmoi status", "push dotfiles", "pull dotfiles", "track a
+  new file with chezmoi", "resolve merge conflicts in dotfiles", or "set up
+  chezmoi remote". Do NOT use for template authoring (use chezmoi-config) or
+  troubleshooting (use chezmoi-troubleshooting).
 ---
 
 # Chezmoi Workflows
+
+## Safety Constraints
+
+**FORBIDDEN without explicit user approval:** `chezmoi apply`, `chezmoi update`.
+Always run `chezmoi diff` first and show the user what would change. Commands below that include `chezmoi apply` or `chezmoi update` are steps the **user** must run manually after reviewing the diff.
 
 ## When to Use This Skill
 

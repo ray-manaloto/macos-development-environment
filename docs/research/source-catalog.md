@@ -198,6 +198,21 @@ See deep review: `docs/research/trail/deep-reviews/python-docker-packaging-strat
 
 ---
 
+## Chezmoi Plugin Agent Design Research (2026-03-25)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | chezmoi-specialist agent | .claude/agents/chezmoi-specialist.md | CURRENT IMPLEMENTATION — Minimal agent (haiku model, 4 tools: Read/Glob/Grep/Bash, 2 skills: chezmoi-config + chezmoi-workflows). Lacks explicit when-to-use examples and proactive triggers. Pattern reference for enhancement. | chezmoi-plugin-design |
+| [x] | mise-specialist agent | rsm-subagents/plugins/mise-toolkit/agents/mise-specialist.md | PATTERN REFERENCE — Mature agent with 4 explicit <example> blocks, <commentary> lines explaining skill triggers, 8 skills, "inherit" model for complex work. Template for chezmoi-specialist enhancement. | chezmoi-plugin-design |
+| [x] | chezmoi-config skill | .agents/skills/chezmoi-config/SKILL.md | PRODUCTION READY — Read-only mode with 6 reference docs (template-syntax, external-files, ignore-files, password-managers, scripts, advanced-configuration). Safety constraints forbid `chezmoi apply/update`, allow `chezmoi diff/dry-run/doctor/data/verify/execute-template`. | chezmoi-plugin-design |
+| [x] | chezmoi-workflows skill | .agents/skills/chezmoi-workflows/SKILL.md | PRODUCTION READY — 14 workflow sections: status check, track changes, sync, push, setup, config, merge conflicts, validation, forget, templates, safe update, doctor. Comprehensive task reference. | chezmoi-plugin-design |
+| [x] | chezmoi drift detection validation | src/mde/validate/chezmoi.py | INTEGRATED — Runs `chezmoi verify --exclude=scripts` on validation. Detects drift (returncode != 0), reports as Severity.WARNING. Already part of `uv run mde-py validate --all`. | chezmoi-plugin-design |
+| [x] | chezmoi ecosystem skills analysis | docs/research/trail/findings/finding-chezmoi-mise-skills-ecosystem.yaml | RESEARCH CONFIRMED — No external chezmoi agents in wshobson/agents (31.7K⭐), affaan-m/everything-claude-code (78.8K⭐), or VoltAgent awesome-claude-code-subagents (14.4K⭐). Project implementation is best-in-class. | chezmoi-plugin-design |
+| [x] | chezmoi marketplace skills | docs/research/trail/findings/finding-marketplace-chezmoi-mise-search.yaml | ECOSYSTEM SURVEY — terrylica/cc-skills@chezmoi-workflows (85 installs) is highest-adoption external skill; samhvw8/dotfiles@mise-expert (98 installs) for mise; currently mde uses faintghost/skills@chezmoi-config (28 installs, low adoption). | chezmoi-plugin-design |
+| [x] | Claude Code agent template | node_modules/claude-code-templates/.claude/agents/*.md | REFERENCE PATTERNS — Templates show <example> blocks, <commentary>, model selection, tools/skills declarations. Used to validate mise-specialist as pattern reference. | chezmoi-plugin-design |
+
+---
+
 ## Audio/Video Processing Tools for YouTube Pipeline (2026-03-24)
 
 | Status | Source | URL | Finding | Classification |
@@ -265,3 +280,32 @@ See deep review: `docs/research/trail/deep-reviews/python-docker-packaging-strat
 | [x] | mcpmarket.com red-team skills | https://mcpmarket.com/search?q=red+team&type=skills | BLOCKED — HTTP 403 Forbidden | GEO-RESTRICTED |
 | [x] | skillfish CLI tool | https://github.com/knoxgraeme/skillfish | PARTIAL — GitHub repo (Next.js SPA); purpose unclear, likely local skill discovery/management tool; requires browser/DOM rendering | LOCAL-TOOL |
 
+---
+
+## Chezmoi Plugin Hook Research (2026-03-25)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | chezmoi official command overview | https://www.chezmoi.io/user-guide/command-overview/ | REFERENCE — Daily commands (add, edit, apply, diff, status, cd), multi-machine workflows (init, update), template patterns (data, execute-template, chattr). Workflow entry points: chezmoi add (source capture), chezmoi edit --apply (edit+deploy), chezmoi update (pull+apply) | chezmoi-plugin |
+| [x] | chezmoi hooks reference | https://www.chezmoi.io/reference/configuration-file/hooks/ | REFERENCE — Hook events: pre/post for any command (add, edit, apply, update, etc.) + special events (git-auto-commit, git-auto-push, read-source-state). Environment variables: CHEZMOI=1, CHEZMOI_COMMAND, CHEZMOI_COMMAND_DIR, CHEZMOI_ARGS. Hooks run even on --dry-run. Integration point: Claude Code hooks fire BEFORE chezmoi CLI; chezmoi hooks fire within CLI. | chezmoi-plugin |
+| [x] | Claude Code hooks v2.1.81 reference | https://code.claude.com/docs/en/hooks | REFERENCE — 22 hook events: 5 lifecycle (SessionStart, InstructionsLoaded, SessionEnd, PreCompact, PostCompact), 5 interaction (UserPromptSubmit, PreToolUse, PostToolUse, PostToolUseFailure, Stop), 4 agent (SubagentStart, SubagentStop, TeammateIdle, TaskCompleted), 2 security (PermissionRequest, ConfigChange), 2 filesystem (WorktreeCreate, WorktreeRemove), 2 notification (Notification, Elicitation), 1 special (StopFailure). Blocking behavior: PreToolUse, PostToolUseFailure, UserPromptSubmit, PermissionRequest, ConfigChange, Stop, TeammateIdle, TaskCompleted support exit code 1 blocking. | claude-code-hooks |
+| [x] | mise-toolkit plugin hooks.json | rsm-subagents/plugins/mise-toolkit/hooks/hooks.json | PATTERN — Guard pattern: PreToolUse:Bash matcher intercepts direct install commands (brew install, npm -g, pipx install, etc.). Execution: bash script receives ${TOOL_INPUT}. Exit code 1 blocks tool execution. Can be reused for chezmoi dotfile protection (block vim ~/.bashrc, suggest chezmoi edit instead). | guard-pattern |
+| [x] | mise-toolkit guard-install.sh | rsm-subagents/plugins/mise-toolkit/hooks/scripts/guard-install.sh | PATTERN — Implementation: BLOCKED_PATTERNS array with grep -qi matching. Exception handling (pip install -e allowed). Clear error message + suggestion to use mise. Exit code 1 blocks. Timeout 5000ms. Pattern directly applicable to prevent-direct-dotfile-edits hook for chezmoi plugin. | guard-pattern |
+| [x] | awesome-claude-code (32.2K⭐) | https://github.com/hesreallyhim/awesome-claude-code | SURVEY — Curated list of 0 chezmoi-specific hooks; hooks section exists but no dotfiles/chezmoi integration documented. Community reference for hook patterns. | awesome-lists |
+| [x] | awesome-claude-code-toolkit (899⭐) | https://github.com/rohitg00/awesome-claude-code-toolkit | SURVEY — 19 hooks documented; 0 chezmoi integration; hook categories: git-related, file-related, UI, validation, performance. No dotfiles or chezmoi-specific hooks found. | awesome-lists |
+| [x] | awesome-claude-code-plugins (646⭐) | https://github.com/ccplugins/awesome-claude-code-plugins | SURVEY — Hooks and plugins curated; 0 chezmoi integration found. Confirms greenfield opportunity for chezmoi plugin hooks. | awesome-lists |
+| [x] | buildwithclaude (2.6K⭐) | https://github.com/davepoon/buildwithclaude | SURVEY — Hub for Claude skills, agents, hooks, plugins; 0 chezmoi hooks documented. Validates that no existing community implementations exist. | awesome-lists |
+
+
+---
+
+## Chezmoi Plugin Skill Gap Analysis (2026-03-25)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | chezmoi setup documentation | https://www.chezmoi.io/user-guide/setup/ | REFERENCE — Init workflows, remote repo setup, one-shot mode for ephemeral environments. Multi-machine deployment patterns. Fresh install, clone existing, Docker/CI deployment. | chezmoi-plugin |
+| [x] | chezmoi templating documentation | https://www.chezmoi.io/user-guide/templating/ | REFERENCE — Go template syntax, variables (.chezmoi.os, .chezmoi.arch, .chezmoi.hostname), conditionals, loops, template functions, password managers, external resources, .chezmoiexternal configuration | chezmoi-plugin |
+| [x] | chezmoi reference/special-files | https://www.chezmoi.io/reference/special-files/ | REFERENCE — Processing order: .chezmoiroot (source path), .chezmoi.$FORMAT.tmpl (init), .chezmoidata/, .chezmoitemplates/, .chezmoiignore, .chezmoiremove, .chezmoiexternal, .chezmoiversion. All optional; evaluated in specific order. | chezmoi-plugin |
+| [x] | chezmoi reference/special-directories | https://www.chezmoi.io/reference/special-directories/ | REFERENCE — .chezmoidata/ (config data), .chezmoitemplates/ (include templates), .chezmoiscripts/ (lifecycle scripts), .chezmoiexternals/ (external resources). All optional; read in lexical order. | chezmoi-plugin |
+| [x] | chezmoi daily operations | https://www.chezmoi.io/user-guide/daily-operations/ | REFERENCE — Edit patterns (chezmoi edit, edit --apply, edit --watch), pull and diff, auto-commit/push, one-shot install, one-command deploy (sh -c "$(curl...)" -- init --apply) | chezmoi-plugin |
+| [x] | chezmoi commands reference | https://www.chezmoi.io/reference/commands/ | INDEX — All commands documented separately; setup: add, edit, apply, diff, status, cd, source-path, managed, unmanaged, ignored, execute-template, state dump, verify, forget, doctor, init, merge | chezmoi-plugin |

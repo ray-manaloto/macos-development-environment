@@ -1,0 +1,185 @@
+id: finding-chezmoi-plugin-agents
+timestamp: "2026-03-25T04:30:00Z"
+source: |
+  - .claude/agents/chezmoi-specialist.md (existing specialist agent)
+  - rsm-subagents/plugins/mise-toolkit/agents/mise-specialist.md (pattern reference)
+  - .agents/skills/chezmoi-config/SKILL.md (chezmoi-config skill safety constraints)
+  - .agents/skills/chezmoi-workflows/SKILL.md (chezmoi-workflows skill)
+  - src/mde/validate/chezmoi.py (drift detection logic)
+  - docs/research/trail/findings/finding-chezmoi-mise-skills-ecosystem.yaml (ecosystem analysis)
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: |
+  1. **Chezmoi-specialist agent already exists** but is minimal (4 lines description, haiku model, basic protocol).
+  2. **Two chezmoi skills are production-ready** (chezmoi-config with 6 reference docs, chezmoi-workflows with 14 task sections).
+  3. **Safety constraint is CRITICAL**: chezmoi-config forbids `chezmoi apply` / `chezmoi update` — agent MUST respect this.
+  4. **Drift detection is already implemented** at `src/mde/validate/chezmoi.py` (runs `chezmoi verify` with --exclude=scripts).
+  5. **Mise-specialist pattern is mature** with 8 example use-cases, 8 skills, explicit <example> blocks with commentary.
+  6. **Chezmoi CLI is read-only safe**: diff, dry-run, doctor, data, managed, unmanaged, ignored, verify, execute-template — all safe.
+  7. **Ecosystem finding**: No external chezmoi-specialist agents in wshobson/agents (31.7K⭐), affaan-m/everything-claude-code (78.8K⭐), or VoltAgent awesome-claude-code-subagents (14.4K⭐). Project implementation is best-in-class.
+  8. **Plugin triggers should be**: direct edits to deployed files (detected via chezmoi status), template syntax errors, cross-platform drift, secret management patterns.
+
+gaps: |
+  1. **When-to-use examples not documented** in chezmoi-specialist.md — should have explicit <example> blocks like mise-specialist.
+  2. **Proactive triggers undefined** — no specification of when agent should self-activate (e.g., detecting direct home dir edits).
+  3. **Cross-tool coordination missing** — how chezmoi-specialist interacts with mise-specialist for .chezmoisource/dot_config/mise/* templates.
+  4. **Model selection rationale unclear** — why haiku vs sonnet for template debugging? Mise-specialist uses "inherit" (delegates to controller).
+  5. **Secret detection integration missing** — chezmoi-config skill has reference/secret-detection.md but agent has no tools for detecting/handling plaintext secrets.
+  6. **Hostname/container detection** — no agent capability for detecting when running in container vs macOS and switching .chezmoi.os behaviors.
+  7. **Multi-machine sync coordination** — no agent workflow for chezmoi pull → diff → apply → verify across machines.
+
+evidence: |
+  **Current chezmoi-specialist Agent (lines 1-8 of .claude/agents/chezmoi-specialist.md):**
+  ```
+  name: chezmoi-specialist
+  description: Chezmoi dotfiles expert. Manages templates, secrets, and dotfile lifecycle. Use PROACTIVELY when adding/editing shell config, tmux config, zsh plugins, starship config, or any chezmoi-managed file.
+  tools: Read, Glob, Grep, Bash
+  skills: [chezmoi-config, chezmoi-workflows]
+  disallowedTools: WebFetch, WebSearch
+  model: haiku
+  memory: project
+  ```
+
+  **Mise-specialist Pattern (lines 2-35 of mise-specialist.md):**
+  ```
+  <example>
+  Context: User wants to add a new CLI tool to their project.
+  user: "Add starship prompt to my mise config"
+  assistant: "I'll use the mise-specialist agent to find the correct backend and add starship."
+  <commentary>Tool addition requires backend selection decision tree and mise-first policy enforcement.</commentary>
+  </example>
+
+  [4 more examples with explicit commentaries about skills and workflows]
+  ```
+  — Shows WHEN to use agent and WHY each skill applies. Chezmoi-specialist lacks this.
+
+  **Safety Constraints from chezmoi-config skill (lines 10-40):**
+  FORBIDDEN:
+  - `chezmoi apply` — Applies changes to home directory
+  - `chezmoi apply --force` — Forcefully applies changes
+  - `chezmoi update` — Updates source state and may change managed files
+
+  ALLOWED (read-only):
+  - `chezmoi diff` — Preview what would change
+  - `chezmoi apply --dry-run` — Simulate changes without applying
+  - `chezmoi doctor` — Check configuration validity
+  - `chezmoi data` — Display template data variables
+  - `chezmoi managed` / `unmanaged` / `ignored` — List operations
+  - `chezmoi execute-template < file.tmpl` — Preview expanded template output
+  - `chezmoi verify` — Verify source state integrity (DRIFT DETECTION)
+
+  **Drift Detection from src/mde/validate/chezmoi.py (lines 33-50):**
+  ```python
+  def _check_chezmoi_verify(result: ValidationResult) -> None:
+      """Run chezmoi verify to detect drift."""
+      try:
+          proc = subprocess.run(
+              ["chezmoi", "verify", "--exclude=scripts"],
+              capture_output=True,
+              text=True,
+              timeout=30,
+          )
+          if proc.returncode != 0:
+              result.add(
+                  path="chezmoi",
+                  message="chezmoi verify detected drift",
+                  severity=Severity.WARNING,
+                  rule="chezmoi.drift",
+              )
+  ```
+  — Already integrated into `uv run mde-py validate --all`. Agent should leverage this.
+
+  **Chezmoi-config Skill References (6 documentation files):**
+  - template-syntax.md — Go template syntax, conditionals, loops, string operations
+  - external-files.md — .chezmoiexternal for files, archives, git repos
+  - ignore-files.md — .chezmoiignore patterns and template awareness
+  - password-managers.md — 20+ integrations (1Password, Bitwarden, Keychain, age, gpg)
+  - scripts.md — run_once, run_onchange, run_before, run_after semantics
+  - advanced-configuration.md — .chezmoi.toml, prompting, encryption
+
+  **Chezmoi-workflows Skill Tasks (14 sections):**
+  1. Status Check — source-path, git remote, status, managed count
+  2. Track File Changes — add, diff, commit, push workflow
+  3. Track New File — first-time addition and sync
+  4. Sync from Remote — pull + apply, verify, confirm no drift
+  5. Push All Changes — bulk sync modified files
+  6. First-Time Setup — install, init, create repo
+  7. Configure Source Directory — move sourceDir to custom location
+  8. Change Remote — switch GitHub account/repo
+  9. Resolve Merge Conflicts — git resolution + apply
+  10. Validation (SLO) — verify, diff, managed, log
+  11. Forget (Untrack) File — stop tracking without deleting
+  12. Template Management — convert to template, common patterns
+  13. Safe Update (Diff Before Apply) — pull + review + dry-run + apply
+  14. Doctor (Diagnostic) — troubleshoot setup
+
+  **Ecosystem Confirmation (from finding-chezmoi-mise-skills-ecosystem.yaml):**
+  "No external ecosystem contains the specialized dotfiles lifecycle coordination skills our project offers"
+  — terrylica/cc-skills@chezmoi-workflows (85 installs) is highest-adoption external skill, but not installed in mde.
+
+implication: |
+  1. **Chezmoi-specialist agent needs enhancement for plugin context:**
+     - Add 5-6 explicit <example> blocks (like mise-specialist) showing when to trigger agent
+     - Include <commentary> lines explaining which skill applies to each scenario
+     - Document when chezmoi-specialist coordinates with mise-specialist (template edits to .chezmoisource/dot_config/mise/)
+
+  2. **Proactive triggers for chezmoi plugin should be:**
+     - **Direct edit detection**: When user edits a file known to be chezmoi-managed (~/.zshrc, ~/.gitconfig, ~/.config/*, etc.), agent detects via `chezmoi unmanaged` and suggests `chezmoi add` + template conversion
+     - **Drift alerts**: When `uv run mde-py validate --all` reports "chezmoi.drift", agent auto-activates to diagnose via `chezmoi diff` and `chezmoi status`
+     - **Template syntax errors**: When user attempts to edit .chezmoisource/*.tmpl files, agent validates via `chezmoi execute-template` before apply
+     - **Cross-platform config**: When adding new dotfile, agent detects if it's OS-conditional (e.g., .gitconfig with credential.helper) and suggests `.tmpl` conversion + template syntax
+     - **Secret detection**: When `chezmoi-config` skill finds plaintext secrets in source, agent suggests moving to password manager template syntax
+
+  3. **Tools for chezmoi plugin agent:**
+     - **Must have**: Read, Glob, Grep, Bash (same as current specialist)
+     - **Should add**: Write, Edit (for template creation via agent)
+     - **Must NOT have**: WebFetch, WebSearch (current constraints correct)
+
+  4. **Model selection for chezmoi plugin:**
+     - **Option A (current)**: Haiku — fast for status checks, diff reading, validation
+     - **Option B**: Inherit (like mise-specialist) — defers to controller's model, better for complex template work
+     - **Recommendation**: Keep Haiku for plugin default (speed), but allow controller to override for template-heavy workflows
+
+  5. **Skills referenced should be exact:**
+     - chezmoi-config — comprehensive (read-only mode, safe)
+     - chezmoi-workflows — comprehensive (14 task sections)
+     - Consider adding: chezmoi-drift-detection (new skill, wraps `chezmoi verify` and suggests remediation), chezmoi-template-validation (new skill, tests template syntax and previews output)
+
+  6. **Safety constraints for plugin agent:**
+     - **FORBIDDEN**: NEVER run `chezmoi apply`, `chezmoi apply --force`, `chezmoi update` without explicit user approval via comment "apply this change"
+     - **MANDATORY WORKFLOW**: Run `chezmoi diff` first, show diff to user, wait for approval before any apply
+     - **VALIDATION SLO**: Always end chezmoi operations with `chezmoi verify` or `chezmoi doctor` to confirm integrity
+     - **Multi-machine awareness**: If .chezmoi.os or .chezmoi.hostname differ from user's current machine, warn before applying templates
+
+  7. **Integration with mise-specialist:**
+     - When editing `.chezmoisource/dot_config/mise/config.toml.tmpl`, chezmoi-specialist should coordinate with mise-specialist
+     - After template changes: chezmoi-specialist runs `chezmoi diff` (dry-run preview), then mise-specialist validates .toml syntax
+     - Pipeline: chezmoi edit → chezmoi diff → mise validation → user approval → chezmoi apply → mise install → mise lock
+
+  8. **Detection of managed files (for auto-trigger logic):**
+     - Use `chezmoi managed` to build cache of files agent should monitor
+     - On user edit of cached file: check `chezmoi status` for "modified" flag, suggest `chezmoi add` or template update
+     - This enables proactive pattern: "I see you edited ~/.zshrc (chezmoi-managed). Should I sync this change to source?"
+
+  9. **Plugin architecture differences from standalone agent:**
+     - **Standalone agent**: Responds to explicit user invocation ("use the chezmoi-specialist")
+     - **Plugin agent**: Should be embedded in plugin.json with triggers (file globs, file-modified events, validate --all drift reports)
+     - **Skills remain same**: Both plugin and standalone use chezmoi-config and chezmoi-workflows skills
+     - **Model stays same**: Haiku for performance, inherited model for complex template work
+
+tags:
+  - chezmoi
+  - agent-capabilities
+  - plugin-design
+  - dotfiles
+  - safety-constraints
+  - drift-detection
+  - templates
+  - mise-integration
+  - proactive-triggers
+  - skill-design
+  - tool-selection
+  - example-patterns
+
+status: discovered

@@ -26,7 +26,7 @@ cc --plugin-dir /path/to/mise-toolkit
 | mise-enforcement | Policy enforcement, anti-patterns, disallowed installers |
 | mise-env-config | [env] section, set/unset, _.file, secrets, multi-env |
 | mise-config-settings | mise config/settings/fmt/trust, IDE integration |
-| mise-codegen | mise generate (github-action, devcontainer, bootstrap) |
+| mise-codegen | mise generate (github-action, devcontainer, bootstrap, git-pre-commit, task-docs, task-stubs, config, tool-stub) |
 | mise-upgrade-sync | mise upgrade/outdated/prune/sync/self-update/doctor |
 | mise-jdx-ecosystem | pitchfork, fnox, hk, usage integration patterns |
 

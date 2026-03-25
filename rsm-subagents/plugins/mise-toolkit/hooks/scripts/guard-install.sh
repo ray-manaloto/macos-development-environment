@@ -15,28 +15,29 @@ COMMAND="${1:-}"
 [[ -z "$COMMAND" ]] && exit 0
 
 # Patterns that indicate bypassing mise for tool installation
+# Patterns that indicate bypassing mise for tool installation
+# Uses word-boundary matching (-E with \b) to avoid false positives
 BLOCKED_PATTERNS=(
-  'brew install'
-  'npm install -g'
-  'npm i -g'
-  'bun add -g'
-  'bun install -g'
-  'pipx install'
-  'cargo install'
-  'go install'
-  'pip install --user'
-  'pip install -g'
-  'gem install'
+  '\bbrew install\b'
+  '\bnpm install -g\b'
+  '\bnpm i -g\b'
+  '\bbun add -g\b'
+  '\bbun install -g\b'
+  '\bpipx install\b'
+  '\bcargo install\b'
+  '\bgo install\b'
+  '\bpip install --user\b'
+  '\bgem install\b'
 )
 
 for pattern in "${BLOCKED_PATTERNS[@]}"; do
-  if echo "$COMMAND" | grep -qi "$pattern"; then
-    # Allow if it's a known exception (e.g., pip install -e for editable local packages)
-    if echo "$COMMAND" | grep -qi "pip install -e"; then
+  if echo "$COMMAND" | grep -qiE "$pattern"; then
+    # Allow editable local packages (pip install -e .)
+    if echo "$COMMAND" | grep -qiE '\bpip install -e\b'; then
       exit 0
     fi
 
-    echo "BLOCKED: Direct global install detected ('$pattern')."
+    echo "BLOCKED: Direct global install detected."
     echo "This project uses mise as the tool authority."
     echo "Check if the tool is in the mise registry: mise registry | grep <tool>"
     echo "Then add it to mise config: mise use -g <backend>:<tool>"
@@ -45,9 +46,9 @@ for pattern in "${BLOCKED_PATTERNS[@]}"; do
   fi
 done
 
-# Also warn about direnv usage when mise is active
-if echo "$COMMAND" | grep -qi "direnv"; then
-  echo "WARNING: direnv detected. This project uses mise for environment management."
+# Block direnv activation commands (allow references in comments/docs)
+if echo "$COMMAND" | grep -qiE '\bdirenv (allow|hook|exec)\b'; then
+  echo "WARNING: direnv activation detected. This project uses mise for environment management."
   echo "Using both direnv and mise causes PATH conflicts."
   echo "See mise-enforcement skill for migration guidance."
   exit 1
