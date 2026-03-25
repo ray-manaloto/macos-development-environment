@@ -18,6 +18,17 @@ def run_update() -> int:
     increment the failure counter; non-fatal steps only emit a warning.
     After all steps, ``validate_all`` runs as a final verification.
 
+    Step ordering rationale (see Issue: missing tools after update):
+    1. brew update/upgrade  -- OS-level packages first
+    2. mise self-update     -- ensure mise itself is current
+    3. mise upgrade         -- upgrade tools to new versions (uninstalls old)
+    4. mise lock --global   -- refresh global lockfile so "latest" resolves
+                               to the newly upgraded versions, NOT stale pins
+    5. mise prune           -- remove orphan old versions BEFORE install
+    6. mise install         -- install any missing tools (uses fresh lockfile)
+    7. mise reshim          -- regenerate shims for new versions
+    8. chezmoi apply        -- sync dotfiles
+
     Returns:
         Exit code.
     """
@@ -25,10 +36,10 @@ def run_update() -> int:
         ("brew update && brew upgrade", _run_brew_update, True),
         ("mise self-update", _run_mise_self_update, False),
         ("mise upgrade", _run_mise_upgrade, True),
-        ("mise lock", _run_mise_lock, False),
-        ("mise reshim", _run_mise_reshim, False),
-        ("mise install", _run_mise_install, True),
+        ("mise lock --global", _run_mise_lock, False),
         ("mise prune", _run_mise_prune, False),
+        ("mise install", _run_mise_install, True),
+        ("mise reshim", _run_mise_reshim, False),
         ("chezmoi apply", _run_chezmoi_apply, False),
     ]
     failures = 0
@@ -40,6 +51,13 @@ def run_update() -> int:
                 failures += 1
             else:
                 print(f"  WARN: {label} had issues (non-fatal)")
+
+    # Post-cycle health check: verify no tools went missing
+    print("==> mise doctor (post-cycle health check)")
+    doctor_ok = _run_mise_doctor()
+    if doctor_ok != 0:
+        print("  FAIL: mise doctor reported issues after update cycle")
+        failures += 1
 
     # Final verification
     print("==> verify (validate_all)")
@@ -54,7 +72,7 @@ def _run_brew_update() -> int:
     """Run brew update then brew upgrade.
 
     brew update failure is fatal (tap index must refresh).
-    brew upgrade failure is non-fatal — individual package
+    brew upgrade failure is non-fatal --- individual package
     failures (casks needing sudo, removed formulae, transient
     network errors) should not block the rest of the lifecycle.
     """
@@ -85,10 +103,22 @@ def _run_mise_upgrade() -> int:
 
 
 def _run_mise_lock() -> int:
+    """Refresh both project and global lockfiles.
+
+    The --global flag is critical: without it, only the project-level
+    lockfile is updated. The global lockfile at ~/.config/mise/mise.lock
+    pins specific versions for "latest" resolution. If it is stale after
+    ``mise upgrade``, ``mise install`` will reinstall OLD versions that
+    ``mise prune`` then removes -- wasting time and risking missing tools.
+    """
     if not shutil.which("mise"):
         return 0
+    # Update project lockfile
     with contextlib.suppress(subprocess.TimeoutExpired, OSError):
-        subprocess.run(["mise", "lock"], timeout=60)
+        subprocess.run(["mise", "lock"], timeout=120)
+    # Update global lockfile (the critical fix)
+    with contextlib.suppress(subprocess.TimeoutExpired, OSError):
+        subprocess.run(["mise", "lock", "--global"], timeout=120)
     return 0
 
 
@@ -111,6 +141,14 @@ def _run_mise_prune() -> int:
     if not shutil.which("mise"):
         return 0
     proc = subprocess.run(["mise", "prune", "--yes"], timeout=60)
+    return proc.returncode
+
+
+def _run_mise_doctor() -> int:
+    """Run mise doctor to verify tool health after the update cycle."""
+    if not shutil.which("mise"):
+        return 1
+    proc = subprocess.run(["mise", "doctor"], timeout=60)
     return proc.returncode
 
 
