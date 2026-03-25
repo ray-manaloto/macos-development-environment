@@ -31,6 +31,7 @@ def validate_mise(root: Path | None = None) -> ValidationResult:
         return result
 
     _check_mise_fmt(root, result)
+    _check_mise_lockfile_platforms(root, result)
     _check_mise_doctor(result)
 
     return result
@@ -73,6 +74,63 @@ def _check_mise_fmt(root: Path, result: ValidationResult) -> None:
             severity=Severity.ERROR,
             rule="mise.not-found",
         )
+
+
+def _check_mise_lockfile_platforms(root: Path, result: ValidationResult) -> None:
+    """Verify lockfiles only contain entries for the current platform.
+
+    Lockfiles with entries for non-local platforms waste time during
+    ``mise lock`` and indicate a misconfigured lock command (missing
+    ``--platform`` flag).
+    """
+    import platform as _platform
+
+    system = _platform.system().lower()
+    machine = _platform.machine().lower()
+    os_map = {"darwin": "macos", "linux": "linux", "windows": "windows"}
+    arch_map = {"arm64": "arm64", "aarch64": "arm64", "x86_64": "x64", "amd64": "x64"}
+    current = f"{os_map.get(system, system)}-{arch_map.get(machine, machine)}"
+
+    for lock_path in [root / "mise.lock", Path.home() / ".config/mise/mise.lock"]:
+        if not lock_path.exists():
+            continue
+        result.files_checked += 1
+        foreign = _find_foreign_platforms(lock_path, current)
+        if foreign:
+            result.add(
+                path=str(lock_path),
+                message=(
+                    f"lockfile contains {len(foreign)} non-local platform(s): "
+                    f"{', '.join(sorted(foreign))}. "
+                    f"Run: mise lock --platform {current}"
+                ),
+                severity=Severity.ERROR,
+                rule="mise.lockfile-platforms",
+                fixable=True,
+            )
+
+
+def _find_foreign_platforms(lock_path: Path, current: str) -> set[str]:
+    """Extract platform names from a lockfile that don't match current."""
+    import tomllib
+
+    try:
+        data = tomllib.loads(lock_path.read_text())
+    except (OSError, tomllib.TOMLDecodeError):
+        return set()
+
+    foreign: set[str] = set()
+    for tool_entries in data.get("tools", {}).values():
+        entries = tool_entries if isinstance(tool_entries, list) else [tool_entries]
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            for key in entry:
+                if key.startswith("platforms."):
+                    plat = key.removeprefix("platforms.")
+                    if plat != current:
+                        foreign.add(plat)
+    return foreign
 
 
 def _check_mise_doctor(result: ValidationResult) -> None:
