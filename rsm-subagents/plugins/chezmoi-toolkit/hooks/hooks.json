@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/guard-direct-dotfile-edit.sh \"${TOOL_INPUT_COMMAND}\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/guard-direct-dotfile-edit.sh",
             "timeout": 5000
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/remind-chezmoi-commit.sh \"${TOOL_INPUT_COMMAND}\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/remind-chezmoi-commit.sh",
             "timeout": 3000
           }
         ]

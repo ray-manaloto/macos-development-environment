@@ -60,10 +60,12 @@ chezmoi state dump
 chezmoi state delete-bucket --bucket=scriptState
 ```
 
-**Reset run_onchange state** (scripts will re-run based on content):
+**Reset run_onchange state** (both run_once and run_onchange are in scriptState):
 ```bash
-chezmoi state delete-bucket --bucket=entryState
+chezmoi state delete-bucket --bucket=scriptState
 ```
+Note: `entryState` tracks managed FILE state, not scripts. Deleting `entryState`
+would force a full re-apply of all managed files — use with extreme caution.
 
 ### Common State Issues
 

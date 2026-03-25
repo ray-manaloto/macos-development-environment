@@ -4,29 +4,32 @@
 # After a successful chezmoi apply, check if the source directory has
 # uncommitted changes and remind the user to commit/push.
 #
-# Called by PostToolUse:Bash hook with the command as $1.
+# Reads TOOL_INPUT_COMMAND from environment (never as a shell argument).
 
 set -euo pipefail
 
-COMMAND="${1:-}"
+# Read from environment — safe from shell injection
+COMMAND="${TOOL_INPUT_COMMAND:-}"
 
-# Only trigger after chezmoi apply (not dry-run)
-if ! echo "$COMMAND" | grep -qE 'chezmoi (apply|re-add|add)'; then
+# Only trigger after chezmoi apply/re-add/add (not mentions in comments)
+# Use first line only to avoid multi-line false positives
+FIRST_LINE="${COMMAND%%$'\n'*}"
+
+if [[ ! "$FIRST_LINE" =~ ^chezmoi\ (apply|re-add|add)( |$) ]]; then
   exit 0
 fi
 
 # Skip if it was a dry-run
-if echo "$COMMAND" | grep -q '\-\-dry-run'; then
+if [[ "$FIRST_LINE" == *"--dry-run"* ]]; then
   exit 0
 fi
 
-# Check if chezmoi source has uncommitted changes
+# Check if chezmoi source has uncommitted changes (in subshell to avoid cwd mutation)
 SOURCE_DIR="$(chezmoi source-path 2>/dev/null || echo "")"
 if [[ -z "$SOURCE_DIR" ]] || [[ ! -d "$SOURCE_DIR" ]]; then
   exit 0
 fi
 
-# Check git status in source directory
 if (cd "$SOURCE_DIR" && git status --porcelain 2>/dev/null | grep -q .); then
   echo "REMINDER: Chezmoi source has uncommitted changes."
   echo "Run: chezmoi git -- add -A && chezmoi git -- commit -m 'Update dotfiles'"

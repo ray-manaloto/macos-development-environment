@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/guard-install.sh \"${TOOL_INPUT_COMMAND}\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/guard-install.sh",
             "timeout": 5000
           }
         ]

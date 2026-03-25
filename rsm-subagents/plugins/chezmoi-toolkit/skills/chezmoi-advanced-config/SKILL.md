@@ -84,7 +84,7 @@ Pushes to remote after each commit. Requires autoCommit.
 ```toml
 [git]
     autoCommit = true
-    commitMessageTemplate = "dotfiles: {{ .targetPath }}"
+    commitMessageTemplate = "dotfiles: update managed files"
 ```
 
 ### Interactive commit message

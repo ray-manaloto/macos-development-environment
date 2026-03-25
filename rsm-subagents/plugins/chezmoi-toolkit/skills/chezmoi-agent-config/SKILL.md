@@ -73,7 +73,7 @@ Render one canonical source to tool-specific formats:
 
 ```go
 {{- /* shared agent instructions */ -}}
-{{ $instructions := include ".chezmoitemplates/agent-instructions.md.tmpl" . -}}
+{{ $instructions := includeTemplate "agent-instructions.md.tmpl" . -}}
 {{ $instructions }}
 ```
 
@@ -165,7 +165,7 @@ These can be configured in Claude Code's settings.json hooks or in the chezmoi-t
 ```toml
 # .chezmoiexternal.toml
 [".agents/skills/shared-skills"]
-    type = "git-repo"
+    type = "git"
     url = "https://github.com/org/shared-agent-skills.git"
     refreshPeriod = "168h"
 ```

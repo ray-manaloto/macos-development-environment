@@ -91,17 +91,18 @@ chezmoi git -- add -A && chezmoi git -- commit -m "Import from yadm"
 git clone --bare https://github.com/$USER/dotfiles.git /tmp/dotfiles-bare
 git --git-dir=/tmp/dotfiles-bare --work-tree=/tmp/dotfiles-export checkout
 
-# 2. Initialize chezmoi and import files
+# 2. Copy exported files to $HOME (so chezmoi add can find them)
+for file in /tmp/dotfiles-export/.*; do
+    [ -f "$file" ] && cp "$file" "$HOME/$(basename "$file")"
+done
+
+# 3. Initialize chezmoi and add the files
 chezmoi init
 for file in /tmp/dotfiles-export/.*; do
     [ -f "$file" ] && chezmoi add "$HOME/$(basename "$file")"
 done
 
-# 3. Rename to chezmoi conventions
-# Files in source get prefixed: .zshrc → dot_zshrc
-# Templates get .tmpl suffix: dot_zshrc.tmpl
-
-# 4. Clean up
+# 4. Clean up export directory
 rm -rf /tmp/dotfiles-bare /tmp/dotfiles-export
 ```
 

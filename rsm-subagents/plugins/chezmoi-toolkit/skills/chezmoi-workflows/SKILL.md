@@ -196,7 +196,7 @@ Stop tracking a file without deleting it from home directory:
 
 ```bash
 chezmoi managed | grep config.local     # 1. Confirm file is tracked
-chezmoi forget --force ~/.config/app/config.local.toml  # 2. Remove from source (--force skips TTY prompt)
+chezmoi forget ~/.config/app/config.local.toml  # 2. Remove from source (confirm when prompted)
 chezmoi git -- push                     # 3. Push removal to remote
 ls ~/.config/app/config.local.toml      # 4. Verify file still exists in home
 ```
@@ -314,5 +314,5 @@ chezmoi doctor | grep -v "^ok"         # Show only warnings and errors
 | Apply fails        | Template error             | Check template syntax with `chezmoi diff`      |
 | Merge conflicts    | Diverged source and target | Use `chezmoi merge` to resolve                 |
 | Secrets detected   | Plain text credentials     | Use chezmoi templates with 1Password/Doppler   |
-| forget needs TTY   | Interactive confirmation   | Use `chezmoi forget --force <path>`            |
+| forget needs TTY   | Interactive confirmation   | Pipe `yes` or run in interactive terminal       |
 | Template not found | Missing `.tmpl` suffix     | Use `chezmoi add --template` to create `.tmpl` |

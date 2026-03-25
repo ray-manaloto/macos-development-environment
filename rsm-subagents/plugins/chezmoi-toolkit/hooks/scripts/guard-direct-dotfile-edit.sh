@@ -4,42 +4,54 @@
 # Enforces the source-first workflow: edits must go through chezmoi source,
 # not by directly modifying deployed files in ~/.
 #
-# Called by PreToolUse:Bash hook with the command as $1.
+# Reads TOOL_INPUT_COMMAND from environment (never as a shell argument,
+# to prevent injection via shell metacharacters).
 
 set -euo pipefail
 
-COMMAND="${1:-}"
+# Read from environment — safe from shell injection
+COMMAND="${TOOL_INPUT_COMMAND:-}"
 
 # Skip empty commands
 [[ -z "$COMMAND" ]] && exit 0
 
+# Collapse multi-line commands to first line only for matching.
+# Multi-line commands could bypass guards if each line is matched
+# independently (e.g., "chezmoi edit\nvim ~/.bashrc").
+FIRST_LINE="${COMMAND%%$'\n'*}"
+
+# Allow if the command itself IS a chezmoi command
+if [[ "$FIRST_LINE" =~ ^chezmoi\ (edit|cd|add|source-path) ]]; then
+  exit 0
+fi
+
+# Allow if operating on chezmoi source directory
+if [[ "$FIRST_LINE" == *".local/share/chezmoi"* ]]; then
+  exit 0
+fi
+
 # Patterns that indicate direct editing of deployed dotfiles
-# These are files commonly managed by chezmoi
 MANAGED_PATTERNS=(
   'vim ~/\.'
   'nvim ~/\.'
   'nano ~/\.'
   'hx ~/\.'
   'code ~/\.'
-  'echo.*>>.*~/\.'
-  'cat.*>.*~/\.'
-  'sed -i.*~/\.'
-  'perl -pi.*~/\.'
+  'sed -i.* ~/\.'
+  'perl -pi.* ~/\.'
   'tee ~/\.'
+)
+
+# Patterns for redirect/copy operations targeting dotfiles
+REDIRECT_PATTERNS=(
+  'echo .* >> ~/\.'
+  'cat .* > ~/\.'
   'cp .* ~/\.'
   'mv .* ~/\.'
 )
 
-for pattern in "${MANAGED_PATTERNS[@]}"; do
-  if echo "$COMMAND" | grep -qE "$pattern"; then
-    # Allow if the command itself IS a chezmoi command (not just mentions it in a string)
-    if echo "$COMMAND" | grep -qE '^(chezmoi (edit|cd|add|source-path)|.*\.local/share/chezmoi)'; then
-      exit 0
-    fi
-
-    # Allow if editing non-dotfile paths under ~/
-    # (the pattern already requires ~/\. so this catches dotfiles only)
-
+for pattern in "${MANAGED_PATTERNS[@]}" "${REDIRECT_PATTERNS[@]}"; do
+  if [[ "$FIRST_LINE" =~ $pattern ]]; then
     echo "BLOCKED: Direct edit of deployed dotfile detected."
     echo "This project enforces chezmoi source-first workflow."
     echo ""
