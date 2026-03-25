@@ -20,6 +20,10 @@
           {
             "type": "command",
             "command": "uv run mde-py hooks guard-install"
+          },
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks guard-dotfile-edit"
           }
         ]
       }
@@ -31,6 +35,15 @@
           {
             "type": "command",
             "command": "uv run mde-py hooks log-edit-outcome"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks remind-chezmoi-commit"
           }
         ]
       }

@@ -19,12 +19,12 @@ Comprehensive chezmoi expertise for Claude Code: dotfile management, templates, 
 | chezmoi-advanced-config | Monorepo, cleanup, git automation, age/GPG encryption |
 | chezmoi-agent-config | AI agent config templating (CLAUDE.md, permissions, MCP, skills) |
 
-### Hooks (2)
+### Hooks
 
-| Hook | Event | Purpose |
-|------|-------|---------|
-| guard-direct-dotfile-edit | PreToolUse:Bash | Block direct edits to managed dotfiles |
-| remind-chezmoi-commit | PostToolUse:Bash | Remind to commit after chezmoi apply |
+Hook enforcement is handled by the mde Python library (`src/mde/hooks/`), not shell
+scripts in the plugin. The hooks are registered in `.claude/settings.json`:
+- `guard-dotfile-edit` — PreToolUse: block direct edits to managed dotfiles
+- `remind-chezmoi-commit` — PostToolUse: remind to commit after chezmoi apply
 
 ## Installation
 
