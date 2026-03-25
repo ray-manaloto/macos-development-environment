@@ -1,0 +1,23 @@
+id: finding-phase0b-reviewd-verification
+timestamp: "2026-03-25T23:15:00Z"
+source: "pypi:reviewd==0.6.0"
+agent: main
+finding_type: integration-verification
+confidence: confirmed
+confident_about: |
+  1. reviewd 0.6.0 installs cleanly via uv sync (deps: click, httpx, pyyaml, questionary)
+  2. Key APIs importable: invoke_cli(), parse_review_result(), ReviewResult, Finding, Severity
+  3. invoke_cli signature: (prompt, cwd, cli=CLAUDE, timeout=600, model=None, cli_args=None, cli_defaults=None) -> str
+  4. CLI_DEFAULTS auto-discover mise-managed CLIs: claude (--print --disallowedTools), codex (exec --sandbox), gemini (--approval-mode yolo)
+  5. All three CLIs (claude, codex, gemini) resolve via mise PATH — no adjustments needed
+  6. parse_review_result() accepts dict, not string — extract_json() needed for raw CLI output
+  7. Severity enum: critical, suggestion, nitpick, good — exact match to our finding types
+gaps: |
+  1. invoke_cli() returns raw string, not parsed ReviewResult — need extract_json() + parse_review_result()
+  2. No explicit CLAUDECODE unset in our invocation — reviewd handles it (line 398)
+  3. Untested: parallel invocation (3x invoke_cli) — may have subprocess concurrency issues
+status: verified
+next_steps: |
+  1. Build orchestrator that calls invoke_cli() 3x in parallel (anyio.TaskGroup)
+  2. Wire invoke_cli output → extract_json → parse_review_result → ModelReview conversion
+  3. Feed ModelReview list into evaluate_consensus() for the decision
