@@ -1,0 +1,36 @@
+id: finding-mise-skills-skillfish-research
+timestamp: "2026-03-25T07:55:00Z"
+source: https://www.skill.fish/?q=mise
+agent: researcher
+finding_type: investigation
+confidence: probable
+confident_about: |
+  - skill.fish exists as a skill discovery platform
+  - skill.fish renders content client-side (JavaScript SPA)
+  - GitHub API search for mise-skill topic returns no results
+  - awesome-claude-plugins repo does not catalog mise-specific skills in main README
+  - skillport is a CLI tool for managing skills locally (read/write to disk)
+  - No public "mise-skill" ecosystem appears to exist yet
+gaps: |
+  - Cannot extract skill list from skill.fish due to client-side rendering
+  - No GitHub topic "mise-skill" with published repos
+  - skills.sh alternate source also unable to fetch mise results
+  - No published registry/manifest of mise skills found in standard locations
+  - Unknown if skill.fish has an undocumented API for programmatic access
+evidence: |
+  1. skill.fish search page returns animated HTML without actual skill data in HTTP response
+  2. GitHub API search for "topic:mise-skill" returns empty
+  3. skillport list command requires local skill definitions (filesystem-based)
+  4. agent-fetch cannot extract data from client-side rendered pages
+  5. alternate skill catalogs (skills.sh, mcpmarket.com) also unable to provide mise skill lists
+implication: |
+  Mise skills appear to not have an established community registry yet, unlike Anthropic plugins
+  or Node skills. The discovery workflow may require:
+  1. Checking published repos directly on GitHub (no topic organizing them)
+  2. Asking in Mise community channels
+  3. Reviewing Mise official repository for bundled skills
+  4. Using skillport to manage skills discovered ad-hoc (not from centralized catalog)
+
+  This represents a gap in the Mise skill ecosystem compared to other tool platforms.
+tags: [mise, skills, skill-discovery, skillfish, registry, gap-analysis]
+status: discovered

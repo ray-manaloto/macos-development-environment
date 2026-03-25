@@ -30,13 +30,13 @@ depends = ["_check-env"]
 run = "deploy.sh"
 ```
 
-## Cross-Reference: mise-configuration
+## Cross-Reference: mise-config-settings
 
 **Prerequisites**: Before defining tasks, ensure `[env]` section is configured.
 
-> **PRESCRIPTIVE**: After defining tasks, invoke **[`mise-configuration` skill](../../mise-configuration/SKILL.md)** to ensure [env] SSoT patterns are applied.
+> **PRESCRIPTIVE**: After defining tasks, invoke **[`mise-config-settings` skill](../../mise-config-settings/SKILL.md)** to ensure [env] SSoT patterns are applied.
 
-The `mise-configuration` skill covers:
+The `mise-config-settings` skill covers:
 
 - `[env]` - Environment variables with defaults
 - `[settings]` - mise behavior configuration

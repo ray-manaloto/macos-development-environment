@@ -1,0 +1,81 @@
+id: mise-validation-selfupdate
+timestamp: "2026-03-25T08:30:00Z"
+source: "https://mise.jdx.dev/ (cli/self-update.html, cli/doctor.html, hooks.html, configuration/settings.html)"
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  1. mise self-update mechanism: uses GitHub Releases API, auto-updates plugins by default, non-interactive with --yes flag, available only if not package-manager-installed
+  2. Doctor/validation: mise doctor checks PATH precedence, plugin installation state, config file presence, backend availability, shell status
+  3. Mise hooks: experimental system with cd/enter/leave/preinstall/postinstall hooks, can reference mise tasks, runs with MISE_ORIGINAL_CWD/MISE_PROJECT_ROOT env vars
+  4. Version detection: mise --version returns SemVer + build date + features (SELF_UPDATE flag indicates auto-update capability)
+  5. Settings: env_cache for speed, prepare for lockfile/install validation, settings.missing_tools="if_other_versions_installed"
+  6. Current project: mise 2026.3.14, self_update_available=true, 2 warnings (PATH precedence, python backend mismatch)
+gaps: |
+  - No built-in plugin for detecting mise version changes between sessions (would need custom wrapper)
+  - Doctor cannot auto-repair issues (only diagnoses)
+  - No native "verify all tools are installed" check (must infer from prepare + doctor)
+  - No auto-changelog ingestion (mise version numbers don't map to release notes automatically)
+  - Prepare command is experimental and relies on tool-specific lockfile detection
+  - No built-in hook for session-start validation (only cd/enter/leave)
+evidence: |
+  From mise self-update help:
+    "Updates mise itself. Uses the GitHub Releases API to find the latest release and binary."
+    "By default, this will also update any installed plugins."
+    Flags: -f (force), -y (skip prompt), --no-plugins (disable auto-update)
+
+  From mise doctor output:
+    "self_update_available: yes"
+    "Warnings: mise tool paths not first in PATH, python installed with 'py' differs from registry recommendation 'core:python'"
+    "2 config files loaded: ~/.config/mise/config.toml, ./.mise.toml"
+
+  From mise hooks documentation:
+    "[hooks] cd/enter/leave/preinstall/postinstall"
+    "Task hooks can reference mise tasks with dependencies"
+    "Watch files hook detects file changes and runs scripts/tasks"
+
+  From settings reference:
+    "env_cache: caches computed environment (env vars + PATH) with session-scoped encryption"
+    "prepare: checks if lockfiles are newer than installed outputs, auto-invokes before mise x/run"
+    "status.missing_tools: can be 'if_other_versions_installed' to show warnings for mismatched versions"
+implication: |
+  **Session-start validation hook strategy:**
+  1. Claude Code hook can call `mise doctor --json` on session init to detect:
+     - PATH issues (tool paths not first)
+     - Missing tool installations
+     - Config file changes
+     - Version mismatches
+
+  2. Version tracking pattern:
+     - Store $(mise --version) output at session start to ~/.local/state/mise/session-version.txt
+     - On next session, diff against stored version
+     - If changed, could auto-run `mise prepare --force --explain` to show what needs attention
+     - Could trigger `mise doctor` to verify state after update
+
+  3. Hook enforcement in Claude Code:
+     - `hooks.session_start = "uv run mde-py hooks validate-mise"` would call a Python module
+     - Module runs: `mise doctor --json`, `mise prepare --dry-run`, checks PATH
+     - Returns validation matrix (doctor_pass, prepare_needed, path_ok, version_changed)
+     - Claude Code can display warnings or block if critical issues
+
+  4. Auto-learning on mise update:
+     - mise --version output includes build date (2026-03-24)
+     - Could diff command help output (`mise self-update --help`) to detect new flags
+     - Could check if new settings appeared in `mise settings` list
+     - Could catalog changelog via GitHub Releases API
+
+  5. Prepare command as validation gate:
+     - `mise prepare --list` shows available providers (npm, custom, etc.)
+     - `mise prepare --dry-run` shows what would run without executing
+     - Can validate all lockfiles are up-to-date with `mise prepare --explain <provider>`
+
+  6. Health signals that matter:
+     - self_update_available flag in doctor output
+     - Tool version mismatches (doctor shows these)
+     - Stale prepare outputs (prepare --dry-run != cached state)
+     - PATH mutation (tools not first in PATH)
+     - Missing tool installations (can infer from tool list vs installed)
+tags: ["mise-validation", "session-hooks", "version-tracking", "auto-update", "doctor-diagnostics", "prepare-lockfiles", "path-management"]
+status: discovered
+url: "https://mise.jdx.dev/cli/self-update.html"
+secondary_urls: ["https://mise.jdx.dev/cli/doctor.html", "https://mise.jdx.dev/hooks.html", "https://mise.jdx.dev/configuration/settings.html"]

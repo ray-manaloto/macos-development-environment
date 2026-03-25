@@ -1,0 +1,21 @@
+{
+  "name": "rsm-subagents",
+  "owner": {
+    "name": "ray-manaloto",
+    "url": "https://github.com/ray-manaloto"
+  },
+  "metadata": {
+    "description": "Specialized agent toolkits for dotfiles, chezmoi, mise, and macOS development environment management"
+  },
+  "plugins": [
+    {
+      "name": "mise-toolkit",
+      "source": "./plugins/mise-toolkit",
+      "description": "Comprehensive mise expertise: tool management, task orchestration, environment configuration, and mise-first policy enforcement",
+      "version": "0.1.0",
+      "category": "devtools",
+      "tags": ["mise", "tool-management", "task-runner", "dotfiles", "jdx"],
+      "repository": "https://github.com/ray-manaloto/rsm-subagents"
+    }
+  ]
+}

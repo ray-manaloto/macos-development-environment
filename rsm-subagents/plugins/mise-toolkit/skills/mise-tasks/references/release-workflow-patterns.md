@@ -1,4 +1,4 @@
-**Skill**: [mise-tasks](../SKILL.md) | **Related**: [semantic-release](../../semantic-release/SKILL.md) | [pypi-doppler](../../pypi-doppler/SKILL.md)
+**Skill**: [mise-tasks](../SKILL.md)
 
 # Release Workflow Patterns for mise Tasks
 

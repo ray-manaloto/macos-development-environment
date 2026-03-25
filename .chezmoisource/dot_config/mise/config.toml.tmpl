@@ -99,12 +99,9 @@ bats = "latest"
 "github:charmbracelet/gum" = "latest"
 
 # ── AI Agents & CLI Tools ──
-# Claude Code CLI — use npm: backend, NOT the registry shortname "claude-code".
-# The registry shortname routes to aqua:anthropics/claude-code which mirrors
-# GitHub releases with a lag (e.g. aqua has 2.1.78 while GitHub has 2.1.79).
-# The npm: backend reads directly from the npm registry and is always current.
-# The github: backend won't work — claude-code releases have no binary assets.
-"npm:@anthropic-ai/claude-code" = "latest"
+# Claude Code CLI — managed by its native installer (`claude update`),
+# NOT by mise. Installed at ~/.local/bin/claude → ~/.local/share/claude/versions/<ver>.
+# See Issue #52 for migration rationale.
 gemini-cli = "latest"
 "npm:@ralph-orchestrator/ralph-cli" = "latest"
 codex = "latest"

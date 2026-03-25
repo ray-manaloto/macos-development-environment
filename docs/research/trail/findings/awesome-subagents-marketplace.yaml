@@ -1,0 +1,117 @@
+id: finding-awesome-subagents-marketplace
+timestamp: "2026-03-25T08:45:00Z"
+source: https://github.com/VoltAgent/awesome-claude-code-subagents
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  - Repository structure: 10 numbered categories (01-10) with category-specific plugins
+  - Plugin format: .claude-plugin/plugin.json per category with agent list and versioning
+  - Installation methods: interactive shell script, marketplace plugin, manual file copy
+  - Agent template: YAML frontmatter (name, description, tools, model) + markdown content
+  - Contributing workflow: add agent to category, update README.md + category README + main README
+  - Version management: semver in plugin.json, bumped on content changes
+  - Community: 15,098 stars, 1,684 forks, 127+ agents, active VoltAgent organization
+
+gaps: |
+  - No central marketplace.json registry found (404 on expected path)
+  - Unknown if automatic update mechanism via Claude Code plugin system
+  - Plugin installation flow unclear (claude plugin marketplace add vs direct agent copy)
+  - No documented approval/submission process for new contributors
+
+evidence: |
+  - Repository: VoltAgent/awesome-claude-code-subagents (created 2025-07-30)
+  - Categories structure confirmed via `gh api repos/.../contents/categories`:
+    01-core-development: backend-developer, frontend-developer, fullstack-developer, api-designer, etc.
+    02-language-specialists: typescript-pro, python-pro, golang-pro, etc.
+    03-infrastructure:
+    04-quality-security:
+    05-data-ai:
+    06-developer-experience:
+    07-specialized-domains:
+    08-business-product:
+    09-meta-orchestration: agent-installer tool
+    10-research-analysis:
+
+  - Plugin manifest (categories/01-core-development/.claude-plugin/plugin.json):
+    ```json
+    {
+      "name": "voltagent-core-dev",
+      "version": "1.0.1",
+      "description": "Essential development subagents for everyday coding tasks...",
+      "author": {"name": "VoltAgent Community", "url": "https://github.com/VoltAgent"},
+      "repository": "https://github.com/VoltAgent/awesome-claude-code-subagents",
+      "license": "MIT",
+      "agents": [
+        "./api-designer.md",
+        "./backend-developer.md",
+        ...
+      ]
+    }
+    ```
+
+  - Agent template (backend-developer.md):
+    ```yaml
+    ---
+    name: backend-developer
+    description: "Use this agent when building server-side APIs..."
+    tools: Read, Write, Edit, Bash, Glob, Grep
+    model: sonnet
+    ---
+    [role definition, capabilities, workflow, examples]
+    ```
+
+  - Contributing guide (CONTRIBUTING.md):
+    - Agents must be placed in numbered category folders
+    - Agents must be tested with Claude Code before PR
+    - Contributors MUST update: main README.md, category README.md, agent .md file
+    - Alphabetical ordering required within category
+    - Version bumping required in category plugin.json when content changes
+    - Synchronized version updates to marketplace plugin (not found)
+
+  - Installation options documented in README:
+    1. Claude Code Plugin Marketplace: `claude plugin marketplace add VoltAgent/awesome-claude-code-subagents` + `claude plugin install <plugin-name>`
+    2. Manual: copy .md files to ~/.claude/agents/ or .claude/agents/
+    3. Interactive installer: ./install-agents.sh (local or remote via curl)
+    4. Agent Installer tool: agent-installer.md (Claude Code native discovery)
+
+implication: |
+  1. **Marketplace Model**: Not a traditional centralized marketplace, but a GitHub-curated "awesome" list with plugin distribution via Claude Code marketplace. Each category = one installable plugin.
+
+  2. **Categorization Strategy**: Numerical prefix (01-10) ensures ordering; category name describes domain. Plugin name format: voltagent-{category-slug} (voltagent-lang, voltagent-core-dev, etc.)
+
+  3. **Distribution Mechanism**: Multiple paths serve different user personas:
+     - PowerUsers: clone repo + ./install-agents.sh (full control, all agents)
+     - Casual users: Claude plugin marketplace (auto-updates via marketplace)
+     - Scripted deployments: curl install-agents.sh (no git clone)
+     - In-IDE: agent-installer.md (native Claude Code discovery UX)
+
+  4. **Quality Gate**: CONTRIBUTING.md enforces:
+     - Agent template structure (.md with YAML frontmatter)
+     - Category placement (alphabetical, correct category)
+     - Documentation updates (README entries, description, examples)
+     - Version discipline (plugin.json semver bumps on content changes)
+
+  5. **Scalability Observation**: 127+ agents across 10 categories; no signs of fragmentation. Model (sonnet/opus) specified per agent; tools constrained to Claude Code capabilities (Read, Write, Edit, Bash, Glob, Grep).
+
+  6. **Missing Pieces for Full-Featured Marketplace**:
+     - No centralized registry.json (marketplace.json missing — would be single source of truth)
+     - No approval workflow documented (trust model appears to be: anyone can fork+PR)
+     - No metrics/rating system (just GitHub stars on parent org)
+     - No search/discovery UX beyond README and Git interface
+
+  7. **Pattern for rsm-subagents**: This structure is replicable:
+     - Create 5-8 technology-specific categories (python-specialist, rust-specialist, etc.)
+     - Per-category .claude-plugin/plugin.json with agent list
+     - CONTRIBUTING.md with template + submission process
+     - Optional: agent-installer tool in 09-meta category for auto-discovery
+
+tags:
+  - claude-code-subagents
+  - plugin-distribution
+  - awesome-list-pattern
+  - marketplace-alternative
+  - voltagent-ecosystem
+  - community-driven-agents
+
+status: discovered

@@ -98,7 +98,7 @@ depends = ["_verify-gh-auth"]  # Verify before release
 run = "npx semantic-release --no-ci"
 ```
 
-See [`mise-configuration` skill](../../mise-configuration/SKILL.md#github-token-multi-account-patterns) for GH_TOKEN setup.
+See the **mise-config-settings** skill for GH_TOKEN setup via `mise set`.
 
 > **SSH ControlMaster Warning**: If using multi-account SSH, ensure `ControlMaster no` is set for GitHub hosts in `~/.ssh/config`. Cached connections can authenticate with the wrong account.
 

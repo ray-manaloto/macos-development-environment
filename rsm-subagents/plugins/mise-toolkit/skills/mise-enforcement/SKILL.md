@@ -1,6 +1,10 @@
 ---
 name: mise-enforcement
-description: Use when installing or updating CLI tools, configuring devcontainer tooling, or validating runtime/tool commands to ensure a strict mise-first workflow.
+description: >
+  This skill should be used when the user asks to "install a CLI tool", "add a global
+  tool", "check mise policy", "enforce mise-first", or when reviewing scripts that
+  mention brew install, npm -g, pipx install, cargo install, or go install. Also use
+  when validating runtime/tool commands to ensure a strict mise-first workflow.
 ---
 
 # Mise Enforcement
@@ -16,7 +20,7 @@ mise is the authority for global tools.
 
 ## Contract
 
-1. Global runtimes and global CLIs belong under `mise` authority, with `/Users/rmanaloto/.config/mise/config.toml` plus `configs/mde-modernization-matrix.json` defining whether the declaration is a direct `mise` entry or a backend-native declarative config consumed by `mise`.
+1. Global runtimes and global CLIs belong under `mise` authority, with `~/.config/mise/config.toml` plus `configs/mde-modernization-matrix.json` defining whether the declaration is a direct `mise` entry or a backend-native declarative config consumed by `mise`.
 2. Repository libraries belong in native manifests such as `package.json`, `pyproject.toml`, `uv.lock`, `pixi`, `Cargo.toml`, and `go.mod`.
 3. Use `mise run <task>` for repo automation and `mise x <tool> -- <args>` for one-off tool execution.
 4. Prefer backend-native declarative config when the backend exposes one; otherwise use a direct declarative `mise` entry.
@@ -29,7 +33,7 @@ mise is the authority for global tools.
 - Read `configs/mde-tool-ownership.json` before changing tool ownership.
 - Read `configs/mde-modernization-matrix.json` before changing declarative package sources or script authority.
 - Read `configs/mde-skill-registry.json` before introducing new repo-local skill IDs.
-- Load `.agents/skills/mde-package-cache-policy/SKILL.md` when cache behavior or cache directories are part of the change.
+- Check cache behavior policies when cache directories are part of the change.
 - Run `mise run mde:agent:preflight` before agent-driven setup, migration, or research flows.
 - Run `mise run mde:drift` after changing ownership rules or managed tool surfaces.
 

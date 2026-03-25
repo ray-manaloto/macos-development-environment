@@ -1,0 +1,102 @@
+id: mise-anti-patterns
+timestamp: "2026-03-25T08:15:00Z"
+source: |
+  https://mise.jdx.dev/direnv.html
+  https://mise.jdx.dev/faq.html
+  https://mise.jdx.dev/getting-started.html
+  https://mise.jdx.dev/ide-integration.html
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  - Official direnv/mise compatibility stance and root causes
+  - Common anti-patterns listed in mise FAQ and docs
+  - IDE integration pitfalls and PATH precedence rules
+  - Enforcement opportunities for bash hook validation
+  - mise doctor warnings already in use
+gaps: |
+  - Runtime behavior of conflicting direnv + mise in real projects (only covered theoretically)
+  - Specific package manager version conflicts (brew, npm, pipx timing)
+  - Details on stale shim cleanup procedures
+evidence: |
+  Direnv docs state: "direnv and mise both manage environment variables based on directory.
+  Because they both analyze the current environment variables before and after their respective
+  'hook' commands are run, they can sometimes conflict with each other."
+
+  Official stance: "Issues arising from incompatibilities are not considered bugs."
+  Real-world note: "the reality is mise and direnv usually will work together just fine
+  despite this. It's only more advanced use-cases where problems arise."
+
+  Root cause: "If you have an issue, it's likely to do with the ordering of PATH. This means
+  it would really only be a problem if you were trying to manage the same tool with direnv
+  and mise. For example, you may use `layout python` in an `.envrc` but also be maintaining
+  a `.tool-versions` file with python in it as well."
+
+  Mise doctor warnings found:
+  1. "mise tool paths are not first in PATH" — system-installed tools take precedence
+  2. "tool 'python' installed with explicit backend 'py' differs from registry recommendation"
+
+  FAQ note on hook-env: "In reality updating `PATH` is a bit more complex than that because
+  it also needs to remove java-17"
+
+  IDE integration: "Once you have launched the IDE, it won't reload the environment variables
+  or the `PATH` provided by `mise` if you update your mise configuration files."
+implication: |
+  **Direnv/Mise Coexistence**: Do NOT use direnv with mise for the same tool. If needed, use
+  `mise direnv activate` to create a use_mise function, making direnv the authority. Recommend
+  migration to mise.toml-only approach.
+
+  **Anti-Patterns to Enforce**:
+  1. Same tool in both direnv `.envrc` and mise config → conflict (PATH ordering issue)
+  2. `brew install <tool>` when tool is in mise registry → dual installation, shim confusion
+  3. `npm install -g` / `bun add -g` when in mise config → system npm shadowing mise npm
+  4. `pipx install` when tool is in mise config → dual Python environments
+  5. Direct `cargo install`, `go install` when in mise config → competing shims
+  6. Using `.tool-versions` instead of `mise.toml` → legacy, misses env var + tasks
+  7. Not calling `mise lock` after config changes → stale lock files cause version mismatch
+  8. Not calling `mise reshim` after manual install changes → stale shims
+  9. Using bare `python`/`node`/`ruby` in scripts without `mise exec --` → misses context
+  10. Forgetting GIT_TERMINAL_PROMPT=0 in scripts doing git operations → hangs in CI
+
+  **IDE Integration Pitfalls**:
+  - VSCode/JetBrains need `~/.zprofile` with shims added (not just `mise activate`)
+  - Changing mise.toml in IDE doesn't auto-reload env vars in running IDE
+  - IDE plugins (intellij-mise, mise-vscode) provide tighter integration than shims alone
+  - Shims don't support arbitrary env vars in [env] section — only tool PATHs
+  - IntelliJ asdf symlink workaround available: `ln -s ~/.local/share/mise ~/.asdf`
+
+  **Enforcement Hook Opportunities** (for PreToolUse:Bash hook):
+  1. Detect `brew install` for registered mise tools → suggest `mise use` instead
+  2. Detect `npm install -g`, `bun add -g` → suggest `mise use npm:<pkg>` or `pipx`
+  3. Detect `pipx install` when tool in mise → suggest `mise use pipx:<pkg>`
+  4. Detect `cargo install`, `go install` when tool in mise → suggest `mise use`
+  5. Detect `direnv allow` when mise is active → warn about potential conflicts
+  6. Detect `.tool-versions` file → suggest migration to `.mise.toml` + `.envrc`
+  7. Detect scripts using raw `python/node/ruby` → suggest `mise exec --`
+  8. Detect git commands in scripts without GIT_TERMINAL_PROMPT=0 → flag
+  9. Detect `mise use` without `mise lock` in next line → suggest lock
+  10. Detect manual edits to ~/.local/share/mise/* → suggest `mise reshim`
+
+  **mise doctor Already Catches**:
+  - PATH precedence (cmux, opencode, llvm coming before mise shims)
+  - Backend mismatches (py vs core:python recommendation)
+  - Unused tools (can be disabled with status.missing_tools = "if_other_versions_installed")
+
+  **Configuration Best Practices**:
+  - Use `mise.toml` with [env], [tasks], [tools] sections
+  - Avoid `.tool-versions` (asdf legacy, limited expressiveness)
+  - Use `mise.local.toml` for local overrides (git-ignored)
+  - Set `not_found_auto_install = true` for UX (auto-install missing tools)
+  - Run `mise doctor` before committing config changes
+  - For CI/CD: prefer shims over `mise activate` (shims more compatible with sandboxing)
+  - For IDEs: use official plugins + shims, not plain `mise activate`
+tags:
+  - mise
+  - direnv
+  - anti-patterns
+  - enforcement
+  - ide-integration
+  - path-precedence
+  - package-managers
+  - hook-validation
+status: discovered

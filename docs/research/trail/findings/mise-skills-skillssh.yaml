@@ -1,0 +1,34 @@
+id: finding-mise-skills-skillssh
+timestamp: "2026-03-25T07:55:00Z"
+source: "https://skills.sh/?q=mise"
+agent: researcher
+finding_type: investigation
+confidence: probable
+confident_about: |
+  - skills.sh exists and hosts an agent skills directory (90,087+ skills indexed)
+  - The site is primarily client-side rendered (JavaScript-based)
+  - Search functionality works via query parameters (?q=mise)
+  - agent-fetch tool can reach the site but retrieves HTML without populated skill data
+gaps: |
+  - No mise-specific skills visible in fetched content (client-side rendering barrier)
+  - Unable to determine if skills.sh has mise-related skills without browser execution
+  - No dedicated API endpoint discovered for skill search/listing
+  - Query parameter search may not return results in static HTML
+evidence: |
+  - HTTP fetch successful (latency 575ms)
+  - Large HTML response (156KB) contains leaderboard structure but no populated skills data
+  - Attempted patterns: skill link extraction, text node search, data attributes
+  - Alternative skill pages (https://skills.sh/skills/mise-task) return 404
+  - All skill queries appear client-side rendered in Next.js/React framework
+implication: |
+  - skills.sh requires JavaScript execution to display skill listings
+  - agent-fetch (static HTML fetcher) cannot retrieve dynamic skill data from skills.sh
+  - Alternative sources (skill.fish, mcpmarket.com) may have better API/static content support
+  - Consider checking GitHub repositories directly for mise-related Claude skills
+tags:
+  - skills
+  - mise
+  - agent-skills
+  - skills.sh
+  - client-side-rendering
+status: discovered

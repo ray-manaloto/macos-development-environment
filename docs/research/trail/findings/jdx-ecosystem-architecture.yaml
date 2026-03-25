@@ -1,0 +1,178 @@
+id: jdx-ecosystem-architecture
+timestamp: "2026-03-25T08:45:00Z"
+source: |
+  - gh api repos/jdx/* (GitHub API queries for all jdx projects)
+  - gh repo list jdx (100+ repository index)
+  - Local mise config analysis (~/.config/mise/config.toml)
+  - Plugin ecosystem documentation (mise-plugins, mise-env-fnox)
+  - Repository READMEs and descriptions
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  1. **JDX Organization Overview**: Jeff Dickey (jdx) maintains 100 active + 17 archived open-source projects
+     focused on developer experience (DX). The organization is built around complementary Unix-like tools
+     that integrate tightly with Rust, Lua, and modern CLI tooling.
+
+  2. **Core Platform (5 Major Projects)**:
+     - **mise** (26k stars): Universal dev tool manager. Replaces asdf, direnv, and make.
+       Manages versions, environment variables, and tasks. Core language: Rust.
+     - **fnox** (1.3k stars): Encrypted secrets manager. CLI + remote support.
+       Integrates with mise via mise-env-fnox plugin. Language: Rust.
+     - **hk** (695 stars): Git hooks + project lints. Replaces pre-commit. Language: Rust.
+     - **usage** (593 stars): CLI specification language. Defines CLIs declaratively (portable across languages).
+       Language: Rust. Website: https://usage.jdx.dev
+     - **pitchfork** (229 stars): Daemon management with DX. Modern alternative to systemd/launchd.
+       Language: Rust.
+
+  3. **Configuration & Code Generation**:
+     - **pkl** (Hashicorp's configuration language). jdx maintains pklr (Rust implementation) and rpkl (Rust bindings).
+     - **mise-java**: JVM data crawler for version metadata collection.
+     - **mise-versions**: Repository storing version numbers of common mise plugins (cache/source of truth).
+     - **aqua-registry**: jdx maintains fork of aqua's standard registry (tool discovery system).
+
+  4. **DevOps & Integration**:
+     - **mise-action**: GitHub Actions integration for CI/CD (262 stars, TypeScript).
+     - **communique**: AI-powered release notes generation (Rust). Generates editorialized changelogs.
+     - **mise-analytics**: Analytics infrastructure (purpose unclear from repo listing).
+     - **sigstore-verification**: Supply chain verification integration.
+
+  5. **Plugin System & Templates**:
+     - **mise-tool-plugin-template**: Scaffold new tool backends.
+     - **mise-env-plugin-template**: Scaffold env var plugins (like fnox-env).
+     - **mise-backend-plugin-template**: Scaffold backend providers (aqua, asdf, github, etc.).
+     - **vfox-npm**, **vfox-dummy**: Example vfox (Visual Fox Pro? or generic versionable framework) plugins.
+     - Installed examples: 1password-cli, eza plugins available via mise ecosystem.
+
+  6. **Integration Ecosystem**:
+     - **fnox-env**: mis​e environment plugin that hydrates secrets from fnox into shell env vars.
+       Uses Lua hooks, file watching, and redaction. Allows profile-based secrets (dev/prod).
+     - **hk** (git hooks): Can be installed via mise and invoked from mise tasks (postinstall hook).
+     - **mise + tasks + hk**: Complete CI/CD-style workflow inside single `mise.toml` file.
+       Example: `[hooks] postinstall = "mise lock"` runs after tool installs.
+
+  7. **Rust Monoculture**: All core jdx projects are in Rust. Provides:
+     - Single binary distribution (vs Node.js/Python dependencies).
+     - Fast CLI startup (critical for hook/task runners).
+     - Type-safe configuration parsing (pkl integration).
+     - Strong integration with systems tooling (signals, file watching, daemons).
+
+  8. **Supported Tool Ecosystem (100+ tools in registry)**:
+     - Language runtimes: node, python, go, rust, ruby, java, dotnet, bun, pixi, uv
+     - Infrastructure: docker, kubectl, helm, eksctl, aws-cli, azure-cli, terraform, ansible
+     - DevOps: github-cli, gitlab-cli, aws-sam, devcontainer, mise-action
+     - AI/ML: langchain-cli, langgraph-cli, aider-chat, deepagents-cli
+     - Data: jq, yq, dbt, kafka, postgresql, redis
+     - Security: age, sops, 1password-cli, fnox
+     - Backend options: aqua (OSS), asdf (legacy), cargo, npm, pipx, github, vfox, http, s3
+     - Backends support ~18 different source types; tools can be installed from multiple backends.
+
+  9. **Multi-Environment Support**:
+     - mise.<ENV>.toml for environment-specific configs (dev, staging, prod, ci).
+     - fnox supports profiles (fnox --profile production vs --profile dev).
+     - Plugins can be parameterized: _.fnox-env = { profile = "production" }
+     - Settings allow environment-specific backends (aqua.baked_registry, pip.registry_url).
+
+  10. **GitHub Presence**: 26k+ stars on mise alone. fnox (1.3k), hk (695), usage (593), pitchfork (229),
+      mise-action (262) all have strong adoption. Community-maintained plugins for 100+ tools.
+      Discord server with active community (link: https://discord.gg/mABnUDvP57).
+
+  11. **Version Metadata & Attestation**:
+      - mise-versions repository: Single source of truth for plugin version numbers.
+      - GitHub Attestations: Supported in mise, aqua, and github backends for supply chain security.
+      - SLSA provenance: Supported in mise and aqua backends.
+      - Sigstore integration: For verifying binary supply chain.
+
+  12. **Licensing & Stability**:
+      - All projects appear to be Apache 2.0 or MIT licensed (OSS-friendly).
+      - Core projects (mise, fnox, hk, usage) actively maintained as of 2026-03-25.
+      - 17 archived projects (legacy, experimental, or superseded) indicate iteration and evolution.
+      - mise is the flagship (~26k stars), with ecosystem supporting it.
+
+evidence: |
+  - GitHub API: jdx org has 100 active repos (gh repo list jdx --limit 100)
+  - Star counts: mise (26k), fnox (1.3k), hk (695), usage (593), pitchfork (229), mise-action (262)
+  - Languages: Rust dominates (mise, fnox, hk, usage, pitchfork, pklr, rpkl, communique)
+  - Local config shows fnox integration: [plugins] fnox-env and [env] _.fnox-env = { tools = true }
+  - Task runners: mise task ls shows 50+ tasks including mde:agent:*, install:*, bootstrap:*
+  - Hooks: [hooks] postinstall = "mise lock" shows integration with tool installation pipeline
+  - Templates: mise-*-plugin-template repos for scaffolding new extensions
+  - Action: mise-action available for CI/CD (GitHub Actions integration)
+
+implication: |
+  1. **Consolidation Opportunity**: The jdx ecosystem is designed to replace multiple tools.
+     Instead of: asdf + direnv + make + pre-commit + fnox CLI
+     Use: mise + fnox-env plugin + hk + pitchfork + usage (declare CLIs)
+     This reduces dependency sprawl and cognitive load.
+
+  2. **Rust-First Strategy**: For teams that prefer compiled binaries and single-file deployment,
+     jdx tools are ideal. No runtime dependencies (Node.js, Python). Fast shell startup.
+     Downside: contributions require Rust knowledge.
+
+  3. **Plugin Architecture as Extension Point**: Don't fork jdx projects. Instead, extend via:
+     - Custom plugins (mise-env-plugin-template for env plugins, mise-tool-plugin-template for tools)
+     - Custom backends (aqua, github, http, s3 backends already support custom registries)
+     - Custom tasks (mise.toml [tasks] section for automation)
+
+  4. **Secrets Management Pattern**: fnox + fnox-env plugin is the canonical pattern.
+     For this project: deprecate shell-based secrets, migrate to fnox (or 1password integration).
+     Benefits: multi-environment profiles, redaction in logs, file watching, encryption at rest.
+
+  5. **For CI/CD**: Use mise-action in GitHub Actions for reproducible builds.
+     Define versions in mise.toml (single source of truth), then:
+     ```yaml
+     - uses: jdx/mise-action@v2
+     ```
+     This eliminates need for setup-python, setup-node, setup-go, etc.
+
+  6. **For Onboarding**: New team members should run:
+     ```bash
+     git clone repo
+     mise trust
+     mise install
+     ```
+     Everything (tools, env vars, hooks, tasks) is configured in mise.toml. No separate scripts.
+
+  7. **Hermetic Builds**: Use mise.lock (auto-generated by mise lock) to pin:
+     - Tool versions
+     - Backend URLs (downloads)
+     - Checksums (for verification)
+     This provides reproducibility across CI, dev, and production.
+
+  8. **Ecosystem Maturity**: jdx projects are production-ready with strong GitHub presence.
+     mise is the flagship (26k stars, actively maintained, large community).
+     Reasonable to bet on this ecosystem for new infrastructure projects.
+
+  9. **Interoperability**: Each tool stands alone but integrates via:
+     - mise as orchestrator (versions + env + tasks)
+     - fnox for secrets (via mise-env plugin)
+     - hk for git hooks (can be invoked from mise tasks)
+     - usage for CLI documentation (tool-agnostic)
+     - pitchfork for long-running daemons
+     Can use any combination without vendor lock-in.
+
+  10. **Comparison with Alternatives**:
+      - vs. Docker: mise/hk/fnox provide local development without containers.
+      - vs. Nix: jdx tools are more approachable, less functional-language learning curve.
+      - vs. Devbox: Similar goal, but jdx tools more composable (each tool is standalone).
+      - vs. Hermit: mise provides more flexibility (18 backends vs. single registry).
+
+tags:
+  - jdx-ecosystem
+  - mise-platform
+  - fnox-secrets
+  - hk-git-hooks
+  - usage-spec
+  - pitchfork-daemons
+  - rust-cli-tools
+  - plugin-architecture
+  - multi-environment
+  - github-actions
+  - secrets-management
+  - developer-experience
+  - tool-consolidation
+  - supply-chain-security
+  - hermetic-builds
+  - open-source-ecosystem
+
+status: discovered

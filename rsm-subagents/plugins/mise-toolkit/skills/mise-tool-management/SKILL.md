@@ -1,12 +1,10 @@
 ---
 name: mise-tool-management
-description: Backend selection decision tree, adding tools to mise config, drift detection, GIT_TERMINAL_PROMPT enforcement
-triggers:
-  - mise
-  - tool install
-  - add tool
-  - new dependency
-  - backend selection
+description: >
+  This skill should be used when the user asks to "add a tool to mise", "install a new
+  CLI tool", "choose a mise backend", "search the mise registry", "detect tool drift",
+  or mentions mise tool installation, backend selection, GIT_TERMINAL_PROMPT enforcement,
+  or adding new dependencies to mise config.
 ---
 
 # Mise Tool Management

@@ -907,7 +907,7 @@ Install dependencies: `npm install`
 
 Create `.releaserc.yml` in the monorepo root:
 
-> **Warning**: The `@semantic-release/exec` plugin uses Lodash templates which conflict with bash `${VAR:-default}` syntax. Use `<%= %>` for semantic-release variables or avoid bash default syntax. See [Troubleshooting: Lodash Template Conflicts](../../semantic-release/references/troubleshooting.md#semantic-releaseexec-lodash-template-conflicts).
+> **Warning**: The `@semantic-release/exec` plugin uses Lodash templates which conflict with bash `${VAR:-default}` syntax. Use `<%= %>` for semantic-release variables or avoid bash default syntax. Consult the semantic-release documentation for Lodash template conflict workarounds.
 
 ```yaml
 branches:
@@ -1609,9 +1609,7 @@ doSomething(value); // OK
 
 **Release Workflow**:
 
-- `itp:semantic-release` skill - Comprehensive release automation guide
 - [semantic-release Documentation](https://semantic-release.gitbook.io/) - Official docs
-- [local-release-workflow.md](../../semantic-release/references/local-release-workflow.md) - 4-phase workflow reference
 
 **GitHub & Workflow**:
 
