@@ -42,7 +42,6 @@ def _check_mise_fmt(root: Path, result: ValidationResult) -> None:
     if not mise_toml.exists():
         return
 
-    result.files_checked += 1
     try:
         proc = subprocess.run(
             ["mise", "fmt", "--check"],
@@ -51,6 +50,7 @@ def _check_mise_fmt(root: Path, result: ValidationResult) -> None:
             cwd=str(root),
             timeout=30,
         )
+        result.files_checked += 1
         if proc.returncode != 0:
             result.add(
                 path=str(mise_toml),
@@ -59,12 +59,28 @@ def _check_mise_fmt(root: Path, result: ValidationResult) -> None:
                 rule="mise.fmt",
                 fixable=True,
             )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+    except subprocess.TimeoutExpired:
+        result.add(
+            path=str(mise_toml),
+            message="mise fmt timed out (30s)",
+            severity=Severity.ERROR,
+            rule="mise.timeout",
+        )
+    except FileNotFoundError:
+        result.add(
+            path="mise",
+            message="mise binary not found despite which() check",
+            severity=Severity.ERROR,
+            rule="mise.not-found",
+        )
 
 
 def _check_mise_doctor(result: ValidationResult) -> None:
-    """Run mise doctor for health checks."""
+    """Run mise doctor for health checks.
+
+    Scans both stdout and stderr for WARN/ERROR lines, regardless of
+    exit code — mise doctor may exit 0 with warnings.
+    """
     try:
         proc = subprocess.run(
             ["mise", "doctor"],
@@ -72,14 +88,33 @@ def _check_mise_doctor(result: ValidationResult) -> None:
             text=True,
             timeout=30,
         )
-        if proc.returncode != 0:
-            for line in proc.stderr.splitlines():
-                if "WARN" in line or "ERROR" in line:
-                    result.add(
-                        path="mise",
-                        message=f"mise doctor: {line.strip()}",
-                        severity=Severity.ERROR,
-                        rule="mise.doctor",
-                    )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+        # Scan both streams — mise versions vary on where output goes
+        all_output = proc.stdout + proc.stderr
+        for line in all_output.splitlines():
+            if "WARN" in line or "ERROR" in line:
+                result.add(
+                    path="mise",
+                    message=f"mise doctor: {line.strip()}",
+                    severity=Severity.ERROR,
+                    rule="mise.doctor",
+                )
+        # Also flag non-zero exit even without WARN/ERROR text
+        has_warn_or_error = any(
+            "WARN" in out_line or "ERROR" in out_line for out_line in all_output.splitlines()
+        )
+        if proc.returncode != 0 and not has_warn_or_error:
+            result.add(
+                path="mise",
+                message=f"mise doctor exited with code {proc.returncode}",
+                severity=Severity.ERROR,
+                rule="mise.doctor",
+            )
+    except subprocess.TimeoutExpired:
+        result.add(
+            path="mise",
+            message="mise doctor timed out (30s)",
+            severity=Severity.ERROR,
+            rule="mise.timeout",
+        )
+    except FileNotFoundError:
+        pass  # Already caught by fmt check

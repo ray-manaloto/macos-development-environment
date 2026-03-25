@@ -47,51 +47,112 @@ def _check_chezmoi_verify_files(result: ValidationResult) -> None:
             timeout=30,
         )
         if proc.returncode != 0:
+            detail = proc.stderr.strip() or proc.stdout.strip() or ""
             result.add(
                 path="chezmoi",
-                message="chezmoi verify detected file drift",
+                message=f"chezmoi verify failed (exit {proc.returncode}): {detail}"
+                if detail
+                else "chezmoi verify detected file drift",
                 severity=Severity.ERROR,
                 rule="chezmoi.drift",
             )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+    except subprocess.TimeoutExpired:
+        result.add(
+            path="chezmoi",
+            message="chezmoi verify timed out (30s)",
+            severity=Severity.ERROR,
+            rule="chezmoi.timeout",
+        )
+    except FileNotFoundError:
+        result.add(
+            path="chezmoi",
+            message="chezmoi binary not found despite which() check",
+            severity=Severity.ERROR,
+            rule="chezmoi.not-found",
+        )
 
 
 def _check_chezmoi_script_drift(result: ValidationResult) -> None:
-    """Detect pending script changes via chezmoi diff.
+    """Detect script state issues via chezmoi state dump.
 
-    run_onchange scripts re-run when their content changes.  If diff
-    shows script changes, it means a chezmoi apply is needed to execute
-    the updated scripts.
+    Compares rendered script hashes against stored entryState hashes.
+    If chezmoi has no script state at all (fresh machine), that's an
+    ERROR because scripts need to be applied first.
+
+    Note: chezmoi diff --include=scripts always shows run_onchange
+    scripts as "new files" (they're executed, not deployed), so we
+    use state dump instead of diff for accurate detection.
     """
     try:
         proc = subprocess.run(
-            ["chezmoi", "diff", "--include=scripts"],
+            ["chezmoi", "state", "dump"],
             capture_output=True,
             text=True,
             timeout=30,
         )
-        if proc.stdout.strip():
+        if proc.returncode != 0:
             result.add(
                 path="chezmoi",
-                message="chezmoi scripts have pending changes (run chezmoi apply)",
-                severity=Severity.WARNING,
+                message=f"chezmoi state dump failed (exit {proc.returncode})",
+                severity=Severity.ERROR,
                 rule="chezmoi.script-drift",
             )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+            return
+
+        import json
+
+        try:
+            state = json.loads(proc.stdout)
+        except json.JSONDecodeError:
+            result.add(
+                path="chezmoi",
+                message="chezmoi state dump produced invalid JSON",
+                severity=Severity.ERROR,
+                rule="chezmoi.script-drift",
+            )
+            return
+
+        # Check that entryState has script entries
+        entry_state = state.get("entryState", {})
+        script_entries = {k: v for k, v in entry_state.items() if v.get("type") == "script"}
+        if not script_entries:
+            result.add(
+                path="chezmoi",
+                message="chezmoi has no script execution state (run chezmoi apply)",
+                severity=Severity.ERROR,
+                rule="chezmoi.script-drift",
+            )
+    except subprocess.TimeoutExpired:
+        result.add(
+            path="chezmoi",
+            message="chezmoi state dump timed out (30s)",
+            severity=Severity.ERROR,
+            rule="chezmoi.timeout",
+        )
+    except FileNotFoundError:
+        pass  # Already caught by verify check
+
+
+# Chezmoi doctor output format: "severity  check-name  message"
+# Severity tokens are lowercase: "ok", "info", "warning", "error"
+_DOCTOR_SEVERITY_TOKENS = ("warning", "error")
+
+# Benign check NAMES (second column) that are expected in this project.
+# Matched against the check-name field only, not the full line.
+_BENIGN_CHECK_NAMES = frozenset(
+    {
+        "working-tree",
+        "suspicious-entries",
+    }
+)
 
 
 def _check_chezmoi_doctor(result: ValidationResult) -> None:
-    """Run chezmoi doctor and treat unexpected warnings as errors.
+    """Run chezmoi doctor and treat unexpected warnings/errors as failures.
 
-    Known benign warnings (working-tree dirty, suspicious-entries for
-    .chezmoisource) are filtered out.
+    Known benign check names (working-tree, suspicious-entries) are
+    filtered by matching the check-name column, not the full line text.
     """
-    benign_patterns = (
-        "working-tree",
-        "suspicious-entries",
-    )
     try:
         proc = subprocess.run(
             ["chezmoi", "doctor"],
@@ -99,19 +160,39 @@ def _check_chezmoi_doctor(result: ValidationResult) -> None:
             text=True,
             timeout=30,
         )
-        for line in proc.stdout.splitlines():
-            if not line.startswith("warning"):
+        # Check both stdout and stderr for doctor output
+        all_output = proc.stdout + proc.stderr
+        for line in all_output.splitlines():
+            # Match lines starting with warning or error tokens
+            matched_token = None
+            for token in _DOCTOR_SEVERITY_TOKENS:
+                if line.startswith(token):
+                    matched_token = token
+                    break
+            if matched_token is None:
                 continue
-            if any(p in line for p in benign_patterns):
-                continue
-            # Extract check name and message from doctor output
+
+            # Doctor output columns: severity, check-name, message
             parts = line.split(None, maxsplit=2)
-            msg = parts[-1] if len(parts) > 1 else line
+            check_name = parts[1] if len(parts) > 1 else ""
+            check_msg = parts[-1] if len(parts) > 1 else line
+
+            # Filter by check name, not full line text
+            if check_name in _BENIGN_CHECK_NAMES:
+                continue
+
             result.add(
                 path="chezmoi",
-                message=f"chezmoi doctor warning: {msg.strip()}",
+                message=f"chezmoi doctor {matched_token}: [{check_name}] {check_msg}".strip(),
                 severity=Severity.ERROR,
                 rule="chezmoi.doctor",
             )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+    except subprocess.TimeoutExpired:
+        result.add(
+            path="chezmoi",
+            message="chezmoi doctor timed out (30s)",
+            severity=Severity.ERROR,
+            rule="chezmoi.timeout",
+        )
+    except FileNotFoundError:
+        pass  # Already caught by verify check
