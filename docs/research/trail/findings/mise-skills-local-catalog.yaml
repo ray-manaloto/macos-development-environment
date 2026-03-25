@@ -1,0 +1,136 @@
+id: mise-skills-local-catalog
+timestamp: "2026-03-25T00:00:00Z"
+source: "local:"
+agent: researcher
+finding_type: catalog
+confidence: confirmed
+confident_about: |
+  Local project has 3 mise skills, 1 mise-specialist agent defined.
+  ctx7 registry has 20+ mise-related skills (7 directly relevant).
+  Project mise-first policy is comprehensive and enforced.
+gaps: |
+  Local skills focus on [tools], [tasks], and policy enforcement.
+  Gaps identified:
+  1. No [env] configuration skill (only task-specific env handling)
+  2. No drift detection/audit skill (mise doctor exists but not exposed as skill)
+  3. No upgrade/migration workflow skill (version bumping, security patches)
+  4. No lock file management skill (mise.lock strategies for reproducibility)
+  5. No backend-specific expertise skills (pipx extras, github releases, aqua verification)
+  6. No performance/caching optimization skill (mise cache tuning, shim optimization)
+  7. No conflict resolution skill (duplicate globals, namespace collisions)
+  8. No health check automation (proactive missing tool detection)
+evidence: |
+  LOCAL SKILLS (3 files):
+
+  1. mise-tool-management (/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/.claude/skills/mise-tool-management/SKILL.md)
+     - Backend selection decision tree (Registry > aqua > github > pipx > npm > cargo > go)
+     - Aqua backend discovery (mise ls-remote "aqua:<org>/<repo>")
+     - GitHub backend discovery (mise ls-remote "github:<org>/<repo>")
+     - Bun/uv global cleanup patterns
+     - Drift detection: `mise outdated`, `mise doctor`
+     - GIT_TERMINAL_PROMPT enforcement
+     Scope: NEW tool addition workflows only
+
+  2. mise-tasks (/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/.claude/skills/mise-tasks/SKILL.md)
+     - Task definition and dependency management (depends, depends_post, wait_for)
+     - 70+ task properties documented (description, alias, dir, env, hide, sources, outputs, confirm, etc.)
+     - Task namespacing patterns
+     - Levels 1-11 reference (basic to monorepo to Pants integration)
+     - Integration with [env] section
+     - Anti-patterns (hardcoding secrets, skipped depends, minimal descriptions)
+     Scope: Task definition and orchestration
+
+  3. mise-enforcement (/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/.claude/skills/mise-enforcement/SKILL.md)
+     - Global runtimes/CLIs belong under mise authority
+     - Backend-native declarative config preference
+     - Explicit config file references: mde-tool-ownership.json, mde-modernization-matrix.json, mde-skill-registry.json
+     - Tasks: mde:agent:preflight, mde:drift, mde:agent:report
+     - Explicitly disallowed: brew install, npm -g, bun add -g, uv tool install
+     Scope: Policy enforcement and validation
+
+  AGENT (1 file):
+
+  4. mise-specialist (/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/.claude/agents/mise-specialist.md)
+     - Haiku model (cost-optimized)
+     - Skills: [mise-enforcement, mise-tool-management, mise-tasks]
+     - Uses: Read, Glob, Grep, Bash
+     - Disallowed: WebFetch, WebSearch
+     - Memory: project-scoped
+     - Key files: ~/.config/mise/config.toml, .mise.toml, mise.lock
+     - Protocol: check (mise ls, mise doctor) → add → install → lock → reshim → verify
+     Scope: Managing tool versions, backends, task runners
+
+  CTX7 REGISTRY SEARCH (20 skills found, 7 directly relevant):
+
+  1. mise-environment-management (/thebushidocollective/han) — env vars, direnv replacement, per-directory settings
+  2. mise-task-configuration (/thebushidocollective/han) — task setup (overlaps with local mise-tasks)
+  3. mise-tool-management (/thebushidocollective/han) — tool installation (overlaps with local)
+  4. mise-configuration (/terrylica/cc-skills) — [env], [settings], [tools], _.file, _.path, _.python.venv
+  5. mise-tasks (/terrylica/cc-skills) — task definition (overlaps with local)
+  6. mise-expert (/samhvw8/dot-claude) — general mise expertise (unspecified scope)
+
+  POLICY DOCUMENT:
+
+  5. mise-first.md enforces:
+     - ALL tools MUST be in mise config (not install scripts)
+     - Backend priority order (6 tiers + deprecated ubi)
+     - GIT_TERMINAL_PROMPT=0 for git scripts
+     - No duplication in Brewfile
+implication: |
+  CRITICAL GAPS FOR NEW MISE-EXPERT AGENT:
+
+  1. [env] Configuration Management (HIGH PRIORITY)
+     - Parallel skill to mise-tasks: handle [env] section, defaults, _.file patterns
+     - Secrets integration: redact = true, external env files
+     - Per-tool env vars vs global env vars
+     - Context7 has mise-environment-management and mise-configuration that cover this
+
+  2. Drift Detection & Audit (HIGH PRIORITY)
+     - Expose `mise doctor`, `mise outdated`, `mise ls` as diagnostic workflows
+     - Auto-detect tool version drift from config
+     - Detect bun/npm/pipx/uv tool duplicates (global namespace pollution)
+     - Verify all [tools] declared in config are actually installed
+     - Proactive health check patterns
+
+  3. Lock File Strategy (MEDIUM PRIORITY)
+     - When to run `mise lock` (after config changes, before commits)
+     - Lock vs lock.json vs no-lock workflows
+     - Reproducibility guarantees
+     - CI/CD lock file validation
+
+  4. Backend-Specific Expertise (MEDIUM PRIORITY)
+     - pipx extras handling (pip install with [extras] syntax)
+     - GitHub Releases asset selection (Darwin/Linux/Windows binaries)
+     - Aqua config discovery and verification
+     - Registry lookup workflows
+
+  5. Upgrade & Migration Workflows (MEDIUM PRIORITY)
+     - Version bumping strategies
+     - Security patch workflows
+     - Pre-release vs stable selection
+     - Rollback patterns
+     - Tool lifecycle (deprecation, replacement)
+
+  6. Conflict Resolution (MEDIUM PRIORITY)
+     - Detecting duplicate globals (bun vs npm, pipx vs uv, cargo vs go)
+     - Namespace collision detection
+     - Consolidation workflows
+
+  7. Performance & Caching (LOW PRIORITY)
+     - mise cache tuning
+     - Shim optimization
+     - Backend-specific cache strategies
+
+  RECOMMENDED NEW SPECIALIST PROFILE:
+  - Name: mise-expert or mise-configuration-expert
+  - Core skills: [mise-enforcement, mise-tool-management, mise-tasks, NEW:mise-env, NEW:mise-drift-audit]
+  - Model: Haiku (cost-optimized, like mise-specialist)
+  - Tools: Read, Glob, Grep, Bash, Bash (for drift workflows)
+  - Key responsibilities:
+    * Proactively invoke /mise-env when tasks/tool definitions are created
+    * Diagnose drift using exposed mise doctor/outdated/ls workflows
+    * Advise on lock file strategy and reproducibility
+    * Handle backend-specific tool onboarding
+    * Manage version upgrades with safety gates
+tags: [mise, skills-inventory, gap-analysis, specialist-design, mise-expert, tool-management, drift-detection, env-config]
+status: discovered

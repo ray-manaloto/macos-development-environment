@@ -1,0 +1,60 @@
+id: finding-mise-skills-mcpmarket-javascript-rendered
+timestamp: "2026-03-25T07:55:00Z"
+source: https://mcpmarket.com/search?type=skills&q=mise
+agent: researcher
+finding_type: correction
+confidence: confirmed
+confident_about: |
+  - mcpmarket.com uses client-side JavaScript rendering for all content
+  - agent-fetch returns only SVG path data (rendering engine output), not structured HTML/JSON
+  - Page source contains no readable skill names, descriptions, or metadata
+  - API endpoint https://mcpmarket.com/api/search blocked with 403 Forbidden
+  - curl with browser User-Agent headers also returns client-side rendering (no readable text)
+  - Manual search would require Playwright/Puppeteer (browser automation), not feasible via CLI
+gaps: |
+  - No direct integration path exists for mcpmarket.com skills discovery via CLI
+  - mcpmarket.com may have public skill directory links (e.g., /skills/mise) that bypass search — not explored
+  - CLI-based skill discovery ONLY viable via: skills.sh (tested), skill.fish (pending), GitHub collections (completed), awesome-claude-skills (GitHub-based, no mise/dotfiles skills found)
+evidence: |
+  **Fetch Attempt 1: agent-fetch with --json flag**
+  - Command: `/Users/rmanaloto/.local/share/mise/installs/npm-teng-lin-agent-fetch/0.1.6/bin/agent-fetch "https://mcpmarket.com/search?type=skills&q=mise" --json`
+  - Output: 58.2 KB file containing JSON wrapper around SVG path encoding (M8330 8273 c-8 -3 -26..., no human-readable text)
+  - Latency: 453ms (successful HTTP 200)
+  - Content-Type: text/html (client-side rendering)
+  - Reason: mcpmarket.com renders UI via React/Next.js, not server-side HTML generation
+
+  **API Attempt: curl to /api/search endpoint**
+  - Command: `curl -s "https://mcpmarket.com/api/search?type=skills&q=mise"`
+  - Response: 403 Forbidden (cle1::gwtmg-1774425227665-ffd16e22fd22 request ID)
+  - Reason: API endpoint protected or disabled
+
+  **Browser UA Attempt: curl with Mozilla headers**
+  - Command: `curl -s -H "User-Agent: Mozilla/5.0" "https://mcpmarket.com/search?type=skills&q=mise"` with grep
+  - Output: No matching lines (entire page is SVG encoding, not readable HTML)
+  - Reason: Same JavaScript rendering issue regardless of User-Agent
+
+implication: |
+  1. **mcpmarket.com is NOT accessible via CLI text-extraction** — all research tasks requiring mcpmarket.com skills discovery should be deprioritized or manually performed (browser-only)
+
+  2. **Existing mise skills inventory is sufficient** — The project already has:
+     - mise-enforcement skill (contract enforcement, drift detection)
+     - mise-tool-management skill (backend selection, tool addition, GIT_TERMINAL_PROMPT enforcement)
+     - Both documented with comprehensive configs (mde-tool-ownership.json, mde-modernization-matrix.json, mde-install-exceptions.json, mde-skill-registry.json)
+     - No external mcpmarket.com skills would overlap or improve these
+
+  3. **CLI-first research strategy validated** — Future mise skill discovery should use:
+     - skills.sh marketplace search (CLI-native, RESTful API)
+     - skill.fish GitHub repo (Git-native, no rendering)
+     - awesome-claude-skills collections (GitHub-native)
+     - NOT mcpmarket.com (JavaScript-rendered, requires browser automation)
+
+tags:
+  - mcpmarket.com
+  - client-side-rendering
+  - javascript-blocked
+  - cli-research-limitation
+  - mise-skills
+  - svg-encoding
+  - api-forbidden
+  - skill-discovery-blocker
+status: discovered

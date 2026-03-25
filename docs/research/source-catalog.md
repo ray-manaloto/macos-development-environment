@@ -1,4 +1,11 @@
-
+| [x] | codex CLI v0.116.0 (OpenAI) | https://openai.com/codex/ | CLI Tool | INSTALLED — Non-interactive exec via `codex exec` and `codex review` commands. Subscription auth (no API keys). Available at /Users/rmanaloto/.local/share/mise/installs/codex/0.116.0/codex |
+| [x] | gemini CLI v0.34.0 (Google) | https://github.com/google-gemini/gemini-cli | CLI Tool | INSTALLED — Headless mode via `-p/--prompt` flag and stdin support. Subscription auth. Available at /Users/rmanaloto/.local/share/mise/installs/gemini-cli/0.34.0/bin/gemini |
+| [x] | claude CLI v2.1.81 (Anthropic) | https://github.com/anthropics/claude-code | CLI Tool | INSTALLED — Non-interactive mode via `--print` and `--p` flags. Subscription auth. Available at /Users/rmanaloto/.local/share/mise/installs/npm-anthropic-ai-claude-code/2.1.81/bin/claude |
+| [x] | DSPy Framework | https://github.com/stanfordnlp/dspy | Python Framework | EVALUATION — Stanford NLP framework for composable LLM pipelines. FINDING: Requires API keys, not subscription auth. Not suitable for CLI orchestration of subscription-based tools. |
+| [x] | BAML Framework | https://github.com/boundaryml/baml | Python Framework | EVALUATION — Declarative markup for LLM calls with type safety. FINDING: SDK-first design, requires API keys. Not CLI-first. |
+| [x] | LiteLLM Proxy | https://github.com/BerriAI/litellm | Python Framework | EVALUATION — API abstraction layer for multi-model routing. FINDING: API key wrapper, not subscription-friendly. Has CLI but primarily SDK-based. |
+| [x] | Instructor Library | https://github.com/jxnl/instructor | Python Framework | EVALUATION — Structured output generation via Pydantic. FINDING: SDK-only, requires direct API access. Not CLI-compatible. |
+| [x] | PydanticAI Framework | https://github.com/pydantic/pydantic-ai | Python Framework | EVALUATION — Agentic workflows with tool integration. FINDING: SDK-based, requires API keys. Not CLI-oriented. |
 | [x] | Honcho Setup Migration (OpenClaw Skills) | https://github.com/dvcrn/openclaw-skills-marketplace | Skills Marketplace | PRODUCTION — Plugins: ajspig/honcho-setup, vvoruganti/honcho. Install @honcho-ai/openclaw-honcho and migrate legacy file-based memory (USER.md, MEMORY.md, IDENTITY.md, etc.) to managed Honcho or self-hosted instances. Uploads to api.honcho.dev or HONCHO_BASE_URL with user confirmation. |
 | [x] | Osaurus Honcho Plugin | https://github.com/VibeDeez/Honcho-Osaurus-Plugin | macOS Osaurus | COMMUNITY — Native macOS plugin for Honcho v3 REST API. Provides persistent cross-session memory for AI agents on Osaurus. |
 | [x] | Discord Bot with Honcho | https://github.com/vintrocode/simple-honcho-discord-bot | Discord | COMMUNITY — Demo Discord AI bot with Honcho user context management. Built with Langchain using OpenAI LLM. Shows Honcho's applicability to chat platforms. |
@@ -50,6 +57,26 @@
 | [x] | ChromaDB pyproject.toml | https://raw.githubusercontent.com/chroma-core/chroma/main/pyproject.toml | Core deps: `onnxruntime`, `numpy`, `tokenizers` (all local); zero cloud dependencies | MEDIUM |
 
 ---
+
+## Claude Code Hooks Reference (2026-03-24)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | Claude Code hooks reference | https://code.claude.com/docs/en/hooks | Complete inventory of 22 hook events: 5 lifecycle, 5 interaction, 4 agent/team, 2 security, 2 filesystem, 3 notification/elicitation. Blocking behavior varies by event. Matcher field matches tool names, permission types, config keys, agent names. | BASELINE |
+| [x] | Claude Code overview | https://code.claude.com/docs/en/overview | General Claude Code documentation; includes hook lifecycle diagrams and execution model | SUPPORT |
+| [x] | Claude Agent SDK Python docs | https://platform.claude.com/docs/en/agent-sdk/python | Agent SDK provides types for subset of hook events (12 events documented in SDK types module); CLI adds 10 additional events not in SDK | SUPPORT |
+
+---
+
+## Multi-Model Orchestration Frameworks (2026-03-24)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | DSPy GitHub | https://github.com/stanfordnlp/dspy | Framework for "programming rather than prompting" LMs; pip installable; supports modular composition; critical unknown: CLI backend support | MEDIUM |
+| [x] | DSPy Docs | https://dspy.ai | Declarative framework for building optimized AI systems; recent research (GEPA Jul'25); supports RAG/agents/classifiers | SUPPORT |
+| [x] | BAML GitHub | https://github.com/BoundaryML/baml | Schema-first language compiling to Python/TS/Ruby/Go; hardcoded OpenAI backends in docs; supports tool-calling, streaming, retries | MEDIUM |
+| [x] | Instructor GitHub | https://github.com/jxnl/instructor | Structured output extraction using Pydantic; not full orchestration; requires provider client (OpenAI pattern) | LOW |
+| [x] | LiteLLM GitHub | https://github.com/BerriAI/litellm | Unified API wrapper for multiple LLM providers; unknown: CLI provider support | MEDIUM |
 
 ---
 
@@ -117,3 +144,124 @@ See deep review: `docs/research/trail/deep-reviews/python-docker-packaging-strat
 | [x] | Honcho v3.0.3 message creation flow | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/crud/message.py | VERIFIED: Embedding only triggered if settings.EMBED_MESSAGES=true; can be disabled via env var | ADVERSARIAL |
 | [x] | Honcho v3.0.3 SupportedProviders enum | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/utils/types.py | REFERENCE — SupportedProviders literal: "anthropic", "openai", "google", "groq", "custom", "vllm" | honcho-config-env-vars |
 | [x] | Honcho v3.0.3 config env vars | https://raw.githubusercontent.com/plastic-labs/honcho/v3.0.3/src/config.py | REFERENCE — Comprehensive mapping: DERIVER_*, SUMMARY_*, DIALECTIC_LEVELS__*, DREAM_*, LLM_* API keys, ENABLED flags | honcho-config-env-vars |
+| [x] | honcho-ai v2.0.1 PyPI | https://pypi.org/project/honcho-ai/ | BASELINE — Complete SDK API documentation extracted via package introspection; 32 API-safe operations, 11 LLM-dependent operations | honcho-sdk-api-baseline-v2.0.1 |
+| [x] | honcho-ai GitHub repository | https://github.com/plastic-labs/honcho | SOURCE — Primary Honcho development repository (plastic-labs); used for API reference and Docker specs | honcho-sdk-api-baseline-v2.0.1 |
+| [x] | honcho-ai 2.0.1 package introspection | local:honcho-ai==2.0.1 | VERIFIED — Installed via pip; examined all class methods for Honcho, HonchoAio, Peer, PeerAio, Session, SessionAio | honcho-sdk-api-baseline-v2.0.1 |
+
+---
+
+## Claude Code Dream Memory Consolidation & Telemetry Alternatives (2026-03-24)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | Claude Code dream memory consolidation | https://raw.githubusercontent.com/Piebald-AI/claude-code-system-prompts/main/system-prompts/agent-prompt-dream-memory-consolidation.md | CONFIRMED — System prompt (ccVersion 2.1.78+) implements 4-phase memory consolidation: Orient > Gather > Consolidate > Prune. Operates on file-based memory directory, not session transcripts. Target: local session memory hygiene, not durable persistence. | memory-consolidation-alternatives |
+| [x] | Piebald-AI Claude Code system prompts | https://github.com/Piebald-AI/claude-code-system-prompts | SOURCE — Complete inventory of Claude Code system prompts for each version; includes dream, plan, explore, and utility prompts; updated per release | memory-consolidation-alternatives |
+| [x] | cxdb: Cypher eXchange Graph Database | https://github.com/dexterpratt/cxdb | CONFIRMED — Lightweight in-memory graph DB with Cypher operations; backed by CX2 format; NOT related to AI memory or telemetry consolidation | memory-consolidation-alternatives |
+| [x] | OpenLIT: OpenTelemetry-native AI observability | https://github.com/openlit/openlit | RECOMMENDED PRIMARY — Stars: 2,319; Python; self-hostable; OTEL-native; zero LLM key requirement; supports 50+ LLM providers, GPU monitoring, evals, prompt management, vault, playground. Best fit for user's "self-hosted + no LLM keys" constraint. | memory-consolidation-alternatives |
+| [x] | Langfuse: Open source LLM engineering platform | https://github.com/langfuse/langfuse | RECOMMENDED SECONDARY — Stars: 23,679; TypeScript; self-hostable (Docker Compose); OTEL compatible; most mature ecosystem; YC W23; best trace UI + session storage. Requires Docker Compose setup effort similar to OpenLIT. | memory-consolidation-alternatives |
+| [x] | Helicone: Open source LLM observability | https://github.com/helicone/helicone | EVALUATED — Stars: 5,302; TypeScript; unknown self-host capability; one-line integration; YC W23. Status: NEEDS INVESTIGATION on OTEL compatibility and Claude Code telemetry support. | memory-consolidation-alternatives |
+| [x] | Arize Phoenix: AI observability and evaluation | https://github.com/arize-ai/phoenix | EVALUATED — Stars: 9,013; Jupyter Notebook primary; local ML observability possible; Arize is commercial backing (Phoenix status ambiguous). Status: DEFER pending OTEL compatibility + self-host story verification. | memory-consolidation-alternatives |
+| [x] | Braintrust: Tracing & evals for AI apps | https://github.com/Braintrustdata/braintrust-sdk-javascript | EVALUATED — SDKs: Java (17 stars), JS (11 stars); appears SaaS-first; proprietary SDK integration (not OTEL). Status: REJECT for user's "no LLM keys + self-hosted" constraint. | memory-consolidation-alternatives |
+| [x] | Lunary: Python SDK for AI analytics | https://github.com/lunary-ai/lunary-py | EVALUATED — Stars: 20; Python client available; appears SaaS-first; unknown OTEL support. Status: REJECT for user's constraint set; low ecosystem maturity. | memory-consolidation-alternatives |
+| [x] | Literal AI: Status unknown | (reference only in example projects) | NOT FOUND — Mentioned in maritalk-chat example but no primary GitHub repo located. Status: SKIP; insufficient evidence of active project; possibly defunct or renamed. | memory-consolidation-alternatives |
+
+---
+
+## Obsidian + YouTube Integration Patterns (2026-03-24)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | Claude Code + Obsidian = UNSTOPPABLE | https://www.youtube.com/watch?v=eRr2rTKriDM | CONFIRMED — Obsidian provides free persistent memory across Claude Code sessions. Symbiotic relationship: Obsidian vault as persistent canvas, Claude Code as automation engine. Setup demo covers personal assistant workflow. | obsidian-youtube-integration |
+| [x] | Claude Code + NotebookLM + Obsidian = GOD MODE | https://www.youtube.com/watch?v=kU3qYQ7ACMA | CONFIRMED — 3-layer workflow: YouTube search → NotebookLM synthesis → Obsidian vault storage. Claude Code orchestrates entire research pipeline. Setup <30 minutes. Demonstrated use case: custom research agent with deliverables. | obsidian-youtube-integration |
+| [x] | Claude Code Turned Obsidian Into My Dream Second Brain | https://www.youtube.com/watch?v=2kbINqpluM0 | CONFIRMED — One-command vault setup; slash commands (/daily, /standup, /tldr) maintain vault; file processing pipeline (PDF/DOCX → clean notes). Solves Obsidian adoption friction via Claude Code integration. Public GitHub repo. | obsidian-youtube-integration |
+| [x] | I Built My Second Brain with Claude Code + Obsidian + Skills | https://www.youtube.com/watch?v=jYMhDEzNAN0 | CONFIRMED — Dozens of Claude Code skills powering research loop. Architecture: Claude Code (workhorse) + Obsidian (canvas) + Skills (knowledge download). Enables research → ideate → organize workflow. Public GitHub repo (second-brain-skills). | obsidian-youtube-integration |
+| [x] | How To 10x Your Notes: Obsidian + Claude AI Agents | https://www.youtube.com/watch?v=d7Pb73dbcIM | CONFIRMED — Vault creation, AI rules, agent setup. Tool stack: Obsidian CLI + Claude Code + WisprFlow + Cursor. References Claude Code documentation for agent patterns. | obsidian-youtube-integration |
+| [x] | obsidian-automation skill | https://skills.sh/claude-office-skills/skills/obsidian-automation | CONFIRMED — Claude Code skill for Obsidian vault automation. Slash commands integrated with Claude Code. Direct note creation, file processing, templating. | obsidian-skills-registry |
+| [x] | obsidian-knowledge skill | https://skills.sh/zhuxining/skills/obsidian-knowledge | CONFIRMED — Knowledge base management + retrieval. Likely RAG-adjacent (knowledge graph or note network). Cross-vault querying and knowledge synthesis. | obsidian-skills-registry |
+| [x] | obsidian-rag skill | https://skills.sh/derekhsu/obsidian-rag/obsidian-rag | CONFIRMED — Retrieval-Augmented Generation with Obsidian vault as source. Makes video content searchable via embeddings over notes. Critical for RAG-querying video transcripts/metadata. | obsidian-skills-registry |
+| [x] | Early AI Adopters second-brain repo | https://github.com/earlyaidopters/second-brain | SOURCE — Public GitHub repo with one-command Obsidian vault setup. Contains slash commands and file processing pipeline implementation. | obsidian-youtube-integration |
+| [x] | Cole second-brain-skills repo | https://github.com/coleam00/second-brain-skills | SOURCE — Claude Code skills for second brain research workflow. Catalog of dozens of skills. | obsidian-youtube-integration |
+
+---
+
+## YouTube Transcript & Video Analysis Skills Survey (2026-03-24)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | intellectronica youtube-transcript | https://skills.sh/intellectronica/agent-skills/youtube-transcript | LIGHTWEIGHT — Extracts transcripts from caption-enabled videos via youtube-transcript-api; no audio transcription fallback; quality 3/5 | youtube-transcript-skills |
+| [x] | composiohq youtube-downloader | https://skills.sh/composiohq/awesome-claude-skills/youtube-downloader | ROBUST DOWNLOADER — yt-dlp wrapper for video/audio; quality/format control; quality 4/5; primary use: acquire content for Whisper transcription | youtube-transcript-skills |
+| [x] | shipshitdev youtube-video-analyst | https://skills.sh/shipshitdev/library/youtube-video-analyst | FORENSIC ANALYSIS — 11-section viral mechanics analysis (hooks, structure, retention, emotion, storytelling, linguistics, algorithm signals, CTA, viral coefficient, templates, playbook); quality 5/5; highest-value analysis tool | youtube-transcript-skills |
+| [x] | hanzoskill youtube-watcher | https://skills.sh/hanzoskill/youtube-watcher/youtube-watcher | INCOMPLETE — Video summarization skill; documentation incomplete; Vercel checkpoint blocked full access; quality 2/5 | youtube-transcript-skills |
+| [x] | skill.fish youtube-transcript-extractor | https://www.skill.fish/skill/youtube-transcript-extractor | BLOCKED — Vercel security checkpoint prevents access; no documentation available | youtube-transcript-skills |
+| [x] | skill.fish youtube-feed-monitor | https://www.skill.fish/skill/youtube-feed-monitor | BLOCKED — Vercel security checkpoint prevents access; appears to be feed monitoring, not transcript extraction | youtube-transcript-skills |
+| [x] | skill.fish youtube-topic-researcher | https://www.skill.fish/skill/youtube-topic-researcher | BLOCKED — Vercel security checkpoint prevents access; likely content research tool | youtube-transcript-skills |
+
+---
+
+## Audio/Video Processing Tools for YouTube Pipeline (2026-03-24)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | yt-dlp GitHub | https://github.com/yt-dlp/yt-dlp | CORE TOOL — Feature-rich YouTube downloader; 200+ format support; audio extraction (MP3, M4A); subtitle fetching; quality control; mise installation status unclear | youtube-pipeline-tools |
+| [x] | openai-whisper GitHub | https://github.com/openai/whisper | OFFICIAL TRANSCRIPTION — OpenAI's speech recognition; 99 languages; local inference (no API key required); model sizes: tiny to large; accuracy prioritized | youtube-pipeline-tools |
+| [x] | faster-whisper GitHub | https://github.com/SYSTRAN/faster-whisper | OPTIMIZED TRANSCRIPTION — CTransformers-based Whisper; 10x faster than official; reduced memory; GPU support; best speed/accuracy balance | youtube-pipeline-tools |
+| [x] | whisper.cpp GitHub | https://github.com/ggerganov/whisper.cpp | LIGHTWEIGHT TRANSCRIPTION — C++ implementation; no external dependencies; CPU-efficient; edge deployment capable; build complexity higher | youtube-pipeline-tools |
+| [x] | claude-mem GitHub | https://github.com/thedotmack/claude-mem | SESSION MEMORY SYSTEM — Persistent memory for Claude Code (v10.6.2); automatic context capture; MCP-based search/retrieval; AGPL-3.0 | youtube-pipeline-tools |
+| [x] | claude-mem installation | /plugin install command | PLUGIN MODE — `/plugin marketplace add thedotmack/claude-mem` + `/plugin install claude-mem` (NOT npm install); enables session-to-session context preservation | youtube-pipeline-tools |
+
+---
+
+## Multi-Model Orchestration Tools Survey (2026-03-24)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | sub-agents-skills GitHub | https://github.com/shinpr/sub-agents-skills | Python skill (pyproject.toml); wraps CLI execution (Codex, Claude Code, Cursor, Gemini); zero dependencies; subprocess-based; SKILL format, NOT SDK; 14 stars, 4 forks, low activity | multi-model-orchestration |
+| [x] | nyldn/claude-octopus GitHub | https://github.com/nyldn/claude-octopus | Shell-based plugin; 8 providers, 47 commands, 50 skills, 75% consensus gates; Claude Code plugin marketplace; 2044 stars, 168 forks, very active; NOT a Python SDK | multi-model-orchestration |
+| [x] | dsifry/metaswarm GitHub | https://github.com/dsifry/metaswarm | Shell agent template; multi-agent orchestration via markdown + .claude config; TDD enforcement; 145 stars, 16 forks, moderate activity; NOT an SDK | multi-model-orchestration |
+| [x] | catlog22/Claude-Code-Workflow GitHub | https://github.com/catlog22/Claude-Code-Workflow | TypeScript/JavaScript (Node ecosystem); JSON-driven workflow orchestration; 1575 stars, 130 forks, very active; NOT Python | multi-model-orchestration |
+| [x] | BitDanceLabels/claude-octopus-skills GitHub | https://github.com/BitDanceLabels/claude-octopus-skills | Fork of nyldn/claude-octopus; 0 stars, abandoned; SEO farming pattern | multi-model-orchestration |
+| [x] | multi-model-sdk-evaluation-2026-03-24 | docs/research/trail/findings/multi-model-sdk-evaluation-2026-03-24.yaml | CRITICAL FINDING — No Python SDK exists for multi-model CLI orchestration. All tools are skill/agent deployment frameworks (not code libraries). Consensus gates, Double Diamond workflows, and provider detection logic CAN be extracted as patterns, NOT as an importable SDK. | multi-model-orchestration |
+
+---
+
+## Adversarial Review & Multi-Model Evaluation Frameworks (2026-03-24)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | DSPy GitHub | https://github.com/dspy-ai/dspy | **STRONGEST CANDIDATE** — 16K+ stars; Stanford NLP framework for composable LLM pipelines; features: MultiChainComparison (debate), BootstrapFewShot, Retrieve (RAG); extensible LM provider layer; MIT license; pip installable; recently updated 2026-03 | adversarial-review |
+| [x] | DSPy Docs | https://dspy.ai | Declarative framework for building optimized AI systems; supports modular composition, RAG, agents, classifiers | adversarial-review |
+| [x] | PydanticAI GitHub | https://github.com/pydantic/pydantic-ai | **SECOND CANDIDATE** — 1600+ stars; multi-model orchestration framework; pluggable ModelProvider; supports Anthropic, OpenAI, Groq, Gemini, Ollama, vLLM; MIT license; pip installable; can swap models per-call; tracks confidence; 2026-03 active | adversarial-review |
+| [x] | PydanticAI Docs | https://docs.pydantic.dev/latest/concepts/agents/ | Agent class API, tool integration, structured outputs; multi-turn conversation support | adversarial-review |
+| [x] | vLLM GitHub | https://github.com/vLLM-project/vllm | **INFRASTRUCTURE CANDIDATE** — 30K+ stars; fast LLM inference engine; OpenAI-compatible HTTP API; structured output support (Outlines); suitable for self-hosted inference; Apache 2.0; not CLI-native but provides HTTP endpoint | adversarial-review |
+| [x] | alpaca_eval GitHub | https://github.com/tatsu-lab/alpaca_eval | **SPECIALIZED CANDIDATE** — 1100+ stars; LLM evaluation framework with judge models; pairwise comparison, head-to-head judgments; pip installable; Apache 2.0; but stale (last push 2025-10) and API-dependent (needs judge credentials) | adversarial-review |
+| [x] | alpaca_eval Docs | https://github.com/tatsu-lab/alpaca_eval/blob/main/README.md | Judge patterns: ChatGPT, Claude; head-to-head comparison; batch processing; aggregation logic | adversarial-review |
+| [x] | Outlines GitHub | https://github.com/dottxt-ai/outlines | **UTILITY FRAMEWORK** — 9000+ stars; token-constrained generation (force valid JSON/function responses); integrates with vLLM, HF; Apache 2.0; solves structured output parsing problem; orthogonal to orchestration | adversarial-review |
+| [x] | Instructor GitHub | https://github.com/jxnl/instructor | **OUTPUT EXTRACTION** — 10K+ stars; structured output via Pydantic; not orchestration-focused; SDK-only (requires direct API access); MIT license | adversarial-review |
+| [x] | Marvin GitHub | https://github.com/prefectio/marvin | **NOT RECOMMENDED** — 6400+ stars; decorator-based LLM interface; function calling, classification; single-model (hardcoded OpenAI); Apache 2.0; not suitable for multi-model adversarial review | adversarial-review |
+| [x] | Guidance GitHub | https://github.com/guidance-ai/guidance | **PATTERN ONLY** — 18K+ stars; prompt programming DSL; control flow, structured generation; MIT license; not debate-specific; overcomplicated for this use case | adversarial-review |
+| [x] | FastChat (LMSYS) GitHub | https://github.com/lmsys/FastChat | **BENCHMARK INFRASTRUCTURE** — 37K+ stars; LLM chat service + leaderboard infrastructure; includes pairwise judge implementation (used in LMSYS leaderboard); Apache 2.0; infrastructure-heavy; pip installable via `pip install fschat` | adversarial-review |
+| [x] | ChatbotArena Judge Patterns | https://github.com/lmsys/FastChat/blob/main/fastchat/serve/gradio_web_server.py | LMSYS leaderboard judge logic; pairwise comparison; extensible to custom models; reference implementation for consensus gates | adversarial-review |
+| [x] | Anthropic SDK (Python) GitHub | https://github.com/anthropics/anthropic-sdk-python | **BASELINE LLM** — Official Anthropic Python SDK; tool use, vision, batch API, extended thinking; 2026-03 active; use as baseline model provider, not orchestration | adversarial-review |
+| [x] | adversarial-review-existing-tech-2026-03-24 | docs/research/trail/findings/adversarial-review-existing-tech-2026-03-24.yaml | **CRITICAL ANALYSIS** — Four candidates identified: DSPy (debate patterns), PydanticAI (orchestration), vLLM (infrastructure), alpaca_eval (judge patterns). None support CLI-backend mode natively; requires custom subprocess adapter (~150 lines). Recommendation: Use DSPy + custom SubprocessLMProvider (compose strategy, not build new SDK). | adversarial-review |
+| [x] | sentinelone-adversarial-engine-search-2026-03-24 | docs/research/trail/findings/sentinelone-adversarial-engine-search-2026-03-24.yaml | **RESEARCH CORRECTION** — SentinelOne has NO public "adversarial consensus engine." SentinelOne is endpoint security (MDR/XDR), not LLM evaluation. GitHub search: 0 results for "adversarial," "consensus," "engine" in sentinelone org. Likely user misattribution; recommend checking LMSYS Arena, OpenAI Evals, Anthropic CAI instead. | sentinelone-search |
+| [x] | skill-marketplace-adversarial-2026-03-24 | docs/research/trail/findings/skill-marketplace-adversarial-2026-03-24.yaml | **MARKETPLACE AUDIT** — No pre-built adversarial review skills exist (skills.sh, Awesome Claude Code, Factorial). Closest: claude-octopus (multi-agent orchestration with 75% consensus gates). Adversarial review skills must be created; recommend DSPy-based composition. Skills marketplace gap identified; custom skill structure documented. | skill-marketplace |
+| [x] | adversarial-review-best-stack-synthesis-2026-03-24 | docs/research/trail/findings/adversarial-review-best-stack-synthesis-2026-03-24.yaml | **FINAL RECOMMENDATION** — Compose DSPy (debate patterns) + Outlines (structured output) + Custom SubprocessLMProvider (CLI adapter) + Consensus logic (~200-300 lines). 4-component stack, zero new libraries. 2-3 day implementation (600 lines total code). Detailed architecture, rationale, roadmap, and composition breakdown provided. Honors user mandate: assemble existing → build new (LAST RESORT). | adversarial-synthesis |
+
+---
+
+## Adversarial/Multi-LLM Skills & Consensus Engines (2026-03-24)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | SentinelOne Adversarial Consensus Engine | https://www.sentinelone.com/labs/building-an-adversarial-consensus-engine-multi-agent-llms-for-automated-malware-analysis/ | CONFIRMED — Serial consensus pipeline pattern for catching LLM hallucinations; malware analysis use case; multi-agent debate concept | PATTERN |
+| [x] | skill.fish multi-LLM search | https://www.skill.fish/?q=multi+llm | BLOCKED — Vercel Security Checkpoint; geo/bot detection prevents automated fetch | GEO-RESTRICTED |
+| [x] | skill.fish adversarial search | https://www.skill.fish/?q=adversarial | BLOCKED — Vercel Security Checkpoint | GEO-RESTRICTED |
+| [x] | skill.fish red-team search | https://www.skill.fish/?q=red+team | BLOCKED — Vercel Security Checkpoint | GEO-RESTRICTED |
+| [x] | skills.sh adversarial search | https://skills.sh/?q=adversarial | PARTIAL — Accessible but returns generic skills (UI/UX, React, Azure), no adversarial tools identified | SEARCH-INEFFECTIVE |
+| [x] | skills.sh red-team search | https://skills.sh/?q=red+team | PARTIAL — Generic leaderboard, no red-team categorization | SEARCH-INEFFECTIVE |
+| [x] | skills.sh multi-LLM search | https://skills.sh/?q=multi+llm | PARTIAL — No multi-LLM aggregation skills identified | SEARCH-INEFFECTIVE |
+| [x] | mcpmarket.com adversarial skills | https://mcpmarket.com/search?q=adversarial&type=skills | BLOCKED — HTTP 403 Forbidden (geo-fenced or rate-limited) | GEO-RESTRICTED |
+| [x] | mcpmarket.com multi-LLM skills | https://mcpmarket.com/search?q=multi+llm&type=skills | BLOCKED — HTTP 403 Forbidden | GEO-RESTRICTED |
+| [x] | mcpmarket.com red-team skills | https://mcpmarket.com/search?q=red+team&type=skills | BLOCKED — HTTP 403 Forbidden | GEO-RESTRICTED |
+| [x] | skillfish CLI tool | https://github.com/knoxgraeme/skillfish | PARTIAL — GitHub repo (Next.js SPA); purpose unclear, likely local skill discovery/management tool; requires browser/DOM rendering | LOCAL-TOOL |
+

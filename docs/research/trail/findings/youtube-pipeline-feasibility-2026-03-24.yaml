@@ -1,0 +1,139 @@
+---
+title: YouTube Pipeline Technical Feasibility Validation
+date: 2026-03-24
+author: feasibility-validator-agent
+type: feasibility-test
+confidence: 0.95
+---
+
+tests:
+  yt_dlp_availability:
+    verdict: PASS
+    details: |
+      - uv pip install --dry-run confirms installable: yt-dlp==2026.3.17
+      - Subtitle flags confirmed: --write-subs, --write-auto-subs, --sub-langs, --sub-format, --skip-download
+      - Can extract subtitles without downloading video (--skip-download mode)
+      - mise registry has yt-dlp: github:yt-dlp/yt-dlp and asdf:duhow/asdf-yt-dlp
+    mise_backend: "github:yt-dlp/yt-dlp"
+
+  faster_whisper_macos_arm64:
+    verdict: PARTIAL
+    details: |
+      - uv pip install --dry-run confirms installable: faster-whisper==1.2.1
+      - Dependencies: ctranslate2==4.7.1, onnxruntime==1.24.4, numpy, tokenizers, huggingface-hub
+      - ctranslate2 ARM64 wheel available (resolved successfully)
+      - NO CUDA on macOS -- falls back to CPU execution provider
+      - CoreMLExecutionProvider available via onnxruntime but NOT used by faster-whisper/ctranslate2
+      - CPU-only transcription WORKS but is SLOW: expect 0.3-1x realtime on M-series chips
+      - A 10-minute video could take 3-10 minutes to transcribe on CPU
+    risk: |
+      CPU-only performance may be too slow for interactive/hook use.
+      No Metal/MPS acceleration path in ctranslate2.
+      Consider: use yt-dlp auto-subs first, only fall back to whisper when subs unavailable.
+
+  youtube_video_analyst:
+    verdict: FAIL
+    details: |
+      CRITICAL FINDING: youtube-video-analyst is a Claude Code SKILL (SKILL.md prompt file),
+      NOT a Python library with importable functions.
+
+      - skills.sh page exists (HTTP 200) at shipshitdev/library/youtube-video-analyst
+      - Install command: npx skills add https://github.com/shipshitdev/library --skill youtube-video-analyst
+      - It IS a SKILL.md prompt that instructs Claude to analyze transcripts
+      - It includes a Python script at: library/agents/.claude/skills/youtube-video-analyst/scripts/fetch_transcript.py
+      - The fetch_transcript.py script takes a YouTube URL and fetches transcript
+      - The analysis itself is done by Claude (the LLM), not by Python code
+
+      IMPLICATION: Any spec showing "from youtube_video_analyst import ..." is WRONG.
+      The skill provides:
+        1. A prompt template for Claude to analyze video transcripts
+        2. A helper script to fetch transcripts from YouTube
+      It does NOT provide importable Python analysis functions.
+    spec_impact: |
+      The spec must be rewritten to treat youtube-video-analyst as a SKILL invocation,
+      not a Python library import. The pipeline should:
+        1. Use yt-dlp or the skill's fetch_transcript.py to get transcript text
+        2. Pass transcript to Claude via the skill prompt
+        3. Receive structured analysis as LLM output
+
+  ffmpeg_dependency:
+    verdict: FAIL
+    details: |
+      - ffmpeg is NOT installed (which ffmpeg: not found)
+      - NOT in Homebrew
+      - NOT in mise config
+      - mise registry has ffmpeg: conda:ffmpeg and asdf:mise-plugins/mise-ffmpeg
+      - yt-dlp needs ffmpeg for audio extraction (required for whisper fallback)
+      - yt-dlp subtitle-only mode (--skip-download) does NOT need ffmpeg
+      - faster-whisper needs audio input, which requires ffmpeg to extract from video
+    action_required: |
+      If whisper fallback is needed: add ffmpeg to mise config via conda or asdf backend.
+      If subtitle-only mode is sufficient: ffmpeg is not strictly required.
+
+  whisper_model_sizes:
+    verdict: PASS
+    details: |
+      Model sizes (disk + ~2x RAM):
+        - tiny:   ~75MB disk, ~150MB RAM  -- fast, low accuracy
+        - base:   ~150MB disk, ~300MB RAM  -- reasonable tradeoff
+        - small:  ~500MB disk, ~1GB RAM    -- good accuracy
+        - medium: ~1.5GB disk, ~3GB RAM    -- high accuracy
+        - large:  ~3GB disk, ~6GB RAM      -- best accuracy, slow on CPU
+
+      Recommendation for agent use: "base" or "small" model.
+      - "base" downloads on first use (~150MB), transcribes ~2-3x realtime on M-series CPU
+      - "small" better accuracy but ~500MB download and slower
+      - Models auto-download from HuggingFace on first use (cached in ~/.cache/huggingface/)
+
+  hook_timeout_constraints:
+    verdict: FAIL
+    details: |
+      Claude Code hooks have execution timeouts (typically 30-120 seconds).
+      Whisper transcription of a 10-minute video on CPU: 3-10 minutes.
+      This CANNOT run in a synchronous hook.
+
+      Options:
+        1. Background process: start transcription, poll for completion
+        2. Pre-transcribe: user runs transcription command before invoking skill
+        3. Subtitle-first strategy: use yt-dlp auto-subs (fast, <5s), only whisper as offline fallback
+        4. Async CLI command: `uv run mde-py youtube transcribe <url>` as a standalone command
+    recommendation: |
+      Use yt-dlp subtitle extraction as primary path (fast, no ffmpeg needed).
+      Whisper should be an optional offline fallback, run as a standalone CLI command,
+      NOT in a hook.
+
+  mise_backends:
+    verdict: PASS
+    details: |
+      - yt-dlp: github:yt-dlp/yt-dlp (preferred) or asdf:duhow/asdf-yt-dlp
+      - ffmpeg: conda:ffmpeg or asdf:mise-plugins/mise-ffmpeg
+      Both available in mise registry. github backend preferred for yt-dlp per mise-first policy.
+
+summary:
+  pass_count: 3
+  partial_count: 1
+  fail_count: 3
+  overall: PARTIAL
+
+  critical_findings:
+    - youtube-video-analyst is a SKILL (prompt), not a Python library -- spec must be rewritten
+    - ffmpeg not installed -- required only if whisper fallback is needed
+    - Hook timeouts prevent synchronous whisper transcription
+
+  recommended_architecture: |
+    1. PRIMARY PATH (fast, no deps beyond yt-dlp):
+       - yt-dlp --write-auto-subs --sub-langs en --skip-download <url>
+       - Parse VTT/SRT subtitle file
+       - Feed transcript to youtube-video-analyst SKILL (Claude prompt)
+
+    2. FALLBACK PATH (offline, requires ffmpeg + faster-whisper):
+       - yt-dlp download audio only
+       - faster-whisper transcribe on CPU (base model)
+       - Feed transcript to analysis skill
+       - Must run as standalone CLI command, NOT in a hook
+
+    3. TOOL INSTALLATION:
+       - mise: add yt-dlp via github:yt-dlp/yt-dlp
+       - mise: add ffmpeg via conda:ffmpeg (only if whisper fallback needed)
+       - uv: add faster-whisper to [dependency-groups] dev (only if whisper fallback needed)
+       - skills: npx skills add ... --skill youtube-video-analyst

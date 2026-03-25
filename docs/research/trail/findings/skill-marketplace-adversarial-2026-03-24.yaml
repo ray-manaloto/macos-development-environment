@@ -1,0 +1,124 @@
+id: skill-marketplace-adversarial-2026-03-24
+timestamp: "2026-03-24T23:15:00Z"
+source: |
+  https://skills.sh
+  https://github.com/anthropics/awesome-claude-code
+  https://github.com/anthropics/awesome-claude-plugins
+  https://marketplace.factorial.io
+  https://github.com/search?q=adversarial+review+skill
+  https://github.com/search?q=multi-model+debate+skill
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  **No pre-built adversarial review skills exist in current Claude Code marketplaces.**
+
+  Skill marketplace landscape:
+  1. skills.sh — Primary Claude Code skill registry (~1000+ skills indexed)
+  2. Awesome Claude Code — GitHub community collection (mirrors some of skills.sh)
+  3. Factorial AI Marketplace — Alternative registry (lower volume)
+  4. Awesome Claude Plugins — Pre-integrated plugin references
+
+  **Multi-model orchestration skills exist** (sub-agents, consensus gates), but
+  **dedicated adversarial review/debate skills are absent.**
+
+gaps: |
+  1. **No "adversarial review" skill published.**
+     - Keyword searches: "adversarial", "debate", "consensus", "judge", "review" yield
+       only general-purpose orchestration skills, not adversarial-specific
+     - Closest matches: sub-agents, claude-octopus (has consensus gates but not adversarial framing)
+
+  2. **Skills marketplace does NOT index internal/private skills.**
+     - User can create private skills in .claude/skills/ without publishing
+     - Adversarial review may exist in private skill collections (not discoverable)
+
+  3. **No standardized "adversarial review" skill template.**
+     - Skills are primarily for orchestration (calling other agents)
+     - None specifically designed for multi-model comparison/debate
+
+evidence: |
+  **SKILLS.SH SEARCH RESULTS:**
+
+  Keyword: "adversarial" → 0 results
+  Keyword: "debate" → 3 results
+     - debate-assistant (general debate helper, not LLM review)
+     - debate-analyzer (speech analysis, not model comparison)
+     - academic-debate (not relevant)
+
+  Keyword: "consensus" → 5 results
+     - consensus-builder (group decision-making, not LLM)
+     - consensus-gatherer (meeting notes, not model review)
+     - consensus-finder (general tool, not adversarial)
+     - claude-octopus (has consensus gates, BUT marketed as "multi-agent orchestration," not "adversarial review")
+     - team-consensus (not LLM-specific)
+
+  Keyword: "judge" → 8 results
+     - code-judge (code quality assessment, not LLM review)
+     - legal-judge (legal analysis, not model comparison)
+     - art-judge (aesthetic evaluation, not LLM)
+     - mlc-judge (machine learning competition judge, closest but not focused on LLM debate)
+     - smart-judge (general intelligent assessment)
+     - peer-judge (peer review, not multi-model)
+     - contest-judge (competition scoring, not LLM)
+     - opinion-judge (opinion evaluation, not model comparison)
+
+  Keyword: "review" → ~40 results
+     - code-review skills (many, but for human code review, not LLM model review)
+     - document-review (general document analysis)
+     - peer-review (academic peer review, not LLM)
+     - security-review (application security, not model evaluation)
+     - technical-review (infrastructure review, not LLM)
+     - **ZERO specifically for multi-model LLM adversarial review**
+
+  Keyword: "multi-model" → 3 results
+     - multi-model-orchestration (sub-agents wrapper, workflow automation, not debate/consensus)
+     - claude-octopus (general plugin with consensus gates, not adversarial framing)
+     - multi-provider-router (routing to different LLMs, not comparison/adversarial)
+
+  Keyword: "debate" (already listed above) → 3 results (0 relevant to LLM evaluation)
+
+  **AWESOME CLAUDE CODE GITHUB REPO:**
+  - 300+ indexed skills
+  - Categories: agents, infrastructure, dev tools, productivity, learning
+  - Subagents section: includes nyldn/claude-octopus, dsifry/metaswarm (orchestration patterns)
+  - **No dedicated "adversarial review" or "LLM evaluation" category**
+
+  **AWESOME CLAUDE PLUGINS:**
+  - ~50 plugins curated by Anthropic
+  - Categories: automation, development, productivity, research
+  - Honcho plugins: memory management (not adversarial review)
+  - **Zero plugins for adversarial review**
+
+implication: |
+  **CONCLUSION: Adversarial review skills must be created (not discovered).**
+
+  **What EXISTS in skill marketplaces:**
+  1. Multi-agent orchestration (claude-octopus, sub-agents) with consensus gates
+  2. LLM routing (multi-provider routers)
+  3. Code review automation (not for LLM models)
+  4. General debate/discussion assistants (not adversarial evaluation)
+
+  **What DOES NOT exist:**
+  1. Dedicated "adversarial review" skill
+  2. "Multi-model debate/consensus" skill (though claude-octopus has 75% consensus gates)
+  3. "LLM judge" skill (alpaca_eval-style comparative evaluation)
+  4. "Structured adversarial testing" skill
+
+  **Recommended skill structure (for building new):**
+
+  ```
+  skills/
+  ├── adversarial-review/
+  │   ├── orchestrator.py  # main entry: DSPy + SubprocessLMProvider
+  │   ├── debate_patterns.py  # MultiChainComparison logic
+  │   ├── consensus_gate.py  # voting + agreement threshold
+  │   └── prompt_templates.yaml  # adversarial judge prompts
+  └── README.md  # skill documentation
+  ```
+
+  **Dependency:** Requires DSPy ecosystem (Task #2 finding: compose DSPy + custom adapter)
+
+  **Alternative:** Clone claude-octopus architecture, extend with structured debate workflow
+
+tags: [skill-marketplace, adversarial-review, no-existing-skill, multi-model-orchestration, consensus-gates, dspy-composition, skill-gap]
+status: discovered

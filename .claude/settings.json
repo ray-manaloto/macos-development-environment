@@ -108,6 +108,8 @@
     "pyright-lsp@claude-plugins-official": true,
     "hookify@claude-plugins-official": false,
     "engineering@knowledge-work-plugins": true,
-    "remember@claude-plugins-official": true
+    "remember@claude-plugins-official": true,
+    "design@knowledge-work-plugins": true,
+    "nimble@knowledge-work-plugins": true
   }
 }

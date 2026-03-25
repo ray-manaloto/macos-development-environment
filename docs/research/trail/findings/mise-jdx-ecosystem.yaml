@@ -1,0 +1,163 @@
+id: mise-jdx-ecosystem
+timestamp: "2026-03-25T08:15:00Z"
+source: "https://github.com/jdx"
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  - Complete ecosystem map of jdx tools (20 repos) with integration roles
+  - How pitchfork, hk, usage, fnox, and mise compose for declarative dev environments
+  - Project uses hk for git hooks (via hk.pkl), fnox for secret management, mise for task orchestration
+  - Integration pattern: mise delegates to hk for pre-commit, pitchfork for daemon lifecycle, fnox for env vars
+gaps: |
+  - Advanced pitchfork patterns (cron scheduling, dependency graphs, ready checks) not deeply explored
+  - Usage CLI spec details (how it relates to mise plugin DSL) not researched
+  - Multi-environment fnox profiles (dev/staging/prod) integration patterns unclear
+  - How to integrate Honcho memory stack with fnox secret injection
+evidence: |
+  **Core jdx Repos (20 total, 26k⭐ collective):**
+
+  1. **mise** (26,035⭐) - Task runner, version manager, env manager
+     - Central hub: orchestrates all other jdx tools
+     - Declaration: `.mise.toml` with [tasks], [env], [tools] sections
+     - Recommends all jdx tools via `mise use -g <tool>`
+
+  2. **hk** (695⭐) - Git hooks + project linting manager
+     - Config format: `hk.pkl` (Pkl configuration language, jdx/pklr)
+     - Amends upstream: "package://github.com/jdx/hk/releases/download/v1.38.0/hk@1.38.0#/Config.pkl"
+     - Integration: Project's hk.pkl defines pre-commit steps:
+       - ruff (linting/formatting)
+       - shellcheck (shell scripts)
+       - mde-quality (Python quality gate: `uv run mde-py quality`)
+     - Features: fix=true (auto-fix on commit), stash="git" (stash untracked), profiles (slow/fast)
+     - CLI: `hk install` (set up git hooks), `hk check`, `hk fix`, `hk run <hook>`
+
+  3. **pitchfork** (229⭐) - Daemon/service manager ("daemons with DX")
+     - Config: `pitchfork.toml` with [daemons.*] sections
+     - Features:
+       - Single-start semantics (only start if not running)
+       - Auto-start/stop on cd via shell hook (`pitchfork activate bash/zsh`)
+       - Ready checks: delay (e.g., ready_delay=5), output match (ready_output="listening on"), HTTP
+       - Dependency graph: depends = ["postgres", "redis"]
+       - Cron scheduling: cron = "0 */5 * * * *"
+       - Boot start: automatically on system startup
+       - Log capture: logs to ~/.local/state/pitchfork/logs/
+     - Use cases: postgres, redis, API servers, worker processes, file sync (rsync/unison)
+     - CLI: `pitchfork start|stop|restart`, `pitchfork list|logs|status`, `pitchfork tui` (interactive)
+
+  4. **fnox** (1,351⭐) - Encrypted/remote secrets manager
+     - Config: `fnox.toml` with [providers], [secrets], [profiles]
+     - Encryption backends: age, AWS KMS, Azure KMS, GCP KMS
+     - Cloud providers: AWS SM/PS, Azure KV, GCP SM, Bitwarden, Vault, 1Password, Infisical
+     - Local storage: macOS Keychain, KeePass, GPG pass, plain
+     - Multi-environment: [profiles.production.providers] → separate secret sources per env
+     - Integration: `fnox exec -- <cmd>`, shell activation (`fnox activate bash`)
+     - Project uses: fnox + age encryption + Keychain (per CLAUDE.md)
+
+  5. **usage** (593⭐) - CLI specification format
+     - Spec: like OpenAPI/Swagger but for CLI tools
+     - Outputs: autocompletion, markdown docs, man pages, arg parser in any language
+     - Purpose: scaffold CLI definitions that can be implemented in multiple languages/frameworks
+     - Status: in-progress (coming soon: usage.sh hosting)
+
+  6. **Supporting Tools:**
+     - **pklr** (6⭐) - Pure Rust Pkl config language parser (used by hk.pkl)
+     - **communique** (25⭐) - AI-powered editorialized release notes
+     - **demand** (191⭐) - Rust prompt library (used for TUI/interactive tools)
+     - **expr.rs** (30⭐) - Go's expr language in Rust (task scheduling/expressions)
+     - **ensembler** (6⭐) - Parallel execution engine
+     - **xx** (25⭐) - Cross-compilation toolchain support
+     - **clx** (11⭐) - (unclear purpose)
+     - **sigstore-verification** (9⭐) - Binary signature verification
+     - **aqua-registry** (1⭐) - Aqua standard plugin registry
+
+  7. **Specialized Integrations:**
+     - **mise-env-fnox** (9⭐) - fnox MCP for AI agent access to secrets
+     - **mise-action** (262⭐) - GitHub Actions setup for mise
+     - **mise-analytics** (15⭐) - Anonymized usage analytics
+     - **mise-versions** (13⭐) - Version metadata store
+     - **rtx-java-metadata** (6⭐) - JDK distribution metadata crawler
+     - **mise-java** (2⭐) - JVM-specific mise plugin
+
+**Integration Pattern in MDE Project:**
+
+  hk.pkl delegates pre-commit hook logic:
+  ```pkl
+  local quality_gate = new Mapping<String, Step> {
+      ["mde-quality"] { check = "uv run mde-py quality" }
+  }
+  hooks { ["pre-commit"] { steps = new Mapping { ...fixers ...quality_gate } } }
+  ```
+
+  mise.toml defines task lifecycle (sample):
+  ```toml
+  [tasks."mde:quality"]
+  description = "Full quality gate: lint + type check + test + validate"
+  run = "uv run mde-py quality"
+
+  [tasks."mde:observability:up"]
+  run = "uv run mde-py observability up"  # Starts services → likely uses pitchfork internally
+  ```
+
+  fnox integration (per CLAUDE.md):
+  - Tier 1 (local): fnox + macOS Keychain + age encryption
+  - Used via: mde_load_secrets in scripts, fnox MCP for AI agents
+  - Project secrets: encrypted with age, stored in fnox.toml
+
+**Architecture Summary:**
+
+  mise (center) → orchestrates:
+    ├── hk (pre-commit) → ruff + shellcheck + quality gate
+    ├── pitchfork (daemons) → observability stack, memory stack
+    ├── fnox (secrets) → age-encrypted, keychain-backed, MCP accessible
+    ├── uv (Python runtime) → Python tools in Python 3.12
+    └── Other tools (node, rust, go, etc.)
+
+  Shell integration:
+    - pitchfork activate: auto-start daemons on cd
+    - fnox activate: auto-load secrets on cd
+    - hk pre-commit: automatic fix on commit
+implication: |
+  1. **Declarative Everything**: All tool config in TOML/Pkl (no shell scripts except invoke)
+     - Recommendation: Maintain hk.pkl, fnox.toml, .mise.toml as single source of truth
+     - Avoid adding new .cfg/.ini/.yaml files for Python tools
+
+  2. **jdx Tools Are Composable**: Each tool has a single responsibility, integrates via:
+     - Shared config format (TOML for mise/pitchfork/fnox, Pkl for hk)
+     - Shared ecosystem (all recommend mise installation)
+     - CLI activation hooks (shell integration at cd time)
+
+  3. **Pitchfork for Complex Service Lifecycle**:
+     - Current use: observability stack (LGTM), memory stack (Honcho) via mde-py tasks
+     - Opportunity: expose pitchfork.toml directly instead of shell scripts
+     - Ready checks prevent race conditions (Postgres must be healthy before API starts)
+
+  4. **fnox Secret Injection Pattern**:
+     - Alternative to dotenv files: fnox exec -- <cmd> or eval $(fnox activate)
+     - Multi-environment: fnox --profile production works with different providers per env
+     - Opportunity: Honcho memory stack could inject API keys via fnox agent MCP
+
+  5. **hk.pkl as Git Workflow Gate**:
+     - Pre-commit: fixable issues auto-corrected
+     - Pre-push: blocking checks (quality gate)
+     - Profiles: slow checks can be skipped pre-commit, forced pre-push
+     - Opportunity: add pre-push blocking step for API key validation
+
+  6. **Usage Spec as Code Generation Input**:
+     - Not yet adopted in mde project
+     - Opportunity: define mde-py CLI using usage spec → auto-generate completions
+     - Would integrate with mise's command discovery
+tags:
+  - mise
+  - jdx
+  - ecosystem
+  - declarative-config
+  - devex
+  - git-hooks
+  - daemon-management
+  - secrets
+  - fnox
+  - hk
+  - pitchfork
+  - usage
+status: discovered

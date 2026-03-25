@@ -1,0 +1,134 @@
+id: cli-orchestration-python-sdks
+timestamp: "2026-03-24T22:45:00Z"
+source: "Local research: PyPI, installed packages, CLI tool inspection"
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: |
+  - All three CLI tools (codex v0.116.0, gemini v0.34.0, claude v2.1.81) are installed via mise
+  - Python subprocess orchestration is FULLY VIABLE as a custom solution
+  - No existing Python library orchestrates heterogeneous LLM backends (CodeX+Gemini+Claude)
+  - All existing frameworks (DSPy, BAML, LiteLLM, Instructor, PydanticAI) require API keys, not subscription auth
+  - claude-agent-sdk and openai-agents are locked to their own ecosystems
+  - CLI signatures are well-documented and support non-interactive modes
+  gaps: |
+  - How to handle partial output streaming from subprocess calls
+  - Whether consensus voting or debating requires persistent session state
+  - How to parse structured output from each CLI's different formats
+  - Cost tracking/token budgeting across three separate subscription accounts
+evidence: |
+  1. CLI availability (confirmed via `which` and `shutil.which`):
+     - codex: /Users/rmanaloto/.local/share/mise/installs/codex/0.116.0/codex
+     - gemini: /Users/rmanaloto/.local/share/mise/installs/gemini-cli/0.34.0/bin/gemini
+     - claude: /Users/rmanaloto/.local/share/mise/installs/npm-anthropic-ai-claude-code/2.1.81/bin/claude
+
+  2. CLI capabilities verified via --help:
+     - CODEX: `codex review` command + `codex exec` for non-interactive
+     - GEMINI: `-p/--prompt "query"` for headless mode, stdin support
+     - CLAUDE: `-p/--print` for non-interactive, pipes output to stdout
+
+  3. Python framework analysis:
+     FRAMEWORK          | API-KEY REQUIRED | CLI-FIRST | MULTI-MODEL
+     -------------------|------------------|-----------|-------------
+     DSPy               | Yes (API keys)   | No        | No (single model)
+     BAML               | Yes (API keys)   | No        | No (SDK-compiled)
+     LiteLLM            | Yes (API keys)   | Partial   | Yes, but API key routing
+     Instructor         | Yes (API keys)   | No        | No
+     PydanticAI         | Yes (API keys)   | No        | No
+     claude-agent-sdk   | No (Native)      | No        | No (Claude only)
+     openai-agents      | Yes (API keys)   | No        | No (OpenAI only)
+
+  4. MCP Server options: No existing MCP servers for codex/gemini bridging found in searches
+
+implication: |
+  **RECOMMENDATION: Build a thin Python wrapper in src/mde/domain/**
+
+  Option A (RECOMMENDED - "Option A: subprocess wrapper") is the ONLY viable path because:
+
+  1. **Subscription auth works correctly**: No API key exposure, uses system auth
+  2. **Zero dependencies**: No new PyPI packages needed (subprocess is stdlib)
+  3. **Composable design**: Each CLI is a backend provider via simple wrapper functions
+  4. **Type-safe implementation**: Can use Pydantic models for unified input/output
+  5. **Follows mde philosophy**: Library-first (found 3 working CLIs), no building SDK
+  6. **Consistent with policy**: No shell scripts — wrap in Python domain module
+
+  **Pattern for src/mde/domain/multi_model.py:**
+
+  ```python
+  from dataclasses import dataclass
+  from enum import Enum
+  import subprocess
+  from typing import Protocol
+
+  class CodeReviewer(Protocol):
+      def review(self, code: str, lang: str = "python") -> str: ...
+
+  @dataclass
+  class ReviewResult:
+      model: str
+      verdict: str  # "approved", "issues_found", "critical"
+      details: str
+      duration_sec: float
+
+  class CodeXReviewer:
+      def review(self, code: str, lang: str = "python") -> str:
+          result = subprocess.run(
+              ["codex", "review", code],
+              capture_output=True, text=True, timeout=30
+          )
+          return result.stdout
+
+  class GeminiReviewer:
+      def review(self, code: str, lang: str = "python") -> str:
+          result = subprocess.run(
+              ["gemini", f"Review this {lang} code for issues: {code}"],
+              capture_output=True, text=True, timeout=30
+          )
+          return result.stdout
+
+  class ClaudeReviewer:
+      def review(self, code: str, lang: str = "python") -> str:
+          result = subprocess.run(
+              ["claude", "--print", f"Review this {lang} code for issues: {code}"],
+              capture_output=True, text=True, timeout=30
+          )
+          return result.stdout
+
+  def adversarial_code_review(code: str, consensus_threshold: float = 0.66) -> dict:
+      """Run code through all three models, return consensus verdict."""
+      reviewers = {
+          "codex": CodeXReviewer(),
+          "gemini": GeminiReviewer(),
+          "claude": ClaudeReviewer()
+      }
+      results = {}
+      for name, reviewer in reviewers.items():
+          results[name] = ReviewResult(
+              model=name,
+              verdict=parse_verdict(reviewer.review(code)),
+              details=reviewer.review(code),
+              duration_sec=0.0  # timing not captured yet
+          )
+      return {
+          "individual_results": results,
+          "consensus": calculate_consensus(results, consensus_threshold),
+          "recommendation": "HOLD_FOR_REVIEW" if disagreement else "APPROVED"
+      }
+  ```
+
+  **Why NOT the other options:**
+  - B (DSPy/BAML): Requires API keys, defeats subscription-auth goal
+  - C (Claude Code plugins): Can only spawn Claude agents, not CodeX/Gemini
+  - D (MCP server bridge): Over-engineered for CLI input/output wrappers
+
+tags:
+  - multi-model-llm
+  - code-review
+  - adversarial-testing
+  - subscription-auth
+  - cli-orchestration
+  - python-subprocess
+  - mde-domain
+  - no-api-keys
+
+status: discovered

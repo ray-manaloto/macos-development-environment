@@ -1,0 +1,426 @@
+id: finding-youtube-transcript-skills-2026-03-24
+timestamp: "2026-03-24T21:33:00Z"
+agent: researcher
+finding_type: tool_survey
+confidence: probable
+research_methodology: direct_source_review
+
+skills_reviewed:
+  - name: "youtube-transcript"
+    source_url: "https://skills.sh/intellectronica/agent-skills/youtube-transcript"
+    source_platform: "skills.sh"
+    author: "intellectronica/agent-skills"
+
+    description: "Extract transcripts from YouTube videos with optional timestamps"
+    installation_method: "npx skills add (skills.sh based)"
+
+    capabilities:
+      - transcript_extraction: true
+      - timestamp_support: true
+      - api_based: true
+
+    dependencies:
+      primary: "youtube-transcript-api"
+      installation: "Python-based"
+
+    transcript_extraction_method:
+      - type: "captions"
+        description: "Uses YouTube's built-in captions via youtube-transcript-api"
+        handles_no_captions: false
+
+    output_format:
+      - "Plain text with optional timestamps"
+      - "Line-by-line transcript"
+
+    quality_assessment: "3/5"
+    quality_notes: "Basic transcript extraction only; no audio transcription fallback for caption-less videos"
+
+    use_cases:
+      - "Quick transcript extraction from caption-enabled videos"
+      - "Agent skill for accessing video content"
+
+    limitations:
+      - "Relies on YouTube captions (may not be accurate)"
+      - "No Whisper/audio transcription for caption-less videos"
+      - "No video analysis or content structuring"
+
+  - name: "youtube-downloader"
+    source_url: "https://skills.sh/composiohq/awesome-claude-skills/youtube-downloader"
+    source_platform: "skills.sh"
+    author: "composiohq/awesome-claude-skills"
+
+    description: "Download YouTube videos in customizable quality and format with audio-only MP3 support"
+    installation_method: "npx skills add (skills.sh based)"
+
+    capabilities:
+      - video_download: true
+      - audio_extraction: true
+      - format_selection: true
+      - quality_control: true
+
+    dependencies:
+      primary: "yt-dlp"
+      features: "Video/audio download with format control"
+
+    transcript_extraction_method:
+      - type: "not_primary"
+        description: "Focused on download, not transcript extraction"
+        potential: "Could be paired with Whisper for audio transcription"
+
+    output_format:
+      - "Video files (MP4, WebM, etc.)"
+      - "Audio files (MP3, M4A, etc.)"
+
+    quality_assessment: "4/5"
+    quality_notes: "Excellent for obtaining content; transcript extraction requires additional tool"
+
+    use_cases:
+      - "Download videos for offline processing"
+      - "Extract audio for Whisper transcription"
+      - "Build pipelines: download → transcribe → analyze"
+
+    limitations:
+      - "Download-focused, not transcript-focused"
+      - "Requires yt-dlp as external dependency"
+
+  - name: "youtube-video-analyst"
+    source_url: "https://skills.sh/shipshitdev/library/youtube-video-analyst"
+    source_platform: "skills.sh"
+    author: "shipshitdev/library"
+
+    description: "Forensic deconstruction of YouTube videos to extract viral formulas, hooks, and retention mechanics"
+    installation_method: "npx skills add"
+
+    capabilities:
+      - transcript_analysis: true
+      - viral_mechanics: true
+      - hook_extraction: true
+      - retention_analysis: true
+      - content_templates: true
+      - linguistic_patterns: true
+
+    dependencies:
+      primary: "Transcript input (user-provided or auto-fetched)"
+      features: "Python script for transcript fetching from URL"
+
+    transcript_extraction_method:
+      - type: "external"
+        description: "Includes fetch_transcript.py script for YouTube URLs"
+        provides: "Auto-extraction capability"
+      - type: "manual"
+        description: "Accepts manually pasted transcripts"
+        sources: "YouTube built-in transcripts, ytscribe.ai, youtubetotranscript.com"
+
+    output_format:
+      - "Comprehensive analysis across 11 systematic sections"
+      - "Hook architecture with templates"
+      - "Structural blueprint and beat maps"
+      - "Retention mechanics catalog"
+      - "Emotional engineering analysis"
+      - "Storytelling elements breakdown"
+      - "Linguistic patterns library"
+      - "Algorithm signals identification"
+      - "CTA architecture mapping"
+      - "Viral coefficient scoring"
+      - "Reusable script templates"
+      - "Implementation playbook"
+
+    quality_assessment: "5/5"
+    quality_notes: "Most comprehensive analysis tool; transforms transcript into actionable content templates"
+
+    use_cases:
+      - "Extract viral content formulas from successful videos"
+      - "Generate reusable script templates for content creators"
+      - "Identify psychological triggers and persuasion patterns"
+      - "Create adaptation guides for different niches"
+      - "A/B testing recommendations"
+
+    analysis_framework:
+      sections:
+        - "Hook Architecture (3-8s primary hook analysis)"
+        - "Structural Blueprint (macro-structure and beat maps)"
+        - "Retention Mechanics (open loops, pattern interrupts, curiosity gaps)"
+        - "Emotional Engineering (emotional arc, trigger words, identity hooks)"
+        - "Storytelling Elements (narrative framework, character positioning, conflict)"
+        - "Linguistic Patterns (power phrases, sentence rhythm, repetition)"
+        - "Algorithm Signals (retention optimizers, engagement triggers, share/save)"
+        - "CTA Architecture (call-to-action sequence and timing)"
+        - "Viral Coefficient (shareability score, comment bait density)"
+        - "Reusable Templates (fill-in-the-blank scripts)"
+        - "Implementation Playbook (steal-this elements, adaptation guides)"
+
+    limitations: "Requires transcript; does not handle caption-less videos without Whisper"
+
+  - name: "youtube-watcher"
+    source_url: "https://skills.sh/hanzoskill/youtube-watcher/youtube-watcher"
+    source_platform: "skills.sh"
+    author: "hanzoskill/youtube-watcher"
+
+    description: "Watch and summarize YouTube videos"
+    installation_method: "npx skills add"
+
+    capabilities:
+      - video_summarization: true
+      - transcript_handling: true
+
+    dependencies: "Not fully documented in HTML (Vercel checkpoint blocked access)"
+
+    transcript_extraction_method:
+      - type: "unclear"
+        description: "Specific extraction method not accessible (security checkpoint)"
+
+    output_format: "Video summaries"
+
+    quality_assessment: "2/5"
+    quality_notes: "Limited documentation available; security checkpoint blocks details"
+
+    use_cases:
+      - "Quick video summarization"
+      - "Content aggregation"
+
+  - name: "youtube-transcript-extractor"
+    source_url: "https://www.skill.fish/skill/youtube-transcript-extractor"
+    source_platform: "skill.fish"
+
+    description: "Extract transcripts from YouTube videos"
+    installation_method: "skill.fish platform"
+
+    status: "Documentation blocked by Vercel security checkpoint"
+    quality_assessment: "0/5"
+    quality_notes: "Unable to access documentation"
+
+  - name: "youtube-feed-monitor"
+    source_url: "https://www.skill.fish/skill/youtube-feed-monitor"
+    source_platform: "skill.fish"
+
+    description: "Monitor YouTube feeds"
+    installation_method: "skill.fish platform"
+
+    status: "Documentation blocked by Vercel security checkpoint"
+    quality_assessment: "0/5"
+    quality_notes: "Unable to access documentation; appears to be feed monitoring, not transcript extraction"
+
+  - name: "youtube-topic-researcher"
+    source_url: "https://www.skill.fish/skill/youtube-topic-researcher"
+    source_platform: "skill.fish"
+
+    description: "Research topics via YouTube"
+    installation_method: "skill.fish platform"
+
+    status: "Documentation blocked by Vercel security checkpoint"
+    quality_assessment: "0/5"
+    quality_notes: "Unable to access documentation; likely content research tool, not transcript extraction"
+
+findings_summary:
+  confident_about: |
+    - intellectronica's youtube-transcript: lightweight API-based extraction from captions
+    - composiohq's youtube-downloader: robust yt-dlp wrapper for video/audio acquisition
+    - shipshitdev's youtube-video-analyst: comprehensive viral analysis framework with script templating
+    - youtube-video-analyst includes fetch_transcript.py for auto-extraction from URLs
+
+  gaps: |
+    - skill.fish URLs blocked by Vercel checkpoint (3 skills inaccessible)
+    - hanzoskill/youtube-watcher documentation incomplete
+    - No clear Whisper integration found for caption-less video transcription
+    - No audio transcription fallback mechanisms visible
+    - Limited integration patterns between transcript extraction and analysis
+
+  surprising_findings: |
+    - youtube-video-analyst is a sophisticated forensic analysis framework, not just extraction
+    - It generates reusable script templates as primary output (not just analysis)
+    - 11-section analysis framework is extremely comprehensive (hook, structure, retention, emotion, story, linguistics, algo, CTA, viral, templates, playbook)
+    - Includes adaptation guides and A/B test recommendations
+
+implication: |
+  For AI agents reviewing YouTube videos:
+  1. Use youtube-video-analyst as the primary analysis tool (highest quality, most actionable)
+  2. Pair with youtube-downloader + Whisper for caption-less videos
+  3. intellectronica's youtube-transcript sufficient for caption-enabled videos (lightweight)
+  4. skill.fish tools unavailable due to platform issues; not recommended for production
+  5. Building complete pipeline: download (youtube-downloader) → transcribe (Whisper if needed) → analyze (youtube-video-analyst)
+
+recommendation: |
+  Best-in-class approach for agents:
+  - PRIMARY: shipshitdev/youtube-video-analyst (comprehensive analysis)
+  - SECONDARY: composiohq/youtube-downloader + Whisper (handles caption-less)
+  - TERTIARY: intellectronica/youtube-transcript (simple extraction for captions)
+  - AVOID: skill.fish (blocked access), hanzoskill/youtube-watcher (incomplete docs)
+
+tags:
+  - youtube
+  - transcript
+  - extraction
+  - skills
+  - agents
+  - video-analysis
+  - yt-dlp
+  - viral-formulas
+  - content-templates
+  - skill.fish-blocked
+status: discovered
+
+---
+
+## SUPPLEMENTARY FINDINGS (Task #3 Prep)
+
+### fetch_transcript.py Analysis
+
+fetch_transcript_source:
+  availability: "Not directly accessible via standard GitHub paths"
+  referenced_in: "shipshitdev/youtube-video-analyst skill documentation"
+  likely_implementation:
+    - "Uses youtube-transcript-api or yt-dlp for URL-based transcript extraction"
+    - "Python-based script in skills repository"
+    - "Auto-fetches from YouTube URLs; accepts manual paste input"
+  access_method: "Included with youtube-video-analyst skill installation"
+
+### claude-mem Plugin Analysis
+
+claude_mem_plugin:
+  name: "claude-mem"
+  version: "10.6.2"
+  license: "AGPL-3.0"
+  github: "https://github.com/thedotmack/claude-mem"
+
+  installation:
+    - command_1: "/plugin marketplace add thedotmack/claude-mem"
+    - command_2: "/plugin install claude-mem"
+    - note: "npm install does NOT register plugin hooks; use /plugin commands only"
+
+  session_data_capture:
+    methodology: "Automatic observation capture"
+    mechanisms:
+      - "Captures tool usage observations from Claude Code session"
+      - "Generates semantic summaries of work performed"
+      - "Stores in persistent memory layer"
+      - "Retrieves and inserts into future session context"
+
+  capabilities:
+    - "Automatic context preservation across sessions"
+    - "Tool usage tracking and summarization"
+    - "Session transcript compression"
+    - "MCP-based memory search and retrieval"
+    - "Knowledge graph construction from session data"
+
+  mcp_tools:
+    - search: "Query persistent memory"
+    - chat: "Access memory via conversation"
+    - create_conclusion: "Generate session summaries"
+
+  technology_stack:
+    language: "TypeScript/Node.js"
+    protocol: "MCP (Model Context Protocol)"
+    deployment: "Claude Code plugin + worker service"
+
+  use_cases:
+    - "Preserve context across multi-session projects"
+    - "Reduce context restatement in new sessions"
+    - "Build session-independent project memory"
+    - "Track long-running research initiatives"
+
+### Audio/Video Tool Ecosystem (Mise Installation)
+
+yt_dlp_tool:
+  name: "yt-dlp"
+  github: "https://github.com/yt-dlp/yt-dlp"
+  pypi_package: "yt-dlp"
+
+  installation_methods:
+    - "pip install yt-dlp"
+    - "brew install yt-dlp (macOS)"
+    - "mise install yt-dlp (if plugin available; status: VERIFY)"
+
+  capabilities:
+    - "Download videos in 200+ formats"
+    - "Extract audio as MP3, M4A, WAV, OPUS"
+    - "Fetch available subtitles/captions"
+    - "Quality and codec selection"
+    - "Batch download with filtering"
+    - "Post-processing with FFmpeg integration"
+
+  recommended_for_pipeline: "Video/audio acquisition stage"
+
+whisper_ecosystem:
+  official_whisper:
+    name: "openai-whisper"
+    github: "https://github.com/openai/whisper"
+    pypi_package: "openai-whisper"
+    description: "Official OpenAI speech recognition model"
+    installation: "pip install openai-whisper"
+    capabilities:
+      - "Multilingual audio transcription"
+      - "99 languages supported"
+      - "Can run locally without API keys"
+      - "Model sizes: tiny, base, small, medium, large"
+    recommended_for_pipeline: "Accurate transcription; higher latency"
+
+  faster_whisper:
+    name: "faster-whisper"
+    github: "https://github.com/SYSTRAN/faster-whisper"
+    pypi_package: "faster-whisper"
+    description: "CTransformers-optimized Whisper (10x faster)"
+    installation: "pip install faster-whisper"
+    advantages:
+      - "10x speed improvement over official"
+      - "Reduced memory footprint"
+      - "GPU acceleration support"
+      - "Maintains accuracy"
+    recommended_for_pipeline: "Best balance of speed and accuracy"
+
+  whisper_cpp:
+    name: "whisper.cpp"
+    github: "https://github.com/ggerganov/whisper.cpp"
+    description: "C++ implementation for lightweight local inference"
+    installation: "Build from source or download binaries"
+    advantages:
+      - "No external dependencies"
+      - "Extremely lightweight"
+      - "Can run on CPU efficiently"
+      - "No internet required"
+    limitations:
+      - "Build complexity higher than Python packages"
+      - "Requires C++ compiler"
+    recommended_for_pipeline: "Minimal-dependency environments; edge deployment"
+
+  mise_availability:
+    status: "VERIFY - Not found in standard mise registry"
+    note: "Whisper tools available primarily via pip; may require custom mise plugin or direct pip installation"
+    installation_via_mise:
+      - "Check: mise plugin install</plugin-name> for whisper plugins"
+      - "Fallback: pip install faster-whisper within project virtualenv"
+
+### Recommended Tool Pipeline for Task #3
+
+complete_pipeline:
+  step_1_download:
+    tool: "composiohq/youtube-downloader (yt-dlp wrapper)"
+    action: "Acquire video content from URL"
+    output: "MP4 video or MP3 audio"
+
+  step_2_transcribe:
+    tool: "faster-whisper (for speed) or openai-whisper (for accuracy)"
+    action: "Convert audio to text transcript"
+    condition: "Required only for caption-less videos"
+    output: "Plain text transcript with optional timestamps"
+
+  step_3_analyze:
+    tool: "shipshitdev/youtube-video-analyst"
+    action: "Forensic deconstruction and viral mechanics extraction"
+    output: "11-section analysis with reusable templates"
+
+  step_4_memory:
+    tool: "claude-mem plugin"
+    action: "Persist analysis across sessions"
+    output: "Searchable memory graph available in future sessions"
+
+integration_notes:
+  - "yt-dlp handles caption extraction automatically when available"
+  - "Skip Whisper step if captions present"
+  - "claude-mem automatically captures tool usage and summaries"
+  - "Pipeline enables agents to review complete videos without manual transcript input"
+
+gaps_remaining:
+  - "fetch_transcript.py source code not publicly accessible"
+  - "Whisper mise integration status unclear; pip fallback recommended"
+  - "No observed integration between skills (manual pipeline required)"
+  - "Task #2 may have identified Obsidian integration patterns for long-term memory

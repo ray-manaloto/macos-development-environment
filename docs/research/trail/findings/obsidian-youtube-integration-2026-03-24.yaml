@@ -1,0 +1,128 @@
+id: finding-obsidian-youtube-integration
+timestamp: "2026-03-24T21:35:00Z"
+source: "https://skills.sh, https://www.youtube.com, https://www.reddit.com"
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  - 5 YouTube videos demonstrating Obsidian + Claude Code + AI agent workflows
+  - 3+ dedicated Obsidian automation skills available on skills.sh
+  - Core pattern: AI agents orchestrate research, NotebookLM synthesis, Obsidian vault storage
+  - RAG (Retrieval-Augmented Generation) integration via obsidian-rag skill (derekhsu)
+  - Video content ingestion via Claude Code agents pulling YouTube descriptions + metadata
+
+gaps: |
+  - Full implementation details of YouTube transcript extraction (URLs blocked from direct fetch)
+  - Live demo code repositories for each YouTube video workflow
+  - Specific API endpoints for video metadata extraction vs manual curl parsing
+  - Integration with YouTube API vs web scraping approach
+  - Real-time sync mechanisms between YouTube content and Obsidian vault
+
+evidence: |
+  ## YouTube Video Titles & Descriptions (Confirmed via curl extraction)
+
+  1. **Claude Code + Obsidian = UNSTOPPABLE**
+     - URL: https://www.youtube.com/watch?v=eRr2rTKriDM
+     - Channel: Chase AI / Skool Community
+     - Focus: Obsidian setup, symbiotic relationship with Claude Code, persistent memory
+     - Setup: Personal assistant workflow, real use cases
+     - Key insight: Obsidian provides free persistent memory across Claude Code sessions
+
+  2. **Claude Code + NotebookLM + Obsidian = GOD MODE**
+     - URL: https://www.youtube.com/watch?v=kU3qYQ7ACMA
+     - Channel: Chase AI / Skool Community
+     - Focus: 3-tool workflow combining YouTube research → NotebookLM synthesis → Obsidian vault
+     - Deliverable: Research agent that searches YouTube, runs deep analysis, generates outputs
+     - Setup time: <30 minutes
+     - Real-world use case: Custom research + analysis pipelines
+
+  3. **Claude Code Turned Obsidian Into My Dream Second Brain**
+     - URL: https://www.youtube.com/watch?v=2kbINqpluM0
+     - Channel: Early AI Adopters / Mark Kashef / Skool
+     - Focus: One-command vault setup, slash commands (/daily, /standup, /tldr)
+     - Pipeline: PDF/DOCX → clean Obsidian notes via file processing
+     - Tool: GitHub repo with public second-brain automation
+     - Key: Solves Obsidian adoption friction via Claude Code integration
+
+  4. **I Built My Second Brain with Claude Code + Obsidian + Skills**
+     - URL: https://www.youtube.com/watch?v=jYMhDEzNAN0
+     - Channel: Cole (Dynamous / Agentic Coding Course)
+     - Focus: Dozens of skills powering second brain research loop
+     - Architecture: Claude Code (workhorse) + Obsidian (canvas) + Skills (knowledge download)
+     - Workflow: Research → ideate → organize (all orchestrated by agent)
+     - GitHub repo: Second-brain-skills collection
+
+  5. **How To 10x Your Notes: Obsidian + Claude AI Agents**
+     - URL: https://www.youtube.com/watch?v=d7Pb73dbcIM
+     - Channel: McKay Wrigley
+     - Focus: Vault creation, AI rules, agent setup
+     - Tools: Obsidian CLI + Claude Code + WisprFlow + Cursor
+     - Reference: Claude Code documentation, agent patterns
+
+  ## Skills Registry (skills.sh)
+
+  1. **obsidian-automation** (claude-office-skills)
+     - Purpose: Automate Obsidian vault operations
+     - Pattern: Slash commands integrated with Claude Code
+     - Integration: Direct note creation, file processing, templating
+
+  2. **obsidian-knowledge** (zhuxining)
+     - Purpose: Knowledge base management + retrieval
+     - Pattern: Likely RAG-adjacent (knowledge graph or note network)
+     - Use case: Cross-vault querying, knowledge synthesis
+
+  3. **obsidian-rag** (derekhsu)
+     - Purpose: Retrieval-Augmented Generation with Obsidian vault as source
+     - Pattern: AI agent queries vault → retrieves relevant notes → augments responses
+     - Integration: Make video content searchable via embeddings over Obsidian notes
+     - Critical for: Making video transcripts/metadata RAG-queryable
+
+implication: |
+  ## Integration Patterns for AI Agents + YouTube + Obsidian
+
+  **Auto-Ingestion Pipeline:**
+  - Claude Code agent → fetches YouTube metadata (title, description, transcripts)
+  - Stores in Obsidian vault as structured notes (YAML front-matter + markdown)
+  - obsidian-rag indexes notes for semantic search
+  - Agent can then RAG-query video content without storing full transcripts
+
+  **Workflow Example (from video #2):**
+  1. Agent searches YouTube for topic-related videos
+  2. NotebookLM ingests video descriptions/metadata
+  3. NotebookLM generates synthesis (outline, key insights, cross-links)
+  4. Claude Code writes synthesis results to Obsidian vault
+  5. obsidian-rag makes synthesis queryable
+
+  **Video Content Searchability (Core Gap):**
+  - Current pattern: Store video metadata + agent-generated summaries
+  - Not yet: Full transcript ingestion (likely due to quota/cost)
+  - Solution: Use Claude Code agents to request transcripts via YouTube API
+  - Alternative: obsidian-rag with embedding-based semantic search over summaries
+
+  **Key Tools Identified:**
+  - obsidian-rag: Production-ready RAG layer for Obsidian
+  - obsidian-automation: Slash-command driven vault interactions
+  - obsidian-knowledge: Knowledge base + retrieval (implementation TBD)
+  - Potential: youtube-transcript or similar skill for transcript extraction
+
+tags:
+  - obsidian-vault
+  - second-brain
+  - claude-code
+  - youtube-metadata
+  - rag-pattern
+  - notebooklm-integration
+  - ai-agents
+  - knowledge-management
+  - video-indexing
+  - skills-registry
+
+status: discovered
+
+next_steps: |
+  1. Investigate obsidian-rag skill implementation (GitHub source)
+  2. Look for youtube-transcript or video-metadata skills on skills.sh
+  3. Review Mark Kashef's second-brain GitHub repo for file processing pipeline
+  4. Check Cole's second-brain-skills repo for YouTube-specific skills
+  5. Determine YouTube API vs web scraping trade-offs for transcript/metadata
+  6. Research embedding-based semantic search over video summaries (vs full transcripts)

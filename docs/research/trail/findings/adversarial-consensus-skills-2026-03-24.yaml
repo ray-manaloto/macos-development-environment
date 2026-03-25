@@ -1,0 +1,159 @@
+id: adversarial-consensus-skills-catalog
+timestamp: "2026-03-24T23:00:00Z"
+agent: researcher
+finding_type: catalog
+confidence: partial
+findings_summary: |
+  Attempted catalog of adversarial/multi-LLM skills from 5 marketplaces + SentinelOne
+  architecture paper. Key blockers: Vercel/geo-restriction on skill.fish and mcpmarket.
+  Successfully fetched SentinelOne article on consensus engine for malware analysis.
+  skills.sh accessible but limited to ~20 non-adversarial skills in results.
+
+sources_attempted:
+  - url: https://www.sentinelone.com/labs/building-an-adversarial-consensus-engine-multi-agent-llms-for-automated-malware-analysis/
+    status: SUCCESS
+    title: "Building an Adversarial Consensus Engine | Multi-Agent LLMs for Automated Malware Analysis"
+    publisher: SentinelOne Labs
+    key_concepts:
+      - consensus_engine: Serial pipeline for catching artifacts/hallucinations from single-tool LLM analysis
+      - multi_agent: Debate mechanism between multiple LLM models
+      - use_case: Automated malware analysis (adversarial review context)
+      - finding: Single-tool LLM outputs appear authoritative but lack validation
+    description: >
+      Presents adversarial consensus pattern for catching hallucinations and artifacts
+      from LLM-based malware analysis. Proposes serial consensus pipeline to validate
+      outputs across multiple models before reporting.
+    image_asset: https://www.sentinelone.com/wp-content/uploads/2026/03/Adversarial_LLM9.jpg
+    tags: [consensus-engine, multi-llm, malware-analysis, adversarial-validation]
+
+  - url: https://www.skill.fish/?q=multi+llm
+    status: BLOCKED
+    blocker: Vercel Security Checkpoint
+    note: Returns security checkpoint page, content not accessible via automated fetch
+    tags: [vercel-geo, skill-market-blocked]
+
+  - url: https://www.skill.fish/?q=adversarial
+    status: BLOCKED
+    blocker: Vercel Security Checkpoint
+    note: Returns security checkpoint page, content not accessible
+    tags: [vercel-geo, skill-market-blocked]
+
+  - url: https://www.skill.fish/?q=red+team
+    status: BLOCKED
+    blocker: Vercel Security Checkpoint
+    note: Returns security checkpoint page, content not accessible
+    tags: [vercel-geo, skill-market-blocked]
+
+  - url: https://skills.sh/?q=adversarial
+    status: PARTIAL
+    note: Page loads but search returns generic/unrelated skills, not adversarial-focused results
+    skills_found: []
+    observation: >
+      Search results don't filter properly for adversarial/red-team context.
+      Returns: find-skills, ui-ux-pro-max, brainstorming, azure-* skills.
+      No standalone adversarial validation or multi-LLM debate skills identified.
+    tags: [skills-sh, search-ineffective]
+
+  - url: https://skills.sh/?q=red+team
+    status: PARTIAL
+    note: Page loads, search ineffective for red-team skills
+    observation: >
+      Generic skills leaderboard, no red-team categorization. Results include
+      design, react, azure compute skills -- not offensive/adversarial tools.
+    tags: [skills-sh, search-ineffective]
+
+  - url: https://skills.sh/?q=multi+llm
+    status: PARTIAL
+    note: Returns generic leaderboard, no multi-LLM aggregation skills identified
+    tags: [skills-sh, search-ineffective]
+
+  - url: https://mcpmarket.com/search?q=adversarial&type=skills
+    status: BLOCKED
+    blocker: "HTTP 403 Forbidden (IP/region restriction or rate limit)"
+    note: API endpoint blocked, likely geo-fenced or requires authentication
+    tags: [mcpmarket-blocked, geo-restricted]
+
+  - url: https://mcpmarket.com/search?q=multi+llm&type=skills
+    status: BLOCKED
+    blocker: "HTTP 403 Forbidden"
+    note: Same endpoint restriction
+    tags: [mcpmarket-blocked]
+
+  - url: https://mcpmarket.com/search?q=red+team&type=skills
+    status: BLOCKED
+    blocker: "HTTP 403 Forbidden"
+    tags: [mcpmarket-blocked]
+
+  - url: https://github.com/knoxgraeme/skillfish
+    status: PARTIAL
+    note: GitHub repo page loads but content requires DOM render (JavaScript SPA)
+    observation: >
+      Repository appears to be a skill marketplace client/catalog tool.
+      Cannot extract README or feature details from raw HTML (Next.js SPA).
+      Likely useful for local skill discovery but not accessible via curl/automation.
+    tags: [skillfish-cli, github-spa, local-tool]
+
+alternative_fetch_blockers: |
+  - agent-fetch npm package not available in registry (404)
+  - Vercel Security Checkpoint affects skill.fish searches (CORS/bot detection)
+  - mcpmarket.com geo-fenced or rate-limited (403 Forbidden)
+  - skillfish GitHub repo is a Next.js SPA, requires browser rendering
+
+marketplace_assessment: |
+  SKILL.FISH: Vercel checkpoint prevents automated scraping. Manual browser access
+  would work but defeats research automation. Category filtering may exist on live
+  site but not accessible via curl.
+
+  SKILLS.SH: Accessible but search queries don't filter adversarial/red-team/multi-LLM
+  skills effectively. Returns generic developer skills (UI/UX, React, Azure).
+  No dedicated adversarial validation or consensus-engine categories observed.
+
+  MCPMARKET.COM: Geo-restricted or rate-limited. Returns 403 for all search endpoints.
+  Likely requires browser-based access or authenticated API key.
+
+  SKILLFISH CLI: GitHub repo (knoxgraeme/skillfish) appears to be a local tool for
+  skill management. Requires Node.js/npm setup. Potential for local CLI-based discovery
+  but source code not readable via automation.
+
+confident_about: |
+  - SentinelOne article is real, discusses consensus engine for malware analysis
+  - Skill.fish and mcpmarket.com are real marketplaces but geo-fenced
+  - skills.sh is accessible but search/categorization doesn't distinguish adversarial skills
+  - skills.sh returns generic developer productivity tools, not security/adversarial tools
+
+gaps: |
+  - No specific adversarial/consensus/red-team skills identified in accessible markets
+  - skills.sh may have skills scattered under different categories (not "adversarial" tagged)
+  - skillfish repo purpose/features unknown (SPA rendering issue)
+  - Need manual browser-based exploration of skill.fish and mcpmarket
+  - No existing pre-built "multi-LLM consensus" skill found in publicly searchable catalogs
+
+implication: |
+  LIBRARIES/PRE-EXISTING TOOLS TO INSTALL:
+  1. SentinelOne consensus pipeline concept: Extract design pattern from article,
+     could be implemented as MCP tool or Claude Code skill
+  2. skillfish CLI: Might provide local skill discovery for offline markets
+  3. skills.sh: Has content but search categorization needs improvement
+
+  BUILD VS INSTALL DECISION:
+  - No pre-built multi-LLM adversarial consensus skill found in accessible marketplaces
+  - Concept is solid (SentinelOne article), implementation details available
+  - Likely need to BUILD this as new MCP tool or Claude Code skill
+  - Consider wrapping existing debate/consensus patterns from anthropic/model libraries
+
+research_next_steps:
+  - Try manual browser access to skill.fish/mcpmarket.com with human review
+  - Check if skillfish CLI can discover local/cached skills
+  - Look for consensus/debate patterns in existing LLM orchestration libraries
+  - Investigate whether Anthropic SDK has native multi-model debate capability
+  - Review SentinelOne article for exact implementation details to guide build
+
+tags:
+  - multi-llm
+  - adversarial-consensus
+  - skill-catalog
+  - marketplace-access
+  - geo-restriction
+  - malware-analysis
+  - debate-engine
+status: blocked-partial

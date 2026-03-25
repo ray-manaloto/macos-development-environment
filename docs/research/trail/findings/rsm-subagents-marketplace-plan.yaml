@@ -1,0 +1,299 @@
+id: rsm-subagents-marketplace-plan
+timestamp: "2026-03-25T03:45:00Z"
+source: internal-project-analysis
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: |
+  Marketplace structure, first plugin (mise-toolkit), technology-specific extraction candidates,
+  plugin catalog format, and organizational patterns based on existing agents/skills in mde project.
+gaps: |
+  Exact marketplace registration API/endpoint, published marketplace plugin index format,
+  timeline for multi-plugin extraction, CI/CD pipeline for plugin releases,
+  versioning strategy across plugins and their dependencies.
+evidence: |
+  - mde project has 11 specialist agents (mise, chezmoi, python, brew, researcher, etc.)
+  - mise-toolkit already built at mise-toolkit/ with 8 skills + 1 agent + 1 hook
+  - 70+ skills available across project covering diverse domains
+  - pyproject.toml dependencies: pydantic, claude-agent-sdk, honcho-ai, acodex, gemini-cli-sdk, etc.
+  - Project uses .claude/agents/, .claude/skills/, .claude/rules/ organization
+  - Each plugin has agent spec (*.md), skills/, hooks/, .claude-plugin/plugin.json
+implication: |
+  Design rsm-subagents marketplace as monorepo with 6-8 technology-specific plugins,
+  each extracting a cohesive domain from mde project. Start with mise-toolkit,
+  add chezmoi-toolkit and mde-python next. Use marketplace.json for plugin registry,
+  plugin.json for plugin metadata, and agent+skill+hook reuse patterns from mde project.
+tags: [rsm-subagents, marketplace, plugin-architecture, mis-first, python-development, dotfiles]
+status: discovered
+---
+
+# RSM-Subagents Marketplace Plan
+
+## Marketplace Repository Structure
+
+```
+rsm-subagents/
+├── README.md                          # Marketplace overview
+├── marketplace.json                   # Plugin registry (authoritative source)
+├── CONTRIBUTING.md                    # Plugin contribution guide
+├── LICENSE
+├── plugins/
+│   ├── mise-toolkit/                  # Published (v1.0.0+)
+│   │   ├── agents/
+│   │   ├── skills/
+│   │   ├── hooks/
+│   │   ├── .claude-plugin/plugin.json
+│   │   └── README.md
+│   ├── chezmoi-toolkit/               # Next (v0.1.0)
+│   ├── mde-python/                    # Next (v0.1.0)
+│   ├── brew-toolkit/                  # Future (v0.1.0)
+│   ├── devcontainer-toolkit/          # Future (v0.1.0)
+│   ├── observability-toolkit/         # Future (v0.1.0)
+│   └── honcho-toolkit/                # Future (v0.1.0)
+└── docs/
+    ├── plugin-development-guide.md
+    ├── agent-patterns.md
+    ├── skill-patterns.md
+    └── hook-patterns.md
+```
+
+## Plugin Inventory & Extraction Plan
+
+### 1. mise-toolkit (PUBLISHED)
+**Status**: Ready for marketplace release
+**Agents**: mise-specialist (1)
+**Skills**: mise-tool-management, mise-tasks, mise-enforcement, mise-env-config, mise-config-settings, mise-codegen, mise-upgrade-sync, mise-jdx-ecosystem (8)
+**Hooks**: guard-install (blocks direct installers, suggests mise) (1)
+**Version**: 1.0.0
+**Dependencies**: mise, Claude Code 2.x+
+**Marketplace Ready**: YES — already built at mise-toolkit/
+
+### 2. chezmoi-toolkit (EXTRACTION CANDIDATE)
+**Status**: Ready to extract from mde agents + skills
+**Agents**: chezmoi-specialist (1)
+**Skills**: chezmoi-config, chezmoi-workflows (2)
+**Hooks**: dotfile-apply-override (override chezmoi-config FORBIDDEN constraint) (1)
+**Supporting Skills**: (linked but not exclusive) dotfiles-team
+**Version**: 0.1.0
+**Dependencies**: chezmoi, Claude Code 2.x+
+**Extraction Source**: .claude/agents/chezmoi-specialist.md + .claude/skills/chezmoi-*
+**Marketplace Ready**: READY — self-contained domain
+
+### 3. mde-python (EXTRACTION CANDIDATE)
+**Status**: Ready to extract from mde Python-specific agents + skills
+**Agents**: python-coder (1)
+**Skills**: test-driven-development, ruff, ty, uv (4)
+**Domain Focus**: Python development patterns, Pydantic, ruff linting, type-checking (ty), testing (pytest)
+**Supporting Skills**: (linked but not exclusive) python-dev-team
+**Version**: 0.1.0
+**Dependencies**: ruff, pyright, pytest, uv, Claude Code 2.x+
+**Extraction Source**: .claude/agents/python-coder.md + .claude/skills/{test-driven-development,ruff,ty,uv}/
+**Marketplace Ready**: READY — cohesive Python-specific domain
+
+### 4. brew-toolkit (EXTRACTION CANDIDATE)
+**Status**: Can extract but lower priority
+**Agents**: brew-specialist (1)
+**Skills**: mde-homebrew, homebrew-formula-maintenance (2)
+**Domain Focus**: Homebrew package management, Brewfile, cask installations, conflict resolution with mise
+**Version**: 0.1.0
+**Dependencies**: Homebrew, Claude Code 2.x+
+**Extraction Source**: .claude/agents/brew-specialist.md + .claude/skills/mde-homebrew/
+**Marketplace Ready**: READY — standalone domain
+
+### 5. devcontainer-toolkit (EXTRACTION CANDIDATE)
+**Status**: Skills exist but need agent consolidation
+**Domain Focus**: Devcontainer lifecycle, image building, smoke testing, bootstrapping
+**Existing Skills**: None dedicated, but patterns exist in mise tasks + mde observability/memory modules
+**New Agent Needed**: devcontainer-specialist (propose)
+**Skills to Create**: devcontainer-bootstrap, devcontainer-image-testing, devcontainer-health-check (3)
+**Version**: 0.1.0
+**Dependencies**: devcontainer CLI, Docker, Claude Code 2.x+
+**Marketplace Ready**: PARTIAL — needs agent + skill development
+
+### 6. observability-toolkit (EXTRACTION CANDIDATE)
+**Status**: Skills exist, LGTM stack (Collector, Tempo, Loki, Grafana)
+**Domain Focus**: OpenTelemetry, LGTM stack deployment, health checks, telemetry policy
+**Existing Agent**: None (possible route to acodex-sdk-expert overlap)
+**Existing Skills**: otel-fanout (1)
+**Supporting Code**: src/mde/observability.py, src/mde/telemetry_verify.py
+**New Agent Needed**: observability-specialist (propose)
+**Skills to Create**: otel-lgtm-deployment, otel-health-check, otel-collector-config (3)
+**Version**: 0.1.0
+**Dependencies**: opentelemetry-api, Docker, Claude Code 2.x+
+**Marketplace Ready**: PARTIAL — needs agent + skill development
+
+### 7. honcho-toolkit (EXTRACTION CANDIDATE)
+**Status**: Skills exist but SDK-specific expertise needed
+**Domain Focus**: Honcho memory stack (API, PostgreSQL, Redis, deriver), memory lifecycle, SDK integration
+**Existing Agent**: None (acodex-sdk-expert is different)
+**Existing Skills**: None dedicated
+**Supporting Code**: src/mde/domain/honcho_models.py (generated from JSON Schema)
+**New Agent Needed**: honcho-memory-specialist (propose)
+**Skills to Create**: honcho-stack-deploy, honcho-sdk-integration, honcho-memory-verify (3)
+**Version**: 0.1.0
+**Dependencies**: honcho-ai SDK, Docker, PostgreSQL, Redis, Claude Code 2.x+
+**Marketplace Ready**: PARTIAL — needs agent + skill development
+
+### 8. research-toolkit (EXTRACTION CANDIDATE, LOWER PRIORITY)
+**Status**: Researcher agent exists, highly specialized
+**Agents**: researcher (1)
+**Skills**: agent-fetch, research-source-discovery (2)
+**Domain Focus**: Investigation, source discovery, findings documentation, NotebookLM integration
+**Version**: 0.1.0
+**Dependencies**: Claude Code 2.x+
+**Extraction Source**: .claude/agents/researcher.md + .claude/skills/{agent-fetch,research-source-discovery}/
+**Marketplace Ready**: READY — standalone but highly specialized
+
+## marketplace.json Format
+
+```json
+{
+  "version": "1.0.0",
+  "plugins": [
+    {
+      "id": "ray-manaloto/mise-toolkit",
+      "name": "mise-toolkit",
+      "version": "1.0.0",
+      "author": "ray-manaloto",
+      "description": "Comprehensive mise expertise: tool management, task orchestration, environment configuration.",
+      "repository": "https://github.com/ray-manaloto/rsm-subagents",
+      "agents": ["mise-specialist"],
+      "skillCount": 8,
+      "hooks": 1,
+      "tags": ["mise", "tool-management", "task-orchestration", "environment"],
+      "dependencies": {
+        "mise": "*",
+        "claude-code": ">=2.0"
+      },
+      "status": "published",
+      "releasedAt": "2026-03-25",
+      "installCommand": "/plugin add ray-manaloto/mise-toolkit"
+    },
+    {
+      "id": "ray-manaloto/chezmoi-toolkit",
+      "name": "chezmoi-toolkit",
+      "version": "0.1.0",
+      "author": "ray-manaloto",
+      "description": "Chezmoi dotfiles expert: templates, secrets, dotfile lifecycle management.",
+      "repository": "https://github.com/ray-manaloto/rsm-subagents",
+      "agents": ["chezmoi-specialist"],
+      "skillCount": 2,
+      "hooks": 1,
+      "tags": ["chezmoi", "dotfiles", "configuration-management"],
+      "dependencies": {
+        "chezmoi": "*",
+        "claude-code": ">=2.0"
+      },
+      "status": "ready",
+      "installCommand": "/plugin add ray-manaloto/chezmoi-toolkit"
+    }
+  ]
+}
+```
+
+## Plugin Installation & Discovery
+
+### Installation via Claude Code
+```bash
+# From marketplace (once published)
+/plugin marketplace add ray-manaloto/mise-toolkit
+/plugin install mise-toolkit
+
+# Local development
+cc --plugin-dir /path/to/rsm-subagents/plugins/mise-toolkit
+
+# All plugins at once
+cc --plugin-dir /path/to/rsm-subagents/plugins/*
+```
+
+### Plugin Metadata (plugin.json)
+Each plugin must include `.claude-plugin/plugin.json`:
+```json
+{
+  "name": "mise-toolkit",
+  "version": "1.0.0",
+  "agents": ["mise-specialist"],
+  "skills": ["mise-tool-management", "mise-tasks", ...],
+  "hooks": ["guard-install"],
+  "requiredFeatures": ["claude-code-2.0"],
+  "marketplace": {
+    "id": "ray-manaloto/mise-toolkit",
+    "description": "...",
+    "tags": ["mise", "tool-management"],
+    "installCommand": "/plugin add ray-manaloto/mise-toolkit"
+  }
+}
+```
+
+## Next Steps (Priority Order)
+
+### Phase 1: Marketplace Foundation (NOW)
+1. Create rsm-subagents monorepo at GitHub
+2. Publish marketplace.json with mise-toolkit entry
+3. Add contribution guidelines for plugin authors
+4. Write plugin development guide (agent patterns, skill patterns, hook patterns)
+
+### Phase 2: Core Plugins (NEXT)
+1. Extract chezmoi-toolkit from mde/
+2. Extract mde-python from mde/
+3. Extract brew-toolkit from mde/
+4. Release all three as v0.1.0
+
+### Phase 3: Specialized Plugins (FUTURE)
+1. Create devcontainer-specialist agent + 3 skills
+2. Create observability-specialist agent + 3 skills
+3. Create honcho-memory-specialist agent + 3 skills
+4. Optionally: Extract research-toolkit
+
+### Phase 4: Ecosystem Expansion (LATER)
+1. Outreach to Claude Code community for plugin contributions
+2. Establish plugin quality gates (testing, documentation, version pinning)
+3. Create "awesome-rsm-plugins" collection
+4. Consider versioning strategy for plugin dependencies
+
+## Key Design Decisions
+
+### 1. Monorepo vs. Multi-Repo
+**Decision**: Monorepo (rsm-subagents) with plugins/ subdirectories.
+**Rationale**: Easier to maintain shared patterns, unified CI/CD, simpler marketplace.json management, single source-of-truth for plugin registry.
+
+### 2. Backwards Compatibility
+**Decision**: Semantic versioning (MAJOR.MINOR.PATCH) for each plugin independently.
+**Rationale**: Plugins are independent; version mismatches won't break the marketplace.
+
+### 3. Extraction vs. Duplication
+**Decision**: Extract from mde project, don't duplicate.
+**Rationale**: Avoid drift between mde agents/skills and marketplace plugins. Update mde project first, then sync to marketplace.
+
+### 4. Hook Policy
+**Decision**: Each plugin can include hooks but should be minimal and scoped.
+**Rationale**: Hooks change Claude Code behavior globally; minimize surprises. Document all hooks in plugin README.
+
+### 5. Skill Reusability
+**Decision**: Skills can be shared across plugins if they form a cohesive domain.
+**Rationale**: mise-toolkit reuses all 8 skills; chezmoi-toolkit reuses 2. No need to isolate.
+
+## Marketplace Comparison Matrix
+
+| Feature | mise-toolkit | chezmoi-toolkit | mde-python | devcontainer-toolkit | observability-toolkit |
+|---------|--------------|-----------------|-----------|----------------------|----------------------|
+| Agents  | 1            | 1               | 1         | 1                    | 1                    |
+| Skills  | 8            | 2               | 4         | 3                    | 3                    |
+| Hooks   | 1            | 1               | 0         | 1                    | 1                    |
+| Status  | Published    | Ready           | Ready     | Partial              | Partial              |
+| Domain  | Tool mgmt    | Dotfiles        | Python    | Containers           | Observability        |
+
+## Risk Mitigation
+
+1. **Plugin Conflicts**: Document mutual exclusivity in plugin READMEs (e.g., chezmoi-toolkit vs. home-manager-toolkit).
+2. **Version Pinning**: Use semantic versioning; document minimum Claude Code version for each plugin.
+3. **Agent Name Collisions**: Prefix agents with toolkit name (e.g., mise-specialist, chezmoi-specialist).
+4. **Skill Duplication**: Audit skills across plugins during extraction; consolidate if identical.
+5. **Marketplace Discovery**: Provide search by tags, agent names, and skills to help users find relevant plugins.
+
+## Conclusion
+
+The rsm-subagents marketplace is a natural extension of the mde project's agent + skill + hook architecture.
+Starting with mise-toolkit (already built), extracting 2-3 core plugins (chezmoi, python, brew) is feasible in ~2-4 weeks.
+The monorepo structure with plugin.json metadata enables scaling to 10+ community-contributed plugins over time.
+Key success factors: clear contribution guidelines, tight versioning discipline, and comprehensive documentation for plugin authors.

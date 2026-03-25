@@ -1,0 +1,95 @@
+id: multi-model-sdk-evaluation-2026-03-24
+timestamp: "2026-03-24T22:30:00Z"
+source: https://github.com/shinpr/sub-agents-skills, https://github.com/nyldn/claude-octopus, https://github.com/dsifry/metaswarm, https://github.com/catlog22/Claude-Code-Workflow, https://github.com/BitDanceLabels/claude-octopus-skills
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  All five orchestration repositories are CLI-based skill/agent collections, NOT importable Python packages.
+  None provide programmatic Python SDKs — they are deployment patterns (shell skills, markdown agents, JSON workflows).
+gaps: |
+  No Python package exists that wraps multi-model orchestration as a pip-installable SDK.
+  Each tool requires integration at the skill/agent layer, not the library layer.
+evidence: |
+  1. sub-agents-skills (shinpr/sub-agents-skills):
+     - Language: Python (pyproject.toml present, zero dependencies)
+     - Type: SKILL (subprocess wrapper, not SDK)
+     - Content: skills/sub-agents/run_subagent.py calls external CLIs
+     - Install: curl install.sh → places into ~/.codex/skills or ~/.claude/skills
+     - Stars: 14, created 2026-01-16, active (last push 2026-03-21)
+     - License: None specified (no LICENSE file)
+     - Activity: Low but real (4 forks, no issues)
+     - Quality: Minimal pyproject.toml, no test coverage reported
+
+  2. nyldn/claude-octopus:
+     - Language: Shell (main codebase)
+     - Type: CLAUDE CODE PLUGIN (not a Python package)
+     - Content: agent definitions in agents/, shell scripts in skills/, config.yaml
+     - Install: `claude plugin install octo@nyldn-plugins` (Claude Code plugin marketplace)
+     - Package metadata: package.json present (Node/npm ecosystem metadata)
+     - Stars: 2044, created 2026-01-15, highly active (last push 2026-03-24)
+     - License: MIT
+     - Activity: Very high (168 forks, 19 watchers, 3 open issues)
+     - Quality: Professional documentation (CHANGELOG, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT)
+     - Claims: "8 providers, 47 commands, 50 skills" — these are NOT importable; they're workflow definitions
+     - Consensus gates: implemented via shell orchestration, not a Python library
+
+  3. dsifry/metaswarm:
+     - Language: Shell (AGENTS.md, orchestration via markdown + .claude/.codex configs)
+     - Type: MULTI-AGENT ORCHESTRATION TEMPLATE (agent definitions, not SDK)
+     - Content: agents/*.md (agent specs), .claude/.codex/.cursor/.gemini plugin configs
+     - Install: template-based (copy .claude/ config, define agents in agents/)
+     - Stars: 145, created 2026-02-02, moderate activity (last push 2026-03-02)
+     - License: MIT
+     - Activity: 16 forks, 9 watchers, 3 open issues
+     - Quality: Policy-driven (ORCHESTRATION.md, GETTING_STARTED.md, quality gates via .claude/rules/)
+     - No Python SDK present; TDD enforcement via pytest on *user code*, not a library
+
+  4. catlog22/Claude-Code-Workflow:
+     - Language: TypeScript/JavaScript
+     - Type: JSON-DRIVEN WORKFLOW ORCHESTRATOR (not a Python package)
+     - Content: agents/ (agent definitions), workflows/*.json, CLI executors written in TS
+     - Install: npm install (uses Node.js ecosystem, not Python)
+     - Package.json present (npm registry metadata)
+     - Stars: 1575, created 2025-09-07, very active (last push 2026-03-24)
+     - License: MIT
+     - Activity: 130 forks, 10 watchers, 0 open issues
+     - Quality: Professional (multi-language README, WORKFLOW_GUIDE, spec system)
+     - Homepage: ccw-command-explorer.vercel.app (hosted dashboard)
+     - Zero Python components; TS/JS-based CLI orchestrator only
+
+  5. BitDanceLabels/claude-octopus-skills:
+     - Type: FORK of nyldn/claude-octopus
+     - Language: None (inherits parent's Shell/config structure)
+     - Stars: 0, created 2026-03-17, unmaintained fork (last push 2026-03-17)
+     - License: MIT
+     - Activity: No forks, no watchers, no issues — abandoned fork
+     - Quality: SEO farming pattern (just copied parent, no original work)
+
+implication: |
+  **No Python SDK exists for multi-model CLI orchestration.** All discovered tools are:
+
+  1. **Skill/agent deployment frameworks** (markdown + config, not code)
+  2. **Plugin ecosystems** (Claude Code plugin, Factory AI droid, VS Code extension)
+  3. **Workflow templates** (JSON config, shell scripts, or agent markdown specs)
+  4. **TypeScript/JavaScript tools** (catering to Node ecosystem, not Python)
+
+  **Patterns that CAN be extracted into src/mde/domain/multi_model.py:**
+
+  - **Consensus gate logic** (nyldn/claude-octopus v9: 75% agreement threshold across providers)
+  - **Double Diamond workflow stages** (Discover → Define → Develop → Deliver)
+  - **Provider detection + auto-activation** (scan for installed CLIs, activate workflows accordingly)
+  - **Task routing heuristics** (match task description to specialized agent)
+  - **Quality gate enforcement** (pass/fail checkpoints between stages)
+  - **Context handoff protocol** (session-to-session memory via structured JSON)
+
+  **NOT extractable as a Python library:**
+  - Orchestration itself (too tightly coupled to CLI execution via subprocess)
+  - Agent/skill definitions (stored as markdown, YAML, JSON — not Python code)
+  - Plugin installation (tied to IDE-specific plugin marketplaces)
+
+  **Better approach:** Create a lightweight Python _orchestration pattern library_ (not an SDK)
+  that implements the above patterns, leaving skill/agent deployment to existing ecosystems.
+
+tags: [multi-model, orchestration, cli, python-sdk, research, pattern, no-sdk-found, agent-skills, workflow-automation, consensus-gates]
+status: discovered
