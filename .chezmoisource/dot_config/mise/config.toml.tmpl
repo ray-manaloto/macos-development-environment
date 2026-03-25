@@ -23,11 +23,14 @@ GIT_TERMINAL_PROMPT = "0"
 NOTEBOOKLM_HOME = "~/.notebooklm"
 
 {{ if eq .chezmoi.os "darwin" -}}
-# LLVM/Clang: use Homebrew's latest LLVM (includes clang-format, clang-tidy, lldb)
+# LLVM/Clang: Homebrew's latest LLVM (clang-format, clang-tidy, lldb, lld included)
+# Brew formula: https://formulae.brew.sh/formula/llvm (keg-only, needs explicit paths)
+_.path = ["/opt/homebrew/opt/llvm/bin"]
 CC = "/opt/homebrew/opt/llvm/bin/clang"
 CXX = "/opt/homebrew/opt/llvm/bin/clang++"
-LDFLAGS = "-L/opt/homebrew/opt/llvm/lib"
+LDFLAGS = "-L/opt/homebrew/opt/llvm/lib -L/opt/homebrew/opt/llvm/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++"
 CPPFLAGS = "-I/opt/homebrew/opt/llvm/include"
+PKG_CONFIG_PATH = "/opt/homebrew/opt/llvm/lib/pkgconfig"
 {{ end -}}
 
 [tools]
