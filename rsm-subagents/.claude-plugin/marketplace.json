@@ -5,7 +5,7 @@
     "url": "https://github.com/ray-manaloto"
   },
   "metadata": {
-    "description": "Specialized agent toolkits for dotfiles, chezmoi, mise, and macOS development environment management"
+    "description": "Specialized agent toolkits for dotfiles, chezmoi, mise, hk, and macOS development environment management"
   },
   "plugins": [
     {
@@ -24,6 +24,15 @@
       "version": "0.1.0",
       "category": "devtools",
       "tags": ["chezmoi", "dotfiles", "templates", "secrets", "encryption", "migration", "ai-agent-config"],
+      "repository": "https://github.com/ray-manaloto/rsm-subagents"
+    },
+    {
+      "name": "hk-toolkit",
+      "source": "./plugins/hk-toolkit",
+      "description": "Comprehensive hk git hooks expertise: pkl configuration, hook step management, stash troubleshooting, and self-improving debugging",
+      "version": "0.1.0",
+      "category": "devtools",
+      "tags": ["hk", "git-hooks", "pre-commit", "pkl", "linting", "quality-gate", "jdx"],
       "repository": "https://github.com/ray-manaloto/rsm-subagents"
     }
   ]

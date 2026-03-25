@@ -88,6 +88,17 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     team_p.add_argument("name", help="Team name")
     team_p.add_argument("--dry-run", action="store_true", help="Dry run mode")
 
+    # review
+    review_p = sub.add_parser("review", help="Run autonomous multi-model code review")
+    review_p.add_argument("finding", help="Finding file (YAML) or description string")
+    review_p.add_argument(
+        "--autonomy",
+        choices=["supervised", "semi-autonomous", "autonomous"],
+        default="semi-autonomous",
+        help="Autonomy mode (default: semi-autonomous)",
+    )
+    review_p.add_argument("--skip-quality", action="store_true", help="Skip quality gate")
+
     # prune
     sub.add_parser("prune", help="Prune stale globals and orphan mise versions")
 
@@ -217,7 +228,7 @@ def _cmd_validate(args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_update(_args: argparse.Namespace) -> int:
+def _cmd_update(_: argparse.Namespace) -> int:
     with _traced_command("update") as ctx:
         from mde.maintain.update import run_update
 
@@ -226,7 +237,7 @@ def _cmd_update(_args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_verify(_args: argparse.Namespace) -> int:
+def _cmd_verify(_: argparse.Namespace) -> int:
     with _traced_command("verify") as ctx:
         from mde.validate import validate_all
 
@@ -235,7 +246,7 @@ def _cmd_verify(_args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_status(_args: argparse.Namespace) -> int:
+def _cmd_status(_: argparse.Namespace) -> int:
     with _traced_command("status") as ctx:
         from mde.status.dashboard import show_dashboard
 
@@ -244,7 +255,7 @@ def _cmd_status(_args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_doctor(_args: argparse.Namespace) -> int:
+def _cmd_doctor(_: argparse.Namespace) -> int:
     with _traced_command("doctor") as ctx:
         from mde.status.health import run_doctor
 
@@ -253,7 +264,7 @@ def _cmd_doctor(_args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_drift(_args: argparse.Namespace) -> int:
+def _cmd_drift(_: argparse.Namespace) -> int:
     with _traced_command("drift") as ctx:
         from mde.maintain.drift import check_drift
 
@@ -292,7 +303,16 @@ def _cmd_team(args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_prune(_args: argparse.Namespace) -> int:
+def _cmd_review(args: argparse.Namespace) -> int:
+    with _traced_command("review") as ctx:
+        from mde.autonomous_review import cli_review
+
+        result = cli_review(args)
+        ctx["result"] = result
+        return result
+
+
+def _cmd_prune(_: argparse.Namespace) -> int:
     with _traced_command("prune") as ctx:
         from mde.maintain.prune import run_prune
 
@@ -301,7 +321,7 @@ def _cmd_prune(_args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_remediate(_args: argparse.Namespace) -> int:
+def _cmd_remediate(_: argparse.Namespace) -> int:
     with _traced_command("remediate") as ctx:
         from mde.maintain.remediate import run_remediate
 
@@ -507,6 +527,7 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "drift": _cmd_drift,
     "secrets": _cmd_secrets,
     "learn": _cmd_learn,
+    "review": _cmd_review,
     "prune": _cmd_prune,
     "remediate": _cmd_remediate,
     "install": _cmd_install,
