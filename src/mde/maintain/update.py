@@ -103,23 +103,43 @@ def _run_mise_upgrade() -> int:
 
 
 def _run_mise_lock() -> int:
-    """Refresh both project and global lockfiles.
+    """Refresh both project and global lockfiles for this platform only.
 
     The --global flag is critical: without it, only the project-level
     lockfile is updated. The global lockfile at ~/.config/mise/mise.lock
     pins specific versions for "latest" resolution. If it is stale after
     ``mise upgrade``, ``mise install`` will reinstall OLD versions that
     ``mise prune`` then removes -- wasting time and risking missing tools.
+
+    The --platform flag limits lock to the current machine's platform,
+    avoiding unnecessary checksum resolution for linux/windows platforms
+    that this macOS machine will never use.
     """
     if not shutil.which("mise"):
         return 0
-    # Update project lockfile
+    platform = _detect_platform()
+    # Update project lockfile (current platform only)
     with contextlib.suppress(subprocess.TimeoutExpired, OSError):
-        subprocess.run(["mise", "lock"], timeout=120)
-    # Update global lockfile (the critical fix)
+        subprocess.run(["mise", "lock", "--platform", platform], timeout=120)
+    # Update global lockfile (current platform only)
     with contextlib.suppress(subprocess.TimeoutExpired, OSError):
-        subprocess.run(["mise", "lock", "--global"], timeout=120)
+        subprocess.run(["mise", "lock", "--global", "--platform", platform], timeout=120)
     return 0
+
+
+def _detect_platform() -> str:
+    """Detect the current platform in mise's format (e.g., macos-arm64)."""
+    import platform as _platform
+
+    system = _platform.system().lower()
+    machine = _platform.machine().lower()
+
+    os_map = {"darwin": "macos", "linux": "linux", "windows": "windows"}
+    arch_map = {"arm64": "arm64", "aarch64": "arm64", "x86_64": "x64", "amd64": "x64"}
+
+    os_name = os_map.get(system, system)
+    arch_name = arch_map.get(machine, machine)
+    return f"{os_name}-{arch_name}"
 
 
 def _run_mise_reshim() -> int:
