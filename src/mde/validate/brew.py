@@ -7,7 +7,7 @@ import subprocess
 
 from mde.models.result import Severity, ValidationResult
 
-EXPECTED_FORMULAE = {"gnupg", "curl", "chafa", "tree"}
+EXPECTED_FORMULAE = {"gnupg", "curl", "chafa", "tree", "llvm", "lld"}
 
 
 def validate_brew() -> ValidationResult:
