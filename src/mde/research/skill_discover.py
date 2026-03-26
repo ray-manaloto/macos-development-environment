@@ -1,7 +1,10 @@
 """Unified skill discovery across all working sources.
 
-Searches skills.sh, GitHub code search, and SkillsMP, merges results
-into a ranked de-duplicated list, and marks installed skills.
+Searches skills.sh, GitHub code search, SkillsMP, and skillport local
+inventory. Merges results into a ranked de-duplicated list and marks
+installed skills.
+
+All CLI tools are invoked directly via mise-managed PATH — never npx.
 
 Usage:
     uv run mde-py research skill-discover <query>
@@ -13,6 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -36,7 +40,7 @@ class SkillResult:
 
     name: str
     author: str
-    source: str  # "skills.sh", "github", "skillsmp"
+    source: str  # "skills.sh", "github", "skillsmp", "skillport", "skillfish"
     installs: int = 0
     stars: int = 0
     description: str = ""
@@ -91,9 +95,13 @@ def _parse_skills_sh_line(line: str, skills: list[SkillResult]) -> None:
 
 
 def _search_skills_sh(query: str) -> list[SkillResult]:
-    """Search skills.sh via npx skills CLI."""
+    """Search skills.sh via mise-managed skills CLI (not npx)."""
+    skills_bin = shutil.which("skills")
+    if not skills_bin:
+        _log.warning("skills CLI not found in PATH (install via mise: npm:skills)")
+        return []
     result = subprocess.run(
-        ["npx", "skills", "search", query],
+        [skills_bin, "find", query],
         capture_output=True,
         text=True,
         timeout=30,
@@ -167,6 +175,97 @@ def _search_skillsmp(query: str) -> list[SkillResult]:
     ]
 
 
+def _extract_author(item: dict[str, str]) -> str:
+    """Extract author from a skillfish result item."""
+    author = item.get("author", "")
+    if author:
+        return author
+    repo = item.get("repo", "")
+    if "/" in repo:
+        return repo.split("/")[0]
+    return ""
+
+
+def _search_skillfish(query: str) -> list[SkillResult]:
+    """Search skillfish registry via mise-managed CLI.
+
+    Note: skillfish search backend (mcpmarket.com) returns empty results
+    as of 2026-03-25. Included for when the backend is fixed upstream.
+    """
+    skillfish_bin = shutil.which("skillfish")
+    if not skillfish_bin:
+        return []
+    try:
+        result = subprocess.run(
+            [skillfish_bin, "search", query, "--json"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    except subprocess.TimeoutExpired:
+        return []
+    if result.returncode != 0:
+        return []
+    try:
+        data = json.loads(result.stdout)
+    except (json.JSONDecodeError, ValueError):
+        return []
+    if not data.get("results"):
+        return []
+    return [
+        SkillResult(
+            name=item.get("name", ""),
+            author=_extract_author(item),
+            source="skillfish",
+            description=item.get("description", ""),
+            url=item.get("url", ""),
+        )
+        for item in data["results"]
+        if item.get("name")
+    ]
+
+
+def _search_skillport_local(query: str) -> list[SkillResult]:
+    """Search locally installed skills via skillport list.
+
+    This searches the local inventory — useful for finding skills
+    already installed that match the query.
+    """
+    skillport_bin = shutil.which("skillport")
+    if not skillport_bin:
+        return []
+    try:
+        result = subprocess.run(
+            [skillport_bin, "list", "--json"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        return []
+    if result.returncode != 0:
+        return []
+    try:
+        data = json.loads(result.stdout)
+    except (json.JSONDecodeError, ValueError):
+        return []
+    skills: list[SkillResult] = []
+    items = data if isinstance(data, list) else data.get("skills", [])
+    for item in items:
+        name = item.get("name", "")
+        if query.lower() in name.lower() or query.lower() in item.get("description", "").lower():
+            skills.append(
+                SkillResult(
+                    name=name,
+                    author=item.get("author", ""),
+                    source="skillport",
+                    description=item.get("description", ""),
+                    installed=True,
+                )
+            )
+    return skills
+
+
 def _get_installed_skills() -> set[str]:
     """Get names of locally installed skills."""
     installed: set[str] = set()
@@ -175,11 +274,25 @@ def _get_installed_skills() -> set[str]:
             for skill_dir in search_dir.iterdir():
                 if skill_dir.is_dir() and (skill_dir / "SKILL.md").exists():
                     installed.add(skill_dir.name)
+    # Also check user-level skills
+    user_skills = Path.home() / ".agents" / "skills"
+    if user_skills.exists():
+        for skill_dir in user_skills.iterdir():
+            if skill_dir.is_dir() and (skill_dir / "SKILL.md").exists():
+                installed.add(skill_dir.name)
     return installed
 
 
 def discover_skills(query: str) -> DiscoveryResult:
-    """Search all sources and return merged, ranked results."""
+    """Search all sources and return merged, ranked results.
+
+    Sources searched (in order):
+    1. skills.sh — largest open ecosystem, has install counts
+    2. GitHub code search — deepest, finds niche/personal skills
+    3. SkillsMP — 66K+ skills, requires API key
+    4. skillfish — separate registry (backend intermittent)
+    5. skillport — local inventory search
+    """
     result = DiscoveryResult(query=query)
     installed = _get_installed_skills()
     result.installed_matches = [s for s in installed if query.lower() in s.lower()]
@@ -190,6 +303,8 @@ def discover_skills(query: str) -> DiscoveryResult:
         ("skills.sh", _search_skills_sh),
         ("github", _search_github),
         ("skillsmp", _search_skillsmp),
+        ("skillfish", _search_skillfish),
+        ("skillport", _search_skillport_local),
     ]
 
     for source_name, search_fn in sources:
@@ -216,6 +331,7 @@ def discover_skills(query: str) -> DiscoveryResult:
 def cli_main(args: list[str]) -> int:
     """CLI entry point for unified skill discovery."""
     import argparse
+    import sys
 
     parser = argparse.ArgumentParser(description="Discover skills across all sources")
     parser.add_argument("query", help="Search query")
@@ -244,22 +360,23 @@ def cli_main(args: list[str]) -> int:
                 for s in result.skills
             ],
         }
-        print(json.dumps(data, indent=2))
+        sys.stdout.write(json.dumps(data, indent=2))
+        sys.stdout.write("\n")
         return 0
 
-    print(f"Skill Discovery: '{result.query}'")
-    print(f"Sources: {', '.join(result.sources_searched)}")
+    sys.stderr.write(f"Skill Discovery: '{result.query}'\n")
+    sys.stderr.write(f"Sources: {', '.join(result.sources_searched)}\n")
     if result.sources_failed:
-        print(f"Failed: {', '.join(result.sources_failed)}")
+        sys.stderr.write(f"Failed: {', '.join(result.sources_failed)}\n")
     if result.installed_matches:
-        print(f"Installed: {', '.join(result.installed_matches)}")
-    print()
+        sys.stderr.write(f"Installed: {', '.join(result.installed_matches)}\n")
+    sys.stderr.write("\n")
 
     if not result.skills:
-        print("No skills found.")
+        sys.stderr.write("No skills found.\n")
         return 0
 
-    print(f"Found {len(result.skills)} skills:\n")
+    sys.stderr.write(f"Found {len(result.skills)} skills:\n\n")
     for i, skill in enumerate(result.skills, 1):
         marker = " [INSTALLED]" if skill.installed else ""
         metrics = []
@@ -268,8 +385,10 @@ def cli_main(args: list[str]) -> int:
         if skill.stars:
             metrics.append(f"{skill.stars} stars")
         metrics_str = f" ({', '.join(metrics)})" if metrics else ""
-        print(f"  {i}. {skill.author}/{skill.name}{metrics_str} [{skill.source}]{marker}")
+        sys.stderr.write(
+            f"  {i}. {skill.author}/{skill.name}{metrics_str} [{skill.source}]{marker}\n"
+        )
         if skill.description:
-            print(f"     {skill.description[:80]}")
+            sys.stderr.write(f"     {skill.description[:80]}\n")
 
     return 0
