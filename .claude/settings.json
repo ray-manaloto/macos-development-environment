@@ -96,6 +96,11 @@
         "matcher": "",
         "hooks": [
           {
+            "type": "command",
+            "command": "uv run mde-py hooks persist-transcripts",
+            "timeout": 30
+          },
+          {
             "type": "prompt",
             "prompt": "Did the agent write all findings to files on disk? Check if any research findings, deep reviews, or provenance records were mentioned in the conversation but not written to docs/research/trail/. If findings exist only in context and not on disk, answer NO with the missing items. If all findings are persisted, answer YES.",
             "timeout": 15
@@ -107,6 +112,11 @@
       {
         "matcher": "",
         "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks persist-transcripts",
+            "timeout": 30
+          },
           {
             "type": "prompt",
             "prompt": "Before compaction, verify: (1) Are there any research findings in the conversation that have NOT been written to docs/research/trail/findings/*.yaml? (2) Are there any decisions or preferences that should be saved to auto memory? List any unpersisted items.",

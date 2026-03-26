@@ -55,6 +55,22 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
         action="store_true",
         help="Plugin validation only",
     )
+    validate_p.add_argument(
+        "--evaluations",
+        action="store_true",
+        help="Research evaluation completeness only",
+    )
+    validate_p.add_argument(
+        "--eval-file",
+        default="docs/research/trail/findings/community-plugin-evaluations.yaml",
+        help="Path to evaluation YAML file",
+    )
+    validate_p.add_argument(
+        "--eval-candidates",
+        nargs="+",
+        default=None,
+        help="Required candidate names to check",
+    )
 
     # update
     sub.add_parser("update", help="Run maintenance cycle")
@@ -160,6 +176,7 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     hooks_sub.add_parser("post-compact", help="PostCompact research state save")
     hooks_sub.add_parser("team-quality-gate", help="Per-team quality gate validation")
     hooks_sub.add_parser("validate-plugins", help="PostToolUse rsm-subagents validator")
+    hooks_sub.add_parser("persist-transcripts", help="PreCompact/Stop agent transcript saver")
     _SUBPARSERS["hooks"] = hooks_p
 
     # research
@@ -232,18 +249,33 @@ def _dispatch(args: argparse.Namespace) -> int:
 
 def _cmd_validate(args: argparse.Namespace) -> int:
     with _traced_command("validate") as ctx:
-        from mde.validate import validate_all
+        if getattr(args, "evaluations", False):
+            from pathlib import Path
 
-        result = validate_all(
-            fix=args.fix,
-            configs_only=args.configs,
-            json_output=args.json,
-            brew_only=args.brew,
-            docker_only=args.docker,
-            package_managers_only=getattr(args, "package_managers", False),
-            skills_only=args.skills,
-            plugins_only=args.plugins,
-        )
+            from mde.validate.evaluations import validate_evaluations
+
+            candidates = args.eval_candidates or []
+            result_obj = validate_evaluations(
+                evaluation_path=Path(args.eval_file),
+                required_candidates=candidates,
+            )
+            from mde.validate import _print_findings
+
+            _print_findings(result_obj)
+            result = 0 if result_obj.passed else 1
+        else:
+            from mde.validate import validate_all
+
+            result = validate_all(
+                fix=args.fix,
+                configs_only=args.configs,
+                json_output=args.json,
+                brew_only=args.brew,
+                docker_only=args.docker,
+                package_managers_only=getattr(args, "package_managers", False),
+                skills_only=args.skills,
+                plugins_only=args.plugins,
+            )
         ctx["result"] = result
         return result
 
@@ -469,6 +501,7 @@ _HOOKS_DISPATCH: dict[str, tuple[str, str]] = {
     "post-compact": ("mde.hooks.post_compact", "post_compact"),
     "team-quality-gate": ("mde.hooks.team_quality_gates", "team_quality_gate_hook"),
     "validate-plugins": ("mde.hooks.validate_plugins", "validate_plugins_hook"),
+    "persist-transcripts": ("mde.hooks.persist_transcripts", "persist_transcripts"),
 }
 
 
