@@ -110,6 +110,7 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     )
     debate_p.add_argument("--output-dir", help="Save results as JSON to this directory")
     debate_p.add_argument("--timeout", type=int, default=300, help="Timeout per model (seconds)")
+    debate_p.add_argument("--json", action="store_true", help="JSON output for agent consumption")
 
     # prune
     sub.add_parser("prune", help="Prune stale globals and orphan mise versions")
@@ -341,15 +342,24 @@ def _cmd_debate(args: argparse.Namespace) -> int:
             output_dir=output_dir,
         )
 
+        import json
         import sys
 
-        for r in results:
-            status = "OK" if r.success else "FAIL"
-            sys.stderr.write(f"[{r.model}] {status} ({r.duration_seconds}s)\n")
-            if r.response:
-                sys.stderr.write(f"{r.response[:500]}\n\n")
-            if r.error:
-                sys.stderr.write(f"  Error: {r.error}\n")
+        json_mode = getattr(args, "json", False)
+
+        if json_mode:
+            # Machine-readable JSON output for agent consumption
+            sys.stdout.write(json.dumps([r.model_dump() for r in results], indent=2))
+            sys.stdout.write("\n")
+        else:
+            # Human-readable output
+            for r in results:
+                status = "OK" if r.success else "FAIL"
+                sys.stderr.write(f"[{r.model}] {status} ({r.duration_seconds}s)\n")
+                if r.response:
+                    sys.stderr.write(f"{r.response[:500]}\n\n")
+                if r.error:
+                    sys.stderr.write(f"  Error: {r.error}\n")
 
         ctx["result"] = 0 if all(r.success for r in results) else 1
         return ctx["result"]
