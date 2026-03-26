@@ -1,0 +1,168 @@
+id: finding-devcontainer-compose-real-world-patterns
+timestamp: "2026-03-26T02:35:00Z"
+source: |
+  - https://github.com/verlab/ros1_devcontainer_docker_compose
+  - https://github.com/reinoxl/unique-devcontainer-name-with-docker-compose
+  - https://github.com/ryokosuge/devcontainer-docker-compose
+  - https://github.com/pascalbreuninger/devcontainer-docker-compose
+  - https://github.com/ahm81/devcontainer-docker-compose
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  - Real projects use dockerComposeFile property with service selector
+  - initializeCommand used for path-specific project naming (cross-workspace isolation)
+  - waitFor property controls when tooling connects (postCreateCommand or updateContentCommand)
+  - init: true enables init process for signal handling
+  - privileged: true required for ROS/complex dev environments
+  - Extensions configured per language/framework (Python, C++, CMake, ROS)
+  - workspaceFolder mounted from compose service
+gaps: |
+  - Limited examples of observability stack integration in public repos
+  - No examples of health-check orchestration across compose services
+  - Minimal documentation on error handling when compose services fail
+  - No patterns for monitoring service readiness across container boundaries
+evidence: |
+  Real-World Pattern 1: verlab/ros1_devcontainer_docker_compose
+    Purpose: ROS1 Noetic development environment
+    Key Configuration:
+      - "service": "ros1" (references docker-compose service name)
+      - "dockerComposeFile": ["../compose_macos.yaml"] (platform-specific)
+      - "workspaceFolder": "/home/ubuntu" (container path)
+      - "waitFor": "postCreateCommand" (waits for postCreateCommand to finish)
+      - "init": true (init process for signal handling)
+      - "privileged": true (needed for hardware simulation/ROS middleware)
+      - "remoteUser": "ubuntu" (non-root user)
+
+    Extensions (27 total):
+      - Python: python-extension-pack, pylance, debugpy, black-formatter, environment-manager
+      - C++: cpptools, cpptools-themes, cpptools-extension-pack, intellicode
+      - ROS-specific: rde-pack, rde-ros-2, urdf-editor
+      - Tools: cmake-tools, gitlens, copilot
+
+    Settings Applied:
+      - python.defaultInterpreterPath: ${workspaceFolder}/.py3.8/bin/python
+      - C_Cpp.intelliSenseEngine: "Tag Parser" (for large projects)
+      - cmake.autoSelectActiveFolder: false (user-driven)
+      - XML associations for ROS/URDF files
+
+  Real-World Pattern 2: reinoxl/unique-devcontainer-name-with-docker-compose
+    Purpose: Path-specific container naming for multi-workspace support
+    Key Configuration:
+      - "initializeCommand": "bash .devcontainer/init_compose_project_name.sh ${localWorkspaceFolder}"
+      - "dockerComposeFile": "docker-compose.yaml" (project root)
+      - "service": "devcontainer" (references compose service)
+      - "workspaceFolder": "/workspace" (container mount point)
+
+    Use Case: Allows same compose file to support multiple workspace paths
+    via injected project name (preventing container name collisions)
+
+    Pattern Benefits:
+      - Single docker-compose.yaml for multiple projects
+      - Each workspace gets isolated containers
+      - Shared volumes/services across workspaces via compose override
+
+  Typical compose Service Definition for Devcontainer:
+    services:
+      devcontainer:
+        build:
+          context: .
+          dockerfile: .devcontainer/Dockerfile
+        volumes:
+          - .:/workspace  # workspace bind mount
+          - /var/run/docker.sock:/var/run/docker.sock  # docker-in-docker
+        environment:
+          - DOCKER_HOST=unix:///var/run/docker.sock
+        networks:
+          - dev-network
+
+      postgres:  # sidecar service
+        image: postgres:15
+        environment:
+          - POSTGRES_PASSWORD=dev
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready -U postgres"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
+
+      redis:  # sidecar service
+        image: redis:7-alpine
+        healthcheck:
+          test: ["CMD", "redis-cli", "ping"]
+          interval: 10s
+          timeout: 3s
+          retries: 5
+
+  Key Integration Points:
+    1. dockerComposeFile property:
+       - Can be array: ["compose.yaml", "compose.override.yaml"]
+       - Supports env variable substitution: ${localWorkspaceFolder}
+       - Platform-specific: compose_macos.yaml, compose_linux.yaml, etc.
+
+    2. service property:
+       - MUST match a service name in docker-compose.yml
+       - Service must have build OR image property
+       - devcontainer will use this service as development container
+
+    3. waitFor property (timing control):
+       - "updateContentCommand" (default)
+       - "postCreateCommand" (wait for setup scripts)
+       - "postStartCommand" (wait for sidecar services)
+
+    4. initializeCommand (pre-container setup):
+       - Runs on HOST before container starts
+       - Used for: project naming, workspace initialization, env setup
+       - Access: ${localWorkspaceFolder}, ${containerWorkspaceFolder}
+
+    5. Sidecar Service Health Checks:
+       - Must be in same compose file
+       - postCreateCommand can poll sidecars (e.g., pg_isready)
+       - waitFor: postCreateCommand ensures sidecars are healthy before editor connects
+
+  Critical Properties for Observability Stack:
+    init: true
+      - Required for signal propagation in monitoring containers
+      - Allows graceful Prometheus/Grafana shutdown
+
+    privileged: true (conditional)
+      - Required for advanced monitoring (kernel metrics, network ns access)
+      - Not needed for basic prometheus/grafana
+
+    cap_add: ["SYS_ADMIN", "NET_ADMIN"] (alternative to privileged)
+      - Preferred for network monitoring without full privilege escalation
+      - Allows tcpdump, netstat, etc. in devcontainer
+
+    healthcheck placement:
+      - Define in compose service (postgres, redis, etc.)
+      - Verify in postCreateCommand via CLI tools
+      - Monitor in postStartCommand via Prometheus scraper
+
+implication: |
+  1. For devcontainer-toolkit skill:
+     - dockerComposeFile as primary integration point
+     - Support both array (multiple files) and string formats
+     - Generate service name = project_name or user-configurable
+     - Validate service exists in compose before returning config
+
+  2. For compose sidecar orchestration:
+     - Use initializeCommand for host-side setup (docker compose config validation)
+     - Use postCreateCommand for container-side readiness checks
+     - Use waitFor: postCreateCommand to delay editor connection until services healthy
+     - Health checks MUST be defined in compose service, not in devcontainer.json
+
+  3. For observability stack integration:
+     - Create compose service: prometheus, grafana, jaeger (optional)
+     - Add health checks to each monitoring service
+     - postCreateCommand: validate scraper config, reload prometheus
+     - postStartCommand: wait for grafana UI ready, seed dashboards
+     - Use cap_add instead of privileged for metrics collection
+
+  4. For specialist agent skill:
+     - Detect language/framework from Dockerfile or service build context
+     - Auto-select extensions based on detected language
+     - Generate initializeCommand for unique project naming
+     - Set waitFor based on presence of health checks
+
+tags: [devcontainer, docker-compose, real-world, sidecar-services, observability, initializeCommand, waitFor]
+status: discovered

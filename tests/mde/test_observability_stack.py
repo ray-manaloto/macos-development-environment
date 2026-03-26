@@ -76,7 +76,7 @@ class TestStackUp:
             patch("subprocess.run") as mock_run,
         ):
             mock_cf.is_file.return_value = True
-            mock_cf.__str__ = lambda _self: "/fake/compose.yaml"  # type: ignore[assignment]
+            mock_cf.__str__ = lambda _: "/fake/compose.yaml"  # type: ignore[assignment]
             mock_run.return_value.returncode = 0
             mock_run.return_value.stdout = ""
             result = stack_up()
@@ -98,7 +98,7 @@ class TestStackUp:
             patch("subprocess.run") as mock_run,
         ):
             mock_cf.is_file.return_value = True
-            mock_cf.__str__ = lambda _self: "/fake/compose.yaml"  # type: ignore[assignment]
+            mock_cf.__str__ = lambda _: "/fake/compose.yaml"  # type: ignore[assignment]
             # First call is stop_orphan_collectors (succeeds), second is compose up (timeout)
             mock_run.side_effect = [
                 MagicMock(returncode=0, stdout=""),  # docker ps for orphan check
@@ -149,15 +149,11 @@ class TestStackStatus:
 
 
 class TestStackVerify:
-    """Test stack_verify checks service health."""
+    """Test stack_verify checks service health via host-side HTTP probes."""
 
     def test_all_healthy(self) -> None:
-        with (
-            patch("mde.domain.observability_stack.urllib.request.urlopen"),
-            patch("subprocess.run") as mock_run,
-        ):
-            mock_run.return_value.returncode = 0
-            mock_run.return_value.stdout = ""
+        """All host-side HTTP probes succeed -> return 0."""
+        with patch("mde.domain.observability_stack.urllib.request.urlopen"):
             result = stack_verify()
             assert result == 0
 
@@ -165,53 +161,60 @@ class TestStackVerify:
         """When collector health check fails, result is nonzero."""
         import urllib.error
 
-        with (
-            patch(
-                "mde.domain.observability_stack.urllib.request.urlopen",
-                side_effect=urllib.error.URLError("connection refused"),
-            ),
-            patch("subprocess.run") as mock_run,
+        _conn_refused = "connection refused"
+
+        def urlopen_side_effect(url: str, **_: Any) -> MagicMock:
+            if "13133" in url:
+                raise urllib.error.URLError(_conn_refused)
+            return MagicMock()
+
+        with patch(
+            "mde.domain.observability_stack.urllib.request.urlopen",
+            side_effect=urlopen_side_effect,
         ):
-            mock_run.return_value.returncode = 0
-            mock_run.return_value.stdout = ""
             result = stack_verify()
             assert result == 1
 
     def test_one_unhealthy(self) -> None:
-        def side_effect(cmd: list[str], **_: Any) -> MagicMock:
-            m = MagicMock()
-            if "grafana" in cmd:
-                m.returncode = 1
-            else:
-                m.returncode = 0
-            return m
+        """When one service (grafana) is unhealthy, result is nonzero."""
+        import urllib.error
 
-        with (
-            patch("mde.domain.observability_stack.urllib.request.urlopen"),
-            patch("subprocess.run", side_effect=side_effect),
+        _conn_refused = "connection refused"
+
+        def urlopen_side_effect(url: str, **_: Any) -> MagicMock:
+            if "3000" in url:
+                raise urllib.error.URLError(_conn_refused)
+            return MagicMock()
+
+        with patch(
+            "mde.domain.observability_stack.urllib.request.urlopen",
+            side_effect=urlopen_side_effect,
         ):
             result = stack_verify()
             assert result == 1
 
-    def test_unhealthy_includes_stderr(self, capsys: pytest.CaptureFixture[str]) -> None:
-        """When a health check fails, stderr from the check should be printed."""
-        with (
-            patch("mde.domain.observability_stack.urllib.request.urlopen"),
-            patch("subprocess.run") as mock_run,
+    def test_unhealthy_includes_detail(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """When a health check fails, the error detail should be printed."""
+        import urllib.error
+
+        _conn_refused = "connection refused"
+        with patch(
+            "mde.domain.observability_stack.urllib.request.urlopen",
+            side_effect=urllib.error.URLError(_conn_refused),
         ):
-            mock_run.return_value.returncode = 1
-            mock_run.return_value.stderr = "connection refused"
-            mock_run.return_value.stdout = ""
             stack_verify()
             captured = capsys.readouterr()
             assert "connection refused" in captured.err
 
-    def test_timeout(self) -> None:
-        with (
-            patch("mde.domain.observability_stack.urllib.request.urlopen"),
-            patch("subprocess.run") as mock_run,
+    def test_all_unhealthy_returns_nonzero(self) -> None:
+        """When all probes fail, result is nonzero."""
+        import urllib.error
+
+        _conn_refused = "connection refused"
+        with patch(
+            "mde.domain.observability_stack.urllib.request.urlopen",
+            side_effect=urllib.error.URLError(_conn_refused),
         ):
-            mock_run.side_effect = subprocess.TimeoutExpired(cmd=[], timeout=15)
             result = stack_verify()
             assert result == 1
 

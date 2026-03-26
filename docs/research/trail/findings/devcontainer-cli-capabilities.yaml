@@ -1,0 +1,1138 @@
+id: devcontainer-cli-capabilities
+timestamp: "2026-03-26T02:02:00Z"
+source: "local devcontainer 0.84.1 --help output"
+agent: researcher
+finding_type: reference
+confidence: confirmed
+confident_about: |
+  All devcontainer CLI subcommands, flags, and their purposes from direct help output.
+  Tested with devcontainer v0.84.1 on darwin/arm64.
+  Project uses .devcontainer/devcontainer.json with image substitution and lifecycle hooks.
+gaps: |
+  Error code/exit status documentation not in help output.
+  Advanced JSON output schema examples not provided in help.
+  Compose file integration details limited to flag existence.
+evidence: |
+  devcontainer --help (0.84.1)
+  All 11 subcommands tested:
+  - up, set-up, build, run-user-commands, read-configuration
+  - outdated, upgrade
+  - features {test, package, publish, info, resolve-dependencies, generate-docs}
+  - templates {apply, publish, metadata, generate-docs}
+  - exec
+implication: |
+  CLI provides full container lifecycle management through flags rather than subcommands.
+  Lifecycle event control (onCreateCommand, postCreateCommand, etc.) via run-user-commands,
+  not separate commands. Feature/template publishing requires OCI registry access.
+  JSON output available for most commands enabling programmatic integration.
+tags: [devcontainer, cli, lifecycle, features, templates, automation]
+status: discovered
+
+# SUBCOMMANDS
+subcommands:
+
+  # PRIMARY LIFECYCLE COMMANDS (container management)
+  up:
+    description: Create and run dev container
+    purpose: Main entry point for initializing and starting devcontainers
+    output_format: text or JSON (with --include-configuration, --include-merged-configuration)
+    flags:
+      container_lifecycle:
+        - name: --workspace-folder
+          type: string
+          description: Path to workspace. Infers devcontainer.json location. Defaults to cwd.
+        - name: --config
+          type: string
+          description: Path to devcontainer.json. Overrides workspace-folder search.
+        - name: --override-config
+          type: string
+          description: Override any devcontainer.json (required when no config exists).
+        - name: --id-label
+          type: string
+          description: |
+            Container id labels (format: name=value). Used to query for existing container.
+            If omitted, inferred from workspace-folder path.
+        - name: --remove-existing-container
+          type: boolean
+          default: false
+          description: Delete container before creating new one.
+        - name: --expect-existing-container
+          type: boolean
+          default: false
+          description: Fail if container does not already exist.
+
+      lifecycle_control:
+        - name: --skip-post-create
+          type: boolean
+          default: false
+          description: |
+            Skip ALL lifecycle hooks:
+            onCreateCommand, updateContentCommand, postCreateCommand,
+            postStartCommand, postAttachCommand. Also skips dotfiles install.
+        - name: --skip-post-attach
+          type: boolean
+          default: false
+          description: Skip postAttachCommand only.
+        - name: --skip-non-blocking-commands
+          type: boolean
+          default: false
+          description: |
+            Stop after command configured with waitFor or updateContentCommand.
+            Used to skip long-running postCreateCommand, postStartCommand.
+        - name: --prebuild
+          type: boolean
+          default: false
+          description: |
+            Stop after onCreateCommand and updateContentCommand.
+            For image caching in CI. Reruns updateContentCommand if previously run.
+
+      mount_points:
+        - name: --mount
+          type: string
+          description: |
+            Additional mount(s). Format: type=<bind|volume>,source=<source>,target=<target>[,external=<true|false>]
+            Can be repeated. Supplements devcontainer.json mounts.
+        - name: --workspace-mount-consistency
+          type: choice
+          choices: [consistent, cached, delegated]
+          default: cached
+          description: Docker mount consistency mode for workspace.
+        - name: --mount-workspace-git-root
+          type: boolean
+          default: true
+          description: Mount workspace using its Git root (enables Git ops in container).
+        - name: --mount-git-worktree-common-dir
+          type: boolean
+          default: false
+          description: |
+            Mount Git worktree common dir for multi-worktree support.
+            Requires worktree created with: git worktree add --relative-paths
+
+      container_storage:
+        - name: --container-data-folder
+          type: string
+          description: Where user data persists inside container.
+        - name: --container-system-data-folder
+          type: string
+          description: Where system data persists inside container.
+        - name: --user-data-folder
+          type: string
+          description: Host path for persisted user state between sessions.
+        - name: --container-session-data-folder
+          type: string
+          description: Folder for CLI cache (e.g., userEnvProbe results).
+
+      build_control:
+        - name: --build-no-cache
+          type: boolean
+          default: false
+          description: Build image with --no-cache if container does not exist.
+        - name: --buildkit
+          type: choice
+          choices: [auto, never]
+          default: auto
+          description: Control whether BuildKit should be used for image build.
+        - name: --cache-from
+          type: string
+          description: Additional image for layer cache during build.
+        - name: --cache-to
+          type: string
+          description: Destination for buildx cache output.
+
+      environment:
+        - name: --remote-env
+          type: string
+          description: |
+            Remote environment variables (format: name=value).
+            Added when executing user commands. Can be repeated.
+        - name: --secrets-file
+          type: string
+          description: |
+            Path to JSON file with secret env vars (key-value pairs).
+            Loaded into container environment.
+
+      gpu_and_hardware:
+        - name: --gpu-availability
+          type: choice
+          choices: [all, detect, none]
+          default: detect
+          description: GPU availability for container (if required by devcontainer.json).
+
+      dotfiles:
+        - name: --dotfiles-repository
+          type: string
+          description: URL of dotfiles Git repo (e.g., https://github.com/owner/repo.git).
+        - name: --dotfiles-install-command
+          type: string
+          description: |
+            Command to run after cloning dotfiles.
+            Defaults to first found: install.sh, install, bootstrap.sh, bootstrap, setup.sh, setup
+        - name: --dotfiles-target-path
+          type: string
+          default: ~/dotfiles
+          description: Where to clone dotfiles repository.
+
+      features:
+        - name: --additional-features
+          type: string
+          description: |
+            Additional features as JSON (per devcontainer.json "features" schema).
+            Merged with devcontainer.json features. Format: {"<feature-id>": {"option": "value"}}
+
+      environment_probe:
+        - name: --default-user-env-probe
+          type: choice
+          choices: [none, loginInteractiveShell, interactiveShell, loginShell]
+          default: loginInteractiveShell
+          description: How to probe user environment variables in container.
+
+      uid_gid:
+        - name: --update-remote-user-uid-default
+          type: choice
+          choices: [never, on, off]
+          default: "on"
+          description: Update remote user UID/GID to match local user.
+
+      docker_paths:
+        - name: --docker-path
+          type: string
+          description: Path to Docker CLI executable.
+        - name: --docker-compose-path
+          type: string
+          description: Path to Docker Compose CLI executable.
+
+      output_control:
+        - name: --include-configuration
+          type: boolean
+          default: false
+          description: Include resolved configuration in JSON output.
+        - name: --include-merged-configuration
+          type: boolean
+          default: false
+          description: Include fully merged configuration in JSON output.
+        - name: --terminal-columns
+          type: number
+          description: Terminal width (needed for subprocess output rendering).
+        - name: --terminal-rows
+          type: number
+          description: Terminal height (needed for subprocess output rendering).
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+          description: Log level for --terminal-log-file. trace → also sets --log-file to trace.
+        - name: --log-format
+          type: choice
+          choices: [text, json]
+          default: text
+          description: Log output format.
+    notes: |
+      Returns JSON with configuration and workspace properties.
+      Can be chained with --skip-* flags for fine-grained control.
+      --additional-features allows dynamic feature injection without modifying devcontainer.json.
+
+  set-up:
+    description: Set up an existing container as a dev container
+    purpose: Configure already-running container with devcontainer lifecycle hooks
+    use_case: When container already exists; avoids rebuilding image
+    flags:
+      required:
+        - name: --container-id
+          type: string
+          required: true
+          description: ID of the container to configure.
+
+      lifecycle_control:
+        - name: --skip-post-create
+          type: boolean
+          default: false
+          description: Skip onCreateCommand, updateContentCommand, postCreateCommand, postStartCommand, postAttachCommand, dotfiles.
+        - name: --skip-non-blocking-commands
+          type: boolean
+          default: false
+          description: Stop after waitFor or updateContentCommand.
+
+      configuration:
+        - name: --config
+          type: string
+          description: Path to devcontainer.json.
+        - name: --default-user-env-probe
+          type: choice
+          choices: [none, loginInteractiveShell, interactiveShell, loginShell]
+          default: loginInteractiveShell
+
+      storage:
+        - name: --container-data-folder
+          type: string
+        - name: --container-system-data-folder
+          type: string
+        - name: --user-data-folder
+          type: string
+        - name: --container-session-data-folder
+          type: string
+
+      environment:
+        - name: --remote-env
+          type: string
+          description: Remote environment variables (name=value).
+
+      dotfiles:
+        - name: --dotfiles-repository
+          type: string
+        - name: --dotfiles-install-command
+          type: string
+        - name: --dotfiles-target-path
+          type: string
+          default: ~/dotfiles
+
+      docker_paths:
+        - name: --docker-path
+          type: string
+
+      output:
+        - name: --include-configuration
+          type: boolean
+          default: false
+        - name: --include-merged-configuration
+          type: boolean
+          default: false
+        - name: --terminal-columns
+          type: number
+        - name: --terminal-rows
+          type: number
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+        - name: --log-format
+          type: choice
+          choices: [text, json]
+          default: text
+
+  exec:
+    description: Execute a command on a running dev container
+    purpose: Run arbitrary commands inside existing devcontainer
+    syntax: devcontainer exec <cmd> [args...]
+    positionals:
+      - name: cmd
+        type: string
+        required: true
+        description: Command to execute.
+      - name: args
+        type: array
+        default: []
+        description: Arguments to the command (optional).
+    flags:
+      container_targeting:
+        - name: --workspace-folder
+          type: string
+          description: Infers container from workspace. Defaults to cwd.
+        - name: --container-id
+          type: string
+          description: ID of container. Used if no --workspace-folder given.
+        - name: --id-label
+          type: string
+          description: |
+            ID label(s) to query container (format: name=value).
+            If no --container-id, uses labels to find container.
+            If neither given, infers from --workspace-folder.
+        - name: --config
+          type: string
+          description: Path to devcontainer.json.
+        - name: --override-config
+          type: string
+          description: Override devcontainer.json (required if no config exists).
+
+      mount_points:
+        - name: --mount-workspace-git-root
+          type: boolean
+          default: true
+        - name: --mount-git-worktree-common-dir
+          type: boolean
+          default: false
+
+      environment:
+        - name: --remote-env
+          type: string
+          description: Remote environment variables for this exec.
+
+      storage:
+        - name: --user-data-folder
+          type: string
+        - name: --container-data-folder
+          type: string
+        - name: --container-system-data-folder
+          type: string
+
+      environment_probe:
+        - name: --default-user-env-probe
+          type: choice
+          choices: [none, loginInteractiveShell, interactiveShell, loginShell]
+          default: loginInteractiveShell
+
+      docker_paths:
+        - name: --docker-path
+          type: string
+        - name: --docker-compose-path
+          type: string
+
+      output:
+        - name: --terminal-columns
+          type: number
+        - name: --terminal-rows
+          type: number
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+        - name: --log-format
+          type: choice
+          choices: [text, json]
+          default: text
+    notes: |
+      Useful for CI/CD pipelines to run tests or commands inside container.
+      Can target container by workspace path or explicit container ID.
+
+  run-user-commands:
+    description: Run user commands
+    purpose: Execute lifecycle hooks (postCreateCommand, postStartCommand, etc.) in running container
+    use_case: Separate hook execution from container creation; used in CI for caching layers
+    flags:
+      container_targeting:
+        - name: --workspace-folder
+          type: string
+          description: Infers container from workspace. Defaults to cwd.
+        - name: --container-id
+          type: string
+          description: ID of container to run commands in.
+        - name: --id-label
+          type: string
+          description: ID label(s) to query container (format: name=value).
+        - name: --config
+          type: string
+          description: Path to devcontainer.json.
+        - name: --override-config
+          type: string
+          description: Override devcontainer.json.
+
+      lifecycle_control:
+        - name: --prebuild
+          type: boolean
+          default: false
+          description: |
+            Stop after onCreateCommand and updateContentCommand.
+            Rerun updateContentCommand if it has previously run.
+        - name: --skip-non-blocking-commands
+          type: boolean
+          default: false
+          description: |
+            Stop after command configured with waitFor or updateContentCommand.
+            Skips postCreateCommand, postStartCommand if they block.
+        - name: --stop-for-personalization
+          type: boolean
+          default: false
+          description: Stop execution for personalization step.
+        - name: --skip-post-attach
+          type: boolean
+          default: false
+          description: Skip postAttachCommand.
+
+      mount_points:
+        - name: --mount-workspace-git-root
+          type: boolean
+          default: true
+        - name: --mount-git-worktree-common-dir
+          type: boolean
+          default: false
+
+      environment:
+        - name: --remote-env
+          type: string
+          description: Remote environment variables for hook execution.
+
+      dotfiles:
+        - name: --dotfiles-repository
+          type: string
+        - name: --dotfiles-install-command
+          type: string
+        - name: --dotfiles-target-path
+          type: string
+          default: ~/dotfiles
+
+      storage:
+        - name: --user-data-folder
+          type: string
+        - name: --container-data-folder
+          type: string
+        - name: --container-system-data-folder
+          type: string
+        - name: --container-session-data-folder
+          type: string
+
+      secrets:
+        - name: --secrets-file
+          type: string
+          description: Path to JSON file with secret environment variables.
+
+      environment_probe:
+        - name: --default-user-env-probe
+          type: choice
+          choices: [none, loginInteractiveShell, interactiveShell, loginShell]
+          default: loginInteractiveShell
+
+      docker_paths:
+        - name: --docker-path
+          type: string
+        - name: --docker-compose-path
+          type: string
+
+      output:
+        - name: --terminal-columns
+          type: number
+        - name: --terminal-rows
+          type: number
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+        - name: --log-format
+          type: choice
+          choices: [text, json]
+          default: text
+    notes: |
+      Critical for layer caching in CI (e.g., GitHub Actions).
+      Use --prebuild to stop after updateContentCommand.
+      --skip-non-blocking-commands limits execution to blocking phases.
+
+  build:
+    description: Build a dev container image
+    purpose: Create OCI image from devcontainer.json without running container
+    use_case: Prebuild image for faster container startup; test image build separately
+    syntax: devcontainer build [path]
+    positionals:
+      - name: path
+        type: string
+        optional: true
+        default: cwd
+        description: Path containing devcontainer.json.
+    flags:
+      configuration:
+        - name: --workspace-folder
+          type: string
+          description: Path to workspace (infers devcontainer.json location).
+        - name: --config
+          type: string
+          description: Path to devcontainer.json.
+
+      build_control:
+        - name: --no-cache
+          type: boolean
+          default: false
+          description: Build with --no-cache flag.
+        - name: --buildkit
+          type: choice
+          choices: [auto, never]
+          default: auto
+          description: Control BuildKit usage.
+        - name: --cache-from
+          type: string
+          description: Additional image for layer cache.
+        - name: --cache-to
+          type: string
+          description: Destination for buildx cache.
+
+      output:
+        - name: --image-name
+          type: string
+          description: Name for built image.
+        - name: --platform
+          type: string
+          description: Target platforms (e.g., linux/amd64,linux/arm64).
+        - name: --push
+          type: boolean
+          default: false
+          description: Push image to registry after build.
+        - name: --output
+          type: string
+          description: |
+            Override default behavior (load to local Docker).
+            Valid options same as docker buildx build --output.
+        - name: --label
+          type: string
+          description: Key=value metadata to add to image. Can be repeated.
+
+      features:
+        - name: --additional-features
+          type: string
+          description: Additional features as JSON (merged with devcontainer.json).
+
+      docker_paths:
+        - name: --docker-path
+          type: string
+        - name: --docker-compose-path
+          type: string
+
+      logging:
+        - name: --user-data-folder
+          type: string
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+        - name: --log-format
+          type: choice
+          choices: [text, json]
+          default: text
+
+  read-configuration:
+    description: Read configuration
+    purpose: Parse and return devcontainer.json in resolved, structured form
+    use_case: Query configuration programmatically; validate before building/running
+    flags:
+      configuration:
+        - name: --workspace-folder
+          type: string
+          description: Path to workspace.
+        - name: --container-id
+          type: string
+          description: Container ID (used with --id-label or --workspace-folder).
+        - name: --id-label
+          type: string
+          description: ID label(s) to query container.
+        - name: --config
+          type: string
+          description: Path to devcontainer.json.
+        - name: --override-config
+          type: string
+          description: Override devcontainer.json.
+
+      features:
+        - name: --additional-features
+          type: string
+          description: Additional features to include in output.
+        - name: --include-features-configuration
+          type: boolean
+          default: false
+          description: Include features section in output.
+
+      merge_control:
+        - name: --include-merged-configuration
+          type: boolean
+          default: false
+          description: Include fully merged configuration.
+
+      mount_points:
+        - name: --mount-workspace-git-root
+          type: boolean
+          default: true
+        - name: --mount-git-worktree-common-dir
+          type: boolean
+          default: false
+
+      docker_paths:
+        - name: --docker-path
+          type: string
+        - name: --docker-compose-path
+          type: string
+
+      logging:
+        - name: --user-data-folder
+          type: string
+        - name: --terminal-columns
+          type: number
+        - name: --terminal-rows
+          type: number
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+        - name: --log-format
+          type: choice
+          choices: [text, json]
+          default: text
+    output_example: |
+      {
+        "configuration": {
+          "name": "mde-devcontainer",
+          "image": "ghcr.io/...",
+          "remoteUser": "vscode",
+          "containerEnv": {...},
+          "postCreateCommand": "...",
+          "forwardPorts": [...],
+          "portsAttributes": {...},
+          "configFilePath": {...}
+        },
+        "workspace": {
+          "workspaceFolder": "/workspaces/...",
+          "workspaceMount": "type=bind,source=...,target=..."
+        }
+      }
+
+  outdated:
+    description: Show current and available versions
+    purpose: Check if base image/features have newer versions
+    use_case: Detect security updates, dependency updates
+    flags:
+      configuration:
+        - name: --workspace-folder
+          type: string
+        - name: --config
+          type: string
+        - name: --user-data-folder
+          type: string
+
+      output:
+        - name: --output-format
+          type: choice
+          choices: [text, json]
+          default: text
+        - name: --terminal-columns
+          type: number
+        - name: --terminal-rows
+          type: number
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+        - name: --log-format
+          type: choice
+          choices: [text, json]
+          default: text
+
+  upgrade:
+    description: Upgrade lockfile
+    purpose: Update devcontainer.lock with latest feature/template versions
+    use_case: Refresh pinned versions; resolve dependencies
+    flags:
+      configuration:
+        - name: --workspace-folder
+          type: string
+        - name: --config
+          type: string
+
+      docker:
+        - name: --docker-path
+          type: string
+          default: docker
+        - name: --docker-compose-path
+          type: string
+          default: docker-compose
+
+      output:
+        - name: --dry-run
+          type: boolean
+          description: Write lockfile to stdout instead of disk.
+        - name: --log-level
+          type: choice
+          choices: [error, info, debug, trace]
+          default: info
+
+  # FEATURES SUBCOMMANDS
+  features_test:
+    parent: features
+    description: Test Features
+    purpose: Run test suite for devcontainer features
+    use_case: Validate custom features before publishing
+    syntax: devcontainer features test [target]
+    positionals:
+      - name: target
+        type: string
+        optional: true
+        default: "."
+        deprecated: "Use --project-folder instead"
+        description: Path to folder with src/ and test/ subfolders.
+    flags:
+      location:
+        - name: --project-folder, -p
+          type: string
+          default: "."
+          description: Path with src/ and test/ subfolders (git root of feature project).
+
+      test_selection:
+        - name: --features, -f
+          type: array
+          description: |
+            Feature(s) to test (space-separated).
+            Omit to run all. Cannot combine with --global-scenarios-only.
+        - name: --filter
+          type: string
+          description: |
+            Filter tests to only run scenarios containing this string.
+            Cannot combine with --skip-scenarios.
+        - name: --global-scenarios-only
+          type: boolean
+          default: false
+          description: Run only scenario tests under tests/_global. Cannot combine with -f.
+        - name: --skip-scenarios
+          type: boolean
+          description: Skip 'scenario' style tests. Cannot combine with --global-scenarios-only.
+        - name: --skip-autogenerated
+          type: boolean
+          default: false
+          description: Skip 'autogenerated' style tests (test.sh).
+        - name: --skip-duplicated
+          type: boolean
+          default: false
+          description: Skip 'duplicate' style tests (duplicate.sh).
+
+      configuration:
+        - name: --base-image, -i
+          type: string
+          default: "ubuntu:focal"
+          description: Base image for tests (not used for scenarios).
+        - name: --remote-user, -u
+          type: string
+          description: Remote user (not used for scenarios).
+
+      behavior:
+        - name: --permit-randomization
+          type: boolean
+          default: false
+          description: Allow randomness in test cases.
+        - name: --preserve-test-containers
+          type: boolean
+          default: false
+          description: Keep test containers after tests (don't remove).
+
+      output:
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+        - name: --quiet, -q
+          type: boolean
+          default: false
+
+  features_package:
+    parent: features
+    description: Package Features
+    purpose: Create OCI bundle of features for publishing
+    syntax: devcontainer features package <target>
+    positionals:
+      - name: target
+        type: string
+        required: true
+        default: "."
+        description: |
+          Path to feature source:
+          1. src/ folder with [1..n] features
+          2. Single feature folder with devcontainer-feature.json
+          Also generates devcontainer-collection.json in output.
+    flags:
+      output:
+        - name: --output-folder, -o
+          type: string
+          default: "./output"
+          description: Output directory (creates as needed).
+        - name: --force-clean-output-folder, -f
+          type: boolean
+          default: false
+          description: Delete previous output directory before packaging.
+
+      logging:
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+
+  features_publish:
+    parent: features
+    description: Package and publish Features
+    purpose: Create and push features to OCI registry
+    syntax: devcontainer features publish <target>
+    positionals:
+      - name: target
+        type: string
+        required: true
+        description: Path to feature(s) or src/ folder.
+    flags:
+      registry:
+        - name: --registry, -r
+          type: string
+          default: "ghcr.io"
+          description: OCI registry name.
+        - name: --namespace, -n
+          type: string
+          required: true
+          description: Unique identifier for feature collection (e.g., owner/repo).
+
+      logging:
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+
+  features_info:
+    parent: features
+    description: Fetch metadata for a published Feature
+    purpose: Query feature information from registry
+    syntax: devcontainer features info <mode> <feature>
+    positionals:
+      - name: mode
+        type: string
+        required: true
+        choices: [manifest, tags, dependencies, verbose]
+        description: Data to query (verbose=everything).
+      - name: feature
+        type: string
+        required: true
+        description: Feature Identifier (e.g., ghcr.io/owner/features/feature-name).
+    flags:
+      output:
+        - name: --output-format
+          type: choice
+          choices: [text, json]
+          default: text
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+
+  features_resolve_dependencies:
+    parent: features
+    description: Read and resolve dependency graph from a configuration
+    purpose: Check feature dependencies and conflicts
+    flags:
+      configuration:
+        - name: --workspace-folder
+          type: string
+          description: Path to workspace with devcontainer.json.
+
+      logging:
+        - name: --log-level
+          type: choice
+          choices: [error, info, debug, trace]
+          default: error
+
+  features_generate_docs:
+    parent: features
+    description: Generate documentation
+    purpose: Create markdown docs for feature collection
+    flags:
+      configuration:
+        - name: --project-folder, -p
+          type: string
+          default: "."
+          description: Path with src/ and test/ subfolders.
+        - name: --registry, -r
+          type: string
+          default: "ghcr.io"
+        - name: --namespace, -n
+          type: string
+          required: true
+          description: Feature collection identifier (e.g., owner/repo).
+
+      github:
+        - name: --github-owner
+          type: string
+          default: ""
+          description: GitHub owner for documentation links.
+        - name: --github-repo
+          type: string
+          default: ""
+          description: GitHub repo for documentation links.
+
+      logging:
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+
+  # TEMPLATES SUBCOMMANDS
+  templates_apply:
+    parent: templates
+    description: Apply a template to the project
+    purpose: Generate devcontainer.json from template
+    flags:
+      configuration:
+        - name: --workspace-folder, -w
+          type: string
+          description: Target workspace folder. Defaults to cwd.
+        - name: --template-id, -t
+          type: string
+          required: true
+          description: Reference to template in OCI registry (e.g., ghcr.io/owner/templates/template-id).
+
+      customization:
+        - name: --template-args, -a
+          type: string
+          default: "{}"
+          description: JSON with arguments to replace in template.
+        - name: --features, -f
+          type: string
+          default: "[]"
+          description: JSON array of features to add to template.
+        - name: --omit-paths
+          type: string
+          default: "[]"
+          description: |
+            JSON array of paths to omit from template.
+            Append /* to omit directory contents.
+            Example: ["".github/*", "dir/a/*", "file.ts"]
+
+      filesystem:
+        - name: --tmp-dir
+          type: string
+          description: Directory for temporary files. Uses system default if omitted.
+
+      logging:
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+
+  templates_publish:
+    parent: templates
+    description: Package and publish templates
+    purpose: Create and push templates to OCI registry
+    syntax: devcontainer templates publish <target>
+    positionals:
+      - name: target
+        type: string
+        required: true
+        description: |
+          Path to template(s):
+          1. src/ folder with [1..n] templates
+          2. Single template with devcontainer-template.json
+    flags:
+      registry:
+        - name: --registry, -r
+          type: string
+          default: "ghcr.io"
+        - name: --namespace, -n
+          type: string
+          required: true
+          description: Template collection identifier (e.g., owner/repo).
+
+      logging:
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+
+  templates_metadata:
+    parent: templates
+    description: Fetch a published Template's metadata
+    purpose: Query template information from registry
+    syntax: devcontainer templates metadata <templateId>
+    positionals:
+      - name: templateId
+        type: string
+        required: true
+        description: Template Identifier (e.g., ghcr.io/owner/templates/template-id).
+    flags:
+      logging:
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+
+  templates_generate_docs:
+    parent: templates
+    description: Generate documentation
+    purpose: Create markdown docs for template collection
+    flags:
+      configuration:
+        - name: --project-folder, -p
+          type: string
+          default: "."
+
+      github:
+        - name: --github-owner
+          type: string
+          default: ""
+        - name: --github-repo
+          type: string
+          default: ""
+
+      logging:
+        - name: --log-level
+          type: choice
+          choices: [info, debug, trace]
+          default: info
+
+# KEY PATTERNS & INTEGRATION INSIGHTS
+
+lifecycle_event_control: |
+  LIFECYCLE EVENTS (devcontainer.json):
+  1. onCreateCommand (first run only, blocking)
+  2. updateContentCommand (on changes, blocking)
+  3. postCreateCommand (first run, non-blocking)
+  4. postStartCommand (every start, non-blocking)
+  5. postAttachCommand (every attach, non-blocking)
+
+  CLI CONTROL:
+  - devcontainer up: runs all by default
+  - devcontainer up --skip-post-create: skips all lifecycle events
+  - devcontainer up --prebuild: stops after updateContentCommand
+  - devcontainer run-user-commands --prebuild: rerun updateContentCommand if needed
+  - devcontainer run-user-commands --skip-non-blocking-commands: run only through waitFor/updateContentCommand
+  - devcontainer up --skip-post-attach: keep other events
+  - devcontainer run-user-commands --skip-post-attach: skip only postAttachCommand
+
+id_label_targeting: |
+  THREE WAYS TO TARGET CONTAINER:
+  1. --container-id: Direct container ID (fastest)
+  2. --workspace-folder: Inferred from path (default, auto-labeling)
+  3. --id-label name=value: Custom label query (composable, multiple allowed)
+
+  When no targeting given, defaults to current directory.
+  Useful for CI: container = devcontainer up; later exec = devcontainer exec --workspace-folder /same/path
+
+additional_features_pattern: |
+  FEATURE INJECTION WITHOUT MODIFYING devcontainer.json:
+  devcontainer up --additional-features '{"ghcr.io/owner/feature/id": {"option": "value"}}'
+  devcontainer build --additional-features '{"ghcr.io/owner/feature/id": {}}'
+  devcontainer read-configuration --additional-features '{"ghcr.io/owner/feature/id": {}}'
+
+  Features merged at runtime; original devcontainer.json unchanged.
+  Useful for testing features, conditional features in CI.
+
+json_output_formats: |
+  Commands supporting JSON output:
+  - up: configuration + workspace properties
+  - read-configuration: full resolved config
+  - outdated: --output-format json
+  - features info: --output-format json (manifest|tags|dependencies|verbose)
+  - build, exec, run-user-commands: --log-format json
+
+  Most commands: --log-format json (log stream)
+  Some commands: --output-format json (structured result)
+  Note: exit codes same regardless of format
+
+ci_cd_patterns: |
+  IMAGE CACHING PATTERN (GitHub Actions):
+  1. devcontainer build --image-name myimage (prebuilds image)
+  2. devcontainer up --skip-post-create (creates container, skips hooks)
+  3. devcontainer run-user-commands --prebuild (runs create/update only)
+  4. Commit container → image
+  5. Later: devcontainer up (uses cached image)
+
+  FINE-GRAINED LAYER CONTROL:
+  - --prebuild: stop after updateContentCommand
+  - --skip-non-blocking-commands: skip long-running post hooks
+  - --skip-post-create: skip everything
+  - Separate build from setup: build once, run-user-commands many times
+
+composite_project_pattern: |
+  DOCKER COMPOSE SUPPORT:
+  - devcontainer.json can reference dockerComposeFile
+  - devcontainer up: starts compose services
+  - devcontainer exec: connects to primary service container
+  - --docker-compose-path: override compose CLI location
+
+  Note: Project uses separate LGTM observability stack (not dockerComposeFile).
+  Forward ports 4317, 4318, 3000, 3100, 3200, 13133 to reach external compose services.
+
+error_handling: |
+  EXIT CODES:
+  - 0: Success
+  - Non-zero: Failure (specific codes not documented in help)
+
+  COMMON FAILURES:
+  - Container not found (--expect-existing-container)
+  - Config validation failed
+  - Feature resolution conflicts
+  - Docker daemon unavailable
+
+  DEBUG: --log-level trace, --log-format json for structured errors.

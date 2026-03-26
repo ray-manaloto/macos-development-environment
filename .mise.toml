@@ -352,3 +352,4 @@ run = "scripts/clone-agent-framework-repos.sh"
 
 [tools]
 hk = "latest"
+"npm:skillfish" = "latest"

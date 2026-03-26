@@ -1,0 +1,642 @@
+id: finding-devcontainer-spec-deep-dive
+timestamp: "2026-03-25T00:00:00Z"
+source: "context7 /devcontainers/spec + /devcontainers/cli"
+agent: researcher
+finding_type: reference
+confidence: confirmed
+title: Dev Container Specification - Complete Lifecycle & Properties Reference
+
+confident_about: |
+  - All 6 lifecycle events with execution order and scope (host vs container)
+  - Compose integration properties (dockerComposeFile, service, runServices, shutdownAction, overrideCommand)
+  - Core devcontainer.json properties and advanced configuration options
+  - CLI command structure and all major flags
+  - Feature system and installation lifecycle
+  - Security configuration options and privilege escalation
+  - Port forwarding and environment variable management
+
+gaps: |
+  - Detailed timing/performance characteristics of lifecycle events
+  - Feature dependency resolution algorithm specifics
+  - Advanced cache strategies for devcontainer build (internal mechanics)
+  - Troubleshooting guide for common lifecycle failures
+  - Image metadata inheritance hierarchy details
+
+evidence: |
+  Context7 queries returned official GitHub devcontainers/spec and devcontainers/cli documentation
+  with code examples for each property and command.
+
+implication: |
+  This reference enables building a devcontainer expert agent with complete knowledge of:
+  1. When to use each lifecycle event and their execution guarantees
+  2. How to orchestrate multi-container setups with Docker Compose
+  3. All configuration properties available for advanced scenarios
+  4. CLI capabilities for automation and CI/CD integration
+  5. Feature system for modular development environment composition
+
+tags:
+  - devcontainer
+  - specification
+  - lifecycle
+  - docker-compose
+  - cli-reference
+  - features
+  - configuration
+  - automation
+
+status: discovered
+
+---
+
+## Lifecycle Events (Execution Order & Scope)
+
+### 1. initializeCommand
+- **When**: Runs first, before container is created
+- **Scope**: HOST machine (not in container)
+- **Use case**: Clone repos, download large files, GPU preparation
+- **Supports parallel**: No (blocks until complete)
+- **Syntax**: String (shell) or Array (direct exec)
+- **Example**: `"echo 'Preparing host for container creation'"`
+
+### 2. onCreateCommand
+- **When**: Container exists but not yet fully initialized
+- **Scope**: CONTAINER (inside running container)
+- **Use case**: Install OS-level packages, setup databases
+- **Supports parallel**: Can specify multiple named tasks as object
+- **Syntax**: String, Array, or Object (named commands)
+- **Example**:
+  ```json
+  {
+    "dependencies": "apt-get update && apt-get install -y nodejs",
+    "database": "npm run db:setup"
+  }
+  ```
+
+### 3. updateContentCommand
+- **When**: After onCreateCommand, before postCreateCommand
+- **Scope**: CONTAINER
+- **Use case**: Update dependencies (npm install, pip install, cargo build)
+- **Supports parallel**: No
+- **Syntax**: String or Array
+- **Example**: `["npm", "install"]`
+
+### 4. postCreateCommand
+- **When**: After container fully initialized and content updated
+- **Scope**: CONTAINER
+- **Use case**: Build artifacts, compile projects, start watchers
+- **Supports parallel**: Yes (object-based named commands)
+- **Syntax**: String, Array, or Object (named commands)
+- **Example**:
+  ```json
+  {
+    "build": "npm run build",
+    "watch": "npm run watch:css"
+  }
+  ```
+
+### 5. postStartCommand
+- **When**: Every time container starts/resumes from stop
+- **Scope**: CONTAINER
+- **Use case**: Start development servers, background tasks that don't persist
+- **Supports parallel**: Yes (object-based named commands)
+- **Syntax**: String, Array, or Object (named commands)
+- **Example**: `["npm", "run", "dev"]`
+
+### 6. postAttachCommand
+- **When**: Editor/IDE attaches to running container
+- **Scope**: CONTAINER
+- **Use case**: Final setup visible to developer (extensions, shell config)
+- **Supports parallel**: Yes (object-based named commands)
+- **Syntax**: String, Array, or Object (named commands)
+- **Example**: `"echo 'Development environment ready!'"`
+
+### waitFor Property
+- Controls which lifecycle event blocks further execution
+- Values: `"initializeCommand"` | `"onCreateCommand"` | `"updateContentCommand"` | `"postCreateCommand"`
+- Default: `"postCreateCommand"` (blocks until full setup complete)
+- Use case: Define prebuild cutoff point for CI optimization
+
+## Docker Compose Integration
+
+### Core Properties
+
+#### dockerComposeFile
+- Type: String or Array of strings
+- Description: Path(s) to docker-compose.yml file(s)
+- Multiple files: Merged in order specified
+- Example: `["docker-compose.yml", "docker-compose.dev.yml"]`
+
+#### service
+- Type: String
+- Description: Which service in docker-compose.yml to use as dev container
+- Required when using dockerComposeFile
+- Example: `"app"` or `"backend"`
+
+#### runServices
+- Type: Array of strings
+- Description: Services to start alongside dev container service
+- Allows partial multi-container setup
+- Example: `["app", "db", "redis"]`
+
+#### shutdownAction
+- Type: String
+- Values: `"stopCompose"` | `"stopContainer"` | `"none"`
+- Description: What happens when dev container closes
+- `stopCompose`: All services stop
+- `stopContainer`: Only dev container stops
+- `none`: Services continue running
+- Default: `"stopCompose"`
+
+#### overrideCommand
+- Type: Boolean
+- Description: Replace container's default CMD with sleep to keep it running
+- Default: `true` (for image-based containers)
+- Set to `false` if container has custom entrypoint to execute
+
+### Compose Example
+```json
+{
+  "name": "Full Stack",
+  "dockerComposeFile": ["docker-compose.yml", "docker-compose.dev.yml"],
+  "service": "app",
+  "runServices": ["app", "db", "redis"],
+  "shutdownAction": "stopCompose",
+  "forwardPorts": ["db:5432"],
+  "remoteEnv": {
+    "DATABASE_URL": "postgresql://user:pass@db:5432/mydb"
+  }
+}
+```
+
+## Complete devcontainer.json Properties
+
+### Image Configuration
+
+#### image
+- Type: String
+- Description: Base container image (OCI reference)
+- Alternative to: `build`
+- Example: `"mcr.microsoft.com/devcontainers/base:ubuntu"`
+
+#### build
+- Type: Object with docker build properties
+- Properties:
+  - `dockerfile`: Path to Dockerfile
+  - `context`: Build context directory
+  - `args`: Build arguments (key-value)
+  - `target`: Build target for multi-stage builds
+  - `cacheFrom`: Cache sources for layer reuse
+  - `cacheTo`: Cache destinations
+- Example:
+  ```json
+  {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {"PYTHON_VERSION": "3.11"},
+    "target": "development"
+  }
+  ```
+
+### Feature System
+
+#### features
+- Type: Object (key: feature reference, value: config)
+- Format: `"<registry>/<namespace>/<feature>:<version>"`
+- Features are composable dev environment modules
+- Install scripts in features can define additional lifecycle commands
+- Each feature can define:
+  - `onCreateCommand`
+  - `postCreateCommand`
+  - `postAttachCommand`
+- Example:
+  ```json
+  {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": {"version": "18"}
+  }
+  ```
+
+#### installsAfter
+- Type: Array of feature references
+- Description: Dependency ordering for feature installation
+- Ensures specific features install before others
+- Used within feature definitions
+
+### Workspace & Mounts
+
+#### workspaceFolder
+- Type: String
+- Description: Container-side path where host workspace is mounted
+- Default: `/workspaces/<workspace-folder-name>`
+- Example: `"/workspace"` or `"/src"`
+
+#### mounts
+- Type: Array of mount objects
+- Mount object properties:
+  - `source`: Host path or volume name
+  - `target`: Container path
+  - `type`: `"bind"` (host directory) or `"volume"` (Docker volume)
+  - `readonly`: Boolean
+- Bind mounts: Use for development files
+- Volumes: Use for persistent data (node_modules, caches, databases)
+- Example:
+  ```json
+  [
+    {"source": "${localWorkspaceFolder}", "target": "/workspace", "type": "bind"},
+    {"source": "node-modules-cache", "target": "/workspace/node_modules", "type": "volume"},
+    {"source": "docker-cache", "target": "/var/lib/docker", "type": "volume"}
+  ]
+  ```
+
+### User & Permissions
+
+#### containerUser
+- Type: String
+- Description: User for ALL container operations (feature scripts, lifecycle commands)
+- Different from remoteUser
+- Example: `"node"` or `"vscode"`
+
+#### remoteUser
+- Type: String
+- Description: User that editor/IDE runs as
+- Used for editor extensions, debugger
+- Example: `"developer"` or `"vscode"`
+
+#### updateRemoteUserUID
+- Type: Boolean
+- Description: Sync host UID to container remoteUser for bind mount permissions
+- Linux only
+- Prevents permission issues with bind mounts
+
+### Environment Variables
+
+#### containerEnv
+- Type: Object (key: var name, value: var value)
+- Scope: Container environment during lifecycle execution
+- Substitution support:
+  - `${localEnv:VAR_NAME}` - from host environment
+  - `${containerEnv:PATH}` - reference other container vars
+  - `${localWorkspaceFolder}` - host workspace path
+- Example:
+  ```json
+  {
+    "NODE_ENV": "development",
+    "API_KEY": "${localEnv:DEV_API_KEY}",
+    "LOG_LEVEL": "debug"
+  }
+  ```
+
+#### remoteEnv
+- Type: Object (key: var name, value: var value)
+- Scope: Container environment when editor is attached
+- Same substitution support as containerEnv
+- Includes special variables:
+  - `${containerWorkspaceFolder}` - container-side workspace path
+  - `${localWorkspaceFolderBasename}` - workspace folder name
+  - `${containerEnv:VAR}` - reference container variables
+- Example:
+  ```json
+  {
+    "PATH": "${containerEnv:PATH}:/workspace/bin",
+    "PROJECT_NAME": "${localWorkspaceFolderBasename}",
+    "WORKSPACE": "${containerWorkspaceFolder}"
+  }
+  ```
+
+### Port Forwarding
+
+#### forwardPorts
+- Type: Array of ports (numbers or strings)
+- Format: Integer (container port) or `"service:port"` (Compose)
+- Forwards container ports to localhost
+- Example: `[3000, 8080, "db:5432"]`
+
+#### portsAttributes
+- Type: Object (key: port or range, value: attributes)
+- Attributes:
+  - `label`: Human-readable name in port forwarding UI
+  - `protocol`: `"http"` | `"https"`
+  - `onAutoForward`: `"openBrowser"` | `"notify"` | `"silent"` | `"ignore"`
+  - `requireLocalPort`: Force specific local port
+  - `elevateIfNeeded`: Request permissions on macOS
+- Example:
+  ```json
+  {
+    "8080": {
+      "label": "API Gateway",
+      "protocol": "https",
+      "onAutoForward": "openBrowser"
+    },
+    "8081-8082": {
+      "label": "Backend Services",
+      "onAutoForward": "notify"
+    }
+  }
+  ```
+
+#### otherPortsAttributes
+- Type: Object
+- Applies to ports not explicitly listed in portsAttributes
+- Example: `{"onAutoForward": "ignore"}` - silent for unlisted ports
+
+### Security & Capabilities
+
+#### privileged
+- Type: Boolean
+- Description: Run container in privileged mode (like `docker run --privileged`)
+- Use case: Nested Docker (DinD), system-level debugging
+- Security implications: Strong isolation reduction
+- Example: `true`
+
+#### capAdd
+- Type: Array of Linux capability strings
+- Description: Add specific Linux capabilities without full privilege
+- Safer than `privileged: true`
+- Example: `["SYS_PTRACE"]` (for debuggers)
+
+#### securityOpt
+- Type: Array of security option strings
+- Format: `"key=value"`
+- Example: `["seccomp=unconfined"]` (disable seccomp filter)
+- Use case: Debugging, tracing tools that need syscall access
+
+#### init
+- Type: Boolean
+- Description: Use init process (PID 1) instead of direct process
+- Ensures zombie processes are reaped
+- Default: Based on image metadata
+- Example: `true`
+
+#### runArgs
+- Type: Array of strings
+- Description: Raw Docker arguments passed to `docker run`
+- Format: Exactly as command line: `["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined"]`
+- Alternative to individual security properties
+- Use when feature/capability not exposed as property
+
+### Advanced Configuration
+
+#### name
+- Type: String
+- Description: Human-readable name for dev container
+- Shown in UI/tooling
+
+#### customizations
+- Type: Object
+- Description: IDE-specific customizations
+- Subproperties:
+  - `vscode`: VS Code extensions, settings
+  - `github`: GitHub Codespaces settings
+  - `jetbrains`: JetBrains IDE settings
+- Example:
+  ```json
+  {
+    "vscode": {
+      "extensions": ["ms-python.python", "ms-vscode.cpptools"],
+      "settings": {"python.linting.enabled": true}
+    }
+  }
+  ```
+
+#### hostRequirements
+- Type: Object
+- Description: Host machine minimum requirements
+- Properties:
+  - `cpus`: Number or string (e.g., "4", "8")
+  - `memory`: String with unit (e.g., "8gb", "4gb")
+  - `gpu`: Boolean or string (`"true"`, `"false"`, or specific GPU name)
+  - `storage`: String (e.g., "32gb")
+- Use case: Document requirements, enable CI warnings
+- Example:
+  ```json
+  {
+    "cpus": 4,
+    "memory": "8gb",
+    "gpu": true,
+    "storage": "32gb"
+  }
+  ```
+
+#### userEnvProbe
+- Type: String
+- Values: `"loginInteractiveShell"` | `"interactiveShell"` | `"loginShell"` | `"none"`
+- Description: How to probe user's environment for remote variables
+- `loginInteractiveShell`: Most comprehensive, slower
+- `none`: Skip probing
+
+## CLI Commands & Flags
+
+### devcontainer up
+Creates and starts development container
+
+**Key Flags:**
+- `--workspace-folder <path>` (required) - Workspace directory
+- `--config <path>` - Custom devcontainer.json path
+- `--remove-existing-container` - Delete and recreate
+- `--skip-post-create` - Skip postCreateCommand and later
+- `--skip-non-blocking-commands` - Stop after updateContentCommand
+- `--mount <spec>` - Add mounts (can be repeated)
+- `--remote-env <KEY=VALUE>` - Add env vars (can be repeated)
+- `--id-label <KEY=VALUE>` - Container tracking labels
+- `--image-name <image>` - Specify output image name
+
+**Output (JSON):**
+```json
+{
+  "outcome": "success",
+  "containerId": "<container-id>",
+  "remoteUser": "<user>",
+  "remoteWorkspaceFolder": "/container/path"
+}
+```
+
+### devcontainer exec
+Execute command in running container
+
+**Key Flags:**
+- `--workspace-folder <path>` - Target workspace
+- `--id-label <KEY=VALUE>` - Target by label instead
+- `--remote-env <KEY=VALUE>` - Add env vars for command
+- Arguments after command name passed to target command
+
+**Output:**
+```json
+{"outcome": "success"}
+```
+
+### devcontainer run-user-commands
+Execute lifecycle commands
+
+**Key Flags:**
+- `--workspace-folder <path>` (required) - Target workspace
+- `--id-label <KEY=VALUE>` - Target by label
+- `--skip-non-blocking-commands` - Stop after updateContentCommand
+- `--prebuild` - Run only until prebuild point
+
+**Use case:** Manual re-run of setup after config changes, debugging lifecycle issues
+
+### devcontainer build
+Build container image from config
+
+**Key Flags:**
+- `--workspace-folder <path>` (required) - Source workspace
+- `--image-name <image>` (required) - Output image reference
+- `--config <path>` - Custom devcontainer.json
+- `--no-cache` - Skip layer caching
+- `--platform <platform1,platform2>` - Multi-platform (e.g., "linux/amd64,linux/arm64")
+- `--push` - Push to registry after build
+- `--cache-from <image>` - Pull build cache from registry
+- `--cache-to <spec>` - Push build cache to registry (type=registry,ref=...)
+- `--additional-features <json>` - Add features not in config
+
+**Output:**
+```json
+{
+  "outcome": "success",
+  "image": "<built-image-digest>"
+}
+```
+
+### devcontainer read-configuration
+Output merged configuration
+
+**Key Flags:**
+- `--workspace-folder <path>` (required) - Target workspace
+- `--config <path>` - Custom config file
+- `--log-format json` - JSON output (default: human-readable)
+- `--include-merged-configuration` - Show all merged details
+
+**Use case:** Debug config resolution, understand feature merging, validate overrides
+
+## Feature System Deep Dive
+
+### Feature References
+Format: `<registry>/<namespace>/<feature>:<version>`
+- Registry: `ghcr.io`, `mcr.microsoft.com`, or custom
+- Namespace: `devcontainers`, `myorg`, etc.
+- Feature ID: descriptive name (docker-in-docker, node, python, etc.)
+- Version: semver (1, 1.0, 1.0.5) - required for reproducibility
+
+### Feature Metadata (devcontainer-feature.json)
+Located in feature source repository, defines:
+- Feature ID and version
+- onCreateCommand, postCreateCommand, postAttachCommand
+- Dependencies via installsAfter
+- Configuration schema for options
+- Container metadata (mounts, privileged, capAdd, etc.)
+
+### Feature Installation Order
+1. Parse all features from devcontainer.json
+2. Resolve installsAfter dependencies
+3. Execute feature scripts in topological order
+4. Merge metadata (capabilities, mounts, env vars)
+5. Final merged config passed to container creation
+
+## Execution Guarantees & Best Practices
+
+### Lifecycle Execution Order (Strict)
+```
+Host Machine:
+  initializeCommand
+
+Container Creation & Feature Installation:
+  (Container starts)
+  (Feature install scripts run)
+
+Inside Container (Sequential):
+  onCreateCommand
+  updateContentCommand
+  postCreateCommand
+
+(Container running, waiting for attachment)
+
+On Editor Attach:
+  postAttachCommand
+
+Container Restart (after stop/resume):
+  postStartCommand
+  (No re-run of creation commands)
+```
+
+### Command Syntax Considerations
+- **String syntax**: Runs in shell (/bin/sh or /bin/bash)
+  - Supports pipes, &&, ||, redirects
+  - Less predictable (depends on shell)
+  - Use for complex shell logic
+- **Array syntax**: Runs directly without shell
+  - More secure (no shell injection)
+  - Faster (no shell overhead)
+  - Use for simple commands
+  - Must break command + args: `["npm", "run", "build"]` not `["npm run build"]`
+
+### Parallel Command Execution
+- Object syntax enables named, independent commands
+- All commands in object run in parallel
+- Execution order within object undefined
+- Each command has independent exit code/logging
+- Use for independent tasks (build, watch, server all at once)
+
+### Timeout & Blocking
+- No explicit timeout mechanism in spec
+- Long-running commands can block container readiness
+- Use backgrounding or daemon flags wisely
+- `waitFor` property controls what blocks container startup
+
+## Common Integration Patterns
+
+### Multi-Database Setup (Compose)
+```json
+{
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "runServices": ["postgres", "redis", "elasticsearch"],
+  "postCreateCommand": [
+    "npm", "run", "db:migrate"
+  ]
+}
+```
+
+### GPU Development
+```json
+{
+  "image": "nvidia/cuda:11.8-runtime-ubuntu22.04",
+  "hostRequirements": {
+    "gpu": true
+  },
+  "runArgs": ["--gpus", "all"]
+}
+```
+
+### DinD (Docker-in-Docker)
+```json
+{
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "mounts": [
+    {
+      "source": "dind-var-lib-docker",
+      "target": "/var/lib/docker",
+      "type": "volume"
+    }
+  ]
+}
+```
+
+### Cache Persistence
+```json
+{
+  "mounts": [
+    {
+      "source": "npm-cache",
+      "target": "/home/node/.npm",
+      "type": "volume"
+    },
+    {
+      "source": "pip-cache",
+      "target": "/home/node/.cache/pip",
+      "type": "volume"
+    }
+  ]
+}
+```

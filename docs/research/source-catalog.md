@@ -1,6 +1,7 @@
 | [x] | codex CLI v0.116.0 (OpenAI) | https://openai.com/codex/ | CLI Tool | INSTALLED — Non-interactive exec via `codex exec` and `codex review` commands. Subscription auth (no API keys). Available at /Users/rmanaloto/.local/share/mise/installs/codex/0.116.0/codex |
 | [x] | gemini CLI v0.34.0 (Google) | https://github.com/google-gemini/gemini-cli | CLI Tool | INSTALLED — Headless mode via `-p/--prompt` flag and stdin support. Subscription auth. Available at /Users/rmanaloto/.local/share/mise/installs/gemini-cli/0.34.0/bin/gemini |
 | [x] | claude CLI v2.1.81 (Anthropic) | https://github.com/anthropics/claude-code | CLI Tool | INSTALLED — Non-interactive mode via `--print` and `--p` flags. Subscription auth. Available at /Users/rmanaloto/.local/share/mise/installs/npm-anthropic-ai-claude-code/2.1.81/bin/claude |
+| [x] | claude-code-skills Plugin Suite | https://github.com/levnikolaevich/claude-code-skills | Claude Code Plugin | EVALUATION — 7 plugins + 128 skills with native multi-model review (ln-310, ln-510, ln-813). Requires @anthropic/codex-cli + @google/gemini-cli + API authentication. MIT license. VERDICT: SKIP — Codex requires OpenAI API key (gpt-5.4); Gemini requires Google auth (gemini-3-flash-preview). Both incompatible with zero-API-keys constraint. See finding-claude-code-skills-integration-eval.yaml for detailed evaluation. |
 | [x] | DSPy Framework | https://github.com/stanfordnlp/dspy | Python Framework | EVALUATION — Stanford NLP framework for composable LLM pipelines. FINDING: Requires API keys, not subscription auth. Not suitable for CLI orchestration of subscription-based tools. |
 | [x] | BAML Framework | https://github.com/boundaryml/baml | Python Framework | EVALUATION — Declarative markup for LLM calls with type safety. FINDING: SDK-first design, requires API keys. Not CLI-first. |
 | [x] | LiteLLM Proxy | https://github.com/BerriAI/litellm | Python Framework | EVALUATION — API abstraction layer for multi-model routing. FINDING: API key wrapper, not subscription-friendly. Has CLI but primarily SDK-based. |
@@ -307,5 +308,95 @@ See deep review: `docs/research/trail/deep-reviews/python-docker-packaging-strat
 | [x] | chezmoi templating documentation | https://www.chezmoi.io/user-guide/templating/ | REFERENCE — Go template syntax, variables (.chezmoi.os, .chezmoi.arch, .chezmoi.hostname), conditionals, loops, template functions, password managers, external resources, .chezmoiexternal configuration | chezmoi-plugin |
 | [x] | chezmoi reference/special-files | https://www.chezmoi.io/reference/special-files/ | REFERENCE — Processing order: .chezmoiroot (source path), .chezmoi.$FORMAT.tmpl (init), .chezmoidata/, .chezmoitemplates/, .chezmoiignore, .chezmoiremove, .chezmoiexternal, .chezmoiversion. All optional; evaluated in specific order. | chezmoi-plugin |
 | [x] | chezmoi reference/special-directories | https://www.chezmoi.io/reference/special-directories/ | REFERENCE — .chezmoidata/ (config data), .chezmoitemplates/ (include templates), .chezmoiscripts/ (lifecycle scripts), .chezmoiexternals/ (external resources). All optional; read in lexical order. | chezmoi-plugin |
+| [ ] | johnstegeman/dotfiles repository | https://github.com/johnstegeman/dotfiles | BLOCKED — Research queued to analyze chezmoi source structure, external resources, secrets/encryption, mise config, and script patterns for adoption. Tool access required (curl/agent-fetch/gh API). See finding-johnstegeman-dotfiles.yaml | dotfiles-patterns |
 | [x] | chezmoi daily operations | https://www.chezmoi.io/user-guide/daily-operations/ | REFERENCE — Edit patterns (chezmoi edit, edit --apply, edit --watch), pull and diff, auto-commit/push, one-shot install, one-command deploy (sh -c "$(curl...)" -- init --apply) | chezmoi-plugin |
 | [x] | chezmoi commands reference | https://www.chezmoi.io/reference/commands/ | INDEX — All commands documented separately; setup: add, edit, apply, diff, status, cd, source-path, managed, unmanaged, ignored, execute-template, state dump, verify, forget, doctor, init, merge | chezmoi-plugin |
+
+---
+
+## Mise Environment Variables & Settings (2026-03-25)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | mise-env-fnox integration | docs/mise-config.md (lines 44-47) | PATTERN — Use MISE_ENV_CACHE=1 to enable caching for fnox secret resolution; export before `mise activate zsh`. Secrets loaded from ~/.config/mise/secrets.sops.json; fnox is refresh/restore layer. | mise-environment |
+| [x] | Official mise env variables | docs/plans/2026-02-28-research-r1-mise-core.md (lines 232-236) | DOCUMENTED — MISE_YES=1 (auto-answer yes), MISE_TRUSTED_CONFIG_PATHS (colon-sep paths), MISE_PIN=1 (exact versions not fuzzy). Equivalent config: yes=true, [settings] pin_versions=true | mise-environment |
+| [x] | MISE_BACKENDS override | docs/mise-config.md (line 39) | PATTERN — MISE_BACKENDS_<TOOL> env var can override backend; example: MISE_BACKENDS_CLAUDE="npm:@anthropic-ai/claude-code" | mise-environment |
+| [x] | status.missing_tools setting | rsm-subagents/plugins/mise-toolkit/skills/mise-config-settings/SKILL.md (line 41) | SETTING — Controls warning behavior for missing tools. Value "if_other_versions_installed" documented; other values not yet enumerated. Related to status warnings, not strict mode. | mise-settings |
+| [x] | Project automation: MDE_AUTOFIX_STRICT | scripts/macos-dev-maintenance.sh (lines 8, 598-602) | PROJECT-SPECIFIC — Not official mise feature. Removes brew-managed runtimes (node, go, rust, python) when MDE_AUTOFIX=1 AND MDE_AUTOFIX_STRICT=1. Invokes remove_brew_runtimes() function. Destructive; for CI/CD or aggressive cleanup. | project-automation |
+| [x] | GitHub jdx/mise (official) | https://github.com/jdx/mise | OFFICIAL — Version 2026.3.14+. No MISE_STRICT environment variable found in repository. No official "strict mode" concept documented. Potential future feature based on project patterns. | mise-core |
+| [x] | Homebrew llvm formula | https://formulae.brew.sh/formula/llvm | TOOL — LLVM 22.1.1 (stable), keg-only. Includes clang, clang++, clang-format, clang-tidy, lldb, clang-tools-extra. LLD split to separate formula. 63K installs/month. | llvm-clang |
+| [x] | Homebrew lld formula | https://formulae.brew.sh/formula/lld | TOOL — LLVM linker 22.1.1. Separate from llvm formula since Homebrew split. Requires llvm dep. | llvm-clang |
+| [x] | LLVM official releases (GitHub) | https://github.com/llvm/llvm-project/releases | OFFICIAL — llvmorg-22.1.2 latest. macOS ARM64 prebuilt: 1.4GB. Full distribution. | llvm-clang |
+| [x] | mise-plugins/mise-llvm (asdf backend) | https://github.com/mise-plugins/mise-llvm | PLUGIN — asdf-style LLVM plugin for mise. Alternative to conda backend. Untested. | llvm-clang |
+| [x] | wshobson/agents marketplace | https://github.com/wshobson/agents | MARKETPLACE — 32K stars. 72 plugins, 112 agents, 146 skills. python-development plugin has 3 agents + 16 skills (all markdown). No hooks, no executable code. marketplace.json schema documented. | plugin-marketplace |
+| [x] | anthropics/claude-plugins-official | https://github.com/anthropics/claude-plugins-official | MARKETPLACE — 14.6K stars. Official Anthropic-managed plugin directory. | plugin-marketplace |
+| [x] | jeremylongshore/claude-code-plugins-plus-skills | https://github.com/jeremylongshore/claude-code-plugins-plus-skills | MARKETPLACE — 1.7K stars. 340 plugins, 1367 skills. CCPI package manager. | plugin-marketplace |
+| [x] | obra/superpowers-marketplace | https://github.com/obra/superpowers-marketplace | MARKETPLACE — 731 stars. Curated Claude Code plugin marketplace. | plugin-marketplace |
+| [x] | thedotmack/claude-mem | https://github.com/thedotmack/claude-mem | PLUGIN — 40.5K stars. Memory capture plugin (not a marketplace). | plugin-memory |
+| [x] | jarrodwatts/claude-hud | https://github.com/jarrodwatts/claude-hud | PLUGIN — 13.2K stars. Context usage HUD plugin. | plugin-monitoring |
+| [x] | Ruff configuration docs | https://docs.astral.sh/ruff/configuration/ | OFFICIAL — Ruff 0.15.7 config reference. pyproject.toml, select/ignore, per-file-ignores, preview mode. | python-quality |
+| [x] | Ruff rules reference | https://docs.astral.sh/ruff/rules/ | OFFICIAL — 900+ lint rules. Preview rules marked. Fixable rules marked. | python-quality |
+| [x] | Ruff preview mode docs | https://docs.astral.sh/ruff/preview/ | OFFICIAL — Preview expands defaults to B/UP/RUF. explicit-preview-rules for per-rule opt-in. | python-quality |
+| [x] | Ruff integrations docs | https://docs.astral.sh/ruff/integrations/ | OFFICIAL — GitHub Actions, pre-commit, Docker, GitLab CI. ruff-action@v3. | python-quality |
+| [x] | Ruff GitHub releases | https://github.com/astral-sh/ruff/releases | OFFICIAL — 0.15.7 latest (2026-03-19). Lazy import parsing, PEP 798 in preview. | python-quality |
+| [x] | ty docs (Astral type checker) | https://docs.astral.sh/ty/ | OFFICIAL — Alpha 0.0.25. 10-100x faster than mypy/Pyright. LSP, intersection types. | python-quality |
+| [x] | ty configuration reference | https://docs.astral.sh/ty/reference/configuration/ | OFFICIAL — rules, analysis, environment config. allowed-unresolved-imports, replace-imports-with-any. | python-quality |
+| [x] | ty GitHub releases | https://github.com/astral-sh/ty/releases | OFFICIAL — 0.0.25 (2026-03-24). Weekly breaking changes. type:ignore[ty:code] suppression. | python-quality |
+| [x] | uv docs (Astral package manager) | https://docs.astral.sh/uv/ | OFFICIAL — 0.11.1 stable. Replaces pip/poetry/pyenv/pipx. Universal lockfile, workspaces. | python-quality |
+| [x] | uv workspaces docs | https://docs.astral.sh/uv/concepts/projects/workspaces/ | OFFICIAL — Monorepo support. Single lockfile, editable inter-deps. | python-quality |
+| [x] | ty playground | https://play.ty.dev | OFFICIAL — Online playground for ty type checker. | python-quality |
+
+---
+
+## Multi-Model Orchestration & Consensus Systems (2026-03-25)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | claude-octopus GitHub repo | https://github.com/nyldn/claude-octopus | PRODUCTION-READY — v9.13.0 MIT-licensed Claude Code plugin with 75% consensus gate, multi-model orchestration (8 providers), 32 personas, 47 commands. Zero external API key requirements (all auth via OAuth or subscription CLIs). Subprocess dispatch to Codex/Gemini CLIs. | multi-model-orchestration |
+| [x] | claude-octopus README | https://raw.githubusercontent.com/nyldn/claude-octopus/main/README.md | CONFIRMED — Double Diamond workflow (Discover/Define/Develop/Deliver), 75% quality gate threshold, blinded/cross-critique debate modes, autonomy modes (supervised/semi-autonomous/autonomous) | consensus-gate |
+| [x] | claude-octopus scripts/lib/debate.sh | https://raw.githubusercontent.com/nyldn/claude-octopus/main/scripts/lib/debate.sh | IMPLEMENTATION — grapple_debate() function with 3-7 round adversarial review, debate integrity rules (ANTI-CONTRARIAN, ANTI-RUBBER-STAMP, EVIDENCE-BASED), parallel proposal generation, sequential synthesis | debate-logic |
+| [x] | claude-octopus scripts/lib/quality.sh | https://raw.githubusercontent.com/nyldn/claude-octopus/main/scripts/lib/quality.sh | IMPLEMENTATION — Quality gate branching (proceed/proceed_warn/retry/escalate/abort), threshold evaluation (>= 90% → proceed, >= 75% → proceed_warn), provider lockout mechanism, autonomy-aware retry logic | quality-scoring |
+| [x] | claude-octopus preflight checks | https://raw.githubusercontent.com/nyldn/claude-octopus/main/scripts/lib/preflight.sh | CONFIRMED — Zero required external API keys. Codex/Gemini/Perplexity are optional. Claude is built-in. Detects auth via ~/.codex/auth.json OR OPENAI_API_KEY (same pattern for all providers). All features work on Claude alone. | provider-detection |
+| [x] | claude-octopus package.json | https://raw.githubusercontent.com/nyldn/claude-octopus/main/package.json | METADATA — @anthropic-plugins/claude-octopus v9.13.0, MIT License, requires Bash 3.2+, zero npm dependencies (pure shell) | plugin-format |
+| [x] | claude-octopus LICENSE | https://raw.githubusercontent.com/nyldn/claude-octopus/main/LICENSE | CONFIRMED — MIT License, permissive derivative/commercial use allowed | license-compat |
+
+
+## Autonomous PR Review Tools — Multi-Model Consensus (2026-03-25)
+
+| Status | Source | URL | Verdict | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | reviewd GitHub | https://github.com/simion/reviewd | RECOMMENDED — Python package (MIT, v0.6.0) for local PR review via claude/gemini/codex CLIs. Subprocess invocation, no API keys. Structured JSON findings. See finding-reviewd-integration-eval.yaml for full eval. | TOOL — Production Ready |
+| [x] | reviewd PyPI | https://pypi.org/project/reviewd/ | installable via `pip install reviewd` or `uv tool install reviewd`. Requires Python 3.12+. Dependencies: click, httpx, pyyaml, questionary. | TOOL — Packaging |
+| [x] | reviewd Source (reviewer.py) | https://raw.githubusercontent.com/simion/reviewd/main/src/reviewd/reviewer.py | Core review orchestration: git worktree creation, test command execution, AI CLI invocation, JSON parsing. 600+ lines, importable modules. | TOOL — Architecture |
+| [x] | reviewd Models | https://raw.githubusercontent.com/simion/reviewd/main/src/reviewd/models.py | Dataclasses: Finding (severity/category/title/file/line/issue/fix), ReviewResult, ProjectConfig. Matches mde findings format. | TOOL — Data Schema |
+| [x] | reviewd Prompt | https://raw.githubusercontent.com/simion/reviewd/main/src/reviewd/prompt.py | Prompt generation with security scope, severity definitions, auto-approve rules. Produces JSON schema output. | TOOL — Prompt Engineering |
+| [x] | public-apis GitHub (416k stars) | https://github.com/public-apis/public-apis | CATALOG EVALUATION — 1,436 free APIs indexed. Searched for code review, linting, static analysis, LLM orchestration APIs. VERDICT: SKIP — No relevant APIs for autonomous-fix-review skill. SonarQube (OAuth, paid), Deepcode (enterprise), GitHub (OAuth required). All violate zero-key constraint. See finding-public-apis-review-relevance.yaml for detailed evaluation. | free-api-catalog |
+| [x] | claude-octopus scripts/lib/quality.sh (complete) | https://raw.githubusercontent.com/nyldn/claude-octopus/main/scripts/lib/quality.sh | FULL CONTENT EXTRACTED — Complete quality gate implementation (1,012 lines): evaluate_branch_condition(), get_branch_display(), evaluate_quality_branch(), execute_quality_branch(), lock_provider(), is_provider_locked(), get_alternate_provider(), reset_provider_lockouts(), append_provider_history(), read_provider_history(), build_provider_context(), write_structured_decision(), design_review_ceremony(), retrospective_ceremony(), detect_response_mode(), get_gate_threshold(), score_importance(), search_observations(), search_similar_errors(), flag_repeat_error(), score_cross_model_review(), format_review_scorecard(), get_cross_model_reviewer(), run_project_quality_checks(), detect_project_quality_commands(). Saved to docs/research/trail/deep-reviews/claude-octopus-quality.sh.md | quality-gate-complete |
+| [x] | claude-octopus scripts/lib/debate.sh (complete) | https://raw.githubusercontent.com/nyldn/claude-octopus/main/scripts/lib/debate.sh | FULL CONTENT EXTRACTED — Complete debate orchestration (717 lines): grapple_debate() function with round 1 (parallel proposals from 3 providers), round 2 (mode-aware: blinded independent evals vs cross-critique ACH falsification), rounds 3-N (rebuttals with integrity rules), quorum consensus mode (v8.20.0), final synthesis. Debate integrity constraints (ANTI-CONTRARIAN, ANTI-RUBBER-STAMP, EVIDENCE-BASED, PROPORTIONAL). Saved to docs/research/trail/deep-reviews/claude-octopus-debate.sh.md | debate-implementation |
+
+## Devcontainer Spec Deep Dive (2026-03-25)
+
+### Official Specification
+- https://github.com/devcontainers/spec/blob/main/docs/specs/devcontainerjson-reference.md - Complete devcontainer.json reference
+- https://github.com/devcontainers/spec/blob/main/docs/specs/features-contribute-lifecycle-scripts.md - Feature lifecycle integration
+- https://github.com/devcontainers/spec/blob/main/docs/specs/image-metadata.md - Image metadata structure
+- https://context7.com/devcontainers/spec/llms.txt - Context7 aggregated spec documentation
+
+### CLI Reference
+- https://context7.com/devcontainers/cli/llms.txt - Complete CLI command reference
+- https://github.com/devcontainers/cli/blob/main/README.md - CLI overview
+- https://github.com/devcontainers/cli/blob/main/docs/features/test.md - CLI testing patterns
+- devcontainer 0.84.1 local --help output (2026-03-26) - All 11 subcommands with complete flag reference. See docs/research/trail/findings/devcontainer-cli-capabilities.yaml
+
+### Skill Marketplace Discovery (2026-03-26)
+- https://skills.sh - Skills CLI and marketplace search
+- https://skillsmp.com - Skillsmp marketplace
+- sickn33/antigravity-awesome-skills@devcontainer-setup (1306 skills library) - Safe risk assessment, comprehensive devcontainer template system
+- trailofbits/skills@devcontainer-setup (775 installs) - High risk assessment, production-grade devcontainer generator
+- manutej/luxor-claude-marketplace@docker-compose-orchestration (641 installs) - Comprehensive compose patterns, health checks, networking
+- microsoft/vscode-remote-try-node - Official VS Code Node.js sample devcontainer
+- verlab/ros1_devcontainer_docker_compose - ROS1 Noetic real-world pattern: privileged mode, initializeCommand, sidecar services
+- reinoxl/unique-devcontainer-name-with-docker-compose - Path-specific naming pattern for multi-workspace isolation
+- containers.dev/implementors/json_reference/ - Lifecycle command properties (postCreateCommand, postStartCommand, postAttachCommand, waitFor)
+- containers.dev/implementors/features/ - Feature dependencies, installation order, lifecycle hooks
+
