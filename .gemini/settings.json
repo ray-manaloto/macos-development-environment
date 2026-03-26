@@ -1,0 +1,23 @@
+{
+  "admin": {
+    "extensions": {
+      "enabled": false
+    },
+    "mcp": {
+      "enabled": false
+    }
+  },
+  "general": {
+    "defaultApprovalMode": "yolo"
+  },
+  "model": {
+    "name": "auto-gemini-3"
+  },
+  "telemetry": {
+    "enabled": true,
+    "target": "local",
+    "otlpEndpoint": "http://127.0.0.1:4318",
+    "otlpProtocol": "http",
+    "logPrompts": true
+  }
+}

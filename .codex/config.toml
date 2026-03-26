@@ -1,0 +1,24 @@
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+
+mcp_servers = {}
+
+[features]
+apps = false
+apps_mcp_gateway = false
+guardian_approval = false
+js_repl = false
+multi_agent = false
+runtime_metrics = true
+shell_snapshot = false
+steer = false
+tui_app_server = false
+unified_exec = false
+
+[otel]
+environment = "macbook-prod"
+log_user_prompt = true
+exporter = { otlp-http = { endpoint = "http://127.0.0.1:4318/v1/logs", protocol = "binary" } }
+trace_exporter = { otlp-http = { endpoint = "http://127.0.0.1:4318/v1/traces", protocol = "binary" } }

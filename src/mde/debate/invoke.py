@@ -83,7 +83,23 @@ def _invoke_codex(prompt: str, timeout: int = 300) -> InvocationResult:
         )
 
     full_prompt = _CODEX_PREAMBLE + prompt
-    cmd = [codex_path, "exec", "--full-auto", full_prompt]
+    cmd = [
+        codex_path,
+        "exec",
+        "--full-auto",
+        # Disable MCP servers and heavy features for fast headless invocation
+        "-c",
+        "skills.bundled.enabled=false",
+        "-c",
+        "features.apps=false",
+        "-c",
+        "features.js_repl=false",
+        "-c",
+        "features.shell_snapshot=false",
+        "-c",
+        "project_doc_max_bytes=0",
+        full_prompt,
+    ]
 
     start = time.monotonic()
     try:
@@ -147,7 +163,20 @@ def _invoke_gemini(prompt: str, timeout: int = 300) -> InvocationResult:
             error="gemini CLI not found in PATH",
         )
 
-    cmd = [gemini_path, "-p", "", "-o", "text", "--approval-mode", "yolo"]
+    cmd = [
+        gemini_path,
+        "-p",
+        "",
+        "-o",
+        "text",
+        "--approval-mode",
+        "yolo",
+        # Disable extensions and MCP for fast headless invocation
+        "-e",
+        "none",
+        "--allowed-mcp-server-names",
+        "",
+    ]
 
     start = time.monotonic()
     try:
@@ -372,16 +401,18 @@ def _strip_gemini_noise(output: str) -> str:
         "No tool changes",
         "Retry refresh",
         "YOLO mode",
+        "MCP issues detected",
+        "Created execution plan",
+        "Expanding hook command",
+        "Hook execution for",
         "  logging:",
         "  prompts:",
         "  resources:",
         "  tools:",
         "  experimental:",
         "  completions:",
-        "{",
-        "}",
-        "  code:",
-        "  data:",
+        "  code: -",
+        "  data: undefined",
     )
     for line in lines:
         if any(line.strip().startswith(p) for p in noise_prefixes):
