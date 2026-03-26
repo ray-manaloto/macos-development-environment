@@ -1,0 +1,95 @@
+# Opus Deep Review: opus-batch-c-updater-harness-sync
+
+**Date**: 2026-03-26
+**Model**: claude-opus-4.6
+**Agent ID**: ab913d89
+
+---
+
+I now have comprehensive understanding of all 5 plugins. Let me compile the deep review.
+
+---
+
+## Deep Plugin Review
+
+### 1. claude-skills-updater
+**VERDICT: INSTALL**
+**CONFIDENCE: 0.82**
+**GOALS: self-updating, plugin-finding**
+**COMPONENTS: skills=1, agents=0, cmds=0, hooks=none**
+**POLICY_VIOLATIONS: none**
+**OVERLAP: marketplace-evaluator (partial -- evaluator finds new plugins, updater maintains existing ones)**
+**RATIONALE:** Clean single-skill plugin with zero hooks and zero shell scripts. The skill is entirely prompt-driven -- it instructs Claude to scan `~/.claude/plugins/marketplaces/`, compare versions via `gh` CLI, and interactively update with user confirmation. No policy violations whatsoever: no bash hooks, no MCP servers, no API keys. It fills a genuine gap -- there is currently no mechanism to keep installed plugins up to date. The audit report feature (`~/.claude/reports/skills-audit/`) provides useful provenance tracking. Context budget cost is minimal (1 skill description). The only concern is that it assumes plugins live in `~/.claude/plugins/marketplaces/` which may not match all installation paths, but this is easily correctable.
+
+---
+
+### 2. harnesskit
+**VERDICT: REJECT**
+**CONFIDENCE: 0.92**
+**GOALS: plugin-finding, prompt-optimization**
+**COMPONENTS: skills=11, agents=1, cmds=0, hooks=6 bash scripts (SessionStart, Stop, PreToolUse guardrails, PostToolUse lint+typecheck, PreToolUse pre-commit-test)**
+**POLICY_VIOLATIONS:**
+- **HARD: 6 bash hook scripts** -- violates no-shell-scripts policy. All hooks are `.sh` files: `guardrails.sh`, `session-start.sh`, `session-end.sh`, `post-edit-lint.sh`, `post-edit-typecheck.sh`, `pre-commit-test.sh`
+- **HARD: Generates CLAUDE.md** -- the init skill overwrites the project's CLAUDE.md from templates, which would destroy the carefully maintained 100-line CLAUDE.md
+- **HARD: Writes to `.claude/settings.json`** -- the init skill programmatically merges hook registrations into settings.json, which could corrupt existing hook configuration
+**OVERLAP:**
+- guardrails.sh overlaps with `safety-net` plugin (blocks dangerous operations)
+- post-edit-lint.sh overlaps with existing `hk.pkl` format-on-edit hook
+- post-edit-typecheck.sh overlaps with `pyright-lsp` plugin
+- insights/apply workflow overlaps with `codebase-quality` plugin
+- worktree skill overlaps with existing worktree-pr-workflow policy
+- test/lint/typecheck skills overlap with existing quality gate (`uv run mde-py quality`)
+- session tracking overlaps with `remember` plugin
+**RATIONALE:** This is a comprehensive "vibe coding" harness aimed at beginners/intermediates who lack existing tooling. For this project, which already has a mature 18-plugin stack, custom quality gate, hk.pkl hooks, and strict policies, harnesskit is fundamentally incompatible. The 6 bash hook scripts are an immediate HARD violation. The plugin assumes it owns CLAUDE.md and `.claude/settings.json`, which would conflict with the project's established conventions. The detection script (`detect-repo.sh`) is a well-written 216-line bash file, but the project policy forbids shell scripts. The session-end.sh analytics tracking is interesting but would need to be rewritten in Python. The adaptive insights system is clever but overlaps too heavily with existing tooling.
+
+---
+
+### 3. plugin-manager
+**VERDICT: REJECT**
+**CONFIDENCE: 0.85**
+**GOALS: plugin-finding**
+**COMPONENTS: skills=1, agents=0, cmds=0, hooks=none**
+**POLICY_VIOLATIONS:**
+- **SOFT: Requires Node.js runtime** -- launches a localhost HTTP server (`node dist/server.js`) with web UI
+- **NOTE: Opens browser** -- uses `open -a "Google Chrome" --args --app="<url>"` for macOS
+**OVERLAP: None directly, but plugin management is already done via `claude plugin` CLI and `.claude/settings.json`**
+**RATIONALE:** This plugin provides a visual web dashboard for toggling plugins on/off, browsing marketplace, and managing settings. While visually appealing, it adds a Node.js HTTP server dependency for what amounts to editing `.claude/settings.json`. The project already manages plugins declaratively through settings.json and the `mde-py validate --plugins` command. The web UI approach is architecturally misaligned -- this project prefers CLI-first tooling and avoids running servers for configuration tasks. The 30-minute idle timeout server is unnecessary overhead. The token-based auth system is well-implemented but overkill for localhost plugin management. No shell script hooks, but the core value proposition is weak given existing CLI workflows.
+
+---
+
+### 4. cync
+**VERDICT: REJECT**
+**CONFIDENCE: 0.90**
+**GOALS: dotfiles-tooling, self-updating**
+**COMPONENTS: skills=0 (skill dir exists but only has a spec file), cmds=6 (sync-init, sync-push, sync-pull, sync-status, sync-help, plus cync-spec.md), hooks=4 bash scripts (thin wrappers calling `node dist/cli.js`)**
+**POLICY_VIOLATIONS:**
+- **HARD: 4 bash shell scripts** in `scripts/` -- violates no-shell-scripts policy (though they are trivial 4-line wrappers around `node dist/cli.js`)
+- **HARD: Duplicates chezmoi functionality** -- the project already uses chezmoi for dotfiles/config sync, which is managed by the `chezmoi-toolkit` plugin
+- **SOFT: Git-backed sync** -- uses a separate git repo for backup, creating a parallel sync mechanism to the existing chezmoi + git-tracked setup
+**OVERLAP:**
+- Directly overlaps with `chezmoi-toolkit` plugin for dotfiles synchronization
+- The sync scope (`~/.claude/` settings, skills, commands, memory, plans) is already handled by the project's git-tracked `.claude/` directory and chezmoi
+**RATIONALE:** Cync backs up `~/.claude/` contents to a remote git repo, handling settings, skills, commands, memory, and plans. However, this project already has a comprehensive dotfiles management strategy: chezmoi handles cross-machine sync, the `.claude/` directory is git-tracked within the project repo, and CLAUDE.md/settings.json are version-controlled. The TypeScript/Node.js implementation with compiled dist/ files adds dependency weight. The bash script wrappers, while minimal, violate policy. The sensitive-scanner module is a nice touch (prevents committing secrets) but chezmoi's encryption features already cover this. This would create confusion about which sync mechanism is authoritative.
+
+---
+
+### 5. backpack-ontology
+**VERDICT: EXTRACT**
+**CONFIDENCE: 0.72**
+**GOALS: memory-research**
+**COMPONENTS: skills=1, agents=0, cmds=0, hooks=PostToolUse (installed by MCP server, not in hooks.json), MCP server via `npx backpack-ontology`**
+**POLICY_VIOLATIONS:**
+- **HARD: MCP server** -- bundles an MCP server (`.mcp.json` with `npx backpack-ontology`), violating the MCP-access policy which requires CLI wrappers, not direct MCP schemas in context
+- **SOFT: npx dependency** -- uses `npx backpack-ontology@latest` and `npx backpack-viewer`, which conflicts with the `feedback_no_npx_for_mise_tools` policy for mise-managed tools
+- **SOFT: Cloud sync** -- `backpack-sync` command authenticates with external "Backpack App" cloud service, which may conflict with secrets-management and subscription-only policies
+- **NOTE: Hooks installed dynamically** -- the MCP server installs a PostToolUse hook at runtime rather than declaring it in hooks.json, making it harder to audit
+**OVERLAP:**
+- `remember` plugin (session memory persistence)
+- Existing memory architecture (hot/warm/cool/cold layers in CLAUDE.md)
+- NotebookLM integration (second-brain policy) for cross-source synthesis
+**RATIONALE:** The knowledge graph ontology concept is genuinely interesting for the memory-research goal. The typed graph model (nodes with freeform types, edges with typed relationships, progressive discovery pattern) is a well-designed abstraction that could complement the existing 4-layer memory architecture. However, the full plugin is not installable due to the MCP server requirement and the cloud sync dependency. The SKILL.md's progressive discovery pattern (Layer 1-4: Discover, Browse, Inspect, Mutate) and the graph schema conventions (PascalCase node types, SCREAMING_SNAKE_CASE edge relationships) are extractable design patterns that could inform a Python-native knowledge graph module in `src/mde/`.
+**EXTRACTABLE:**
+- Progressive discovery pattern (4-layer approach to keep context window lean) -- applicable to any structured data exploration
+- Graph ontology schema conventions (node type naming, edge type naming, deduplication-before-mutation workflow)
+- The idea of typed learning graphs per domain as a memory organization principle -- could extend the existing warm/cool memory layers
+- Visualization concept (force-directed graph layout for relationship exploration) -- could be implemented as a Python CLI generating HTML/SVG
