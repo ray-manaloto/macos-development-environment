@@ -18,6 +18,7 @@ services:
       # Only Collector receiver ports are published — bound to localhost only
       - "127.0.0.1:4317:4317"   # gRPC receiver
       - "127.0.0.1:4318:4318"   # HTTP receiver
+      - "127.0.0.1:13133:13133" # Health check extension (host-side probe)
     healthcheck:
       # The OTEL Collector contrib image is scratch-based (no shell, wget, or curl).
       # Health is validated externally by `mde-py observability verify` via port 13133.

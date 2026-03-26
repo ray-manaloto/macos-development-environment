@@ -1,0 +1,86 @@
+id: finding-claude-octopus-scripts-extraction
+timestamp: "2026-03-25T23:05:00Z"
+source: https://github.com/nyldn/claude-octopus/tree/main/scripts/lib
+agent: researcher
+finding_type: technique
+confidence: confirmed
+
+# Source Content Extraction — claude-octopus debate.sh & quality.sh
+
+## confident_about:
+Complete bash source code extracted from two core orchestration libraries:
+- **debate.sh** (717 lines): `grapple_debate()` function implementing adversarial multi-model review with configurable rounds (3-7), two debate modes (cross-critique ACH falsification vs blinded independent evaluation), debate integrity rules, and parallel proposal generation from Codex/Gemini/Sonnet 4.6
+- **quality.sh** (1,012 lines): Quality gate system with 26 exported functions including branching logic, provider lockout, history tracking, structured decision logging, ceremony support (design review, retrospective), response mode auto-tuning, configurable thresholds (SPC-based), importance scoring, cross-model review scoring (4x10: security/reliability/performance/accessibility)
+
+## gaps:
+- No exploration of orchestrate.sh main entry point (likely >2000 lines, not fetched)
+- No implementation of run_agent_sync() helper (called throughout but defined elsewhere)
+- No investigation of downstream consumers (which Python agents would call these functions)
+- No analysis of decision.md/decisions.jsonl structures in practice (schema extracted, no sample data)
+- Provider history (.octo/providers/{name}-history.md) capping logic (50 entries) untested
+
+## evidence:
+- **debate.sh** exported function `grapple_debate()`:
+  - Lines 10-717: Full implementation
+  - Round 1 (lines 73-165): Parallel proposals (codex_proposal=$(run_agent_sync "codex" ...))
+  - Round 2 (lines 167-352): Mode-aware critique (blinded vs cross-critique via evaluate_quality_branch heuristics)
+  - Rounds 3-N (lines 357-475): Rebuttals with refinement loop
+  - Synthesis (lines 497-621): Moderator-mode final synthesis with ACH or blinded evaluation aggregation
+  - Result output (lines 626-666): Markdown file with full debate transcript
+- **quality.sh** exported functions:
+  - evaluate_branch_condition() (20-46): Complexity-based tentacle routing (premium/standard/fast)
+  - evaluate_quality_branch() (61-88): Returns action based on success_rate vs thresholds
+  - execute_quality_branch() (91-138): Execute branch action with retry/escalate/abort handling
+  - lock_provider() / is_provider_locked() (232-244): Provider rejection tracking
+  - get_alternate_provider() (246-280): Rotate to alternate provider on lockout
+  - write_structured_decision() (361-416): Append-only decision.md + decisions.jsonl with importance scoring (v8.19.0)
+  - design_review_ceremony() (422-506): Pre-tangle phase consensus (three providers state approach, synthesizer unifies)
+  - retrospective_ceremony() (508-562): Post-failure RCA automation
+  - detect_response_mode() (567-637): Auto-tune execution depth (direct/lightweight/standard/full) based on prompt analysis
+  - get_gate_threshold() (644-705): Per-phase configurable thresholds with SPC (statistical process control) fallback
+  - score_importance() (712-738): Base score by type (security-finding=8, quality-gate=7, etc) + confidence adjustment
+  - score_cross_model_review() (838-899): Extract/heuristic 4x10 scoring (security/reliability/performance/accessibility)
+  - format_review_scorecard() (901-922): Visual bar chart rendering (████/░░ Unicode)
+  - run_project_quality_checks() (942-970): Orchestrate detected linting commands (npm, ruff, mypy, cargo, go vet, make lint)
+  - detect_project_quality_commands() (972-1012): Language-specific lint detection (Node.js, Python, Rust, Go, Makefile)
+
+## implication:
+These two files are the _foundational_ orchestration logic for the autonomous-fix-review skill:
+
+1. **For Debate Architecture:**
+   - debate.sh `grapple_debate()` should be ported to Python as `async def grapple_debate()` with asyncio parallelism
+   - Two modes (cross-critique, blinded) map to `mode: Literal["cross-critique", "blinded"]` parameter
+   - Integrity rules are injected as system constraints in provider prompts — should remain as string injection in Python
+   - Quorum consensus (v8.20.0) requires 2/3 agreement detection before synthesis (extractable as utility function)
+   - Debate result Markdown writing (lines 626-666) should be abstracted to structured data (JSON/YAML) for programmatic consumption
+
+2. **For Quality Gate & Provider Management:**
+   - quality.sh branching logic (proceed/proceed_warn/retry/escalate/abort) maps directly to Python Enum or Union type
+   - Provider lockout should use persistent state file (not bash globals) — recommend .octo/provider-lockouts.json
+   - Structured decision format (write_structured_decision()) is append-only for git mergeability — Python should maintain this invariant via `mode='a'` file I/O
+   - Importance scoring (1-10) based on decision type + confidence is a pure function — trivially portable
+   - Cross-model review scoring (4x10) uses heuristic fallback when models don't explicitly score — regex patterns should be extracted to constants
+
+3. **For Ceremony Automation:**
+   - design_review_ceremony() and retrospective_ceremony() are procedural wrappers around run_agent_sync() calls
+   - In Python, these become orchestration functions that dispatch to external CLI (e.g., `subprocess.run(["codex", ...])`)
+   - No domain-specific logic — straightforward wrapper adaptation
+
+4. **For Response Mode & Thresholds:**
+   - detect_response_mode() uses keyword detection (quick/fast) + word count + technical keyword density
+   - In Python, replace bash string matching with regex.IGNORECASE or str.lower() + 'in' checks
+   - get_gate_threshold() SPC (statistical process control) logic uses awk — extract to numpy/scipy in Python
+   - detect_project_quality_commands() uses language-specific heuristics — should be a pluggable strategy pattern
+
+## tags:
+- multi-model-orchestration
+- debate-logic
+- quality-scoring
+- bash-to-python-port
+- governance-framework
+- integrity-constraints
+- provider-lockout-mechanism
+- consensus-gate
+- async-orchestration
+
+status: discovered

@@ -29,7 +29,7 @@ mise run mde:research:skill-discover -- <query>
 2. SEARCH — Query working sources (skills.sh, skillkit, GitHub)
 3. COMPARE — Rank results by adoption and relevance
 4. DECIDE — Install best match, or identify gap for custom skill
-5. INSTALL — npx skills add + symlink + agent wiring
+5. INSTALL — skills add + symlink + agent wiring
 6. VERIFY — Confirm skill file exists and agent references it
 ```
 
@@ -43,7 +43,7 @@ find .claude/skills .agents/skills -name "SKILL.md" 2>/dev/null \
   | xargs grep -li "<query>" 2>/dev/null
 
 # Count total installed skills
-npx skillfish list 2>&1 | tail -3
+skillfish list 2>&1 | tail -3
 
 # Search installed plugins
 claude plugins list 2>&1 | grep -i "<query>"
@@ -58,11 +58,11 @@ Run all agent-accessible tools in parallel, then guide the user for interactive/
 ```bash
 # 1. skills.sh — BEST source. 22K+ skills with install-count rankings.
 #    Fastest, most reliable, has adoption metrics as quality signal.
-npx skills search "<query>" 2>&1 | head -30
+skills find "<query>" 2>&1 | head -30
 
 # 2. skillkit — 15K+ skills, cross-platform (13+ AI tools).
 #    Slower (downloads 19MB on first run), but finds results skills.sh misses.
-npx skillkit search "<query>" 2>&1 | head -30
+skillkit search "<query>" 2>&1 | head -30
 
 # 3. GitHub code search — deepest, finds niche/personal skills.
 #    Searches ALL public SKILL.md files on GitHub.
@@ -76,13 +76,13 @@ These tools have interactive TUIs that require a real terminal. Ask the user to 
 ```
 # 4. skills-installer — 203+ results for popular queries, interactive TUI selector.
 #    Searches all public GitHub skills via agentskills.io index.
-! npx skills-installer search "<query>"
+! skills-installer search "<query>"
 
 # 5. skill.fish browser — 31-33K skills, visual search.
 #    User opens https://skill.fish in browser and searches there.
 ```
 
-Tell the user: "I can search skills.sh, skillkit, and GitHub automatically, but skills-installer and skill.fish need your terminal. Run `! npx skills-installer search '<query>'` to search the agentskills.io index (203+ results for terraform, 33 for chezmoi)."
+Tell the user: "I can search skills.sh, skillkit, and GitHub automatically, but skills-installer and skill.fish need your terminal. Run `! skills-installer search '<query>'` to search the agentskills.io index (203+ results for terraform, 33 for chezmoi)."
 
 ### API-Key-Required Sources (setup needed first)
 
@@ -100,10 +100,10 @@ curl -s -H "Authorization: Bearer $SKILLSMP_API_KEY" \
 
 ```bash
 # List all installed skills across all agents
-npx skillfish list 2>&1 | tail -5
+skillfish list 2>&1 | tail -5
 
 # Install a specific skill from a known repo
-npx skillfish add <owner/repo/skill-name> 2>&1
+skillfish add <owner/repo/skill-name> 2>&1
 ```
 
 ### GitHub Collection Search (curated quality)
@@ -148,7 +148,7 @@ Build a comparison table from all search results:
 
 ```bash
 # Install from skills.sh
-npx skills add <owner/repo> --skill <name> --yes 2>&1
+skills add <owner/repo> --skill <name> --yes 2>&1
 
 # Verify it landed in .agents/skills/
 ls .agents/skills/<name>/SKILL.md 2>/dev/null

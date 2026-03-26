@@ -1,0 +1,82 @@
+id: finding-devcontainer-marketplace-skills
+timestamp: "2026-03-26T02:10:00Z"
+source: |
+  - https://skills.sh (devcontainer skills search)
+  - https://skillsmp.com (skillsmp marketplace)
+  - https://containers.dev/implementors/json_reference/ (devcontainer spec)
+  - https://github.com/devcontainers/spec (devcontainer spec repo)
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  - Top 3 devcontainer skills by install count: trailofbits (775), jwynia (99), shipshitdev (82)
+  - sickn33/antigravity-awesome-skills devcontainer-setup has cleaner architecture (Safe risk)
+  - Docker Compose orchestration skill has 641 installs (manutej/luxor-claude-marketplace)
+  - Devcontainer spec has 4 lifecycle stages: onCreateCommand → updateContentCommand → postCreateCommand → postStartCommand/postAttachCommand
+  - Lifecycle command failure prevents subsequent commands from executing
+  - Both string, array, and object (parallel) execution formats supported
+gaps: |
+  - No publicly available devcontainer+compose integration skill found in skills.sh
+  - netalertx idempotent-setup repo is private (cannot review)
+  - Limited examples of observability stack integration in marketplace skills
+  - No explicit lifecycle event patterns for sidecar service health monitoring
+evidence: |
+  Top devcontainer skills (775+ installs):
+    - trailofbits/skills@devcontainer-setup (775 installs, High Risk per Gen/Snyk)
+    - sickn33/antigravity-awesome-skills@devcontainer-setup (17 installs, Safe per Gen)
+      Skills SKILL.md covers: project detection, language-specific setup (Python/Node/Rust/Go)
+      Multi-language priority: Python (primary) → Node/TypeScript → Rust → Go
+      Extensions per language (Python: ms-python, ruff; Node: eslint, prettier; Rust: rust-analyzer)
+
+  Docker Compose Orchestration skill (manutej/luxor-claude-marketplace):
+    641 installs, Safe risk assessment
+    Covers: health checks (HTTP/database/custom), service dependencies, networking patterns
+    Examples include: MERN, LAMP, Next.js+PG+Redis stacks
+    Health check patterns per database type:
+      - PostgreSQL: pg_isready -U postgres
+      - MySQL: mysqladmin ping
+      - MongoDB: mongosh --eval "db.adminCommand('ping')"
+      - Redis: redis-cli ping
+
+  Devcontainer Lifecycle (containers.dev spec):
+    1. onCreateCommand - first setup (no user-scoped access)
+    2. updateContentCommand - refresh on content changes (periodic for caching/prebuild)
+    3. postCreateCommand - final setup (user-scoped secrets available)
+    4. postStartCommand - runs EVERY container start (ideal for sidecar monitoring)
+    5. postAttachCommand - runs on tool attachment
+
+  Command failure semantics:
+    - If postCreateCommand fails → postStartCommand/postAttachCommand skipped
+    - Array format bypasses shell (direct execution)
+    - String format executes in /bin/sh (allows && chaining)
+    - Object format allows parallel execution
+
+  Base template includes (sickn33 skill):
+    - Claude Code with marketplace plugins
+    - Python 3.13 via uv
+    - Node 22 via fnm
+    - Network isolation (iptables, ipset, NET_ADMIN cap)
+    - CLI tools: ripgrep, fd, fzf, tmux, git-delta, ast-grep
+implication: |
+  1. For devcontainer-specialist agent:
+     - Use sickn33 approach (language detection → extensions → postCreateCommand chaining)
+     - Model base template structure with network/observability stack pre-installed
+
+  2. For compose integration in lifecycle hooks:
+     - postStartCommand is optimal for sidecar health monitoring (runs every start)
+     - Parallel object syntax allows concurrent service readiness checks
+     - Database health checks MUST match container type (pg_isready vs mysql vs mongo)
+     - Network isolation requires NET_ADMIN; verify devcontainer has this capability
+
+  3. For observability stack setup:
+     - Compose pattern: frontend/backend networks separated from monitoring
+     - Use healthcheck.test with appropriate timeouts per service type
+     - postStartCommand can orchestrate service readiness: postgres→redis→app→monitoring
+     - Consider persisting monitoring data via volume mounts (prometheus.db, grafana dashboards)
+
+  4. Lifecycle command structure for full stack:
+     postCreateCommand: install deps, build images, compose pull
+     postStartCommand: verify service health, configure monitoring scrapers, validate readiness
+
+tags: [devcontainer, lifecycle, docker-compose, healthcheck, marketplace-skills, observability]
+status: discovered

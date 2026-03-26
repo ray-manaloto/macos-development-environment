@@ -20,6 +20,10 @@
           {
             "type": "command",
             "command": "uv run mde-py hooks guard-install"
+          },
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks guard-dotfile-edit"
           }
         ]
       }
@@ -31,6 +35,19 @@
           {
             "type": "command",
             "command": "uv run mde-py hooks log-edit-outcome"
+          },
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks validate-plugins"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks remind-chezmoi-commit"
           }
         ]
       }
@@ -110,6 +127,22 @@
     "engineering@knowledge-work-plugins": true,
     "remember@claude-plugins-official": true,
     "design@knowledge-work-plugins": true,
-    "nimble@knowledge-work-plugins": true
+    "nimble@knowledge-work-plugins": true,
+    "voltagent-lang@voltagent-subagents": true,
+    "voltagent-dev-exp@voltagent-subagents": true,
+    "voltagent-qa-sec@voltagent-subagents": true,
+    "chezmoi-toolkit@rsm-subagents": true,
+    "devcontainer-toolkit@rsm-subagents": true,
+    "hk-toolkit@rsm-subagents": true,
+    "mise-toolkit@rsm-subagents": true,
+    "guide@claude-community": true
+  },
+  "extraKnownMarketplaces": {
+    "rsm-subagents": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/rsm-subagents"
+      }
+    }
   }
 }

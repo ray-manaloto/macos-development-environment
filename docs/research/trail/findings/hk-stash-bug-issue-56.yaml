@@ -1,0 +1,46 @@
+---
+id: hk-stash-bug-issue-56
+date: "2026-03-25"
+category: bug-fix
+confidence: 0.95
+source: direct-investigation
+tags: [hk, git-hooks, stash, pre-commit]
+
+title: "hk v1.39.0 stash restore fails with new staged files"
+
+summary: |
+  hk's manual-unstash logic (src/git.rs:1281) treats `git cat-file -p stash@{0}^1:<path>`
+  failures as hard errors when the file is newly staged (doesn't exist in prior commits).
+  The `stash_untracked=false` config is read but does not prevent the issue because
+  the stash restore path probes stash@{0}^1 for ALL stashed files regardless.
+
+root_cause: |
+  When staging new files that have never been committed:
+  1. hk stashes unstaged changes with `git stash push --keep-index --include-untracked`
+  2. The stash includes the newly staged files in its index commit (stash@{0}^2)
+  3. During restore, hk probes `stash@{0}^1` (the parent commit before stash) for each file
+  4. New files don't exist in the parent commit, causing `fatal: path ... not in stash@{0}^1`
+  5. hk treats any `fatal:` output as a hard failure even though it correctly falls back
+     to `has_base=false` merge logic
+
+approaches_tried:
+  - setting: "git config --local hk.stashUntracked false"
+    result: "Config read correctly (stash_untracked: false in dump) but stash still used --include-untracked. Bug: setting not applied to stash command."
+  - setting: "stash = 'patch-file' in hk.pkl"
+    result: "Same failure - patch-file mode still uses same manual-unstash logic"
+  - setting: "stash = 'none' in hk.pkl"
+    result: "SUCCESS - no stash, no restore failure. All hooks pass (6/6 quality gate)."
+
+fix_applied:
+  file: hk.pkl
+  change: "stash = 'git' -> stash = 'none'"
+  tradeoff: |
+    Hooks see working tree content instead of staged-only content.
+    Acceptable because: (1) ruff/ruff_format use --force-exclude on specific files,
+    (2) mde-quality runs full-project checks, (3) the stash restore failure was
+    destroying working state which is worse than seeing unstaged changes.
+
+upstream_bug: true
+upstream_repo: jdx/hk
+upstream_version: "1.39.0"
+upstream_location: "src/git.rs:1281 (manual-unstash error handling)"

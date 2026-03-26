@@ -22,7 +22,7 @@ local quality_gate = new Mapping<String, Step> {
 hooks {
     ["pre-commit"] {
         fix = true
-        stash = "git"
+        stash = "none"
         steps = new Mapping { ...fixers ...quality_gate }
     }
     ["fix"] {

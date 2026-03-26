@@ -1,0 +1,119 @@
+id: finding-devcontainer-cli-reference
+timestamp: "2026-03-26T02:20:00Z"
+source: |
+  - https://github.com/devcontainers/cli (official CLI repo)
+  - https://containers.dev/implementors/features/ (features specification)
+  - https://containers.dev/implementors/json_reference/ (metadata reference)
+agent: researcher
+finding_type: reference
+confidence: confirmed
+confident_about: |
+  - devcontainer CLI v0.1.0+ supports: build, up, run-user-commands, read-configuration, exec, features, templates
+  - CLI installers available: shell script (x64/arm64), npm, source build
+  - Features API supports: install order, lifecycle hooks, dependencies, legacy IDs
+  - run-user-commands executes lifecycle scripts (postCreateCommand, postStartCommand, etc.)
+  - read-configuration outputs current devcontainer.json state for workspace
+gaps: |
+  - devcontainer stop/down commands are planned but not yet implemented
+  - Limited documentation on run-user-commands behavior with Docker Compose sidecars
+  - No explicit guidance on health-check ordering in CLI when using compose integration
+evidence: |
+  CLI Commands Status (devcontainers/cli main branch):
+    IMPLEMENTED:
+      - devcontainer up --workspace-folder <path>
+        Creates and runs dev container with devcontainer.json settings
+        Output: {outcome, containerId, remoteUser, remoteWorkspaceFolder}
+      - devcontainer build [path]
+        Enables building/pre-building images
+        Example: devcontainer build --workspace-folder <path>
+      - devcontainer run-user-commands
+        Runs lifecycle commands (postCreateCommand, etc.)
+        Executes within the container with full devcontainer.json properties applied
+      - devcontainer read-configuration
+        Outputs current configuration for workspace
+        Returns JSON representation of resolved devcontainer.json
+      - devcontainer exec <cmd> [args..]
+        Executes command in running container
+        Applies userEnvProbe, remoteUser, remoteEnv, other properties
+      - devcontainer features <...>
+        Tools to assist in authoring and testing Dev Container Features
+        Includes testing/validation subcommands
+      - devcontainer templates <...>
+        Tools to assist in authoring and testing Dev Container Templates
+
+    PLANNED (not implemented):
+      - devcontainer stop
+      - devcontainer down (stop + delete containers)
+
+  Installation Methods:
+    1. Shell script (fastest, bundles Node.js):
+       curl -fsSL https://raw.githubusercontent.com/devcontainers/cli/main/scripts/install.sh | sh
+       Supports: --version, --prefix, --update, --uninstall
+       Compatible: Linux x64/arm64, macOS x64/arm64
+
+    2. npm package:
+       npm install -g @devcontainers/cli
+       Requires: Python + C/C++ build tools
+
+    3. From source:
+       Requires Node.js + yarn
+       yarn compile (creates node devcontainer.js)
+
+  Features API (devcontainer-feature.json):
+    Lifecycle Hooks in Features:
+      - onCreateCommand (same as devcontainer.json)
+      - updateContentCommand
+      - postCreateCommand
+      - postStartCommand
+      - postAttachCommand
+      Each feature hook mirrors devcontainer.json behavior
+
+    Feature Dependencies:
+      - installsAfter: array of Feature IDs that must execute before this one
+      - mounts: Feature-specific volume mounts
+      - capabilities: Linux capabilities (CAP_NET_ADMIN, CAP_SYS_PTRACE, etc.)
+      - privileged: boolean for privileged container mode
+      - init: boolean to enable init process
+      - userEnvProbe: probe strategy for environment variables
+
+    Feature Installation Order:
+      - Features in same devcontainer.json install in order declared
+      - installsAfter overrides default order for soft dependencies
+      - Failed feature prevents subsequent features from installing
+
+  read-configuration Output Example:
+    {
+      "image": "...",
+      "dockerfile": "...",
+      "features": { "ghcr.io/devcontainers/features/python:1": {} },
+      "postCreateCommand": "...",
+      "customizations": { "vscode": { "extensions": [...] } },
+      ...
+    }
+
+implication: |
+  1. For devcontainer-specialist agent:
+     - Use `devcontainer up` for container lifecycle management
+     - Use `devcontainer read-configuration` to validate config before provisioning
+     - Use `devcontainer exec` for post-create validation commands
+
+  2. For devcontainer+compose integration:
+     - devcontainer CLI does NOT directly manage docker-compose services
+     - Compose must be launched via postCreateCommand or dockerfile ENTRYPOINT
+     - run-user-commands can orchestrate compose readiness after services start
+     - Features can declare installsAfter dependencies for ordered setup
+
+  3. For observability stack deployment:
+     - Use features/docker:latest feature to ensure docker CLI available in container
+     - postCreateCommand: docker compose up -d (launch monitoring stack)
+     - postStartCommand: validate prometheus/grafana readiness (recommended)
+     - Features with NET_ADMIN capability for network isolation tools
+
+  4. For skill development:
+     - Skills should use `devcontainer up` as primary entry point
+     - Validate with `devcontainer read-configuration` before applying features
+     - Test features with `devcontainer features test` subcommand
+     - Compose integration should live in postCreateCommand, not in feature lifecycle
+
+tags: [devcontainer-cli, lifecycle-hooks, features-api, docker-compose, orchestration]
+status: discovered

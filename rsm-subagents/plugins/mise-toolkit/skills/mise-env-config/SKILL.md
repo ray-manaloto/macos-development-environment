@@ -76,7 +76,7 @@ For advanced secrets management, use fnox (jdx's secrets manager):
 
 ```toml
 [env]
-_.file = "fnox exec --env-file"   # Load secrets from fnox
+_.file = { path = ".env", redact = true }  # Load from .env file (use fnox to populate it)
 ```
 
 See the **mise-jdx-ecosystem** skill for fnox integration details.

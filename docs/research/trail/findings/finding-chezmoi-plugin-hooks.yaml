@@ -1,0 +1,366 @@
+id: finding-chezmoi-plugin-hooks
+timestamp: "2026-03-25T09:20:00Z"
+source: |
+  https://www.chezmoi.io/user-guide/command-overview/
+  https://www.chezmoi.io/reference/configuration-file/hooks/
+  https://code.claude.com/docs/en/hooks
+  rsm-subagents/plugins/mise-toolkit/hooks/hooks.json
+  rsm-subagents/plugins/mise-toolkit/hooks/scripts/guard-install.sh
+  https://github.com/hesreallyhim/awesome-claude-code
+  https://github.com/rohitg00/awesome-claude-code-toolkit
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  - Claude Code hook events available (22 events documented in v2.1.81)
+  - PreToolUse/PostToolUse hooks have blocking capability via exit codes
+  - Stop hook fires when user interrupts, can block with exit code
+  - chezmoi ships its own hook system (pre/post commands per CLI event)
+  - mise-toolkit plugin demonstrates guard pattern (guard-install.sh blocks direct installs)
+  - Three distinct chezmoi hook opportunities for Claude Code plugin:
+    1. PreToolUse hook on Bash: prevent direct edits to deployed dotfiles
+    2. PostToolUse hook on Bash: remind user to run chezmoi apply after source edits
+    3. Stop hook: prompt user to commit chezmoi changes before interrupting
+
+gaps: |
+  - No existing Claude Code plugins found that hook into chezmoi workflows
+  - Community awesome-claude-code collections don't list chezmoi-specific hooks
+  - Exact stdin schema for PreToolUse/PostToolUse/Stop hooks not yet extracted
+  - Integration between chezmoi's native hooks (pre/post) and Claude Code hooks not explored
+  - Git hook patterns for committing chezmoi changes not yet researched
+  - Chezmoi + mise interaction in hook context (tool configs in dotfiles) not explored
+  - Performance implications of PreToolUse hook on every Bash command not measured
+  - Matcher patterns for PreToolUse hook filtering (home directory paths vs system paths) unclear
+
+evidence: |
+  **Claude Code Hook System (22 events, v2.1.81):**
+  - PreToolUse: fires before ANY tool execution, can block with exit code 1
+  - PostToolUse: fires after successful tool, cannot block but can set exit code
+  - Stop: fires when user clicks stop button, CAN block/prevent stop
+  - These are blocking events; blocking events fire before/during user action
+  - Matcher field available: "matcher": "Bash" restricts hook to specific tools
+
+  **Chezmoi Native Hook Events (from chezmoi.io):**
+  - Each CLI command (add, edit, apply, update) can have pre/post hooks
+  - Hooks execute via shell command or script
+  - Environment variables available: CHEZMOI=1, CHEZMOI_COMMAND, CHEZMOI_COMMAND_DIR, CHEZMOI_ARGS
+  - Even run on --dry-run
+  - Example: [hooks.apply.post] command="echo" args=["post-apply-hook"]
+
+  **Mise-Toolkit Plugin Guard Pattern (rsm-subagents/plugins/mise-toolkit):**
+  Location: hooks/scripts/guard-install.sh
+  Strategy: PreToolUse:Bash hook intercepts direct install commands (brew install, npm -g, pipx install, etc.)
+  Implementation:
+    - Pattern matching on blocked commands: BLOCKED_PATTERNS array
+    - Regex matching: grep -qi against command string
+    - Exception handling: pip install -e (editable local) is allowed
+    - Error message: clear explanation + suggestion to use mise
+    - Exit code 1: blocks tool execution
+  Execution via hk.json:
+    ```json
+    {
+      "hooks": {
+        "PreToolUse": [
+          {
+            "matcher": "Bash",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/guard-install.sh \"${TOOL_INPUT}\""
+              }
+            ]
+          }
+        ]
+      }
+    }
+    ```
+
+  **Chezmoi Daily Command Workflow:**
+  - chezmoi add $FILE: home → source
+  - chezmoi edit $FILE: edit source copy in $EDITOR
+  - chezmoi status: summary of pending changes
+  - chezmoi diff: detailed diff
+  - chezmoi apply: source → home
+  - chezmoi cd: shell into source directory
+
+  Protection points in Claude Code:
+  1. When user edits ~/.bashrc directly, PreToolUse could say "use chezmoi edit instead"
+  2. When user runs chezmoi apply, PostToolUse could remind "did you commit changes to git?"
+  3. When user stops session, Stop hook could say "don't forget to commit chezmoi changes"
+
+  **Community Awesome Lists (No Chezmoi Hooks Found):**
+  - hesreallyhim/awesome-claude-code (32.2K⭐): Lists 0 chezmoi-specific hooks
+  - rohitg00/awesome-claude-code-toolkit (899⭐): 19 hooks documented, 0 chezmoi-specific
+  - ccplugins/awesome-claude-code-plugins (646⭐): Lists hooks and plugins, 0 chezmoi integration
+  - davepoon/buildwithclaude (2.6K⭐): Curated hub, 0 chezmoi hooks
+  Conclusion: No existing community implementations to reference
+
+implication: |
+  1. **Three distinct, high-value hooks are implementable for chezmoi Claude Code plugin:**
+
+     a) **PreToolUse:Bash "prevent direct home-dir edits" hook** (HIGHEST priority)
+        - Intercepts edit/vim/nano/sed commands on files in ~/ that are chezmoi-managed
+        - Suggests: "use chezmoi edit ~/.bashrc instead of direct edit"
+        - Pattern: blocks if target matches files in chezmoi source state
+        - Implementation: maintain list of chezmoi-managed paths, pattern-match stdin
+        - Risk: false positives on unmanaged dotfiles; would need chezmoi verify output to avoid noise
+        - Value: prevents drift and workflow confusion (agent might edit deployed file instead of source)
+
+     b) **PostToolUse:Bash "remind commit after chezmoi apply" hook** (MEDIUM priority)
+        - Fires after `chezmoi apply` succeeds
+        - Reminds: "chezmoi changes should be committed to git"
+        - Non-blocking, just a prompt/notification
+        - Implementation: detect "chezmoi apply" in TOOL_INPUT, fire reminder
+        - Value: keeps dotfiles repo synchronized with deployed state
+
+     c) **Stop "commit chezmoi before exit" hook** (MEDIUM priority)
+        - Fires when user clicks stop button
+        - Prompts: "Do you want to commit pending chezmoi changes before stopping?"
+        - CAN block the stop (exit code 1 = prevent stop)
+        - Implementation: check `git status` in chezmoi source, prompt if dirty
+        - Value: prevents accidentally losing uncommitted dotfiles changes
+        - Risk: annoying if user *intended* to not commit (power-off, debug, etc.)
+
+  2. **Guard pattern from mise-toolkit is directly applicable:**
+
+     - PreToolUse hook matches tool name ("Bash" in hk.json matcher field)
+     - Regex pattern matching on TOOL_INPUT or stdin
+     - Exit code 1 blocks execution
+     - Clear error message + suggestion
+     - This exact pattern can be reused for chezmoi protection
+
+  3. **Integration consideration: chezmoi's native hooks vs Claude Code hooks:**
+
+     - chezmoi already has pre/post hooks (in .chezmoi.toml or chezmoi.toml)
+     - Claude Code hooks fire BEFORE chezmoi CLI invocation
+     - Recommendation: use Claude Code hooks for PREVENTION (stop bad commands)
+     - Use chezmoi native hooks for REMEDIATION (auto-git-commit after apply, etc.)
+     - No conflict; they compose well
+
+  4. **Matcher field behavior:**
+
+     - PreToolUse matcher="Bash" catches ALL Bash tool uses (too broad)
+     - Alternative: could match on specific commands if TOOL_INPUT includes command
+     - Recommendation: filter in hook script (guard-install.sh pattern) rather than matcher
+
+  5. **Stop hook blocking implications:**
+
+     - Stop hook can prevent user from interrupting session
+     - Using it to block session exit is INTRUSIVE
+     - Better approach: use as NON-blocking PostToolUse reminder, not Stop blocking
+     - If using Stop: make the decision VERY clear ("Are you sure? 3 uncommitted files in .chezmoisource/")
+
+tags:
+  - chezmoi-plugin
+  - claude-code-hooks
+  - preteoluse
+  - posttooluse
+  - stop-hook
+  - guard-pattern
+  - mise-toolkit
+  - dotfiles-workflow
+  - hook-implementation
+  - git-workflow
+  - chezmoi-apply
+  - home-directory-protection
+  - workflow-reminders
+  - blocking-hooks
+  - non-blocking-hooks
+  - tool-input-matching
+
+status: discovered
+
+# Detailed Hook Recommendation Summary
+
+hook_recommendations:
+  - hook_type: PreToolUse
+    matcher: Bash
+    priority: HIGH
+    name: prevent-direct-dotfile-edits
+    purpose: Stop agents from editing deployed dotfiles directly; enforce chezmoi workflow
+    trigger_condition: |
+      Bash command attempts to edit/modify files that are chezmoi-managed
+      Examples: vim ~/.bashrc, nano ~/.zshrc, sed ~/.config/nvim/init.vim
+    implementation_approach: |
+      1. On PreToolUse Bash, extract command and target paths from TOOL_INPUT
+      2. Cross-reference target against chezmoi source state (run chezmoi verify)
+      3. If target is managed: block (exit code 1) + suggest chezmoi edit
+      4. If target is not managed: allow (exit code 0)
+    blocking_behavior: "exit code 1 blocks tool execution"
+    user_experience: |
+      User: vim ~/.bashrc
+      Plugin: "BLOCKED: ~/.bashrc is managed by chezmoi.
+               Use: chezmoi edit ~/.bashrc
+               Then: chezmoi apply"
+    gotchas: |
+      - Performance: chezmoi verify on every Bash command could be slow
+      - False positives: unmanaged files in ~/ would be allowed
+      - Race condition: if user adds new file to chezmoi during session
+      Mitigations:
+        - Cache chezmoi managed paths at session start
+        - Provide --bypass flag for emergency edits
+        - Document in chezmoi-config skill
+    metrics: |
+      Success: agents never edit deployed dotfiles directly; all changes go through source
+      Failure: performance impact if PreToolUse is too slow (baseline: mise-toolkit guards are <100ms)
+
+  - hook_type: PostToolUse
+    matcher: Bash
+    priority: MEDIUM
+    name: remind-chezmoi-commit
+    purpose: Remind agents to commit changes to chezmoi source repo
+    trigger_condition: |
+      Bash command is `chezmoi apply` (successful execution)
+    implementation_approach: |
+      1. On PostToolUse Bash (after success), check if command was `chezmoi apply`
+      2. If yes, run: git status in chezmoi source directory
+      3. If any changes are staged/unstaged: emit reminder notification
+      4. Include list of changed files in reminder
+    blocking_behavior: "none (observational only, exit code 0)"
+    user_experience: |
+      User runs: chezmoi apply
+      Plugin: "[Post-Apply Reminder] Chezmoi changes deployed.
+               Remember to commit your changes:
+               - .chezmoisource/dot_bashrc (modified)
+               - .chezmoisource/dot_config/nvim/init.vim (added)
+
+               git add .chezmoisource/
+               git commit -m 'config: update bashrc and nvim config'"
+    gotchas: |
+      - Could be noisy if user runs chezmoi apply multiple times per session
+      - PostToolUse fires after success but we need git status (two commands)
+      - Reminder is informational only; agent might ignore
+    metrics: |
+      Success: git status in .chezmoisource/ shows 0 uncommitted files post-apply
+      Soft failure: agents see reminder but don't commit (observable via git log)
+
+  - hook_type: Stop
+    matcher: null
+    priority: LOW
+    name: offer-commit-before-exit (optional / non-blocking variant)
+    purpose: Optional notification when user is about to stop session with uncommitted chezmoi changes
+    trigger_condition: |
+      User clicks stop button AND chezmoi source directory has uncommitted changes
+    implementation_approach: |
+      Option A (Non-blocking, RECOMMENDED):
+        1. Fire Stop hook, check git status in chezmoi source
+        2. If dirty, emit notification with commit suggestion
+        3. exit code 0 (allow stop)
+
+      Option B (Blocking, INTRUSIVE, NOT recommended):
+        1. Fire Stop hook, check git status
+        2. If dirty, exit code 1 (block stop, force user to commit first)
+        3. User experience: "Cannot stop: 2 uncommitted files in .chezmoisource/. Commit or discard."
+    blocking_behavior: |
+      Option A: exit code 0 (allow), just notifies
+      Option B: exit code 1 (block), prevents stop until changes committed
+    user_experience_a: |
+      User clicks stop
+      Plugin: "[Session Stop] You have uncommitted chezmoi changes:
+               - .chezmoisource/dot_bashrc
+               - .chezmoisource/dot_zshrc
+
+               Remember to run: git add .chezmoisource/ && git commit"
+      Result: session stops normally
+
+    user_experience_b: |
+      User clicks stop
+      Plugin: "BLOCKED: Cannot stop with uncommitted chezmoi changes.
+               Run: git add .chezmoisource/ && git commit"
+      Result: session continues, user forced to commit or lose changes
+    recommendation: |
+      Use Option A (non-blocking reminder) — less intrusive
+      Blocking Stop hook is too heavy-handed; use PostToolUse reminder instead
+      If blocking is needed, better to enforce via git hooks in chezmoi repo
+
+  - hook_type: PreToolUse
+    matcher: Bash
+    priority: MEDIUM-OPTIONAL
+    name: warn-on-direct-mise-config-edit
+    purpose: Prevent editing ~/.config/mise/config.toml directly; enforce chezmoi template
+    trigger_condition: |
+      Bash command attempts to edit ~/.config/mise/config.toml
+      Pattern: vim/nano/sed on ~/.config/mise/config.toml
+    implementation_approach: |
+      1. Detect if TOOL_INPUT contains ~/.config/mise/config.toml
+      2. Suggest using chezmoi edit instead (.chezmoisource/dot_config/mise/config.toml.tmpl)
+      3. block (exit code 1)
+    note: |
+      This is a SPECIFIC case of the general prevent-direct-edits hook above.
+      Implementation: could be part of same hook with special handling for mise config
+      OR separate hook focused specifically on mise config (if that's the priority)
+      Recommendation: include in general hook, call out mise specifically in error message
+
+# Architecture Recommendations
+
+hook_file_structure:
+  description: "Recommended file organization for chezmoi plugin hooks"
+  structure: |
+    rsm-subagents/plugins/chezmoi-plugin/
+    ├── hooks/
+    │   ├── hooks.json (or hk.json) — hook configuration
+    │   ├── scripts/
+    │   │   ├── prevent-direct-dotfile-edits.sh — PreToolUse Bash guard
+    │   │   ├── remind-chezmoi-commit.sh — PostToolUse Bash reminder
+    │   │   ├── offer-commit-on-stop.sh — Stop hook (optional)
+    │   │   └── lib/
+    │   │       ├── chezmoi-helpers.sh — utility functions
+    │   │       └── git-helpers.sh — git status checks
+    │   └── README.md — hook documentation
+    └── SKILL.md — main plugin skill file (references hooks/)
+
+hooks_json_template: |
+  {
+    "hooks": {
+      "PreToolUse": [
+        {
+          "matcher": "Bash",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/prevent-direct-dotfile-edits.sh",
+              "timeout": 5000
+            }
+          ]
+        }
+      ],
+      "PostToolUse": [
+        {
+          "matcher": "Bash",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/remind-chezmoi-commit.sh",
+              "timeout": 3000
+            }
+          ]
+        }
+      ]
+    }
+  }
+
+implementation_checklist:
+  - [ ] Extract PreToolUse stdin schema to understand TOOL_INPUT format
+  - [ ] Determine if PostToolUse receives TOOL_INPUT or different fields
+  - [ ] Implement prevent-direct-dotfile-edits.sh with chezmoi source state caching
+  - [ ] Test performance of PreToolUse hook (should complete in <100ms)
+  - [ ] Implement remind-chezmoi-commit.sh with git status integration
+  - [ ] Document hook error messages and suggestions in SKILL.md
+  - [ ] Add bypass mechanism (e.g., CHEZMOI_PLUGIN_BYPASS env var) for emergencies
+  - [ ] Consider cross-reference to mise-toolkit's guard-install.sh pattern
+  - [ ] Test interaction with existing chezmoi native hooks (no conflicts)
+  - [ ] Add hook to source catalog and link from chezmoi-config skill
+
+similar_patterns_observed:
+  - Guard pattern from mise-toolkit/hooks: directly reusable
+  - PreToolUse matcher + blocking: same pattern as prevent-direct-push.py example in docs
+  - Error message + suggestion: matches mise-toolkit's user-friendly error messages
+  - Timeout 5000ms: consistent with mise-toolkit guard
+
+next_research_phases:
+  - Extract PreToolUse/PostToolUse/Stop stdin schema from Agent SDK types
+  - Search for existing chezmoi git hooks (chezmoi/.git/hooks) to avoid conflicts
+  - Research chezmoi's 'git-auto-commit' hook for coordination patterns
+  - Evaluate performance of PreToolUse on every Bash command (caching strategy needed)
+  - Look for chezmoi + Claude Code integration in any other plugin repos
+  - Test hook timeout values empirically

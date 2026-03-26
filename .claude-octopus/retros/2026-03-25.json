@@ -1,0 +1,41 @@
+{
+  "date": "2026-03-25",
+  "window": "24h",
+  "total_commits": 21,
+  "lines_added": 11262,
+  "lines_removed": 593,
+  "prs_merged": 0,
+  "contributors": 1,
+  "ai_assisted_commits": 21,
+  "test_ratio": 0.0,
+  "top_hotspots": [
+    ".chezmoisource/dot_config/mise/config.toml.tmpl",
+    "src/mde/cli.py",
+    "src/mde/debate/invoke.py",
+    "rsm-subagents/.claude-plugin/marketplace.json"
+  ],
+  "sessions": 1,
+  "avg_session_minutes": 360,
+  "commit_types": {
+    "feat": 11,
+    "fix": 10,
+    "refactor": 0,
+    "test": 0,
+    "chore": 0,
+    "docs": 0,
+    "other": 0
+  },
+  "learnings": {
+    "npx_violations_found": 3,
+    "npx_violations_fixed": 3,
+    "new_sources_added": ["skillfish", "skillport"],
+    "new_plugins_created": ["hk-toolkit"],
+    "new_modules_created": ["src/mde/debate/", "src/mde/autonomous_review.py"],
+    "cli_syntax_corrections": {
+      "codex": "codex exec --full-auto (not codex --prompt)",
+      "gemini": "printf | gemini -p '' -o text --approval-mode yolo (not gemini --prompt)"
+    },
+    "issues_closed": [55, 56],
+    "debate_noise_patterns_added": 6
+  }
+}

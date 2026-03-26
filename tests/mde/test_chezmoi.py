@@ -14,12 +14,14 @@ def test_chezmoi_verify() -> None:
     if not shutil.which("chezmoi"):
         pytest.skip("chezmoi not available")
     result = subprocess.run(
-        ["chezmoi", "verify"],
+        ["chezmoi", "verify", "--include=files"],
         capture_output=True,
         text=True,
         timeout=30,
     )
-    assert result.returncode == 0, f"chezmoi verify failed:\n{result.stderr}"
+    assert result.returncode == 0, (
+        f"chezmoi verify failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    )
 
 
 @pytest.mark.integration

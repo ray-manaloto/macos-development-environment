@@ -50,6 +50,11 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     validate_p.add_argument("--docker", action="store_true", help="Docker validation only")
     validate_p.add_argument("--package-managers", action="store_true", help="Dedup check only")
     validate_p.add_argument("--skills", action="store_true", help="Skill frontmatter only")
+    validate_p.add_argument(
+        "--plugins",
+        action="store_true",
+        help="Plugin validation only",
+    )
 
     # update
     sub.add_parser("update", help="Run maintenance cycle")
@@ -88,6 +93,30 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     team_p.add_argument("name", help="Team name")
     team_p.add_argument("--dry-run", action="store_true", help="Dry run mode")
 
+    # review
+    review_p = sub.add_parser("review", help="Run autonomous multi-model code review")
+    review_p.add_argument("finding", help="Finding file (YAML) or description string")
+    review_p.add_argument(
+        "--autonomy",
+        choices=["supervised", "semi-autonomous", "autonomous"],
+        default="semi-autonomous",
+        help="Autonomy mode (default: semi-autonomous)",
+    )
+    review_p.add_argument("--skip-quality", action="store_true", help="Skip quality gate")
+
+    # debate
+    debate_p = sub.add_parser("debate", help="Multi-model debate via CLI backends")
+    debate_p.add_argument("prompt", help="Debate prompt or question")
+    debate_p.add_argument(
+        "--model",
+        choices=["codex", "gemini", "all"],
+        default="all",
+        help="Model to invoke (default: all)",
+    )
+    debate_p.add_argument("--output-dir", help="Save results as JSON to this directory")
+    debate_p.add_argument("--timeout", type=int, default=300, help="Timeout per model (seconds)")
+    debate_p.add_argument("--json", action="store_true", help="JSON output for agent consumption")
+
     # prune
     sub.add_parser("prune", help="Prune stale globals and orphan mise versions")
 
@@ -125,9 +154,12 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     hooks_sub.add_parser("log-edit-outcome", help="PostToolUse logger")
     hooks_sub.add_parser("log-agent-event", help="SubagentStart/SubagentStop logger")
     hooks_sub.add_parser("guard-install", help="PreToolUse install guard")
+    hooks_sub.add_parser("guard-dotfile-edit", help="PreToolUse dotfile edit guard")
+    hooks_sub.add_parser("remind-chezmoi-commit", help="PostToolUse chezmoi reminder")
     hooks_sub.add_parser("session-start", help="SessionStart context setup")
     hooks_sub.add_parser("post-compact", help="PostCompact research state save")
     hooks_sub.add_parser("team-quality-gate", help="Per-team quality gate validation")
+    hooks_sub.add_parser("validate-plugins", help="PostToolUse rsm-subagents validator")
     _SUBPARSERS["hooks"] = hooks_p
 
     # research
@@ -210,12 +242,13 @@ def _cmd_validate(args: argparse.Namespace) -> int:
             docker_only=args.docker,
             package_managers_only=getattr(args, "package_managers", False),
             skills_only=args.skills,
+            plugins_only=args.plugins,
         )
         ctx["result"] = result
         return result
 
 
-def _cmd_update(_args: argparse.Namespace) -> int:
+def _cmd_update(_: argparse.Namespace) -> int:
     with _traced_command("update") as ctx:
         from mde.maintain.update import run_update
 
@@ -224,7 +257,7 @@ def _cmd_update(_args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_verify(_args: argparse.Namespace) -> int:
+def _cmd_verify(_: argparse.Namespace) -> int:
     with _traced_command("verify") as ctx:
         from mde.validate import validate_all
 
@@ -233,7 +266,7 @@ def _cmd_verify(_args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_status(_args: argparse.Namespace) -> int:
+def _cmd_status(_: argparse.Namespace) -> int:
     with _traced_command("status") as ctx:
         from mde.status.dashboard import show_dashboard
 
@@ -242,7 +275,7 @@ def _cmd_status(_args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_doctor(_args: argparse.Namespace) -> int:
+def _cmd_doctor(_: argparse.Namespace) -> int:
     with _traced_command("doctor") as ctx:
         from mde.status.health import run_doctor
 
@@ -251,7 +284,7 @@ def _cmd_doctor(_args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_drift(_args: argparse.Namespace) -> int:
+def _cmd_drift(_: argparse.Namespace) -> int:
     with _traced_command("drift") as ctx:
         from mde.maintain.drift import check_drift
 
@@ -290,7 +323,56 @@ def _cmd_team(args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_prune(_args: argparse.Namespace) -> int:
+def _cmd_review(args: argparse.Namespace) -> int:
+    with _traced_command("review") as ctx:
+        from mde.autonomous_review import cli_review
+
+        result = cli_review(args)
+        ctx["result"] = result
+        return result
+
+
+def _cmd_debate(args: argparse.Namespace) -> int:
+    with _traced_command("debate") as ctx:
+        from pathlib import Path
+
+        from mde.debate.invoke import invoke_all
+
+        model_arg: str = args.model
+        models = ["codex", "gemini"] if model_arg == "all" else [model_arg]
+        output_dir = Path(args.output_dir) if args.output_dir else None
+
+        results = invoke_all(
+            prompt=args.prompt,
+            models=models,
+            timeout=args.timeout,
+            output_dir=output_dir,
+        )
+
+        import json
+        import sys
+
+        json_mode = getattr(args, "json", False)
+
+        if json_mode:
+            # Machine-readable JSON output for agent consumption
+            sys.stdout.write(json.dumps([r.model_dump() for r in results], indent=2))
+            sys.stdout.write("\n")
+        else:
+            # Human-readable output
+            for r in results:
+                status = "OK" if r.success else "FAIL"
+                sys.stderr.write(f"[{r.model}] {status} ({r.duration_seconds}s)\n")
+                if r.response:
+                    sys.stderr.write(f"{r.response[:500]}\n\n")
+                if r.error:
+                    sys.stderr.write(f"  Error: {r.error}\n")
+
+        ctx["result"] = 0 if all(r.success for r in results) else 1
+        return ctx["result"]
+
+
+def _cmd_prune(_: argparse.Namespace) -> int:
     with _traced_command("prune") as ctx:
         from mde.maintain.prune import run_prune
 
@@ -299,7 +381,7 @@ def _cmd_prune(_args: argparse.Namespace) -> int:
         return result
 
 
-def _cmd_remediate(_args: argparse.Namespace) -> int:
+def _cmd_remediate(_: argparse.Namespace) -> int:
     with _traced_command("remediate") as ctx:
         from mde.maintain.remediate import run_remediate
 
@@ -381,9 +463,12 @@ _HOOKS_DISPATCH: dict[str, tuple[str, str]] = {
     "log-edit-outcome": ("mde.hooks.log_outcome", "log_edit_outcome"),
     "log-agent-event": ("mde.hooks.log_agent_event", "log_agent_event"),
     "guard-install": ("mde.hooks.guard_install", "guard_install"),
+    "guard-dotfile-edit": ("mde.hooks.guard_dotfile_edit", "guard_dotfile_edit"),
+    "remind-chezmoi-commit": ("mde.hooks.remind_chezmoi_commit", "remind_chezmoi_commit"),
     "session-start": ("mde.hooks.session_start", "session_start"),
     "post-compact": ("mde.hooks.post_compact", "post_compact"),
     "team-quality-gate": ("mde.hooks.team_quality_gates", "team_quality_gate_hook"),
+    "validate-plugins": ("mde.hooks.validate_plugins", "validate_plugins_hook"),
 }
 
 
@@ -503,6 +588,8 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "drift": _cmd_drift,
     "secrets": _cmd_secrets,
     "learn": _cmd_learn,
+    "review": _cmd_review,
+    "debate": _cmd_debate,
     "prune": _cmd_prune,
     "remediate": _cmd_remediate,
     "install": _cmd_install,

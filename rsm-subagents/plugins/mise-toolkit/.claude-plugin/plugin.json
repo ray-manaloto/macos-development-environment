@@ -6,7 +6,7 @@
     "name": "ray-manaloto",
     "url": "https://github.com/ray-manaloto"
   },
-  "repository": "https://github.com/ray-manaloto/mise-toolkit",
+  "repository": "https://github.com/ray-manaloto/rsm-subagents",
   "license": "MIT",
-  "keywords": ["mise", "devtools", "dotfiles", "chezmoi", "tool-management", "task-runner", "jdx"]
+  "keywords": ["mise", "devtools", "tool-management", "task-runner", "jdx", "environment"]
 }

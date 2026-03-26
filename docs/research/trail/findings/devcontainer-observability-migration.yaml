@@ -1,0 +1,128 @@
+finding_id: devcontainer-observability-migration
+date: "2026-03-25"
+agent: devcontainer-specialist
+confidence: 0.92
+status: complete
+
+title: "Observability stack should NOT use devcontainer dockerComposeFile"
+summary: >
+  After researching the devcontainer spec (dockerComposeFile, runServices,
+  service, shutdownAction) and analyzing the project architecture, the
+  correct approach is to KEEP docker compose for the observability stack
+  and NOT migrate it into devcontainer.json.
+
+research_sources:
+  - url: "https://containers.dev/implementors/spec/"
+    type: spec
+    relevance: HIGH
+    note: "dockerComposeFile requires 'service' property pointing to dev container"
+  - url: "context7:/devcontainers/cli"
+    type: documentation
+    relevance: MEDIUM
+    note: "CLI docs confirm devcontainer up manages the dev environment lifecycle"
+
+options_evaluated:
+  option_a:
+    name: "dockerComposeFile in devcontainer.json"
+    verdict: REJECTED
+    reason: >
+      The devcontainer spec's dockerComposeFile pattern requires a 'service'
+      property that designates which compose service IS the dev container.
+      The entire compose stack lifecycle is then tied to devcontainer up/down.
+      This means: (1) observability would only run when devcontainer is running,
+      (2) the current image-based devcontainer.json would need to be converted
+      to a compose-based one, (3) GRAFANA_PASSWORD env var handling would need
+      to be wired through devcontainer, (4) the observability stack serves
+      host-side AI agents (codex, gemini CLI) that run OUTSIDE the devcontainer.
+      Coupling sidecar telemetry infrastructure to dev environment lifecycle
+      is architecturally wrong.
+
+  option_b:
+    name: "devcontainer exec for management commands"
+    verdict: REJECTED
+    reason: >
+      Running 'devcontainer exec ... docker compose up' adds indirection
+      without benefit. The observability containers run on the host Docker
+      daemon, not inside the devcontainer. The devcontainer may not even
+      have docker CLI available (it uses mise, not docker-in-docker).
+      This would require docker-in-docker or docker-outside-of-docker
+      feature, adding complexity for zero gain.
+
+  option_c:
+    name: "Separate devcontainer for observability"
+    verdict: REJECTED
+    reason: >
+      Creating .devcontainer/observability/devcontainer.json would be
+      over-engineering. The devcontainer spec is for development environments,
+      not infrastructure services. The observability stack is 4 production-grade
+      containers (collector, tempo, loki, grafana) that need independent lifecycle
+      management, secret handling (GRAFANA_PASSWORD), and host-side health probes.
+
+  option_d:
+    name: "Keep docker compose, improve Python module"
+    verdict: ACCEPTED
+    reason: >
+      The observability stack is sidecar infrastructure, not a dev environment.
+      It serves host-side AI agents (codex, gemini CLI send telemetry to
+      127.0.0.1:4318). The correct approach is:
+      1. Keep docker compose for lifecycle (it's the right tool)
+      2. Add a docker compose project name constant for reliable targeting
+      3. Improve health check to use host-side HTTP for all services
+         (some already use host-published ports)
+      4. Document WHY devcontainer is not appropriate here
+      5. Update devcontainer.json to forward observability ports if running
+         inside the devcontainer (forwardPorts)
+
+architectural_rationale: >
+  The devcontainer spec's compose integration (dockerComposeFile + service +
+  runServices) is designed for when the dev container IS a compose service.
+  The observability stack is independent infrastructure that:
+  - Runs on the host Docker daemon
+  - Serves host-side processes (codex CLI, gemini CLI, claude CLI)
+  - Has independent lifecycle (can start/stop without affecting dev env)
+  - Requires host-side secrets (GRAFANA_PASSWORD from Keychain)
+  - Uses host-side health probes (scratch-based collector has no shell)
+  Forcing this through devcontainer would couple unrelated lifecycles and
+  break host-side telemetry consumers.
+
+implementation:
+  changes:
+    - file: "src/mde/domain/observability_stack.py"
+      action: >
+        Replaced docker-compose-exec health checks with uniform host-side HTTP probes.
+        Added _probe_http() helper and _HEALTH_CHECKS table. Added architecture
+        decision docstring explaining why docker compose (not devcontainer) is correct.
+    - file: ".devcontainer/devcontainer.json"
+      action: >
+        Added forwardPorts [4317, 4318, 3000, 3100, 3200, 13133] and portsAttributes
+        so observability endpoints are accessible from inside the devcontainer.
+    - file: "docker/observability/compose.yaml"
+      action: >
+        Published collector health check port 13133 to localhost. This was missing,
+        causing host-side health probes to fail (likely root cause of issue #48).
+    - file: "tests/mde/test_observability_stack.py"
+      action: >
+        Updated TestStackVerify to match new host-side HTTP probe implementation.
+        All tests now mock urllib.request.urlopen instead of subprocess.run.
+  not_changed:
+    - file: ".devcontainer/devcontainer.json"
+      reason: "NOT adding dockerComposeFile — observability is sidecar infra, not dev env"
+
+bugs_found:
+  - id: "missing-collector-health-port"
+    severity: HIGH
+    description: >
+      The collector health check extension listens on port 13133 inside the container,
+      but this port was NOT published in compose.yaml. The host-side health probe in
+      stack_verify() was trying to reach http://localhost:13133/health which was
+      unreachable. This is likely the root cause of issue #48 healthcheck failure.
+    fix: "Added '127.0.0.1:13133:13133' to collector ports in compose.yaml"
+
+quality_gate: "6/6 passed (ruff-check, ruff-format, ty, pyright, pytest, mde-validate)"
+
+tags:
+  - devcontainer
+  - observability
+  - docker-compose
+  - architecture-decision
+  - bug-fix

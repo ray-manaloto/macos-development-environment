@@ -1,0 +1,155 @@
+id: finding-chezmoi-plugin-skills-gaps
+timestamp: "2026-03-25T09:20:00Z"
+source: https://www.chezmoi.io/reference/
+agent: researcher
+finding_type: skill-gap-analysis
+confidence: confirmed
+confident_about: |
+  Existing skills (chezmoi-config, chezmoi-workflows, mde-chezmoi-dotfiles) cover:
+  - Template authoring (Go syntax, conditionals, data variables)
+  - Workflow patterns (add, edit, apply, sync, diff, verify)
+  - Configuration (prompts, data files, encryption basics)
+  - External resources (.chezmoiexternal)
+  - Script lifecycle (run_once, run_onchange, run_before, run_after)
+  - Password manager integration (1Password, Bitwarden, Vault)
+  - MDE-specific customizations (.remote variable, Brewfile, mise, oh-my-zsh)
+gaps: |
+  1. TROUBLESHOOTING & DIAGNOSTICS
+     - chezmoi doctor interpretation (detailed troubleshooting workflow)
+     - State management (state dump, delete-bucket for scripts)
+     - Diff debugging patterns (chezmoi diff --include, --exclude flags)
+     - Merge conflict resolution workflows
+     - Version compatibility checking (.chezmoiversion)
+
+  2. ADVANCED CONFIGURATION
+     - .chezmoiroot for monorepo/multi-repo setups
+     - .chezmoiremove for cleanup workflows
+     - .chezmoiignore patterns (include/exclude, templating)
+     - Git configuration (autoCommit, autoPush, commitMessageTemplate)
+     - Plugin system (hooks, custom commands via plugins)
+     - Encryption setup & management (age, gpg key management)
+
+  3. MIGRATION & ONBOARDING
+     - Importing from other dotfile managers (stow, yadm, bare git)
+     - First-time setup patterns (fresh vs existing repos)
+     - One-shot mode (chezmoi init --one-shot)
+     - Multi-account SSH setup for dotfiles repos
+     - Team/shared dotfiles patterns
+
+  4. TEMPLATE AUTHORING ADVANCED
+     - .chezmoitemplates/ directory (include templates, snippets)
+     - Template functions (bitwarden, onepassword, lookPath, stat, env)
+     - Complex data structures (.chezmoidata/ YAML/TOML nesting)
+     - Template recursion & organization patterns
+     - Platform-specific script injection (shell vs PowerShell)
+
+  5. CROSS-PLATFORM STRATEGIES
+     - Windows PowerShell support (ps1 templates, run_onchange_*.ps1)
+     - Linux-specific considerations (systemd, apt, pacman)
+     - Container/CI/CD patterns (--no-tty, remote detection)
+     - macOS-specific gotchas (M1/M2 arm64 vs x86_64)
+
+  6. PERFORMANCE & SCALABILITY
+     - Lazy loading / conditional external resources
+     - Refresh periods for external files (.chezmoiexternal)
+     - Dependency management between scripts
+     - State cleanup patterns (deleting run_once state)
+     - Partial applies (chezmoi apply --target)
+
+  7. DEVELOPER EXPERIENCE
+     - IDE integration (symlinks to source, editor plugins)
+     - Testing templates in isolation
+     - Pre-commit hooks for dotfile validation
+     - Dry-run strategies (chezmoi apply --dry-run patterns)
+     - Debugging template expansion (chezmoi execute-template)
+evidence: |
+  Existing skills verified:
+  - chezmoi-config SKILL.md lines 1-417: templates, externals, scripts, password managers
+  - chezmoi-workflows SKILL.md lines 1-309: add, sync, merge, doctor, template mgmt
+  - mde-chezmoi-dotfiles SKILL.md lines 1-213: repo-specific templates, keychain, age, .remote var
+
+  Chezmoi official docs structure (from reference index):
+  - Key concepts, source state attributes, target types, application order
+  - Special files (.chezmoi.toml.tmpl, .chezmoiignore, .chezmoiremove, .chezmoiversion, .chezmoiroot)
+  - Special directories (.chezmoidata/, .chezmoitemplates/, .chezmoiscripts/, .chezmoiexternals/)
+  - Configuration file (git autoCommit/autoPush, plugins, encryption)
+  - Commands: doctor, verify, diff, merge, state (dump, delete-bucket)
+  - Advanced: plugins, release history, developer guide
+
+  Features documented but NOT in current skills:
+  - chezmoi doctor detailed interpretation (lines 278-283 in workflows only basic)
+  - State management: chezmoi state dump, state delete-bucket
+  - Git configuration: autoCommit, autoPush, commitMessageTemplate
+  - .chezmoiroot for monorepo support
+  - .chezmoiremove for cleanup workflows
+  - .chezmoiignore advanced templating patterns
+  - .chezmoitemplates/ directory and include templates
+  - .chezmoiversion for version pinning
+  - Plugin system (not mentioned in current skills)
+  - Encryption key management (age, gpg) beyond basic setup
+  - Migration workflows (stow, yadm, bare git import)
+  - One-shot mode (chezmoi init --one-shot)
+  - Multi-platform scripts (PowerShell, systemd)
+implication: |
+  Recommended new skills for comprehensive chezmoi plugin:
+
+  HIGH PRIORITY (power users + teams):
+  1. chezmoi-troubleshooting
+     - Skill focus: doctor interpretation, state debugging, diff analysis
+     - Triggers: "chezmoi not working", "fix chezmoi", "debug", "doctor", "state"
+     - Scope: 200-250 lines (command reference, common issues table, troubleshooting flowchart)
+     - Justification: No current skill covers diagnostic workflow; critical for users with broken setups
+
+  2. chezmoi-migration
+     - Skill focus: importing from stow/yadm/bare git, multi-account SSH setup
+     - Triggers: "import dotfiles", "migrate", "stow", "yadm", "existing repo", "onboarding"
+     - Scope: 200-300 lines (step-by-step migration paths, before/after comparisons)
+     - Justification: Onboarding is a major use case; no current skill addresses it
+
+  3. chezmoi-advanced-config
+     - Skill focus: .chezmoiroot, .chezmoiremove, git config, plugins, encryption
+     - Triggers: "monorepo", "advanced", "plugin", "encryption key", "git config"
+     - Scope: 250-350 lines (reference tables, patterns, security considerations)
+     - Justification: Current skills only cover basic .chezmoi.toml; missing ~50% of config options
+
+  MEDIUM PRIORITY (template authors + team leads):
+  4. chezmoi-template-advanced
+     - Skill focus: .chezmoitemplates/, template functions, recursion, data structures
+     - Triggers: "template function", "include", "recursive", "template library", "bitwarden", "lookPath"
+     - Scope: 200-250 lines (function reference, patterns, examples)
+     - Justification: Current config skill covers basics; advanced patterns are missing
+
+  5. chezmoi-cross-platform
+     - Skill focus: Windows/Linux/macOS conditionals, platform-specific scripts, CI/CD
+     - Triggers: "windows", "powershell", "linux", "container", "ci", "remote"
+     - Scope: 150-200 lines (platform conditionals, script templates, examples)
+     - Justification: mde-chezmoi focuses on macOS; general cross-platform patterns needed
+
+  LOW PRIORITY (advanced/niche use cases):
+  6. chezmoi-state-management
+     - Skill focus: state dump, delete-bucket, script idempotency, cleanup
+     - Triggers: "state", "script not running", "reset", "idempotent"
+     - Scope: 100-150 lines (state overview, reset procedures)
+     - Justification: Rarely needed; but critical when needed
+
+  Integration strategy:
+  - Keep chezmoi-config as-is (strong foundation, read-only safe)
+  - Keep chezmoi-workflows as-is (daily operations are stable)
+  - Keep mde-chezmoi-dotfiles for repo-specific patterns
+  - ADD 3 new skills (troubleshooting, migration, advanced-config) as HIGH priority
+  - ADD 2 new skills (template-advanced, cross-platform) as MEDIUM priority
+  - DEFER state-management until user demand signals priority shift
+tags:
+  - chezmoi
+  - skill-gap
+  - plugin-architecture
+  - troubleshooting
+  - onboarding
+  - configuration
+  - template-authoring
+  - cross-platform
+  - encryption
+  - migration
+  - state-management
+  - multi-machine
+status: discovered

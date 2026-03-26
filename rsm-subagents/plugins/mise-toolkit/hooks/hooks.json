@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/guard-install.sh \"${TOOL_INPUT}\"",
+            "command": "uv run mde-py hooks guard-install",
             "timeout": 5000
           }
         ]

@@ -7,5 +7,18 @@
     "MDE_ENV_AUTOLOAD": "0",
     "MDE_AUTOLOAD_SECRETS": "0"
   },
-  "postCreateCommand": "bash ${containerWorkspaceFolder}/.devcontainer/post-create.sh"
+  "postCreateCommand": "bash ${containerWorkspaceFolder}/.devcontainer/post-create.sh",
+
+  // Observability stack ports — the LGTM stack runs on the host via docker compose
+  // (NOT via dockerComposeFile — see docs/research/trail/findings/devcontainer-observability-migration.yaml).
+  // Forward these ports so code running inside the devcontainer can send telemetry.
+  "forwardPorts": [4317, 4318, 3000, 3100, 3200, 13133],
+  "portsAttributes": {
+    "4317": { "label": "OTEL gRPC", "onAutoForward": "silent" },
+    "4318": { "label": "OTEL HTTP", "onAutoForward": "silent" },
+    "3000": { "label": "Grafana", "onAutoForward": "notify" },
+    "3100": { "label": "Loki", "onAutoForward": "silent" },
+    "3200": { "label": "Tempo", "onAutoForward": "silent" },
+    "13133": { "label": "Collector Health", "onAutoForward": "silent" }
+  }
 }

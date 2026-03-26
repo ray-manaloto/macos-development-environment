@@ -233,6 +233,8 @@ class TestSkillResultSortKey:
 class TestDiscoverSkills:
     """Tests for the discover_skills orchestrator."""
 
+    @patch("mde.research.skill_discover._search_skillport_local")
+    @patch("mde.research.skill_discover._search_skillfish")
     @patch("mde.research.skill_discover._search_skillsmp")
     @patch("mde.research.skill_discover._search_github")
     @patch("mde.research.skill_discover._search_skills_sh")
@@ -243,6 +245,8 @@ class TestDiscoverSkills:
         mock_sh: MagicMock,
         mock_gh: MagicMock,
         mock_smp: MagicMock,
+        mock_skillfish: MagicMock,
+        mock_skillport: MagicMock,
     ) -> None:
         mock_installed.return_value = set()
         mock_sh.return_value = [
@@ -264,6 +268,8 @@ class TestDiscoverSkills:
                 stars=5,
             ),
         ]
+        mock_skillfish.return_value = []
+        mock_skillport.return_value = []
 
         result = discover_skills("test")
         assert len(result.skills) == 3
@@ -271,8 +277,12 @@ class TestDiscoverSkills:
             "skills.sh",
             "github",
             "skillsmp",
+            "skillfish",
+            "skillport",
         }
 
+    @patch("mde.research.skill_discover._search_skillport_local")
+    @patch("mde.research.skill_discover._search_skillfish")
     @patch("mde.research.skill_discover._search_skillsmp")
     @patch("mde.research.skill_discover._search_github")
     @patch("mde.research.skill_discover._search_skills_sh")
@@ -283,6 +293,8 @@ class TestDiscoverSkills:
         mock_sh: MagicMock,
         mock_gh: MagicMock,
         mock_smp: MagicMock,
+        mock_skillfish: MagicMock,
+        mock_skillport: MagicMock,
     ) -> None:
         mock_installed.return_value = set()
         mock_sh.return_value = [
@@ -302,11 +314,15 @@ class TestDiscoverSkills:
             ),
         ]
         mock_smp.return_value = []
+        mock_skillfish.return_value = []
+        mock_skillport.return_value = []
 
         result = discover_skills("terraform")
         assert len(result.skills) == 1
         assert result.skills[0].installs == 100
 
+    @patch("mde.research.skill_discover._search_skillport_local")
+    @patch("mde.research.skill_discover._search_skillfish")
     @patch("mde.research.skill_discover._search_skillsmp")
     @patch("mde.research.skill_discover._search_github")
     @patch("mde.research.skill_discover._search_skills_sh")
@@ -317,6 +333,8 @@ class TestDiscoverSkills:
         mock_sh: MagicMock,
         mock_gh: MagicMock,
         mock_smp: MagicMock,
+        mock_skillfish: MagicMock,
+        mock_skillport: MagicMock,
     ) -> None:
         mock_installed.return_value = {"terraform"}
         mock_sh.return_value = [
@@ -328,10 +346,14 @@ class TestDiscoverSkills:
         ]
         mock_gh.return_value = []
         mock_smp.return_value = []
+        mock_skillfish.return_value = []
+        mock_skillport.return_value = []
 
         result = discover_skills("terraform")
         assert result.skills[0].installed is True
 
+    @patch("mde.research.skill_discover._search_skillport_local")
+    @patch("mde.research.skill_discover._search_skillfish")
     @patch("mde.research.skill_discover._search_skillsmp")
     @patch("mde.research.skill_discover._search_github")
     @patch("mde.research.skill_discover._search_skills_sh")
@@ -342,11 +364,15 @@ class TestDiscoverSkills:
         mock_sh: MagicMock,
         mock_gh: MagicMock,
         mock_smp: MagicMock,
+        mock_skillfish: MagicMock,
+        mock_skillport: MagicMock,
     ) -> None:
         mock_installed.return_value = set()
         mock_sh.side_effect = TimeoutError("timed out")
         mock_gh.return_value = []
         mock_smp.return_value = []
+        mock_skillfish.return_value = []
+        mock_skillport.return_value = []
 
         result = discover_skills("test")
         assert len(result.sources_failed) == 1
@@ -389,4 +415,4 @@ class TestCliMain:
         result = cli_main(["nonexistent"])
         assert result == 0
         captured = capsys.readouterr()
-        assert "No skills found" in captured.out
+        assert "No skills found" in captured.err

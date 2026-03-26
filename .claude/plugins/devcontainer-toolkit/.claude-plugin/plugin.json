@@ -1,0 +1,9 @@
+{
+  "name": "devcontainer-toolkit",
+  "version": "0.1.0",
+  "description": "Expert devcontainer management with full lifecycle, compose integration, CLI automation, and feature system knowledge",
+  "author": {
+    "name": "Ray Manaloto"
+  },
+  "keywords": ["devcontainer", "lifecycle", "docker-compose", "features", "cli", "automation"]
+}

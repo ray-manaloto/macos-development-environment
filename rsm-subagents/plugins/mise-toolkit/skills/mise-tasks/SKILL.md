@@ -1,6 +1,6 @@
 ---
 name: mise-tasks
-description: "Orchestrate multi-step project workflows using mise task definitions with dependency management and argument handling. Use whenever the user wants to create, edit, or debug mise tasks, wire up task dependencies with depends/depends_post, or run workflows via 'mise run'. Also use when setting up task runners or automating build pipelines through mise. Do NOT use for mise environment variable configuration (use mise-config-settings instead) or for general shell scripting unrelated to mise."
+description: "This skill should be used when the user asks to orchestrate multi-step project workflows using mise task definitions with dependency management and argument handling. Use whenever the user wants to create, edit, or debug mise tasks, wire up task dependencies with depends/depends_post, or run workflows via 'mise run'. Also use when setting up task runners or automating build pipelines through mise. Do NOT use for mise environment variable configuration (use mise-env-config instead) or for general shell scripting unrelated to mise."
 allowed-tools: Read, Bash, Glob, Grep, Edit, Write
 ---
 
@@ -165,9 +165,9 @@ For release-specific anti-patterns and patterns, see [Release Workflow Patterns]
 
 **Prerequisites**: Before defining tasks, ensure `[env]` section is configured.
 
-> **PRESCRIPTIVE**: After defining tasks, invoke **[`mise-config-settings` skill](../mise-config-settings/SKILL.md)** to ensure [env] SSoT patterns are applied.
+> **PRESCRIPTIVE**: After defining tasks, invoke **[`mise-env-config` skill](../mise-env-config/SKILL.md)** to ensure [env] SSoT patterns are applied.
 
-The `mise-config-settings` skill covers:
+The `mise-env-config` skill covers:
 
 - `[env]` - Environment variables with defaults
 - `[settings]` - mise behavior configuration

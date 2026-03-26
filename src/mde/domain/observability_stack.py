@@ -1,6 +1,18 @@
 """Observability stack lifecycle management.
 
 Manages the Docker Compose LGTM stack (OTEL Collector + Tempo + Loki + Grafana).
+
+Architecture Decision: This module uses ``docker compose`` directly, NOT the
+devcontainer CLI. The observability stack is **sidecar infrastructure** that
+serves host-side AI agents (codex, gemini, claude CLIs send telemetry to
+127.0.0.1:4318). It has an independent lifecycle from the dev environment.
+
+The devcontainer spec's ``dockerComposeFile`` + ``runServices`` pattern requires
+designating a compose service AS the dev container (via the ``service`` property).
+That couples the entire compose stack lifecycle to ``devcontainer up/down``, which
+would break host-side telemetry consumers and tie observability to dev env state.
+
+See: docs/research/trail/findings/devcontainer-observability-migration.yaml
 """
 
 from __future__ import annotations
@@ -114,93 +126,43 @@ def stack_status() -> int:
     return result.returncode
 
 
+def _probe_http(url: str, timeout: int = 5) -> tuple[bool, str]:
+    """Probe a host-side HTTP endpoint. Returns (ok, detail)."""
+    try:
+        urllib.request.urlopen(url, timeout=timeout)  # noqa: S310
+    except (urllib.error.URLError, OSError) as exc:
+        return False, str(exc)
+    return True, "ok"
+
+
+# Host-side health check endpoints. All services publish ports to localhost,
+# so we probe from the host — no need for docker compose exec.
+# This is essential for the scratch-based collector (no shell/wget inside).
+_HEALTH_CHECKS: list[tuple[str, str]] = [
+    ("collector", "http://localhost:13133/health"),
+    ("grafana", "http://localhost:3000/api/health"),
+    ("loki", "http://localhost:3100/ready"),
+    ("tempo", "http://localhost:3200/ready"),
+]
+
+
 def stack_verify() -> int:
     """Check health of all observability stack services.
 
-    Checks collector health via host-side HTTP (port 13133, scratch-based image
-    has no wget). Grafana, Loki, and Tempo are checked via ``docker compose exec``.
+    All checks use host-side HTTP probes against published ports.
+    This approach works uniformly for all containers, including the
+    scratch-based OTEL Collector which has no shell or wget inside.
     Returns 0 only if all services report healthy.
     """
-    import subprocess
-
     failures = 0
 
-    # Collector: scratch-based image has no shell/wget — probe health extension from host
-    try:
-        urllib.request.urlopen("http://localhost:13133/health", timeout=5)
-        print("  HEALTHY: collector", file=sys.stderr)
-    except (urllib.error.URLError, OSError) as exc:
-        print(f"  UNHEALTHY: collector — {exc}", file=sys.stderr)
-        failures += 1
-
-    checks: list[tuple[str, list[str]]] = [
-        (
-            "grafana",
-            [
-                "docker",
-                "compose",
-                "-f",
-                str(COMPOSE_FILE),
-                "exec",
-                "grafana",
-                "wget",
-                "--spider",
-                "-q",
-                "http://localhost:3000/api/health",
-            ],
-        ),
-        (
-            "loki",
-            [
-                "docker",
-                "compose",
-                "-f",
-                str(COMPOSE_FILE),
-                "exec",
-                "loki",
-                "wget",
-                "--spider",
-                "-q",
-                "http://localhost:3100/ready",
-            ],
-        ),
-        (
-            "tempo",
-            [
-                "docker",
-                "compose",
-                "-f",
-                str(COMPOSE_FILE),
-                "exec",
-                "tempo",
-                "wget",
-                "--spider",
-                "-q",
-                "http://localhost:3200/ready",
-            ],
-        ),
-    ]
-
-    for name, cmd in checks:
-        try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=15,
-            )
-        except subprocess.TimeoutExpired:
-            print(f"  TIMEOUT: {name}", file=sys.stderr)
-            failures += 1
-            continue
-
-        if result.returncode != 0:
-            print(f"  UNHEALTHY: {name}", file=sys.stderr)
-            if result.stderr:
-                print(f"    {result.stderr.strip()}", file=sys.stderr)
-            failures += 1
-        else:
+    for name, url in _HEALTH_CHECKS:
+        ok, detail = _probe_http(url)
+        if ok:
             print(f"  HEALTHY: {name}", file=sys.stderr)
+        else:
+            print(f"  UNHEALTHY: {name} — {detail}", file=sys.stderr)
+            failures += 1
 
     return 1 if failures else 0
 

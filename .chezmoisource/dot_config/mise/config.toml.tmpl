@@ -4,7 +4,7 @@
 [settings]
 experimental = true
 not_found_auto_install = true
-status = { missing_tools = "if_other_versions_installed" }
+status = { missing_tools = "always" }
 
 [settings.npm]
 package_manager = "bun"
@@ -22,11 +22,22 @@ GIT_TERMINAL_PROMPT = "0"
 # NotebookLM auth: standardize paths so agents find credentials consistently
 NOTEBOOKLM_HOME = "~/.notebooklm"
 
+{{ if eq .chezmoi.os "darwin" -}}
+# LLVM/Clang: Homebrew's latest LLVM (clang-format, clang-tidy, lldb, lld included)
+# Brew formula: https://formulae.brew.sh/formula/llvm (keg-only, needs explicit paths)
+_.path = ["/opt/homebrew/opt/llvm/bin"]
+CC = "/opt/homebrew/opt/llvm/bin/clang"
+CXX = "/opt/homebrew/opt/llvm/bin/clang++"
+LDFLAGS = "-L/opt/homebrew/opt/llvm/lib -L/opt/homebrew/opt/llvm/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++"
+CPPFLAGS = "-I/opt/homebrew/opt/llvm/include"
+PKG_CONFIG_PATH = "/opt/homebrew/opt/llvm/lib/pkgconfig"
+{{ end -}}
+
 [tools]
 # ── Core Runtimes ──
 bun = "latest"
 node = "latest"
-python = "latest"
+"core:python" = "latest"
 go = "latest"
 rust = "latest"
 pixi = "latest"
@@ -70,7 +81,8 @@ pre-commit = "latest"
 awscli = { version = "latest", symlink_bins = "true" }
 azure-cli = "latest"
 pitchfork = "latest"
-clang = "latest"
+# clang/LLVM: managed by brew (brew install llvm lld), not mise.
+# conda backend was noisy and missing clang-format/clang-tidy/lldb/lld.
 "aqua:aws/session-manager-plugin" = "latest"
 {{ end -}}
 "github:jdx/fnox" = "latest"

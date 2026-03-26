@@ -5,7 +5,7 @@
     "url": "https://github.com/ray-manaloto"
   },
   "metadata": {
-    "description": "Specialized agent toolkits for dotfiles, chezmoi, mise, and macOS development environment management"
+    "description": "Specialized agent toolkits for dotfiles, chezmoi, mise, hk, devcontainer, and macOS development environment management"
   },
   "plugins": [
     {
@@ -14,7 +14,34 @@
       "description": "Comprehensive mise expertise: tool management, task orchestration, environment configuration, and mise-first policy enforcement",
       "version": "0.1.0",
       "category": "devtools",
-      "tags": ["mise", "tool-management", "task-runner", "dotfiles", "jdx"],
+      "tags": ["mise", "tool-management", "task-runner", "environment", "jdx"],
+      "repository": "https://github.com/ray-manaloto/rsm-subagents"
+    },
+    {
+      "name": "chezmoi-toolkit",
+      "source": "./plugins/chezmoi-toolkit",
+      "description": "Comprehensive chezmoi expertise: dotfile management, templates, secrets, migration, troubleshooting, AI agent config, and source-first workflow enforcement",
+      "version": "0.1.0",
+      "category": "devtools",
+      "tags": ["chezmoi", "dotfiles", "templates", "secrets", "encryption", "migration", "ai-agent-config"],
+      "repository": "https://github.com/ray-manaloto/rsm-subagents"
+    },
+    {
+      "name": "hk-toolkit",
+      "source": "./plugins/hk-toolkit",
+      "description": "Comprehensive hk git hooks expertise: pkl configuration, hook step management, stash troubleshooting, and self-improving debugging",
+      "version": "0.1.0",
+      "category": "devtools",
+      "tags": ["hk", "git-hooks", "pre-commit", "pkl", "linting", "quality-gate", "jdx"],
+      "repository": "https://github.com/ray-manaloto/rsm-subagents"
+    },
+    {
+      "name": "devcontainer-toolkit",
+      "source": "./plugins/devcontainer-toolkit",
+      "description": "Expert devcontainer management: lifecycle events, Docker Compose integration patterns, CLI automation, feature system, and project-aware setup",
+      "version": "0.1.0",
+      "category": "devtools",
+      "tags": ["devcontainer", "docker-compose", "observability", "otel", "grafana", "container"],
       "repository": "https://github.com/ray-manaloto/rsm-subagents"
     }
   ]

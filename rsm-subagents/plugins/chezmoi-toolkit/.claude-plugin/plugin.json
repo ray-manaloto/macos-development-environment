@@ -1,0 +1,12 @@
+{
+  "name": "chezmoi-toolkit",
+  "version": "0.1.0",
+  "description": "Comprehensive chezmoi expertise for Claude Code: dotfile management, templates, secrets, migration, troubleshooting, AI agent config, and source-first workflow enforcement with hooks",
+  "author": {
+    "name": "ray-manaloto",
+    "url": "https://github.com/ray-manaloto"
+  },
+  "repository": "https://github.com/ray-manaloto/rsm-subagents",
+  "license": "MIT",
+  "keywords": ["chezmoi", "dotfiles", "templates", "secrets", "encryption", "age", "1password", "migration", "ai-agent-config"]
+}
