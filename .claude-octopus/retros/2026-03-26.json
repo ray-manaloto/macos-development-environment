@@ -1,0 +1,57 @@
+{
+  "date": "2026-03-26",
+  "window": "7d",
+  "total_commits": 91,
+  "lines_added": 382456,
+  "lines_removed": 4526,
+  "prs_merged": 11,
+  "contributors": 1,
+  "ai_assisted_commits": 189,
+  "test_ratio": 0.0,
+  "top_hotspots": [
+    "src/mde/cli.py",
+    "pyproject.toml",
+    "docs/research/source-catalog.md",
+    ".claude/settings.json",
+    ".mise.toml",
+    "src/mde/observability.py",
+    "src/mde/hooks/team_quality_gates.py",
+    "uv.lock",
+    "tests/mde/test_hooks.py",
+    "src/mde/telemetry_verify.py"
+  ],
+  "sessions": 23,
+  "avg_session_minutes": 26,
+  "commit_types": {
+    "feat": 49,
+    "fix": 25,
+    "refactor": 0,
+    "test": 0,
+    "chore": 1,
+    "docs": 13,
+    "perf": 1,
+    "research": 2,
+    "other": 0
+  },
+  "learnings": {
+    "session_deliverables": {
+      "plugins_installed": ["test-generator", "token-saver", "safety-net", "challenger", "codebase-quality", "bugbash", "python-remote-debug-skill", "vitals"],
+      "plugins_created": ["marketplace-evaluator"],
+      "hooks_created": ["persist-transcripts"],
+      "plugins_screened": 828,
+      "plugins_deep_evaluated": 71,
+      "multi_model_finding": "0/20 finalists survived opus+codex dual review",
+      "transcripts_auto_persisted": 60
+    },
+    "issues_resolved": [
+      "Plugin evaluation thoroughness — expanded from 6 to 828+ with goal-based approach",
+      "Agent transcript loss on reboot — persist-transcripts hook now auto-saves on PreCompact+Stop",
+      "Multi-model review validated — codex caught reliability bug in mine, maturity issue in skills-updater"
+    ],
+    "repetitive_tasks_automated": [
+      "Transcript persistence: now automatic via persist-transcripts hook (was manual copy from /tmp/)",
+      "Plugin screening: now systematic via marketplace-evaluator plugin (was ad-hoc)"
+    ],
+    "hotspot_action_needed": "src/mde/cli.py at 18 touches — extract subcommand registration to declarative config"
+  }
+}
