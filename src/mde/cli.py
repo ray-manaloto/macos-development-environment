@@ -99,6 +99,18 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     )
     review_p.add_argument("--skip-quality", action="store_true", help="Skip quality gate")
 
+    # debate
+    debate_p = sub.add_parser("debate", help="Multi-model debate via CLI backends")
+    debate_p.add_argument("prompt", help="Debate prompt or question")
+    debate_p.add_argument(
+        "--model",
+        choices=["codex", "gemini", "all"],
+        default="all",
+        help="Model to invoke (default: all)",
+    )
+    debate_p.add_argument("--output-dir", help="Save results as JSON to this directory")
+    debate_p.add_argument("--timeout", type=int, default=300, help="Timeout per model (seconds)")
+
     # prune
     sub.add_parser("prune", help="Prune stale globals and orphan mise versions")
 
@@ -310,6 +322,37 @@ def _cmd_review(args: argparse.Namespace) -> int:
         result = cli_review(args)
         ctx["result"] = result
         return result
+
+
+def _cmd_debate(args: argparse.Namespace) -> int:
+    with _traced_command("debate") as ctx:
+        from pathlib import Path
+
+        from mde.debate.invoke import invoke_all
+
+        model_arg: str = args.model
+        models = ["codex", "gemini"] if model_arg == "all" else [model_arg]
+        output_dir = Path(args.output_dir) if args.output_dir else None
+
+        results = invoke_all(
+            prompt=args.prompt,
+            models=models,
+            timeout=args.timeout,
+            output_dir=output_dir,
+        )
+
+        import sys
+
+        for r in results:
+            status = "OK" if r.success else "FAIL"
+            sys.stderr.write(f"[{r.model}] {status} ({r.duration_seconds}s)\n")
+            if r.response:
+                sys.stderr.write(f"{r.response[:500]}\n\n")
+            if r.error:
+                sys.stderr.write(f"  Error: {r.error}\n")
+
+        ctx["result"] = 0 if all(r.success for r in results) else 1
+        return ctx["result"]
 
 
 def _cmd_prune(_: argparse.Namespace) -> int:
@@ -528,6 +571,7 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "secrets": _cmd_secrets,
     "learn": _cmd_learn,
     "review": _cmd_review,
+    "debate": _cmd_debate,
     "prune": _cmd_prune,
     "remediate": _cmd_remediate,
     "install": _cmd_install,
