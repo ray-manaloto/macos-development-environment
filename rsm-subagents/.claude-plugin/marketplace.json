@@ -38,7 +38,7 @@
     {
       "name": "devcontainer-toolkit",
       "source": "./plugins/devcontainer-toolkit",
-      "description": "Comprehensive devcontainer expertise: CLI lifecycle, Docker Compose service integration, observability stack orchestration, and self-improving troubleshooting",
+      "description": "Expert devcontainer management: lifecycle events, Docker Compose integration patterns, CLI automation, feature system, and project-aware setup",
       "version": "0.1.0",
       "category": "devtools",
       "tags": ["devcontainer", "docker-compose", "observability", "otel", "grafana", "container"],

@@ -1,7 +1,6 @@
 {
   "name": "chezmoi-toolkit",
   "version": "0.1.0",
-  "minVersion": "2.0.0",
   "description": "Comprehensive chezmoi expertise for Claude Code: dotfile management, templates, secrets, migration, troubleshooting, AI agent config, and source-first workflow enforcement with hooks",
   "author": {
     "name": "ray-manaloto",

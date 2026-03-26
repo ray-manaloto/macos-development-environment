@@ -1,6 +1,6 @@
 ---
 name: chezmoi-advanced-config
-description: Advanced chezmoi configuration beyond basic templates. Use when setting up monorepo dotfiles with .chezmoiroot, removing old files with .chezmoiremove, configuring git autoCommit/autoPush, setting up age or GPG encryption, managing encryption keys, using multiple config formats (YAML/JSON/TOML), or creating custom chezmoi commands.
+description: This skill should be used when the user asks about advanced chezmoi configuration beyond basic templates, such as setting up monorepo dotfiles with .chezmoiroot, removing old files with .chezmoiremove, configuring git autoCommit/autoPush, setting up age or GPG encryption, managing encryption keys, using multiple config formats (YAML/JSON/TOML), or creating custom chezmoi commands.
 ---
 
 # Chezmoi Advanced Configuration

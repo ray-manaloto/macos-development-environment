@@ -1,6 +1,6 @@
 ---
 name: chezmoi-troubleshooting
-description: Systematic diagnostic and remediation for chezmoi failures, state issues, and configuration problems. Use when chezmoi doctor shows errors, scripts don't run as expected, chezmoi verify fails, chezmoi diff shows unexpected changes, state needs resetting, or merge conflicts occur in chezmoi source.
+description: This skill should be used when the user encounters chezmoi failures, state issues, or configuration problems, such as when chezmoi doctor shows errors, scripts don't run as expected, chezmoi verify fails, chezmoi diff shows unexpected changes, state needs resetting, or merge conflicts occur in chezmoi source.
 ---
 
 # Chezmoi Troubleshooting

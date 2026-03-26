@@ -1,7 +1,6 @@
 {
   "name": "mise-toolkit",
   "version": "0.1.0",
-  "minVersion": "2.0.0",
   "description": "Comprehensive mise expertise for Claude Code: tool management, task orchestration, environment configuration, and mise-first policy enforcement with hooks",
   "author": {
     "name": "ray-manaloto",

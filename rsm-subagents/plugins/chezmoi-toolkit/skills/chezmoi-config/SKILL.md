@@ -1,8 +1,8 @@
 ---
 name: chezmoi-config
 description: >
-  Comprehensive chezmoi dotfile management skill for creating, modifying, and
-  maintaining dotfile templates, configuration files, scripts, and external
+  This skill should be used when the user asks about chezmoi dotfile management,
+  creating, modifying, or maintaining dotfile templates, configuration files, scripts, and external
   resources. Use when the user asks to "create a chezmoi template", "add a .tmpl
   file", "write Go template syntax", "manage .chezmoi.toml.tmpl", "configure
   .chezmoiexternal", "write run_once/run_onchange scripts", "integrate 1Password

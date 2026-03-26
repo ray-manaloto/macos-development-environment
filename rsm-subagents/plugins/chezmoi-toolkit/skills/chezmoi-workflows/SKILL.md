@@ -1,7 +1,7 @@
 ---
 name: chezmoi-workflows
 description: >
-  Dotfile backup, sync, and daily operations with chezmoi. Use when the user asks
+  This skill should be used when the user asks about dotfile backup, sync, and daily operations with chezmoi, such as
   to "sync dotfiles", "backup configs", "cross-machine sync", "chezmoi add",
   "chezmoi diff", "chezmoi status", "push dotfiles", "pull dotfiles", "track a
   new file with chezmoi", "resolve merge conflicts in dotfiles", or "set up

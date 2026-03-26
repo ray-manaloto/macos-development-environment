@@ -1,7 +1,7 @@
 ---
 name: hk-step-management
 description: >
-  Add, remove, or modify hook steps in hk.pkl. Use when adding new linters,
+  This skill should be used when the user asks to add, remove, or modify hook steps in hk.pkl, such as adding new linters,
   removing deprecated steps, changing file globs, or reorganizing hook structure.
 ---
 

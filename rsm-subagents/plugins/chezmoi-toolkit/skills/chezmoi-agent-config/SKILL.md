@@ -1,6 +1,6 @@
 ---
 name: chezmoi-agent-config
-description: Manage AI agent configurations (CLAUDE.md, AGENTS.md, permissions, MCP settings, skills) across multiple tools and machines using chezmoi templates. Use when syncing .claude/ settings across machines, templating CLAUDE.md for different environments, distributing agent instructions to Claude Code/Codex/Copilot from one source, managing AI agent permissions via chezmoi data, backing up Claude Code config with chezmoi, or setting up a shared skills directory.
+description: This skill should be used when the user asks to manage AI agent configurations (CLAUDE.md, AGENTS.md, permissions, MCP settings, skills) across multiple tools and machines using chezmoi templates. Use when syncing .claude/ settings across machines, templating CLAUDE.md for different environments, distributing agent instructions to Claude Code/Codex/Copilot from one source, managing AI agent permissions via chezmoi data, backing up Claude Code config with chezmoi, or setting up a shared skills directory.
 ---
 
 # Chezmoi Agent Config Management

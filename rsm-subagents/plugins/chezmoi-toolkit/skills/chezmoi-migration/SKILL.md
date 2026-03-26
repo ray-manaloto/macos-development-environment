@@ -1,6 +1,6 @@
 ---
 name: chezmoi-migration
-description: Adopt chezmoi on new machines and migrate from other dotfile managers. Use when setting up dotfiles on a new Mac, doing a fresh chezmoi install, migrating from stow/yadm/bare-git repos, setting up multi-account GitHub SSH, deploying dotfiles in CI/Docker with one-shot mode, or onboarding team members to chezmoi.
+description: This skill should be used when the user asks to adopt chezmoi on new machines or migrate from other dotfile managers, such as setting up dotfiles on a new Mac, doing a fresh chezmoi install, migrating from stow/yadm/bare-git repos, setting up multi-account GitHub SSH, deploying dotfiles in CI/Docker with one-shot mode, or onboarding team members to chezmoi.
 ---
 
 # Chezmoi Migration & Onboarding

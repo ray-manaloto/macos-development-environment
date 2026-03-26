@@ -1,7 +1,7 @@
 ---
 name: hk-troubleshooting
 description: >
-  Debug and fix hk hook failures including stash restoration errors, step failures,
+  This skill should be used when the user encounters hk hook failures including stash restoration errors, step failures,
   environment issues, and configuration problems. Use when pre-commit hooks fail,
   when hk behaves unexpectedly, or when hooks pass/fail inconsistently.
 ---

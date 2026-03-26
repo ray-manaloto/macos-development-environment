@@ -35,6 +35,10 @@
           {
             "type": "command",
             "command": "uv run mde-py hooks log-edit-outcome"
+          },
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks validate-plugins"
           }
         ]
       },
@@ -128,7 +132,10 @@
     "voltagent-dev-exp@voltagent-subagents": true,
     "voltagent-qa-sec@voltagent-subagents": true,
     "chezmoi-toolkit@rsm-subagents": true,
-    "mise-toolkit@rsm-subagents": true
+    "devcontainer-toolkit@rsm-subagents": true,
+    "hk-toolkit@rsm-subagents": true,
+    "mise-toolkit@rsm-subagents": true,
+    "guide@claude-community": true
   },
   "extraKnownMarketplaces": {
     "rsm-subagents": {

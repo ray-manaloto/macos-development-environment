@@ -50,6 +50,11 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     validate_p.add_argument("--docker", action="store_true", help="Docker validation only")
     validate_p.add_argument("--package-managers", action="store_true", help="Dedup check only")
     validate_p.add_argument("--skills", action="store_true", help="Skill frontmatter only")
+    validate_p.add_argument(
+        "--plugins",
+        action="store_true",
+        help="Plugin validation only",
+    )
 
     # update
     sub.add_parser("update", help="Run maintenance cycle")
@@ -154,6 +159,7 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     hooks_sub.add_parser("session-start", help="SessionStart context setup")
     hooks_sub.add_parser("post-compact", help="PostCompact research state save")
     hooks_sub.add_parser("team-quality-gate", help="Per-team quality gate validation")
+    hooks_sub.add_parser("validate-plugins", help="PostToolUse rsm-subagents validator")
     _SUBPARSERS["hooks"] = hooks_p
 
     # research
@@ -236,6 +242,7 @@ def _cmd_validate(args: argparse.Namespace) -> int:
             docker_only=args.docker,
             package_managers_only=getattr(args, "package_managers", False),
             skills_only=args.skills,
+            plugins_only=args.plugins,
         )
         ctx["result"] = result
         return result
@@ -461,6 +468,7 @@ _HOOKS_DISPATCH: dict[str, tuple[str, str]] = {
     "session-start": ("mde.hooks.session_start", "session_start"),
     "post-compact": ("mde.hooks.post_compact", "post_compact"),
     "team-quality-gate": ("mde.hooks.team_quality_gates", "team_quality_gate_hook"),
+    "validate-plugins": ("mde.hooks.validate_plugins", "validate_plugins_hook"),
 }
 
 

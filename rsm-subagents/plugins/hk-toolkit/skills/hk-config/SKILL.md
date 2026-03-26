@@ -1,7 +1,7 @@
 ---
 name: hk-config
 description: >
-  Edit and manage hk.pkl configuration files. Use when adding stash settings,
+  This skill should be used when the user asks to edit or manage hk.pkl configuration files, such as adding stash settings,
   changing hook modes, configuring profiles, or modifying any hk configuration.
   Also use when user asks about hk settings or pkl syntax.
 ---

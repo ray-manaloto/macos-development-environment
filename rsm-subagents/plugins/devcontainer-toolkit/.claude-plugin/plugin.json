@@ -1,13 +1,12 @@
 {
   "name": "devcontainer-toolkit",
   "version": "0.1.0",
-  "minVersion": "2.0.0",
-  "description": "Comprehensive devcontainer expertise for Claude Code: CLI lifecycle management, Docker Compose service integration, observability stack orchestration, and self-improving troubleshooting",
+  "description": "Expert devcontainer management with full lifecycle, compose integration, CLI automation, and feature system knowledge",
   "author": {
     "name": "ray-manaloto",
     "url": "https://github.com/ray-manaloto"
   },
   "repository": "https://github.com/ray-manaloto/rsm-subagents",
   "license": "MIT",
-  "keywords": ["devcontainer", "docker-compose", "observability", "otel", "grafana", "container"]
+  "keywords": ["devcontainer", "lifecycle", "docker-compose", "features", "cli", "automation"]
 }
