@@ -1,0 +1,112 @@
+# Marketplace Evaluator Goals Configuration
+# Add/remove/update goals without modifying plugin code.
+# Each goal has a name, description, and keywords for matching.
+
+version: 1
+last_updated: "2026-03-26"
+
+models:
+  screener: haiku
+  deep_reviewer: opus
+  meta_learner: opus
+  codex_reviewer: true  # Enable follow-up round via codex exec
+
+output:
+  evaluations_json: docs/research/trail/findings/marketplace-evaluations.json
+  reviews_dir: docs/research/trail/deep-reviews/marketplace
+  meta_learning_json: docs/research/trail/findings/evaluator-meta-learning.json
+  source_catalog: docs/research/source-catalog.md
+
+goals:
+  - id: agent-improvement
+    name: Agent Improvement / Autonomous Loops
+    description: Plugins that make agents smarter, enable autonomous iteration loops, self-correcting workflows, or persistent agent state across sessions.
+    keywords: [autonomous, loop, self-improving, agent-state, iteration, cycle, evolve, meta-cycle]
+    weight: 1.0
+
+  - id: sdlc-orchestration
+    name: Multi-Agentic SDLC Orchestration
+    description: Plugins that coordinate multiple agents for software development — parallel coding, review, testing, deployment pipelines.
+    keywords: [orchestration, multi-agent, sdlc, pipeline, team, parallel, dev-team, coordinator]
+    weight: 1.0
+
+  - id: adversarial-review
+    name: Adversarial Review / Multi-Model Thinking
+    description: Plugins using multiple LLM models for review, debate, consensus, or adversarial code review patterns.
+    keywords: [adversarial, multi-model, consensus, debate, codex, gemini, review-loop, challenge]
+    weight: 1.0
+
+  - id: prompt-optimization
+    name: Prompt Optimization
+    description: Plugins that improve prompts — rewriting vague prompts, optimizing for token efficiency, or adapting prompts to context.
+    keywords: [prompt, rewrite, optimize, clarify, improve-prompt, scoring]
+    weight: 0.8
+
+  - id: context-token
+    name: Context/Token Optimization
+    description: Plugins that reduce token usage — output compression, context management, CLAUDE.md optimization, progressive disclosure.
+    keywords: [token, compress, context, ansi, output-reduction, progressive-disclosure, cache]
+    weight: 1.0
+
+  - id: memory-research
+    name: Memory / Research / Self-Updating
+    description: Plugins with persistent memory, knowledge graphs, session-to-session learning, auto-updating, self-improving patterns, research workflows.
+    keywords: [memory, knowledge-graph, persistent, session, learning, self-update, research, consolidation]
+    weight: 1.0
+
+  - id: telemetry
+    name: Telemetry / Observability
+    description: Plugins that track agent performance, token costs, tool usage patterns, session analytics, or observability platforms.
+    keywords: [telemetry, analytics, cost, token-tracking, session, metrics, observability, dashboard]
+    weight: 0.8
+
+  - id: plugin-finding
+    name: Plugin/Skill Finding and Management
+    description: Plugins that help discover, audit, validate, upgrade, or manage other plugins and skills.
+    keywords: [plugin-management, skill-audit, validate, upgrade, discover, marketplace, meta-plugin]
+    weight: 0.8
+
+  - id: self-updating
+    name: Self-Updating / Maintenance Offloading
+    description: Plugins that auto-update, auto-maintain CLAUDE.md, auto-sync configs, or reduce maintenance burden.
+    keywords: [auto-update, self-maintain, auto-memory, sync, maintenance, offload, self-heal]
+    weight: 1.0
+
+  - id: code-modernization
+    name: Code Modernization / Refactoring
+    description: Plugins for systematic code modernization — legacy refactoring, dependency updates, technical debt reduction.
+    keywords: [modernize, refactor, legacy, debt, dependency-update, hotspot, coupling]
+    weight: 0.8
+
+  - id: dotfiles-tooling
+    name: Dotfiles / chezmoi / mise / Package Managers
+    description: Plugins for dotfile management, chezmoi workflows, mise tool management, homebrew, cross-platform package management.
+    keywords: [dotfiles, chezmoi, mise, homebrew, package-manager, config-sync, toolchain]
+    weight: 0.6
+
+  - id: replace-handcoded
+    name: Replace Hand-Coded Tooling
+    description: Plugins that could replace functionality currently hand-coded in src/mde/ — quality gates, plugin validation, hooks, research pipelines.
+    keywords: [replace, quality-gate, validation, hooks, research-pipeline, governance, enforcement]
+    weight: 1.0
+
+policies:
+  # Policy violations that trigger automatic REJECT
+  auto_reject:
+    - id: bash-hooks
+      description: "Hooks that execute .sh files"
+      severity: hard
+    - id: mcp-server
+      description: "Plugins that add MCP servers (.mcp.json)"
+      severity: hard
+    - id: api-keys-required
+      description: "Plugins requiring API keys (not subscription CLIs)"
+      severity: soft
+    - id: context-budget-exceeded
+      description: "Plugins with >15 skills + >10 agents + >10 commands"
+      severity: soft
+
+  # Policy violations that can be overridden
+  soft_reject_overridable:
+    - node-hooks  # Node.js hooks for guard utilities (e.g., safety-net)
+    - shell-scripts-in-tests  # .sh files in test/ directories only

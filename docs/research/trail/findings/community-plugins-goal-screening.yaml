@@ -1,0 +1,97 @@
+id: community-plugins-goal-screening
+timestamp: "2026-03-26T10:30:00Z"
+agent: claude-opus-4.6
+finding_type: goal-based-screening
+confidence: confirmed
+source: "claude-community (588) + claude-code-workflows (73) + claude-plugins-official (119) + knowledge-work-plugins (38) + voltagent (10)"
+total_screened: 828
+
+top_picks_by_goal:
+  agent_improvement_autonomous_loops:
+    1: {name: evolve-loop, url: "https://github.com/mickeyyaya/evolve-loop", why: "151 autonomous cycles, 83.8->94.4 quality, self-evolving prompts via meta-cycles"}
+    2: {name: claude-workflow, url: "https://github.com/AxGord/claude-workflow", why: "YAML state machines, guards, nested sub-workflows, web dashboard, 16 bundled workflows"}
+    3: {name: superpowers-optimized, url: "https://github.com/REPOZY/superpowers-optimized", why: "Extends superpowers with self-consistency verification, cross-session 4-file memory"}
+    4: {name: engram, url: "https://github.com/tstockham96/engram-plugin", why: "92% DMR benchmark, knowledge graphs, bi-temporal tracking, auto-consolidation"}
+    5: {name: hipocampus, url: "https://github.com/kevin-hs-sohn/hipocampus", why: "3-tier hot/warm/cold, 5-level compaction tree, ~3K token ROOT.md, markdown-based"}
+
+  sdlc_orchestration:
+    1: {name: cortex, url: "https://github.com/alphaaiservice/cortex", why: "37 commands, 11 agents, full SDLC automation, Python/FastAPI support"}
+    2: {name: devteam, url: "https://github.com/yn01/devteam", why: "10-agent hierarchical team, file-based message queues, Codex CLI reviewers"}
+    3: {name: spec-engine, url: "https://github.com/farshidghyasi/spec-engine", why: "Wave-based parallel agents with quality gates, spec-driven"}
+    4: {name: groundwork, url: "https://github.com/etr/groundwork", why: "28 skills, 22 commands, worktree isolation, 9-agent validation, monorepo support"}
+    5: {name: production-grade, url: "https://github.com/nagisanzenin/claude-code-production-grade-plugin", why: "14 skills, auto-routing orchestrator, full SaaS lifecycle"}
+
+  adversarial_multi_model_review:
+    1: {name: challenger, url: "https://github.com/ismailnakkar/challenger-plugin", why: "4-persona adversarial arena, confidence scoring, auto-scaling intensity"}
+    2: {name: adversarial-spec, url: "https://github.com/zscole/adversarial-spec", why: "Multi-model debate for specs, supports Codex+Gemini CLIs, convergence protocol"}
+    3: {name: adversarial-review, url: "https://github.com/bobby-beckmann/adversarial-review", why: "Iterative Claude-vs-Codex review loops"}
+    4: {name: claude-review-loop, url: "https://github.com/andytango/claude-review-loop", why: "Adversarial reviewer + fixer agents in loop"}
+    5: {name: codebase-quality, url: "https://github.com/baranbingol1/claude-codebase-quality", why: "7 read-only agents, dual compliance auditors, false-positive reduction"}
+
+  prompt_optimization:
+    1: {name: contextstellar, url: "https://github.com/sunnypatneedi/claude-code-contextstellar", why: "5-dimension prompt scoring with adaptive weights, cache-friendliness"}
+    2: {name: prompt-improver, url: "community search", why: "Research-based clarifying questions for vague prompts"}
+    3: {name: superpowers-optimized, url: "https://github.com/REPOZY/superpowers-optimized", why: "5 research-backed principles, self-consistency verification"}
+    4: {name: harnesskit, url: "https://github.com/ice-ice-bear/harnesskit", why: "Adaptive guardrails, custom skill proposals based on usage data"}
+    5: {name: snipara, url: "https://github.com/alopez3006/snipara-claude", why: "90% token reduction on docs, multi-round orchestration"}
+
+  context_token_optimization:
+    1: {name: cc-boost, url: "https://github.com/sworddut/cc-boost", why: "60-90% reduction on verbose CLI output, ANSI stripping, progress bar folding"}
+    2: {name: token-saver, url: "https://github.com/ppgranger/token-saver", why: "21 processors for git/pytest/docker/ruff, content-aware compression"}
+    3: {name: claude-md-optimizer, url: "https://github.com/wrsmith108/claude-md-optimizer", why: "Progressive disclosure for CLAUDE.md, content tiers"}
+    4: {name: contextstellar, url: "https://github.com/sunnypatneedi/claude-code-contextstellar", why: "Real-time context scoring, adaptive weights"}
+    5: {name: snipara, url: "https://github.com/alopez3006/snipara-claude", why: "90% token reduction on docs"}
+
+  memory_research_self_updating:
+    1: {name: engram, url: "https://github.com/tstockham96/engram-plugin", why: "92% DMR benchmark, knowledge graphs, bi-temporal, auto-consolidation"}
+    2: {name: evolve-loop, url: "https://github.com/mickeyyaya/evolve-loop", why: "Self-learning pipeline, meta-cycle prompt evolution, multi-armed bandit"}
+    3: {name: hipocampus, url: "https://github.com/kevin-hs-sohn/hipocampus", why: "3-tier compaction tree, ~3K token index, zero deps, markdown-based"}
+    4: {name: backpack-ontology, url: "https://github.com/NoahIrzinger/backpack-ontology-plugin", why: "Typed knowledge graph, progressive discovery, XDG JSON storage"}
+    5: {name: superpowers-optimized, url: "https://github.com/REPOZY/superpowers-optimized", why: "4-file cross-session memory stack, research-backed principles"}
+
+  telemetry_observability:
+    1: {name: mine, url: "https://github.com/anipotts/claude-code-tips", why: "SQLite session analytics, 18+ query intents, cost tracking, error memory"}
+    2: {name: vitals, url: "https://github.com/chopratejas/vitals", why: "Hotspot detection, co-change coupling, knowledge risk, AI provenance"}
+    3: {name: claude-hud, url: "community", why: "Real-time statusline HUD, context health, tool activity tracking"}
+    4: {name: claude-lens, url: "community", why: "Pace tracking, quota monitoring statusline"}
+    5: {name: contextstellar, url: "https://github.com/sunnypatneedi/claude-code-contextstellar", why: "Real-time context scoring across 5 dimensions"}
+
+  plugin_skill_finding:
+    1: {name: skill-doctor, url: "https://github.com/amaljithkuttamath/skill-doctor", why: "Audit, diagnose, upgrade skills. 12-item best-practices checklist"}
+    2: {name: claude-skills-updater, url: "https://github.com/dcuenot/claude-skills-updater", why: "Auto-audit and update all installed plugins to latest"}
+    3: {name: skill-validator, url: "https://github.com/aliksir/skill-validator", why: "Health checker for skills/commands, auto-fix with backup"}
+    4: {name: harnesskit, url: "https://github.com/ice-ice-bear/harnesskit", why: "Marketplace-first, proposes skills based on usage data"}
+    5: {name: why-is-my-claude-dumb, url: "community", why: "Analyzes environment and recommends marketplace plugins"}
+
+  self_updating_maintenance_offload:
+    1: {name: auto-memory, url: "https://github.com/severity1/claude-code-auto-memory", why: "Auto-maintains CLAUDE.md as codebase evolves"}
+    2: {name: claude-skills-updater, url: "https://github.com/dcuenot/claude-skills-updater", why: "Auto-updates installed plugins to latest versions"}
+    3: {name: open-crab, url: "https://github.com/jay2zxy/Open-Crab", why: "Self-healing /evolve command, daily patrol loop"}
+    4: {name: evolve-loop, url: "https://github.com/mickeyyaya/evolve-loop", why: "Meta-cycle prompt evolution every 5 cycles"}
+    5: {name: memory-compactor, url: "https://github.com/sharooncs/claude-memory-compactor", why: "Auto-enforces MEMORY.md 200-line budget"}
+
+  code_modernization:
+    1: {name: evolve-loop, url: "https://github.com/mickeyyaya/evolve-loop", why: "Multi-armed bandit targeting weakest areas, worktree isolation, quality gates"}
+    2: {name: vitals, url: "https://github.com/chopratejas/vitals", why: "ROI-ranked hotspot diagnosis, co-change coupling analysis"}
+    3: {name: pwp, url: "https://github.com/shandar/pwp-plugin", why: "11 systematic protocols for refactoring, migration, debugging"}
+    4: {name: sourcegraph, url: "https://github.com/sourcegraph-community/sourcegraph-claudecode-plugin", why: "Cross-repo refactor impact analysis"}
+    5: {name: impact-analysis, url: "https://github.com/Overbafer999/claude-impact-analysis", why: "Pre-edit dependency graph, blast radius analysis"}
+
+  dotfiles_chezmoi_mise:
+    note: "No community plugins specifically for chezmoi/mise — our rsm-subagents plugins are the best in this space"
+    1: {name: project-setup, url: "https://github.com/lambdao-dev/claude-project-setup-plugin", why: "Auto-detects Python venvs, linters, test runners"}
+    2: {name: cync, url: "https://github.com/dev-gyus/claude-code-sync", why: "Cross-machine Claude Code config sync with AES-256 encryption"}
+    3: {name: claude-code-organizer, url: "https://github.com/mcpware/claude-code-organizer", why: "Visual dashboard for config across scopes"}
+    4: {name: harnesskit, url: "https://github.com/ice-ice-bear/harnesskit", why: "Stack detection, adaptive guardrails per repo"}
+    5: {name: claude-backup, url: "https://github.com/tombelieber/claude-backup", why: "Simple environment backup/restore"}
+
+  replace_hand_coded:
+    1: {name: governance-skill, url: "https://github.com/wrsmith108/governance-claude-skill", why: "Could replace quality gate enforcement"}
+    2: {name: skill-validator, url: "https://github.com/aliksir/skill-validator", why: "Could replace mde-py validate --plugins"}
+    3: {name: bake-claude-md-files, url: "https://github.com/publicala/bake-claude-md-files", why: "Could replace hook-based rule enforcement"}
+    4: {name: ai-guard, url: "https://github.com/YosefHayim/ai-guard-plugins", why: "Could replace format-on-edit hook + quality enforcement"}
+    5: {name: production-grade, url: "https://github.com/nagisanzenin/claude-code-production-grade-plugin", why: "Could replace CLI dispatcher routing"}
+
+next_step: "Deep-evaluate top picks by cloning repos and reading full source for each finalist"
+tags: [goal-screening, capability-gaps, 828-plugins, 12-goals]
+status: screened

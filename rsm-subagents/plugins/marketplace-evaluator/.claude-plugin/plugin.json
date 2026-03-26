@@ -1,0 +1,19 @@
+{
+  "name": "marketplace-evaluator",
+  "version": "0.1.0",
+  "description": "Self-improving marketplace plugin evaluator. Screens 800+ community plugins against configurable capability goals, deep-reviews finalists, persists findings to repo, and evolves its own analysis prompts based on measured outcomes.",
+  "author": {
+    "name": "ray-manaloto",
+    "url": "https://github.com/ray-manaloto"
+  },
+  "repository": "https://github.com/ray-manaloto/rsm-subagents",
+  "license": "MIT",
+  "keywords": [
+    "marketplace",
+    "plugin-evaluation",
+    "self-improving",
+    "meta-learning",
+    "adversarial-review",
+    "multi-model"
+  ]
+}

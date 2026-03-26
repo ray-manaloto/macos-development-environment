@@ -1,0 +1,218 @@
+id: community-plugins-full-screening
+timestamp: "2026-03-26T09:30:00Z"
+agent: claude-opus-4.6
+finding_type: screening
+confidence: confirmed
+source: claude-community marketplace (588 plugins)
+methodology: |
+  All 588 plugins from claude-community marketplace screened against mde project profile:
+  Python 3.14 CLI, pytest/ruff/ty, mise/chezmoi/hk/Docker, no-shell-scripts policy,
+  subscription-only LLM access, TDD workflow, YAML provenance, context budget constraints.
+
+high_relevance:
+  - name: adversarial-review
+    description: Adversarial planning/code review between Claude Code and OpenAI Codex CLI
+    reasoning: Directly supports existing adversarial review workflow
+
+  - name: adversarial-spec
+    description: Multi-model debate for spec refinement with consensus
+    reasoning: Aligns with multi-model adversarial review pipeline
+
+  - name: ai-guard
+    description: Production guardrails for Claude Code (billing-guard, dry-guard, etc.)
+    reasoning: Prevents costly mistakes; relevant to CLI dev safety
+
+  - name: auto-approve-compound-bash
+    description: Auto-approve compound bash commands via shfmt AST parsing
+    reasoning: Relevant to Python CLI project using uv/mise commands frequently
+
+  - name: avicenna
+    description: Code knowledge graph - semantic search, symbol lookup, dependency analysis
+    reasoning: Directly useful for navigating the mde Python codebase
+
+  - name: bake-claude-md-files
+    description: Converts CLAUDE.md rules into automated checks
+    reasoning: Project has extensive CLAUDE.md; frees context budget
+
+  - name: bugbash
+    description: Hands-on bug hunting plugin for CLI/API/UI
+    reasoning: Relevant to testing the mde CLI tool
+
+  - name: cc-boost
+    description: Token compression - strips ANSI, collapses verbose CLI output
+    reasoning: Saves tokens with frequent uv/ruff/pytest output
+
+  - name: challenger
+    description: Multi-agent adversarial stress-testing of code decisions
+    reasoning: Complements existing adversarial review pipeline
+
+  - name: claude-md-optimizer
+    description: Optimize oversized CLAUDE.md with progressive disclosure
+    reasoning: Project has context budget policy; CLAUDE.md optimization is critical
+
+  - name: claude-review-loop
+    description: Automated code review with adversarial reviewer + fixer agents
+    reasoning: Fits the adversarial review workflow
+
+  - name: code-review-graph
+    description: Persistent incremental knowledge graph for token-efficient code reviews
+    reasoning: Reduces review cost across sessions
+
+  - name: codebase-quality
+    description: Automated code review using multiple specialized agents
+    reasoning: Directly relevant to Python code quality enforcement
+
+  - name: compact-guardian
+    description: Prevents task loss during context compaction
+    reasoning: Relevant to any long Claude Code session
+
+  - name: debug-skill
+    description: Interactive debugging - breakpoints, step through, inspect variables
+    reasoning: Directly useful for debugging Python CLI code
+
+  - name: docvet
+    description: Python docstring quality diagnostics via LSP (Google-style)
+    reasoning: Directly relevant - Python project with quality enforcement
+
+  - name: docvet-lsp
+    description: Real-time docstring quality diagnostics for Python files
+    reasoning: LSP variant of docvet
+
+  - name: draft
+    description: Context-driven development - draft specs and plans before implementation
+    reasoning: Fits spec-driven workflow
+
+  - name: evolve-loop
+    description: Self-learning dev pipeline with isolated git worktree execution
+    reasoning: Aligns with worktree PR workflow
+
+  - name: gh-dash
+    description: GitHub PR dashboard with CI/CD status
+    reasoning: Relevant to worktree PR workflow
+
+  - name: governance
+    description: Engineering standards enforcement with parallel agent code reviews
+    reasoning: Aligns with quality gate enforcement
+
+  - name: governance-skill
+    description: Zero-deferral code review for security/style/standards
+    reasoning: Aligns with zero-tolerance quality policy
+
+  - name: graperoot
+    description: Dual-graph code context engine - structural call graph + dependency graph
+    reasoning: Useful for navigating mde codebase
+
+  - name: impact-analysis
+    description: Analyzes file dependencies before Edit/Write operations
+    reasoning: Useful for understanding blast radius in mde modules
+
+  - name: local-rag
+    description: Local semantic search with AST-aware chunking for 6 languages
+    reasoning: Relevant for codebase search in Python project
+
+  - name: logfire
+    description: Pydantic Logfire observability integration
+    reasoning: Project uses Pydantic models; direct synergy
+
+  - name: memory-compactor
+    description: Auto-monitors MEMORY.md size with configurable thresholds
+    reasoning: Project has strict context budget policy for MEMORY.md
+
+  - name: mine
+    description: Session analytics - tracks costs, tokens, tools per project in SQLite
+    reasoning: Useful for understanding agent efficiency
+
+  - name: n360-engineering
+    description: Zero-defect engineering with TDD cycles and evidence-based investigation
+    reasoning: Aligns with zero-tolerance and TDD policies
+
+  - name: octo
+    description: Multi-LLM orchestration for Codex/Gemini/Claude with Double Diamond
+    reasoning: Directly relevant to subscription-only multi-model CLI approach
+
+  - name: plan-review
+    description: Multi-perspective plan review (VP Product/Engineering/Design)
+    reasoning: Useful for architecture decision review
+
+  - name: project-setup
+    description: Auto-configures .claude/ by reading project files
+    reasoning: Detects Python venvs, linters, test runners
+
+  - name: py-pit
+    description: Claude Code plugin for Python development
+    reasoning: Directly relevant Python dev plugin
+
+  - name: python-remote-debug-skill
+    description: Python 3.14+ remote debugging with sys.remote_exec()
+    reasoning: Python 3.14 match; directly useful for debugging
+
+  - name: safety-net
+    description: Block destructive git and filesystem commands
+    reasoning: Relevant safety guardrail for development workflow
+
+  - name: scan-modules
+    description: Scan and cache project module structure for fast context loading
+    reasoning: Directly useful for the 58-module mde codebase
+
+  - name: skill-doctor
+    description: Audits, diagnoses, and upgrades Claude Code skills and agents
+    reasoning: Project has 10+ plugins; maintenance is important
+
+  - name: skill-provenance
+    description: Version tracking for agent skills bundles across sessions
+    reasoning: Relevant to plugin management workflow
+
+  - name: skill-validator
+    description: Health checker for Claude Code skills/commands
+    reasoning: Directly relevant to plugin validation policy
+
+  - name: tdd-evolutionary-loop
+    description: Automate TDD with parallel coders and devils advocate
+    reasoning: Aligns with TDD workflow policy
+
+  - name: tdd-guard
+    description: Enforces TDD by intercepting file operations
+    reasoning: Aligns with TDD workflow enforcement
+
+  - name: tidy
+    description: Interactive TDD workflow using Kent Beck Tidy First approach
+    reasoning: Directly relevant to TDD workflow
+
+  - name: token-saver
+    description: Compresses verbose CLI output to save tokens
+    reasoning: Saves tokens with frequent CLI tool output
+
+  - name: trunk
+    description: Flaky test detection, root cause analysis, and fix suggestions
+    reasoning: Relevant to pytest test suite maintenance
+
+  - name: vitals
+    description: Codebase hotspot detection, ROI diagnosis, co-change coupling
+    reasoning: cli.py is identified as a hotspot; directly useful
+
+  - name: wave-planner
+    description: Transform issues into execution-ready plans with risk prediction
+    reasoning: Aligns with project workflow
+
+medium_relevance_count: 70
+medium_relevance_notable:
+  - enzyme (Obsidian vault indexing)
+  - obsidian-connector (Obsidian vault access)
+  - hipocampus (3-tier hot/warm/cold memory)
+  - youtube-transcriber (YouTube transcript extraction)
+  - wikipedia (Wikipedia article fetcher)
+  - codex-dispatch (Codex CLI dispatch)
+  - consensus (Multi-LLM parallel query)
+  - claude-tab-fix (Edit tab/space fix)
+  - scriptify (LLM instructions to scripts)
+
+already_evaluated:
+  - test-generator (INSTALL)
+  - srclight (REJECT)
+  - scenario-testing (REJECT)
+  - mcp2cli (EXTRACT)
+  - workflow-toolkit (REJECT)
+  - superdevflow (EXTRACT)
+
+tags: [community-plugins, full-screening, 588-plugins, high-relevance, medium-relevance]
+status: screened

@@ -142,7 +142,16 @@
     "hk-toolkit@rsm-subagents": true,
     "mise-toolkit@rsm-subagents": true,
     "research-review-toolkit@rsm-subagents": true,
-    "guide@claude-community": true
+    "guide@claude-community": true,
+    "test-generator@claude-community": true,
+    "token-saver@claude-community": true,
+    "safety-net@claude-community": true,
+    "challenger@claude-community": true,
+    "codebase-quality@claude-community": true,
+    "bugbash@claude-community": true,
+    "python-remote-debug-skill@claude-community": true,
+    "vitals@claude-community": true,
+    "marketplace-evaluator@rsm-subagents": true
   },
   "extraKnownMarketplaces": {
     "rsm-subagents": {

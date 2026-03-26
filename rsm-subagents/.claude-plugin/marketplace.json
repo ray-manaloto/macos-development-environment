@@ -52,6 +52,15 @@
       "category": "devtools",
       "tags": ["research", "review", "consensus", "multi-model", "provenance", "agent-fetch", "notebooklm", "reviewd"],
       "repository": "https://github.com/ray-manaloto/rsm-subagents"
+    },
+    {
+      "name": "marketplace-evaluator",
+      "source": "./plugins/marketplace-evaluator",
+      "description": "Self-improving marketplace plugin evaluator: screens 800+ plugins against configurable goals, deep-reviews finalists with multi-model review (Claude + Codex), persists findings to repo, and evolves its own prompts via meta-learning",
+      "version": "0.1.0",
+      "category": "devtools",
+      "tags": ["marketplace", "plugin-evaluation", "self-improving", "meta-learning", "multi-model", "adversarial-review"],
+      "repository": "https://github.com/ray-manaloto/rsm-subagents"
     }
   ]
 }

@@ -1,0 +1,311 @@
+id: community-plugin-evaluations
+timestamp: "2026-03-26T09:45:00Z"
+agent: claude-opus-4.6
+finding_type: evaluation
+confidence: confirmed
+source: claude-community marketplace (588 plugins screened, 51 deep-evaluated)
+methodology: |
+  1. Screened all 588 plugins in claude-community marketplace against mde project profile
+  2. Identified 45 HIGH + 6 previously flagged = 51 candidates
+  3. Applied automatic policy filters (no-shell-scripts, MCP access, context budget)
+  4. Deep-evaluated all 28 surviving candidates via 4 parallel agent batches
+  5. Every candidate has INSTALL/EXTRACT/REJECT verdict with rationale
+
+evaluations:
+  # === INSTALL (8 plugins) ===
+
+  - name: test-generator
+    verdict: INSTALL
+    source_url: https://github.com/a-abdellatif98/test-generator
+    rationale: "Python PostToolUse hook for test reminders, pytest scaffolding, test-writer agent. No policy conflicts."
+
+  - name: token-saver
+    verdict: INSTALL
+    source_url: https://github.com/ppgranger/token-saver
+    rationale: "21 processors for git/pytest/docker/ruff output compression. Python hooks. Apache 2.0. 60-99% token savings. Minimal context (1 skill, 1 cmd)."
+
+  - name: claude-code-safety-net
+    verdict: INSTALL
+    source_url: https://github.com/kenryu42/claude-code-safety-net
+    rationale: "Blocks destructive git/filesystem commands. Handles nested bash -c unwrapping. Node.js guard (acceptable). Fills worktree-pr-workflow enforcement gap."
+
+  - name: challenger-plugin
+    verdict: INSTALL
+    source_url: https://github.com/ismailnakkar/challenger-plugin
+    rationale: "2 skills, 5 agents for adversarial stress-testing. Pure prompt-based, no shell scripts, no API keys. On-demand invocation."
+
+  - name: claude-codebase-quality
+    verdict: INSTALL
+    source_url: https://github.com/baranbingol1/claude-codebase-quality
+    rationale: "7 read-only agents for codebase-wide quality audit. Dual compliance auditors. CLAUDE.md adherence checking. Fills periodic audit gap."
+
+  - name: claude-bugbash
+    verdict: INSTALL
+    source_url: https://github.com/riwaht/claude-bugbash
+    rationale: "Exploratory testing/QA. Evidence bar (S1-S4). Find-only. 3 modes (quick/normal/deep). No policy conflicts."
+
+  - name: python-remote-debug-skill
+    verdict: INSTALL
+    source_url: https://github.com/promptromp/python-remote-debug-skill
+    rationale: "Python 3.14 sys.remote_exec() guidance. Pure instructional skill. Zero infrastructure. Minimal context."
+
+  - name: vitals
+    verdict: INSTALL
+    source_url: https://github.com/chopratejas/vitals
+    rationale: "Hotspot detection, co-change coupling, knowledge risk, ROI refactoring. Python hooks. cli.py is 17-commit hotspot."
+
+  # === EXTRACT (7 plugins) ===
+
+  - name: mcp2cli
+    verdict: EXTRACT
+    source_url: https://github.com/myeolinmalchi/mcp2cli
+    rationale: "Overlaps existing mcp2cli CLI. Extract pattern-classification.md and skill-template.md reference docs."
+
+  - name: superdevflow
+    verdict: EXTRACT
+    source_url: https://github.com/ykdojo/superdevflow
+    rationale: "GHA debug methodology valuable. All Rights Reserved license. Document GHA investigation pattern."
+
+  - name: adversarial-spec
+    verdict: EXTRACT
+    source_url: https://github.com/zscole/adversarial-spec
+    rationale: "Spec refinement via multi-model debate. API-key-first design. Extract debate protocol and document templates."
+
+  - name: tdd-evolutionary-loop
+    verdict: EXTRACT
+    source_url: https://github.com/mblando9988/tdd-evolutionary-loop
+    rationale: "Parallel variant implementations. Extract devils advocate agent pattern for research-review-toolkit."
+
+  - name: tidy-skills
+    verdict: EXTRACT
+    source_url: https://github.com/currenjin/tidy-skills
+    rationale: "Kent Beck Tidy First patterns. Extract tidying catalog and structural/behavioral commit separation rule."
+
+  - name: bake-claude-md-files
+    verdict: EXTRACT
+    source_url: https://github.com/publicala/bake-claude-md-files
+    rationale: "mde already optimized CLAUDE.md. Extract audit methodology for converting .claude/rules/ to automated checks."
+
+  - name: skill-doctor
+    verdict: EXTRACT
+    source_url: https://github.com/amaljithkuttamath/skill-doctor
+    rationale: "Overlaps mde-py validate --plugins. Extract best-practices.md 12-item skill quality checklist."
+
+  # === REJECT deep-evaluated (21 plugins) ===
+
+  - name: srclight
+    verdict: REJECT
+    source_url: https://github.com/srclight/claude-code-plugin
+    rationale: "Bash hook, MCP server, API keys. Violates 3 policies."
+
+  - name: scenario-testing
+    verdict: REJECT
+    source_url: https://github.com/2389-research/claude-plugins
+    rationale: "Anti-mock absolutism conflicts with mde test patterns."
+
+  - name: workflow-toolkit
+    verdict: REJECT
+    source_url: https://github.com/dougwithseismic/workflow-toolkit
+    rationale: "All bash hooks. SQLite vs YAML. 21 skills context cost."
+
+  - name: cc-boost
+    verdict: REJECT
+    source_url: https://github.com/sworddut/cc-boost
+    rationale: "Node.js hooks. Narrower than token-saver. Scaffold irrelevant."
+
+  - name: claude-md-optimizer
+    verdict: REJECT
+    source_url: https://github.com/wrsmith108/claude-md-optimizer
+    rationale: "CLAUDE.md already optimized. One-time task."
+
+  - name: claude-memory-compactor
+    verdict: REJECT
+    source_url: https://github.com/sharooncs/claude-memory-compactor
+    rationale: "bash -c wrapper. Existing context-budget policy covers this."
+
+  - name: claude-impact-analysis
+    verdict: REJECT
+    source_url: https://github.com/Overbafer999/claude-impact-analysis
+    rationale: "Node.js hook, .impactrc.json config. 10s timeout per edit."
+
+  - name: scan-modules-plugin
+    verdict: REJECT
+    source_url: https://github.com/fengzhyuan/scan-modules-plugin
+    rationale: "Bash hook. Auto-modifies CLAUDE.md. Conflicts with hk.pkl."
+
+  - name: tdd-guard
+    verdict: REJECT
+    source_url: https://github.com/nizos/tdd-guard
+    rationale: "npx on every Write/Edit. Node.js ecosystem. Quality gate already enforces TDD."
+
+  - name: governance-skill
+    verdict: REJECT
+    source_url: https://github.com/wrsmith108/governance-claude-skill
+    rationale: "TypeScript/Node.js focused. 16 .claude/rules/ already serve same purpose."
+
+  - name: debug-skill
+    verdict: REJECT
+    source_url: https://github.com/AlmogBaku/debug-skill
+    rationale: "install-dap.sh. brew install (mise-first violation). python-remote-debug-skill is better."
+
+  - name: claude-project-setup
+    verdict: REJECT
+    source_url: https://github.com/lambdao-dev/claude-project-setup-plugin
+    rationale: "Greenfield setup. mde already has mature .claude/ config."
+
+  - name: n360-engineering
+    verdict: REJECT
+    source_url: https://github.com/JPVT1977/n360-marketplace
+    rationale: "5 skills. Heavy overlap with existing TDD + quality gate."
+
+  - name: adversarial-review
+    verdict: REJECT
+    source_url: https://github.com/bobby-beckmann/adversarial-review
+    rationale: "codex-review.sh (bash). Overlaps research-review-toolkit."
+
+  - name: plan-review
+    verdict: REJECT
+    source_url: https://github.com/wrsmith108/plan-review-skill
+    rationale: "Overlaps superpowers brainstorming and plan skills."
+
+  - name: wave-planner
+    verdict: REJECT
+    source_url: https://github.com/wrsmith108/wave-planner-claude-skill
+    rationale: "Overlaps superpowers writing-plans and executing-plans."
+
+  - name: skill-validator
+    verdict: REJECT
+    source_url: https://github.com/aliksir/skill-validator
+    rationale: "Node.js validation. Complete overlap with mde-py validate --plugins."
+
+  - name: skill-provenance
+    verdict: REJECT
+    source_url: https://github.com/snapsynapse/skill-provenance
+    rationale: "Contains .sh files. Git already tracks versions."
+
+  - name: safety-net
+    verdict: REJECT
+    source_url: https://github.com/kenryu42/claude-code-safety-net
+    rationale: "Duplicate of claude-code-safety-net (INSTALL above)."
+
+  - name: governance
+    verdict: REJECT
+    source_url: https://github.com/wrsmith108/governance-claude-skill
+    rationale: "Same repo as governance-skill. TypeScript-first."
+
+  - name: bugbash
+    verdict: REJECT
+    source_url: https://github.com/riwaht/claude-bugbash
+    rationale: "Duplicate of claude-bugbash (INSTALL above)."
+
+  # === REJECT auto-filtered (17 plugins) ===
+
+  - name: ai-guard
+    verdict: REJECT
+    source_url: https://github.com/YosefHayim/ai-guard-plugins
+    rationale: "AUTO: 4 bash hooks + 5 .sh — no-shell-scripts"
+
+  - name: auto-approve-compound-bash
+    verdict: REJECT
+    source_url: https://github.com/oryband/claude-code-auto-approve
+    rationale: "AUTO: bash hook + .sh — no-shell-scripts"
+
+  - name: gh-dash
+    verdict: REJECT
+    source_url: https://github.com/jakozloski/claude-code-gh-dash
+    rationale: "AUTO: bash hook + .sh — no-shell-scripts"
+
+  - name: octo
+    verdict: REJECT
+    source_url: https://github.com/nyldn/claude-octopus
+    rationale: "AUTO: 30 bash hooks, 280 .sh, MCP. Already installed separately."
+
+  - name: py-pit
+    verdict: REJECT
+    source_url: https://github.com/robhowley/claude-py-pit
+    rationale: "AUTO: bash hook + MCP — no-shell-scripts + MCP access"
+
+  - name: claude-review-loop
+    verdict: REJECT
+    source_url: https://github.com/andytango/claude-review-loop
+    rationale: "AUTO: bash hook — no-shell-scripts"
+
+  - name: code-review-graph
+    verdict: REJECT
+    source_url: https://github.com/tirth8205/code-review-graph
+    rationale: "AUTO: bash hook + MCP — no-shell-scripts + MCP access"
+
+  - name: compact-guardian
+    verdict: REJECT
+    source_url: https://github.com/ibarapascal/compact-guardian
+    rationale: "AUTO: mixed bash/python hooks — no-shell-scripts"
+
+  - name: local-rag
+    verdict: REJECT
+    source_url: https://github.com/TheWinci/local-rag
+    rationale: "AUTO: 3 bash hooks + 4 .sh — no-shell-scripts"
+
+  - name: avicenna
+    verdict: REJECT
+    source_url: https://github.com/smrf1093/Avicenna
+    rationale: "AUTO: MCP server — MCP access policy"
+
+  - name: trunk
+    verdict: REJECT
+    source_url: https://github.com/trunk-io/claude-code-plugin
+    rationale: "AUTO: MCP server — MCP access policy"
+
+  - name: graperoot
+    verdict: REJECT
+    source_url: https://github.com/kunal12203/graperoot-plugin
+    rationale: "AUTO: MCP server — MCP access policy"
+
+  - name: logfire
+    verdict: REJECT
+    source_url: https://github.com/pydantic/logfire-claude-plugin
+    rationale: "AUTO: MCP server — MCP access policy"
+
+  - name: docvet
+    verdict: REJECT
+    source_url: https://github.com/Alberto-Codes/docvet
+    rationale: "AUTO: 17 agents + 61 commands — context budget"
+
+  - name: docvet-lsp
+    verdict: REJECT
+    source_url: https://github.com/Alberto-Codes/docvet
+    rationale: "AUTO: same as docvet — context budget"
+
+  - name: draft
+    verdict: REJECT
+    source_url: https://github.com/mayurpise/draft
+    rationale: "AUTO: 13 .sh + 17 skills — no-shell-scripts + context budget"
+
+  - name: mine
+    verdict: REJECT
+    source_url: https://github.com/anipotts/claude-code-tips
+    rationale: "AUTO: 15 .sh — no-shell-scripts"
+
+  - name: evolve-loop
+    verdict: REJECT
+    source_url: https://github.com/mickeyyaya/evolve-loop
+    rationale: "AUTO: 8 .sh — no-shell-scripts"
+
+summary:
+  total_screened: 588
+  total_evaluated: 51
+  install: 8
+  extract: 7
+  reject_deep: 21
+  reject_auto: 17
+  install_list:
+    - test-generator
+    - token-saver
+    - claude-code-safety-net
+    - challenger-plugin
+    - claude-codebase-quality
+    - claude-bugbash
+    - python-remote-debug-skill
+    - vitals
+
+tags: [community-plugins, full-evaluation, 588-screened, 51-evaluated]
+status: evaluated

@@ -407,11 +407,13 @@ See deep review: `docs/research/trail/deep-reviews/python-docker-packaging-strat
 - https://raw.githubusercontent.com/anthropics/claude-plugins-community/main/README.md | CONFIRMED | Integration guide
 - https://raw.githubusercontent.com/anthropics/claude-plugins-community/main/.claude-plugin/marketplace.json | CONFIRMED | Community plugins registry
 
-### High-relevance community plugins discovered:
-- test-generator (auto pytest scaffolding)
-- srclight (code indexing Python + 10 langs)
-- python-remote-debug-skill (Python 3.14+ debugging)
-- scenario-testing (real dependency E2E testing)
-- mcp2cli (MCP to CLI conversion with SKILL.md)
-- workflow-toolkit (SQLite local task tracking)
+### High-relevance community plugins evaluated (2026-03-26):
+| Status | Plugin | URL | Verdict |
+|--------|--------|-----|---------|
+| [x] | test-generator | https://github.com/a-abdellatif98/test-generator | INSTALL — Python PostToolUse hook, pytest scaffolding, test-writer agent |
+| [x] | srclight | https://github.com/srclight/claude-code-plugin | REJECT — bash hooks, MCP server, conflicts with no-shell-scripts + MCP access policies |
+| [x] | scenario-testing | https://github.com/2389-research/claude-plugins | REJECT — anti-mock philosophy conflicts with mde test patterns, thin value |
+| [x] | mcp2cli | https://github.com/myeolinmalchi/mcp2cli | EXTRACT — overlaps existing mcp2cli CLI; reference docs useful for plugin dev |
+| [x] | workflow-toolkit | https://github.com/dougwithseismic/workflow-toolkit | REJECT — all bash hooks, SQLite vs YAML, 21 skills context cost, massive overlap |
+| [x] | superdevflow | https://github.com/ykdojo/superdevflow | EXTRACT — GHA debug skill valuable; "All Rights Reserved" license blocks extraction |
 
