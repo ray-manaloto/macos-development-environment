@@ -405,6 +405,7 @@ def _strip_gemini_noise(output: str) -> str:
         "Created execution plan",
         "Expanding hook command",
         "Hook execution for",
+        "Export retry time",
         "  logging:",
         "  prompts:",
         "  resources:",
