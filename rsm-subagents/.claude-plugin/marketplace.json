@@ -5,7 +5,7 @@
     "url": "https://github.com/ray-manaloto"
   },
   "metadata": {
-    "description": "Specialized agent toolkits for dotfiles, chezmoi, mise, hk, devcontainer, and macOS development environment management"
+    "description": "Specialized agent toolkits for dotfiles, chezmoi, mise, hk, devcontainer, research pipeline, and multi-model review management"
   },
   "plugins": [
     {
@@ -42,6 +42,15 @@
       "version": "0.1.0",
       "category": "devtools",
       "tags": ["devcontainer", "docker-compose", "observability", "otel", "grafana", "container"],
+      "repository": "https://github.com/ray-manaloto/rsm-subagents"
+    },
+    {
+      "name": "research-review-toolkit",
+      "source": "./plugins/research-review-toolkit",
+      "description": "Research pipeline and multi-model code review: source discovery, evidence synthesis, provenance tracking, autonomous review orchestration, consensus validation, and debate integrity",
+      "version": "0.1.0",
+      "category": "devtools",
+      "tags": ["research", "review", "consensus", "multi-model", "provenance", "agent-fetch", "notebooklm", "reviewd"],
       "repository": "https://github.com/ray-manaloto/rsm-subagents"
     }
   ]

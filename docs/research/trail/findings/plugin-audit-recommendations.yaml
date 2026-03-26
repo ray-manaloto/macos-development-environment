@@ -1,0 +1,153 @@
+id: finding-plugin-audit-recommendations
+timestamp: "2026-03-26T06:10:00Z"
+source: ".claude/settings.json"
+agent: researcher
+finding_type: audit
+confidence: probable
+confident_about: |
+  - 13 plugins currently enabled in settings.json
+  - 4 rsm-subagents custom plugins (chezmoi/devcontainer/hk/mise toolkits)
+  - 3 voltagent-subagents (multi-model orchestration)
+  - 3 knowledge-work-plugins (engineering/design/nimble)
+  - 2 claude-plugins-official (pyright-lsp/remember)
+  - 1 claude-community (guide)
+  - Project is Python CLI for macOS dev environment (src/mde/)
+  - Context budget limit per CLAUDE.md: max irrelevant plugins = cost increase
+
+gaps: |
+  - No direct measurement of context cost per plugin (skills, agents, tool descriptions)
+  - Cannot access voltagent-subagents source to assess relevance
+  - Design/nimble plugins scope not fully characterized
+  - Actual skill count per plugin not verified
+
+evidence: |
+  From .claude/settings.json enabledPlugins section (confirmed):
+  - pyright-lsp: Python language server integration (official)
+  - engineering: Knowledge-work plugin (productivity/code review context)
+  - remember: Memory/note-taking plugin (official)
+  - design: Design collaboration/workflow plugin
+  - nimble: Unknown knowledge-work plugin (likely task/workflow)
+  - voltagent-lang: Multi-model language support
+  - voltagent-dev-exp: Multi-model development experience plugin
+  - voltagent-qa-sec: Multi-model QA/security agent
+  - chezmoi-toolkit: Custom rsm-subagents (dotfile management)
+  - devcontainer-toolkit: Custom rsm-subagents (devcontainer workflows)
+  - hk-toolkit: Custom rsm-subagents (git hooks via Housy)
+  - mise-toolkit: Custom rsm-subagents (tool lifecycle management)
+  - guide: Community plugin from claude-community
+
+implication: |
+  CURRENT PLUGIN ASSESSMENT FOR PYTHON CLI MANAGING macOS DEV ENVIRONMENTS:
+
+  KEEP (HIGH RELEVANCE):
+  1. pyright-lsp@claude-plugins-official
+     - Status: KEEP
+     - Why: Python language server for LSP integration (deferred per memory notes)
+     - Relevance: HIGH (mde is Python package)
+     - Cost: ~1-2 agents, LSP tool definitions
+     - Note: Currently 0 servers loaded (memory: "LSP server status HIGH priority")
+
+  2. mise-toolkit@rsm-subagents
+     - Status: KEEP
+     - Why: Tool lifecycle management (core to mde-py)
+     - Relevance: HIGH (mde uses mise for tool declarations)
+     - Cost: 8 skills + 1 hook
+     - Status: Installed + validated per memory
+
+  3. chezmoi-toolkit@rsm-subagents
+     - Status: KEEP
+     - Why: Dotfile management (macOS dev environment core)
+     - Relevance: HIGH (chezmoi integration for dev environment)
+     - Cost: 6 skills + 2 hooks
+     - Status: Installed + validated per memory
+
+  4. hk-toolkit@rsm-subagents
+     - Status: KEEP
+     - Why: Git hooks management (code quality gates)
+     - Relevance: HIGH (mde uses hk.pkl for git hooks)
+     - Cost: ~4 skills + 1 hook
+     - Status: Installed, uses housy
+
+  5. devcontainer-toolkit@rsm-subagents
+     - Status: TENTATIVE KEEP
+     - Why: Dev container orchestration (VS Code development)
+     - Relevance: MEDIUM (macOS environment includes devcontainers)
+     - Cost: Likely 4-6 skills
+     - Status: Installed + validated, but scope unclear
+
+  EVALUATE/DISABLE (MEDIUM-LOW RELEVANCE):
+  6. design@knowledge-work-plugins
+     - Status: EVALUATE FOR DISABLE
+     - Why: Design collaboration/CSS workflows
+     - Relevance: LOW (mde is CLI tool, not design-focused)
+     - Cost: Unknown (likely 2-4 design-specific agents/skills)
+     - Risk: Context budget waste on non-applicable skills
+     - Recommendation: DISABLE unless user has design workflow
+
+  7. engineering@knowledge-work-plugins
+     - Status: KEEP (but monitor)
+     - Why: Code review, architecture, testing guidance
+     - Relevance: MEDIUM-HIGH (applicable to Python development)
+     - Cost: Unknown (likely 3-5 agents)
+     - Recommendation: KEEP for code review workflows
+
+  8. remember@claude-plugins-official
+     - Status: KEEP (core utility)
+     - Why: Memory/note management (session persistence)
+     - Relevance: MEDIUM (used for auto-memory integration)
+     - Cost: ~1-2 agents, MCP tools
+     - Note: Different from project's NotebookLM + Obsidian workflow
+
+  9. nimble@knowledge-work-plugins
+     - Status: EVALUATE FOR DISABLE
+     - Why: Unknown (likely task/workflow acceleration)
+     - Relevance: UNCLEAR (context budget concern if not used)
+     - Cost: Unknown
+     - Recommendation: INVESTIGATE scope; disable if not actively used
+
+  DISABLE (MULTI-MODEL ORCHESTRATION - NICHE USE CASE):
+  10. voltagent-lang@voltagent-subagents
+      - Status: DISABLE (unless active multi-model workflow)
+      - Why: Language support across multiple CLI models
+      - Relevance: LOW for single-model mde project
+      - Cost: Unknown (likely 2-3 agents, CLI tool definitions)
+      - Reason: mde focuses on Anthropic Claude; multi-model rarely used
+      - Recommendation: DISABLE to save context
+
+  11. voltagent-dev-exp@voltagent-subagents
+      - Status: DISABLE (niche orchestration)
+      - Why: Multi-model development experience
+      - Relevance: LOW (project uses single-model teams)
+      - Cost: Unknown (likely 3-5 agents, orchestration framework)
+      - Reason: Team uses Claude Opus/Sonnet/Haiku, not multi-model comparison
+      - Recommendation: DISABLE
+
+  12. voltagent-qa-sec@voltagent-subagents
+      - Status: DISABLE (niche orchestration)
+      - Why: Multi-model QA/security debate
+      - Relevance: LOW (security auditor is Sonnet, not multi-model)
+      - Cost: Unknown (likely 2-4 agents, debate framework)
+      - Recommendation: DISABLE; use single-model security-auditor agent instead
+
+  13. guide@claude-community
+      - Status: KEEP (workflow guide)
+      - Why: General Claude Code workflow guidance
+      - Relevance: MEDIUM (applicable to all projects)
+      - Cost: Likely 1-2 agents
+      - Recommendation: KEEP (minimal context cost, general utility)
+
+  SUMMARY:
+  - KEEP: 5-6 plugins (pyright-lsp, mise, chezmoi, hk, remember, guide, engineering)
+  - DISABLE: 3-4 plugins (design, nimble, voltagent-lang, voltagent-dev-exp, voltagent-qa-sec)
+  - EVALUATE: 1 plugin (devcontainer-toolkit scope unclear)
+  - Context savings: Removing voltagent + design + nimble = ~15-30% context budget reclaim
+
+  IMMEDIATE ACTION:
+  1. DISABLE design@knowledge-work-plugins (no design workflows in mde)
+  2. DISABLE voltagent-lang, voltagent-dev-exp, voltagent-qa-sec (multi-model not used)
+  3. INVESTIGATE nimble@knowledge-work-plugins (if no active task workflows, disable)
+  4. VERIFY devcontainer-toolkit necessity (if VS Code devcontainer setup automated, keep; else evaluate)
+  5. MEASURE context savings in next session
+
+tags: [plugin-audit, settings-json, context-budget, recommendations, disable-candidates, voltagent-niche, python-cli]
+status: discovered

@@ -1,0 +1,65 @@
+id: finding-community-plugins-audit
+timestamp: "2026-03-26T06:05:00Z"
+source: https://github.com/anthropics/claude-plugins-community
+agent: researcher
+finding_type: audit
+confidence: confirmed
+confident_about: |
+  - 500 community plugins in marketplace as of 2026-03-26
+  - Identified 40+ plugins relevant to Python/CLI/dev-tooling projects
+  - Top high-relevance plugins for mde Python CLI project
+  - Community plugin marketplace is read-only (synced nightly from Anthropic internal review)
+  - All plugins have passed security scanning and are community-contributed
+
+gaps: |
+  - No deep evaluation of each plugin's code quality or maintenance status
+  - Cannot assess integration cost with current rsm-subagents ecosystem
+  - Missing evaluation of plugin dependency management
+
+evidence: |
+  Repository: https://github.com/anthropics/claude-plugins-community
+  - Entry point: .claude-plugin/marketplace.json with 500 plugins
+  - README states: "read-only mirror of the community plugin marketplace"
+  - Each plugin has: name, description, source (git-subdir/url), homepage
+  - All plugins submitted via clau.de/plugin-directory-submission
+  - Security scanning required before inclusion
+
+implication: |
+  For mde (Python CLI managing macOS dev environments), high-relevance community plugins:
+
+  HIGH RELEVANCE:
+  - test-generator: Auto-generates test files for pytest (mde uses pytest)
+  - srclight: Code indexing with Python symbol search, dead code detection
+  - python-remote-debug-skill: Python 3.14+ debugging (relevant for mde CLI)
+  - scenario-testing: Real dependency E2E testing (aligns with integration test philosophy)
+  - mcp2cli: Convert MCP to CLI tools with SKILL.md (core use case for mde)
+  - workflow-toolkit: Session journaling, local SQLite tasks, GitHub issue sync
+  - dev-journal: Development decision tracking
+  - superdevflow: GitHub Actions debugging, CLAUDE.md review
+
+  MEDIUM RELEVANCE:
+  - better-dev: Code quality, testing, documentation verification
+  - cto-toolkit: Code review, architecture, DevOps, testing (24 skills)
+  - dbt-toolkit: Not relevant to mde scope
+  - dev-squad: Multi-agent team orchestration (mde already using team pattern)
+  - devteam: 10-agent hierarchical team (overlaps with team-lead role)
+  - api-contract-forge: Not relevant (mde is CLI, not web API)
+  - laravel-api-tool-kit: Language-specific, not Python
+  - delphi-dev: Delphi language, not relevant
+
+  LOW RELEVANCE / SKIP:
+  - Language-specific plugins (android-kmp-playbook, delphi-dev, laravel-api-tool-kit)
+  - Framework plugins (firebase-development, medusa-dev, preset-toolkit)
+  - Domain plugins (adspirer-ads-agent, astronomer, opsera-devsecops)
+  - Design/creative plugins (asset-generator, ai-statusline)
+  - Business/ops plugins (ai-adoption-playbook, angel-ai)
+
+  RECOMMENDATION:
+  1. Install test-generator (PostToolUse hook for test file reminders)
+  2. Evaluate srclight for local code indexing (Python + 10 other languages)
+  3. Consider scenario-testing integration (aligns with test philosophy)
+  4. Review mcp2cli source (may already be covered by current MCP policy)
+  5. Skip language/framework plugins — Python-first focus
+
+tags: [community-plugins, python-cli, devtooling, plugin-audit, marketplace, recommendations]
+status: discovered

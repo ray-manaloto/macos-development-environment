@@ -34,6 +34,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; case \"$f\" in *.py) uv run ruff format \"$f\" ;; esac; } 2>/dev/null || true",
+            "timeout": 15,
+            "statusMessage": "Formatting..."
+          },
+          {
+            "type": "command",
             "command": "uv run mde-py hooks log-edit-outcome"
           },
           {
@@ -126,15 +132,16 @@
     "hookify@claude-plugins-official": false,
     "engineering@knowledge-work-plugins": true,
     "remember@claude-plugins-official": true,
-    "design@knowledge-work-plugins": true,
-    "nimble@knowledge-work-plugins": true,
-    "voltagent-lang@voltagent-subagents": true,
-    "voltagent-dev-exp@voltagent-subagents": true,
-    "voltagent-qa-sec@voltagent-subagents": true,
+    "design@knowledge-work-plugins": false,
+    "nimble@knowledge-work-plugins": false,
+    "voltagent-lang@voltagent-subagents": false,
+    "voltagent-dev-exp@voltagent-subagents": false,
+    "voltagent-qa-sec@voltagent-subagents": false,
     "chezmoi-toolkit@rsm-subagents": true,
     "devcontainer-toolkit@rsm-subagents": true,
     "hk-toolkit@rsm-subagents": true,
     "mise-toolkit@rsm-subagents": true,
+    "research-review-toolkit@rsm-subagents": true,
     "guide@claude-community": true
   },
   "extraKnownMarketplaces": {

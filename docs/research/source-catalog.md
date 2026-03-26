@@ -400,3 +400,18 @@ See deep review: `docs/research/trail/deep-reviews/python-docker-packaging-strat
 - containers.dev/implementors/json_reference/ - Lifecycle command properties (postCreateCommand, postStartCommand, postAttachCommand, waitFor)
 - containers.dev/implementors/features/ - Feature dependencies, installation order, lifecycle hooks
 
+
+## 2026-03-26: Community Plugins Research Round
+
+- https://github.com/anthropics/claude-plugins-community | CONFIRMED | 500 community plugins, marketplace sync
+- https://raw.githubusercontent.com/anthropics/claude-plugins-community/main/README.md | CONFIRMED | Integration guide
+- https://raw.githubusercontent.com/anthropics/claude-plugins-community/main/.claude-plugin/marketplace.json | CONFIRMED | Community plugins registry
+
+### High-relevance community plugins discovered:
+- test-generator (auto pytest scaffolding)
+- srclight (code indexing Python + 10 langs)
+- python-remote-debug-skill (Python 3.14+ debugging)
+- scenario-testing (real dependency E2E testing)
+- mcp2cli (MCP to CLI conversion with SKILL.md)
+- workflow-toolkit (SQLite local task tracking)
+
