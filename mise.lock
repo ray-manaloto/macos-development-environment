@@ -24,3 +24,7 @@ backend = "npm:claude-code-lint"
 [[tools."npm:skillfish"]]
 version = "1.0.30"
 backend = "npm:skillfish"
+
+[[tools."pipx:srclight"]]
+version = "0.8.1"
+backend = "pipx:srclight"

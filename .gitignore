@@ -42,3 +42,4 @@ docker/observability/.env
 
 # Local settings (session-accumulated permissions — not committed)
 .claude/settings.local.json
+.srclight/
