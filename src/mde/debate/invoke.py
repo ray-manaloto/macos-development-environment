@@ -7,7 +7,7 @@ never improvise flags.
 CLI syntax source of truth: skill-debate.md lines 53-79 (claude-octopus v9.13.0).
 
 Codex: codex exec --full-auto "prompt"
-Gemini: printf '%s' "prompt" | gemini -p "" -o text --approval-mode yolo
+Gemini: printf '%s' "prompt" | gemini -p "" -o json -y
 """
 
 from __future__ import annotations
@@ -146,13 +146,13 @@ def _invoke_codex(prompt: str, timeout: int = 300) -> InvocationResult:
 def _invoke_gemini(prompt: str, timeout: int = 300) -> InvocationResult:
     """Invoke Gemini CLI in non-interactive headless mode.
 
+    Uses -o json for structured output — noise goes to stderr, stdout is clean JSON.
+
     Flags derived from gemini --help (v0.35.2) and geminicli.com docs:
     - -p "" triggers headless mode; stdin is appended to the prompt value
-    - -o text|json|stream-json sets output format
+    - -o json for structured output (text parts as JSON array)
     - -y is shorthand for --approval-mode yolo (NOT deprecated)
-    - --allowed-mcp-server-names with no value blocks all MCP servers
     - "yolo" is ONLY valid as CLI flag, NOT in settings.json (use "auto_edit" there)
-    - admin.extensions.enabled in settings.json is user-level only, CLI -e overrides
     """
     gemini_path = shutil.which("gemini")
     if not gemini_path:
@@ -170,7 +170,7 @@ def _invoke_gemini(prompt: str, timeout: int = 300) -> InvocationResult:
         "-p",
         "",
         "-o",
-        "text",
+        "json",  # structured output — noise to stderr, clean JSON to stdout
         "-y",  # --approval-mode yolo shorthand
     ]
 
@@ -186,7 +186,7 @@ def _invoke_gemini(prompt: str, timeout: int = 300) -> InvocationResult:
         )
         duration = time.monotonic() - start
 
-        response = _strip_gemini_noise(result.stdout)
+        response = _extract_gemini_json(result.stdout)
 
         return InvocationResult(
             model="gemini",
@@ -432,6 +432,32 @@ def _strip_codex_noise(output: str) -> str:
             content_lines.append(line)
 
     return "\n".join(content_lines).strip()
+
+
+def _extract_gemini_json(stdout: str) -> str:
+    """Extract text content from gemini -o json output.
+
+    Gemini JSON output is an array of response parts. Each part has a "text" field.
+    Falls back to the old noise stripping if JSON parsing fails.
+    """
+    try:
+        data = json.loads(stdout)
+        # Gemini outputs an array of parts or a single object
+        if isinstance(data, list):
+            # Concatenate all text parts
+            parts: list[str] = []
+            for item in data:
+                if isinstance(item, dict) and "text" in item:
+                    parts.append(item["text"])
+                elif isinstance(item, str):
+                    parts.append(item)
+            return "\n".join(parts).strip() if parts else stdout.strip()
+        if isinstance(data, dict):
+            return str(data.get("text", data.get("response", stdout))).strip()
+        return stdout.strip()
+    except (json.JSONDecodeError, TypeError):
+        # Fallback: strip noise from text output (shouldn't happen with -o json)
+        return _strip_gemini_noise(stdout)
 
 
 def _strip_gemini_noise(output: str) -> str:

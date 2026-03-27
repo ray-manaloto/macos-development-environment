@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from mde.debate.invoke import (
     DebateModel,
     InvocationResult,
+    _extract_gemini_json,
     _strip_codex_noise,
     _strip_gemini_noise,
     invoke_all,
@@ -261,3 +263,78 @@ class TestInvokeAllParallel:
         assert len(results) == 2
         assert all(not r.success for r in results)
         assert all("Agent tool" in (r.error or "") for r in results)
+
+
+# ── Gemini JSON extraction ───────────────────────────────────────────────
+
+
+class TestExtractGeminiJson:
+    """Test gemini JSON output extraction."""
+
+    def test_extracts_text_from_array(self) -> None:
+        stdout = json.dumps([{"text": "Hello from Gemini"}])
+        result = _extract_gemini_json(stdout)
+        assert result == "Hello from Gemini"
+
+    def test_extracts_text_from_object(self) -> None:
+        stdout = json.dumps({"text": "Hello from Gemini"})
+        result = _extract_gemini_json(stdout)
+        assert result == "Hello from Gemini"
+
+    def test_concatenates_multiple_parts(self) -> None:
+        stdout = json.dumps([{"text": "Part 1"}, {"text": "Part 2"}])
+        result = _extract_gemini_json(stdout)
+        assert "Part 1" in result
+        assert "Part 2" in result
+
+    def test_falls_back_to_noise_strip_on_invalid_json(self) -> None:
+        stdout = "Not JSON at all\nActual response here.\n"
+        result = _extract_gemini_json(stdout)
+        # Should fall back to _strip_gemini_noise
+        assert "Actual response here." in result
+
+    def test_handles_string_array(self) -> None:
+        stdout = json.dumps(["response text"])
+        result = _extract_gemini_json(stdout)
+        assert result == "response text"
+
+    def test_handles_response_key_in_object(self) -> None:
+        stdout = json.dumps({"response": "Hello from Gemini"})
+        result = _extract_gemini_json(stdout)
+        assert result == "Hello from Gemini"
+
+    def test_handles_empty_array(self) -> None:
+        stdout = json.dumps([])
+        result = _extract_gemini_json(stdout)
+        assert result == "[]"  # Falls back to stdout.strip()
+
+    def test_handles_empty_string(self) -> None:
+        result = _extract_gemini_json("")
+        assert isinstance(result, str)
+
+
+# ── Gemini -o json flag in command ───────────────────────────────────────
+
+
+class TestGeminiUsesJsonOutput:
+    """Verify gemini invocation uses -o json flag."""
+
+    @patch("mde.debate.invoke.subprocess.run")
+    @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/gemini")
+    def test_gemini_cmd_uses_json_output(self, mock_which: MagicMock, mock_run: MagicMock) -> None:
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout=json.dumps([{"text": "test response"}]),
+            stderr="",
+        )
+        from mde.debate.invoke import _invoke_gemini
+
+        result = _invoke_gemini("test prompt")
+        assert result.success is True
+        assert result.response == "test response"
+
+        # Verify the command includes -o json
+        cmd = mock_run.call_args[0][0]
+        assert "-o" in cmd
+        json_idx = cmd.index("-o")
+        assert cmd[json_idx + 1] == "json"
