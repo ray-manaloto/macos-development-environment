@@ -446,5 +446,10 @@
     "type": "command",
     "command": "cd /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment && uv run mde-py statusline render"
   },
-  "spinnerTipsEnabled": true
+  "spinnerTipsEnabled": true,
+  "permissions": {
+    "defaultMode": "default"
+  },
+  "autoDreamEnabled": true,
+  "skipDangerousModePermissionPrompt": true
 }
