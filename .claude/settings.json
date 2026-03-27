@@ -16,6 +16,9 @@
     "OTEL_METRICS_INCLUDE_VERSION": "true",
     "OTEL_RESOURCE_ATTRIBUTES": "project=mde,environment=dev"
   },
+  "permissions": {
+    "defaultMode": "default"
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -142,6 +145,10 @@
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "cd /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment && uv run mde-py statusline render"
   },
   "enabledPlugins": {
     "accessibility-compliance@claude-code-workflows": false,
@@ -331,7 +338,9 @@
     "vue-volar@claude-code-lsps": true,
     "web-scripting@claude-code-workflows": true,
     "zapier@knowledge-work-plugins": true,
-    "zoominfo@knowledge-work-plugins": true
+    "zoominfo@knowledge-work-plugins": true,
+    "mcp2cli@claude-community": true,
+    "srclight@claude-community": true
   },
   "extraKnownMarketplaces": {
     "anthropic-agent-skills": {
@@ -432,14 +441,7 @@
       }
     }
   },
-  "statusLine": {
-    "type": "command",
-    "command": "cd /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment && uv run mde-py statusline render"
-  },
   "spinnerTipsEnabled": true,
-  "permissions": {
-    "defaultMode": "default"
-  },
   "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true
 }

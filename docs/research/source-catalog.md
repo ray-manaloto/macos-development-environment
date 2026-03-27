@@ -417,3 +417,42 @@ See deep review: `docs/research/trail/deep-reviews/python-docker-packaging-strat
 | [x] | workflow-toolkit | https://github.com/dougwithseismic/workflow-toolkit | REJECT — all bash hooks, SQLite vs YAML, 21 skills context cost, massive overlap |
 | [x] | superdevflow | https://github.com/ykdojo/superdevflow | EXTRACT — GHA debug skill valuable; "All Rights Reserved" license blocks extraction |
 
+## 2026-03-27: Doppler Secrets Management Research
+
+### Doppler Documentation Sources (finding-doppler-secrets-setup.yaml)
+
+| Status | Source | URL | Type | Classification |
+|--------|--------|-----|------|-----------------|
+| [x] | Doppler CLI Installation | https://docs.doppler.com/docs/install-cli | Official Docs | CONFIRMED — macOS installation via brew, prerequisites (gnupg), version verification |
+| [x] | Doppler CLI Guide | https://docs.doppler.com/docs/cli | Official Docs | CONFIRMED — Full CLI reference, doppler setup, doppler run, configuration patterns |
+| [x] | Service Tokens | https://docs.doppler.com/docs/enclave-service-tokens | Official Docs | CONFIRMED — Read-only token creation, 3 usage patterns, ephemeral tokens, revocation |
+| [x] | Pricing & Tiers | https://www.doppler.com/pricing | Official Docs | CONFIRMED — Developer (free 3 users, $8/mo each), Team ($21/mo), Enterprise (custom) |
+| [x] | Integrations | https://docs.doppler.com/docs/integrations | Official Docs | CONFIRMED — 20+ platform integrations (AWS, Azure, GCP, GitHub, GitLab, Kubernetes, Docker, etc.) |
+| [x] | API Reference | https://docs.doppler.com/docs/api | Official Docs | CONFIRMED — REST API with Postman collection, auth token formats |
+
+### Key Findings from Doppler Research
+
+- **Installation (macOS)**: `brew install gnupg && brew install dopplerhq/cli/doppler` (or curl shell script)
+- **Free Tier**: 3 users, 5 config syncs, 3-day activity logs, CLI + service tokens + API access
+- **Project/Config Model**: Doppler uses Projects > Configs (environments), not separate Environment tier
+- **Secrets Injection**: Language-agnostic via `doppler run -- <command>` (injects as env vars)
+- **Service Token Strategy**: Read-only, scoped to single config; best for production/CI
+- **Offline Support**: Encrypted fallback file (~/.config/doppler/fallback.json) enables offline access
+- **Integration Breadth**: 20+ platforms; fnox+Keychain has none (Keychain-locked)
+
+### Gaps Identified
+
+- No documented bulk import API endpoint (truncated in API docs preview)
+- No native macOS Keychain integration (unlike fnox+Keychain)
+- No mise task wrapper documented; requires custom integration
+- No direct fnox↔Doppler sync tooling found
+- Doppler export-to-Keychain capability not documented
+
+### For Solo Developer Context
+
+**Doppler vs fnox+Keychain:**
+- fnox: local-first, Keychain-native, free, no integrations
+- Doppler: cloud-first, 20+ integrations, Team RBAC, $0-$21/user, offline fallback
+
+**Recommendation**: Use Doppler as cloud source-of-truth + optional fnox wrapper for Keychain sync if local-first preference required.
+
