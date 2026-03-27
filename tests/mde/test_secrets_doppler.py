@@ -186,3 +186,62 @@ class TestExportFnoxToDoppler:
             result = export_fnox_to_doppler()
         assert result == 1
         mock_run.assert_not_called()  # fnox list must not be called when doppler unavailable
+
+
+class TestSyncDopplerToFnox:
+    """Tests for sync_doppler_to_fnox."""
+
+    def test_syncs_all_secrets_to_fnox(self) -> None:
+        """Sync downloads from Doppler and sets each in fnox."""
+        with (
+            patch("mde.secrets.sync.is_doppler_available", return_value=True),
+            patch("mde.secrets.sync.doppler_list_secrets") as mock_list,
+            patch("mde.secrets.sync.subprocess.run") as mock_run,
+        ):
+            mock_list.return_value = {"KEY1": "val1", "KEY2": "val2"}
+            mock_run.return_value = MagicMock(returncode=0)
+            from mde.secrets.sync import sync_doppler_to_fnox
+
+            result = sync_doppler_to_fnox()
+        assert result == 0
+        assert mock_run.call_count == 2
+        # Verify fnox set commands
+        calls = [c[0][0] for c in mock_run.call_args_list]
+        assert ["fnox", "set", "KEY1", "val1", "--provider", "keychain", "--global"] in calls
+        assert ["fnox", "set", "KEY2", "val2", "--provider", "keychain", "--global"] in calls
+
+    def test_returns_one_when_doppler_not_available(self) -> None:
+        """Returns 1 if doppler is not installed."""
+        with patch("mde.secrets.sync.is_doppler_available", return_value=False):
+            from mde.secrets.sync import sync_doppler_to_fnox
+
+            result = sync_doppler_to_fnox()
+        assert result == 1
+
+    def test_returns_one_when_no_secrets(self) -> None:
+        """Returns 1 if Doppler returns empty."""
+        with (
+            patch("mde.secrets.sync.is_doppler_available", return_value=True),
+            patch("mde.secrets.sync.doppler_list_secrets", return_value={}),
+        ):
+            from mde.secrets.sync import sync_doppler_to_fnox
+
+            result = sync_doppler_to_fnox()
+        assert result == 1
+
+    def test_returns_one_on_partial_failure(self) -> None:
+        """Returns 1 if some fnox set calls fail."""
+        with (
+            patch("mde.secrets.sync.is_doppler_available", return_value=True),
+            patch("mde.secrets.sync.doppler_list_secrets") as mock_list,
+            patch("mde.secrets.sync.subprocess.run") as mock_run,
+        ):
+            mock_list.return_value = {"KEY1": "val1", "KEY2": "val2"}
+            mock_run.side_effect = [
+                MagicMock(returncode=0),  # KEY1 succeeds
+                MagicMock(returncode=1, stderr="error"),  # KEY2 fails
+            ]
+            from mde.secrets.sync import sync_doppler_to_fnox
+
+            result = sync_doppler_to_fnox()
+        assert result == 1

@@ -24,4 +24,8 @@ def dispatch_secrets(action: str) -> int:
         from mde.secrets.export_to_doppler import export_fnox_to_doppler
 
         return export_fnox_to_doppler()
+    if action == "sync":
+        from mde.secrets.sync import sync_doppler_to_fnox
+
+        return sync_doppler_to_fnox()
     return 1
