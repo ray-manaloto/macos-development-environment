@@ -114,6 +114,7 @@ class TestExportFnoxToDoppler:
         with (
             patch("mde.secrets.export_to_doppler.subprocess.run") as mock_run,
             patch("mde.secrets.export_to_doppler.doppler_set_secrets") as mock_set,
+            patch("mde.secrets.export_to_doppler.is_doppler_available", return_value=True),
         ):
             mock_run.side_effect = [
                 MagicMock(returncode=0, stdout=mock_fnox_list),  # fnox list
@@ -136,6 +137,7 @@ class TestExportFnoxToDoppler:
         with (
             patch("mde.secrets.export_to_doppler.subprocess.run") as mock_run,
             patch("mde.secrets.export_to_doppler.doppler_set_secrets"),
+            patch("mde.secrets.export_to_doppler.is_doppler_available", return_value=True),
         ):
             mock_run.return_value = MagicMock(
                 returncode=1, stdout="", stderr="fnox: command failed"
@@ -144,3 +146,43 @@ class TestExportFnoxToDoppler:
 
             result = export_fnox_to_doppler()
         assert result == 1
+
+    def test_partial_fnox_get_failure_still_exports_successes(self) -> None:
+        """Exports successfully retrieved secrets even when some fnox get calls fail."""
+        mock_fnox_list = (
+            " OPENAI_API_KEY   provider (keychain)  OPENAI_API_KEY\n"
+            " GEMINI_API_KEY   provider (keychain)  GEMINI_API_KEY\n"
+        )
+        with (
+            patch("mde.secrets.export_to_doppler.subprocess.run") as mock_run,
+            patch("mde.secrets.export_to_doppler.doppler_set_secrets") as mock_set,
+            patch("mde.secrets.export_to_doppler.is_doppler_available", return_value=True),
+        ):
+            mock_run.side_effect = [
+                MagicMock(returncode=0, stdout=mock_fnox_list),  # fnox list
+                MagicMock(
+                    returncode=1, stdout="", stderr="keychain error"
+                ),  # fnox get OPENAI fails
+                MagicMock(returncode=0, stdout="key-xyz789\n"),  # fnox get GEMINI succeeds
+            ]
+            mock_set.return_value = 0
+            from mde.secrets.export_to_doppler import export_fnox_to_doppler
+
+            result = export_fnox_to_doppler()
+        assert result == 0
+        mock_set.assert_called_once()
+        secrets_arg = mock_set.call_args[0][0]
+        assert "OPENAI_API_KEY" not in secrets_arg  # failed get should be excluded
+        assert "GEMINI_API_KEY" in secrets_arg  # successful get should be included
+
+    def test_returns_one_when_doppler_not_available(self) -> None:
+        """Returns exit code 1 immediately when doppler is not installed."""
+        with (
+            patch("mde.secrets.export_to_doppler.is_doppler_available", return_value=False),
+            patch("mde.secrets.export_to_doppler.subprocess.run") as mock_run,
+        ):
+            from mde.secrets.export_to_doppler import export_fnox_to_doppler
+
+            result = export_fnox_to_doppler()
+        assert result == 1
+        mock_run.assert_not_called()  # fnox list must not be called when doppler unavailable

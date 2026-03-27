@@ -5,7 +5,7 @@ from __future__ import annotations
 import subprocess
 
 from mde.log import logger
-from mde.secrets.doppler import doppler_set_secrets
+from mde.secrets.doppler import doppler_set_secrets, is_doppler_available
 
 
 def export_fnox_to_doppler() -> int:
@@ -17,6 +17,10 @@ def export_fnox_to_doppler() -> int:
     Returns:
         0 on success, 1 on failure.
     """
+    if not is_doppler_available():
+        logger.error("doppler_not_available")
+        return 1
+
     list_result = subprocess.run(
         ["fnox", "list"],
         capture_output=True,
