@@ -185,7 +185,7 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     # secrets
     secrets_p = sub.add_parser("secrets", help="Secrets management")
     secrets_p.add_argument(
-        "action", choices=["refresh", "smoke", "export", "sync"], help="Secrets action"
+        "action", choices=["refresh", "smoke", "export", "sync", "validate"], help="Secrets action"
     )
 
     # learn

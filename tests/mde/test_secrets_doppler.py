@@ -188,6 +188,62 @@ class TestExportFnoxToDoppler:
         mock_run.assert_not_called()  # fnox list must not be called when doppler unavailable
 
 
+class TestValidateSecretsParity:
+    """Tests for validate_secrets_parity."""
+
+    def test_returns_zero_when_keys_match(self) -> None:
+        """Returns 0 when Doppler and fnox have the same keys."""
+        fnox_output = " KEY1   provider (keychain)  KEY1\n KEY2   provider (keychain)  KEY2\n"
+        with (
+            patch("mde.secrets.validate_parity.is_doppler_available", return_value=True),
+            patch("mde.secrets.validate_parity.doppler_list_secrets") as mock_list,
+            patch("mde.secrets.validate_parity.subprocess.run") as mock_run,
+        ):
+            mock_list.return_value = {"KEY1": "val1", "KEY2": "val2"}
+            mock_run.return_value = MagicMock(returncode=0, stdout=fnox_output)
+            from mde.secrets.validate_parity import validate_secrets_parity
+
+            result = validate_secrets_parity()
+        assert result == 0
+
+    def test_returns_one_when_doppler_has_extra_keys(self) -> None:
+        """Returns 1 when Doppler has keys not in fnox."""
+        fnox_output = " KEY1   provider (keychain)  KEY1\n"
+        with (
+            patch("mde.secrets.validate_parity.is_doppler_available", return_value=True),
+            patch("mde.secrets.validate_parity.doppler_list_secrets") as mock_list,
+            patch("mde.secrets.validate_parity.subprocess.run") as mock_run,
+        ):
+            mock_list.return_value = {"KEY1": "val1", "KEY2": "val2"}
+            mock_run.return_value = MagicMock(returncode=0, stdout=fnox_output)
+            from mde.secrets.validate_parity import validate_secrets_parity
+
+            result = validate_secrets_parity()
+        assert result == 1
+
+    def test_returns_one_when_doppler_not_available(self) -> None:
+        """Returns 1 if doppler is not installed."""
+        with patch("mde.secrets.validate_parity.is_doppler_available", return_value=False):
+            from mde.secrets.validate_parity import validate_secrets_parity
+
+            result = validate_secrets_parity()
+        assert result == 1
+
+    def test_returns_one_when_fnox_list_fails(self) -> None:
+        """Returns 1 if fnox list fails."""
+        with (
+            patch("mde.secrets.validate_parity.is_doppler_available", return_value=True),
+            patch("mde.secrets.validate_parity.doppler_list_secrets") as mock_list,
+            patch("mde.secrets.validate_parity.subprocess.run") as mock_run,
+        ):
+            mock_list.return_value = {"KEY1": "val1"}
+            mock_run.return_value = MagicMock(returncode=1, stderr="error")
+            from mde.secrets.validate_parity import validate_secrets_parity
+
+            result = validate_secrets_parity()
+        assert result == 1
+
+
 class TestSyncDopplerToFnox:
     """Tests for sync_doppler_to_fnox."""
 

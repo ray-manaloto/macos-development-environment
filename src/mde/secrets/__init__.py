@@ -28,4 +28,8 @@ def dispatch_secrets(action: str) -> int:
         from mde.secrets.sync import sync_doppler_to_fnox
 
         return sync_doppler_to_fnox()
+    if action == "validate":
+        from mde.secrets.validate_parity import validate_secrets_parity
+
+        return validate_secrets_parity()
     return 1
