@@ -1,6 +1,6 @@
 """Tests for mde.autonomous_review — 7-phase autonomous fix-review orchestrator.
 
-Tests the orchestration layer that wires reviewd CLI invocations through
+Tests the orchestration layer that wires debate/invoke.py invocations through
 the consensus gate. All CLI calls are mocked (zero API keys).
 
 Phase 0c of the autonomous-fix-review skill.
@@ -20,6 +20,7 @@ from mde.autonomous_review import (
     ReviewPipeline,
     ReviewPipelineConfig,
     ReviewPipelineResult,
+    _extract_json,
     parse_finding_input,
     run_multi_model_review,
 )
@@ -27,6 +28,7 @@ from mde.consensus import (
     AutonomyMode,
     ConsensusDecision,
 )
+from mde.debate.invoke import InvocationResult
 
 # ── Fixtures ──────────────────────────────────────────────────────────────
 
@@ -37,7 +39,7 @@ def _make_review_json(
     findings: list[dict[str, Any]] | None = None,
     overview: str = "Looks good",
 ) -> str:
-    """Build a fake reviewd JSON response wrapped in markdown code fence."""
+    """Build a fake review JSON response wrapped in markdown code fence."""
     data = {
         "overview": overview,
         "findings": findings or [],
@@ -52,7 +54,7 @@ def _make_review_json(
 def _make_reject_json(
     findings: list[dict[str, Any]] | None = None,
 ) -> str:
-    """Build a fake reviewd rejection response."""
+    """Build a fake rejection response."""
     default_findings = [
         {
             "severity": "critical",
@@ -68,6 +70,24 @@ def _make_reject_json(
         approve=False,
         findings=findings or default_findings,
         overview="Found issues",
+    )
+
+
+def _make_invocation_result(
+    model: str = "claude",
+    response: str = "",
+    *,
+    success: bool = True,
+    error: str | None = None,
+) -> InvocationResult:
+    """Build a fake InvocationResult from debate/invoke.py."""
+    return InvocationResult(
+        model=model,
+        prompt="test prompt",
+        response=response,
+        success=success,
+        duration_seconds=1.0,
+        error=error,
     )
 
 
@@ -123,15 +143,45 @@ class TestReviewPipelineConfig:
         assert config.autonomy == AutonomyMode.SUPERVISED
 
 
+# ── JSON extraction ──────────────────────────────────────────────────────
+
+
+class TestExtractJson:
+    """Test _extract_json helper for parsing model responses."""
+
+    def test_extracts_from_json_fence(self) -> None:
+        text = 'Here is my review:\n```json\n{"approve": true}\n```\n'
+        result = _extract_json(text)
+        assert result == {"approve": True}
+
+    def test_extracts_from_bare_fence(self) -> None:
+        text = '```\n{"approve": false}\n```'
+        result = _extract_json(text)
+        assert result == {"approve": False}
+
+    def test_extracts_raw_json(self) -> None:
+        text = '{"approve": true, "findings": []}'
+        result = _extract_json(text)
+        assert result == {"approve": True, "findings": []}
+
+    def test_raises_on_invalid_json(self) -> None:
+        import pytest
+
+        with pytest.raises((json.JSONDecodeError, ValueError)):
+            _extract_json("This is not JSON at all, just prose.")
+
+
 # ── Multi-model review invocation ─────────────────────────────────────────
 
 
 class TestRunMultiModelReview:
-    """Test parallel multi-model review invocation via reviewd."""
+    """Test multi-model review invocation via debate/invoke.py."""
 
-    @patch("mde.autonomous_review.invoke_cli")
+    @patch("mde.autonomous_review.invoke_model")
     def test_invokes_all_three_models(self, mock_invoke: MagicMock) -> None:
-        mock_invoke.return_value = _make_review_json()
+        mock_invoke.return_value = _make_invocation_result(
+            response=_make_review_json(),
+        )
         reviews = run_multi_model_review(
             prompt="Review this diff",
             cwd="/tmp/test",
@@ -141,12 +191,12 @@ class TestRunMultiModelReview:
         assert mock_invoke.call_count == 3
         assert all(r.approve for r in reviews)
 
-    @patch("mde.autonomous_review.invoke_cli")
+    @patch("mde.autonomous_review.invoke_model")
     def test_handles_mixed_approve_reject(self, mock_invoke: MagicMock) -> None:
         mock_invoke.side_effect = [
-            _make_review_json(approve=True),
-            _make_reject_json(),
-            _make_review_json(approve=True),
+            _make_invocation_result(model="claude", response=_make_review_json(approve=True)),
+            _make_invocation_result(model="codex", response=_make_reject_json()),
+            _make_invocation_result(model="gemini", response=_make_review_json(approve=True)),
         ]
         reviews = run_multi_model_review(
             prompt="Review this diff",
@@ -157,13 +207,15 @@ class TestRunMultiModelReview:
         assert reviews[1].approve is False
         assert reviews[2].approve is True
 
-    @patch("mde.autonomous_review.invoke_cli")
+    @patch("mde.autonomous_review.invoke_model")
     def test_cli_failure_produces_reject_review(self, mock_invoke: MagicMock) -> None:
         """If a CLI invocation fails, treat it as a rejection with error."""
         mock_invoke.side_effect = [
-            _make_review_json(approve=True),
-            RuntimeError("codex crashed"),
-            _make_review_json(approve=True),
+            _make_invocation_result(model="claude", response=_make_review_json(approve=True)),
+            _make_invocation_result(
+                model="codex", response="", success=False, error="codex crashed"
+            ),
+            _make_invocation_result(model="gemini", response=_make_review_json(approve=True)),
         ]
         reviews = run_multi_model_review(
             prompt="Review this diff",
@@ -175,10 +227,12 @@ class TestRunMultiModelReview:
         assert reviews[1].approve is False
         assert reviews[1].critical_count == 0
 
-    @patch("mde.autonomous_review.invoke_cli")
+    @patch("mde.autonomous_review.invoke_model")
     def test_malformed_json_produces_reject(self, mock_invoke: MagicMock) -> None:
         """If JSON extraction fails, treat as rejection."""
-        mock_invoke.return_value = "This is not JSON at all, just prose."
+        mock_invoke.return_value = _make_invocation_result(
+            response="This is not JSON at all, just prose.",
+        )
         reviews = run_multi_model_review(
             prompt="Review this diff",
             cwd="/tmp/test",
@@ -212,10 +266,12 @@ class TestReviewPhase:
 class TestReviewPipeline:
     """Test the full 7-phase pipeline with mocked CLI calls."""
 
-    @patch("mde.autonomous_review.invoke_cli")
+    @patch("mde.autonomous_review.invoke_model")
     def test_unanimous_approve_proceeds(self, mock_invoke: MagicMock) -> None:
         """All models approve → PROCEED, pipeline succeeds."""
-        mock_invoke.return_value = _make_review_json(approve=True)
+        mock_invoke.return_value = _make_invocation_result(
+            response=_make_review_json(approve=True),
+        )
         pipeline = ReviewPipeline(
             config=ReviewPipelineConfig(
                 run_quality_gate=False,  # Skip quality gate in test
@@ -228,10 +284,12 @@ class TestReviewPipeline:
         assert result.phase_reached == ReviewPhase.DECISION
         assert result.success is True
 
-    @patch("mde.autonomous_review.invoke_cli")
+    @patch("mde.autonomous_review.invoke_model")
     def test_unanimous_reject_with_criticals_escalates(self, mock_invoke: MagicMock) -> None:
         """All models reject with criticals → ESCALATE."""
-        mock_invoke.return_value = _make_reject_json()
+        mock_invoke.return_value = _make_invocation_result(
+            response=_make_reject_json(),
+        )
         pipeline = ReviewPipeline(
             config=ReviewPipelineConfig(
                 autonomy=AutonomyMode.SEMI_AUTONOMOUS,
@@ -245,15 +303,15 @@ class TestReviewPipeline:
         assert result.success is False
         assert result.needs_human is True
 
-    @patch("mde.autonomous_review.invoke_cli")
+    @patch("mde.autonomous_review.invoke_model")
     def test_supervised_mode_escalates_on_warn(self, mock_invoke: MagicMock) -> None:
         """SUPERVISED + PROCEED_WARN → ESCALATE (human must approve)."""
         # 3 of 4 approve (75%) → PROCEED_WARN, supervised → ESCALATE
         mock_invoke.side_effect = [
-            _make_review_json(approve=True),
-            _make_review_json(approve=True),
-            _make_review_json(approve=True),
-            _make_review_json(approve=False),
+            _make_invocation_result(model="claude", response=_make_review_json(approve=True)),
+            _make_invocation_result(model="codex", response=_make_review_json(approve=True)),
+            _make_invocation_result(model="gemini", response=_make_review_json(approve=True)),
+            _make_invocation_result(model="extra", response=_make_review_json(approve=False)),
         ]
         pipeline = ReviewPipeline(
             config=ReviewPipelineConfig(
@@ -268,10 +326,12 @@ class TestReviewPipeline:
         assert result.consensus_decision == ConsensusDecision.ESCALATE
         assert result.needs_human is True
 
-    @patch("mde.autonomous_review.invoke_cli")
+    @patch("mde.autonomous_review.invoke_model")
     def test_pipeline_records_all_reviews(self, mock_invoke: MagicMock) -> None:
         """Pipeline result includes all model reviews."""
-        mock_invoke.return_value = _make_review_json(approve=True)
+        mock_invoke.return_value = _make_invocation_result(
+            response=_make_review_json(approve=True),
+        )
         pipeline = ReviewPipeline(
             config=ReviewPipelineConfig(run_quality_gate=False),
         )
@@ -284,11 +344,13 @@ class TestReviewPipeline:
         assert "codex" in model_names
         assert "gemini" in model_names
 
-    @patch("mde.autonomous_review.invoke_cli")
+    @patch("mde.autonomous_review.invoke_model")
     def test_integrity_violations_recorded(self, mock_invoke: MagicMock) -> None:
         """Debate integrity violations are recorded in the result."""
         # Approval with no findings → ANTI_RUBBER_STAMP
-        mock_invoke.return_value = _make_review_json(approve=True)
+        mock_invoke.return_value = _make_invocation_result(
+            response=_make_review_json(approve=True),
+        )
         pipeline = ReviewPipeline(
             config=ReviewPipelineConfig(run_quality_gate=False),
         )

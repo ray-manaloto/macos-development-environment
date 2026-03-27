@@ -25,7 +25,7 @@ from pydantic import BaseModel, field_validator
 
 
 class ReviewSeverity(enum.Enum):
-    """Severity levels matching reviewd's Severity enum.
+    """Severity levels for review findings.
 
     Each level has a numeric weight for aggregation.
     """
@@ -91,7 +91,7 @@ class DebateIntegrityRule(enum.Enum):
 class ModelReview(BaseModel):
     """A single model's review output.
 
-    Wraps reviewd's ReviewResult with consensus-relevant metadata.
+    A single model's structured review output with consensus-relevant metadata.
     """
 
     model: str

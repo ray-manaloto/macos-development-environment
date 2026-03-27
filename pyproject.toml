@@ -14,7 +14,6 @@ dependencies = [
     "loguru>=0.7.3",
     "orjson>=3.11.7",
     "honcho-ai>=2.0.0,<3.0.0",
-    "reviewd>=0.6.0",
 ]
 
 [project.scripts]

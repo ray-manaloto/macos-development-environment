@@ -1,12 +1,12 @@
 """Autonomous fix-review orchestrator — 7-phase pipeline.
 
-Wires reviewd CLI invocations through the consensus gate to achieve
+Wires debate/invoke.py CLI invocations through the consensus gate to achieve
 zero-human-attention code review on the happy path.
 
 Phases:
     1. RESEARCH   — gather context (docs, code, community)
     2. IMPLEMENT  — dispatch coder subagent in worktree with TDD
-    3. REVIEW     — run multi-model review via reviewd CLI
+    3. REVIEW     — run multi-model review via debate/invoke.py
     4. CONSENSUS  — evaluate consensus across model reviews
     5. DECISION   — apply autonomy mode to consensus result
     6. QUALITY_GATE — run uv run mde-py quality
@@ -18,20 +18,20 @@ References:
     - Design doc: ~/.gstack/projects/ray-manaloto-macos-development-environment/
       rmanaloto-main-design-20260325-171540.md
     - Phase 0b: src/mde/consensus.py (consensus gate + debate integrity)
-    - Phase 0b: reviewd>=0.6.0 (multi-model CLI review runner)
+    - Phase 0b: src/mde/debate/invoke.py (multi-model CLI invocation backend)
 """
 
 from __future__ import annotations
 
 import enum
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
 from pydantic import BaseModel
-from reviewd.reviewer import CLI, extract_json, invoke_cli, parse_review_result
 
 from mde.consensus import (
     AutonomyMode,
@@ -42,16 +42,8 @@ from mde.consensus import (
     check_debate_integrity,
     evaluate_consensus,
 )
+from mde.debate.invoke import InvocationResult, invoke_model
 from mde.log import logger
-
-# ── CLI name → reviewd CLI enum mapping ───────────────────────────────────
-
-_CLI_MAP: dict[str, CLI] = {
-    "claude": CLI.CLAUDE,
-    "codex": CLI.CODEX,
-    "gemini": CLI.GEMINI,
-}
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────
 
@@ -138,16 +130,39 @@ def parse_finding_input(input_str: str) -> Finding:
     return Finding(description=input_str, source="cli")
 
 
+# ── JSON extraction ──────────────────────────────────────────────────────
+
+
+def _extract_json(text: str) -> dict[str, Any]:
+    """Extract JSON from text that may contain ```json fences.
+
+    Args:
+        text: Raw model response text.
+
+    Returns:
+        Parsed JSON dict.
+
+    Raises:
+        json.JSONDecodeError: If no valid JSON found.
+        ValueError: If no valid JSON found.
+    """
+    # Try to find JSON in code fence
+    match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", text, re.DOTALL)
+    if match:
+        return json.loads(match.group(1))
+    # Try raw JSON parse
+    return json.loads(text)
+
+
 # ── Multi-model review ────────────────────────────────────────────────────
 
 
 def _invoke_single_model(
     model: str,
     prompt: str,
-    cwd: str,
     timeout: int = 600,
 ) -> ModelReview:
-    """Invoke a single model via reviewd and return a ModelReview.
+    """Invoke a single model via debate/invoke.py and return a ModelReview.
 
     On CLI failure or JSON parse failure, returns a synthetic rejection
     so the consensus gate can still operate on partial results.
@@ -155,31 +170,27 @@ def _invoke_single_model(
     Args:
         model: Model name (claude, codex, gemini).
         prompt: The review prompt.
-        cwd: Working directory for the review.
         timeout: CLI timeout in seconds.
 
     Returns:
         ModelReview from the model's response.
     """
-    cli_enum = _CLI_MAP.get(model, CLI.CLAUDE)
+    result: InvocationResult = invoke_model(model, prompt, timeout=timeout)
 
-    try:
-        raw = invoke_cli(prompt, cwd, cli=cli_enum, timeout=timeout)
-    except Exception as exc:  # noqa: BLE001
-        logger.bind(model=model).warning(f"CLI invocation failed: {exc}")
+    if not result.success:
+        logger.bind(model=model).warning(f"CLI invocation failed: {result.error}")
         return ModelReview(
             model=model,
             approve=False,
-            approve_reason=f"CLI error: {exc}",
+            approve_reason=f"CLI error: {result.error}",
             findings=[],
             critical_count=0,
             suggestion_count=0,
         )
 
     try:
-        data = extract_json(raw)
-        result = parse_review_result(data)
-    except (json.JSONDecodeError, KeyError, ValueError, TypeError) as exc:
+        data = _extract_json(result.response)
+    except (json.JSONDecodeError, ValueError, TypeError) as exc:
         logger.bind(model=model).warning(f"JSON parse failed: {exc}")
         return ModelReview(
             model=model,
@@ -190,35 +201,16 @@ def _invoke_single_model(
             suggestion_count=0,
         )
 
-    # Convert reviewd ReviewResult → consensus ModelReview
-    findings_dicts: list[dict[str, Any]] = [
-        {
-            "severity": f.severity.value if hasattr(f.severity, "value") else str(f.severity),
-            "category": f.category,
-            "title": f.title,
-            "file": f.file,
-            "line": f.line,
-            "issue": f.issue,
-            "fix": f.fix,
-        }
-        for f in result.findings
-    ]
-    critical_count = sum(
-        1
-        for f in result.findings
-        if (f.severity.value if hasattr(f.severity, "value") else str(f.severity)) == "critical"
-    )
-    suggestion_count = sum(
-        1
-        for f in result.findings
-        if (f.severity.value if hasattr(f.severity, "value") else str(f.severity)) == "suggestion"
-    )
+    # Convert parsed JSON → consensus ModelReview
+    findings_raw: list[dict[str, Any]] = data.get("findings", [])
+    critical_count = sum(1 for f in findings_raw if f.get("severity") == "critical")
+    suggestion_count = sum(1 for f in findings_raw if f.get("severity") == "suggestion")
 
     return ModelReview(
         model=model,
-        approve=result.approve,
-        approve_reason=result.approve_reason or "",
-        findings=findings_dicts,
+        approve=bool(data.get("approve", False)),
+        approve_reason=data.get("approve_reason", ""),
+        findings=findings_raw,
         critical_count=critical_count,
         suggestion_count=suggestion_count,
     )
@@ -226,18 +218,18 @@ def _invoke_single_model(
 
 def run_multi_model_review(
     prompt: str,
-    cwd: str,
+    cwd: str,  # noqa: ARG001 — kept for API compatibility with callers
     models: list[str] | None = None,
     timeout: int = 600,
 ) -> list[ModelReview]:
     """Run review across multiple models sequentially.
 
-    Each model is invoked via reviewd's invoke_cli(). Failures are
-    captured as synthetic rejections so consensus can still operate.
+    Each model is invoked via debate/invoke.py's invoke_model(). Failures
+    are captured as synthetic rejections so consensus can still operate.
 
     Args:
         prompt: The review prompt.
-        cwd: Working directory for the review.
+        cwd: Working directory for the review (reserved for future use).
         models: List of model names. Defaults to claude, codex, gemini.
         timeout: CLI timeout in seconds per model.
 
@@ -249,7 +241,7 @@ def run_multi_model_review(
 
     reviews: list[ModelReview] = []
     for model in models:
-        review = _invoke_single_model(model, prompt, cwd, timeout)
+        review = _invoke_single_model(model, prompt, timeout)
         reviews.append(review)
 
     return reviews
