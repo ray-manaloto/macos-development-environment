@@ -146,11 +146,13 @@ def _invoke_codex(prompt: str, timeout: int = 300) -> InvocationResult:
 def _invoke_gemini(prompt: str, timeout: int = 300) -> InvocationResult:
     """Invoke Gemini CLI in non-interactive headless mode.
 
-    Exact syntax: printf '%s' "prompt" | gemini -p "" -o text --approval-mode yolo
-    - MUST use -p "" (empty string) to trigger headless mode
-    - MUST pipe prompt via stdin (avoids OS arg length limits)
-    - MUST use -o text for clean output (no extension boot noise)
-    - Do NOT use -y (deprecated) or --prompt "text" (dumps noise)
+    Flags derived from gemini --help (v0.35.2) and geminicli.com docs:
+    - -p "" triggers headless mode; stdin is appended to the prompt value
+    - -o text|json|stream-json sets output format
+    - -y is shorthand for --approval-mode yolo (NOT deprecated)
+    - --allowed-mcp-server-names with no value blocks all MCP servers
+    - "yolo" is ONLY valid as CLI flag, NOT in settings.json (use "auto_edit" there)
+    - admin.extensions.enabled in settings.json is user-level only, CLI -e overrides
     """
     gemini_path = shutil.which("gemini")
     if not gemini_path:
@@ -169,13 +171,7 @@ def _invoke_gemini(prompt: str, timeout: int = 300) -> InvocationResult:
         "",
         "-o",
         "text",
-        "--approval-mode",
-        "yolo",
-        # Disable extensions and MCP for fast headless invocation
-        "-e",
-        "none",
-        "--allowed-mcp-server-names",
-        "",
+        "-y",  # --approval-mode yolo shorthand
     ]
 
     start = time.monotonic()
@@ -432,10 +428,20 @@ def _strip_gemini_noise(output: str) -> str:
 
 
 def _clean_env() -> dict[str, str]:
-    """Return a clean environment for subprocess invocation."""
+    """Return a clean environment for subprocess invocation.
+
+    Strips telemetry env vars that cause noise/timeouts when the OTEL
+    collector is not running, and disables interactive features.
+    """
     import os
 
     env = os.environ.copy()
     # Ensure GIT_TERMINAL_PROMPT=0 per project policy
     env["GIT_TERMINAL_PROMPT"] = "0"
+    # Suppress OTEL noise when collector is unavailable
+    for key in list(env):
+        if key.startswith("GEMINI_TELEMETRY_") or (
+            key.startswith("OTEL_") and key != "OTEL_RESOURCE_ATTRIBUTES"
+        ):
+            del env[key]
     return env

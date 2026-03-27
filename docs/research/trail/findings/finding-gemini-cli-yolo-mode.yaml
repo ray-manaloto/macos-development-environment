@@ -1,0 +1,39 @@
+id: finding-gemini-cli-yolo-mode
+timestamp: "2026-03-27T00:00:00Z"
+source: https://www.reddit.com/r/GeminiAI/comments/1poqd9g/how_do_i_stop_gemini_cli_from_asking_permissions/
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: |
+  Yolo mode (`--yolo` CLI flag) is the only reliable approval mechanism for headless Gemini CLI execution.
+  All other approval settings (autoAccept, allowImplicitApproval, toolPermissions in settings.json) have
+  inconsistent behavior in non-interactive context. Yolo mode explicitly bypasses the approval system
+  entirely, auto-approving all tool calls.
+gaps: |
+  - Why settings.json approval options fail in headless mode (initialization order issue not fully documented)
+  - Whether yolo mode can be enabled via environment variable (only documented as CLI flag or Ctrl+Y keyboard shortcut)
+  - Whether yolo mode applies to MCP server confirmations or only tool approvals
+evidence: |
+  Reddit user (2025-12-17) documented trying multiple approval settings without success:
+  - yolo: true in settings.json — no effect
+  - toolPermissions.alwaysAllow array — no effect
+  - autoApprovedTools array — no effect
+  - autoAccept: true — no effect
+
+  StackOverflow (2025-06-27): "How to automatically accept suggestions without accepting every time?"
+  suggests users expect fine-grained approval control that doesn't exist in headless.
+
+  GitHub PR #20438 (merged 2026-02-26) confirms that even policy rules with ask_user decision
+  require special handling in headless mode (must convert to DENY, not ALLOW).
+implication: |
+  For autonomous review pipelines, always use `gemini --yolo` as the CLI invocation method.
+  Do not attempt to configure approval behavior via settings.json — it will not work reliably.
+  Tool restrictions must be enforced at the prompt level (what tools are mentioned in the prompt)
+  or via MCP server includeTools/excludeTools configuration, not via CLI approval modes.
+tags:
+  - gemini-cli
+  - headless-mode
+  - approval-modes
+  - non-interactive
+  - automation-safety
+status: discovered

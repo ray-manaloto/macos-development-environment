@@ -1,0 +1,63 @@
+id: finding-maestro-multi-agent-pattern
+timestamp: "2026-03-27T00:00:00Z"
+source: https://github.com/josstei/maestro-gemini
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: |
+  Maestro is a production-grade multi-agent orchestration framework for Gemini CLI that has
+  emerged as the community standard for autonomous agent teams. It uses a 12-agent model
+  with a TechLead orchestrator, 4-phase workflow (Design, Plan, Execute, Complete), and
+  all agents running in --yolo mode via separate CLI processes. The framework demonstrates
+  that tool safety in autonomous contexts is enforced at the prompt level, not via approval modes.
+gaps: |
+  - Comparison with official Gemini CLI native agent support (experimental in settings)
+  - Performance benchmarks across large teams (scalability limits unknown)
+  - Integration patterns with Claude Code or other LLM CLI tools
+  - Production incident reports (early stage framework, limited prod history)
+evidence: |
+  Maestro GitHub repository (116 stars, active maintenance):
+  - v1.1.0 released 2026-02-16
+  - 12 specialized agents: architect, coder, tester, debugger, security-engineer,
+    performance-engineer, code-reviewer, devops-engineer, api-designer, data-engineer,
+    refactor, technical-writer
+  - 4-phase workflow with orchestrator coordination
+  - Parallel dispatch for independent phases
+  - 10+ configurable environment variables
+
+  Reddit announcement (2026-02-16):
+  - Explicit statement: subagents run in `--yolo` mode
+  - Reason: agents cannot provide interactive approval
+  - Boundary enforcement: filesystem safety protocols injected into prompts
+  - Structured handoffs: Downstream Context reports reduce hallucination
+
+  Configuration example:
+  ```json
+  {
+    "experimental": {
+      "enableAgents": true
+    }
+  }
+  ```
+  Environment control:
+  ```bash
+  MAESTRO_DEFAULT_MODEL=gemini-2.0-flash
+  MAESTRO_MAX_CONCURRENT_AGENTS=4
+  ```
+implication: |
+  For multi-phase autonomous review pipelines:
+  1. Use Maestro pattern as reference architecture (not necessarily the framework itself)
+  2. Each phase = separate gemini CLI invocation with --yolo
+  3. Tool restrictions via prompt-level instruction (scope in delegation prompts)
+  4. Structured handoffs between phases (Downstream Context) reduce error propagation
+  5. Enable experimental.enableAgents in settings.json if using native Gemini CLI agents
+
+  This validates the approach of treating agent orchestration as subprocess-based (separate processes)
+  rather than conversation-based (single REPL session with subagents).
+tags:
+  - gemini-cli
+  - multi-agent-orchestration
+  - autonomous-review
+  - agent-framework
+  - community-pattern
+status: discovered

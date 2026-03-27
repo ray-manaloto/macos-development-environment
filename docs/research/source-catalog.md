@@ -456,3 +456,115 @@ See deep review: `docs/research/trail/deep-reviews/python-docker-packaging-strat
 
 **Recommendation**: Use Doppler as cloud source-of-truth + optional fnox wrapper for Keychain sync if local-first preference required.
 
+---
+
+## Gemini CLI Configuration & API Reference (2026-03-27)
+
+| Status | Source | URL | Category | Notes |
+|--------|--------|-----|----------|-------|
+| [x] | CLI commands reference | https://geminicli.com/docs/reference/commands/ | Official Docs | 25+ slash commands (/about, /agents, /clear, /settings, /model, /custom, /telemetry, etc.) for session control and context management |
+| [x] | Configuration reference | https://geminicli.com/docs/reference/configuration/ | Official Docs | Complete 7-layer configuration hierarchy; 40+ settings across 11 categories; environment variable substitution; system-wide and project-level precedence |
+| [x] | CLI cheatsheet | https://geminicli.com/docs/cli/cli-reference/ | Official Docs | Quick reference for common commands: `gemini -p "query"` (non-interactive), `gemini "query"` (continue to interactive), piped input support |
+| [x] | Telemetry (OpenTelemetry) | https://geminicli.com/docs/cli/telemetry/ | Official Docs | OTLP endpoints, Google Cloud integration, local file export, telemetry settings table with env var overrides |
+| [x] | Custom commands | https://geminicli.com/docs/cli/custom-commands/ | Official Docs | User commands (~/.gemini/commands/) and project commands (.gemini/commands/); project overrides user on name collision |
+| [x] | Settings command (/settings) | https://geminicli.com/docs/cli/settings/ | Official Docs | Interactive UI + schema reference; 40+ settings with types, defaults, descriptions; all settings stored in .gemini/settings.json |
+
+### Key Findings from Gemini CLI Research
+
+- **Non-Interactive Mode**: Via `gemini -p "query"` flag (no REPL continuation); output format controlled by `output.format: "text"|"json"` setting
+- **Approval Modes**: Three in settings (`default`/`auto_edit`/`plan`); YOLO mode is CLI-only (`--yolo` or `--approval-mode=yolo` flag), never in settings.json
+- **Configuration Precedence**: Defaults < system-defaults < user < project < system < env vars < CLI flags (7 layers)
+- **Settings Locations**: `~/.gemini/settings.json` (user), `.gemini/settings.json` (project-local, overrides user)
+- **Telemetry Backends**: `target: "gcp"` (Google Cloud), `target: "local"` (OTLP or file-based)
+- **Mutually Exclusive**: `useCollector: true` + `useCliAuth: true` disables telemetry (only one permitted)
+- **Environment Variables in Settings**: `$VAR_NAME` or `${VAR_NAME}` auto-resolved; each extension has optional `.env` file
+- **Custom Commands**: Override with project version; `.md` files in commands directory with YAML frontmatter (name, description)
+- **Context Management**: `discoveryMaxDirs: 200` (default), `respectGitIgnore: true`, `enableFuzzySearch: true`
+- **Tool Behavior**: `disableLLMCorrection: true` (default, deterministic edits), `sandboxNetworkAccess: false` (global), `useRipgrep: true` for file search
+
+### Gaps Identified
+
+- No JSON schema file published (inline HTML documentation only)
+- Enterprise configuration docs referenced but not accessed (`/docs/cli/enterprise`)
+- Security/permission model for `policyPaths` not detailed
+- Settings validation tool not documented (no schema validator provided)
+- Custom extension `.env` loading mechanism not detailed
+- No telemetry rate limiting documentation for GCP exports
+
+---
+
+## Gemini CLI Headless & Non-Interactive Mode Research (2026-03-27)
+
+**Deep Review:** `docs/research/trail/deep-reviews/gemini-cli-community-findings.md`
+
+| Status | Source | URL | Category | Notes |
+|--------|--------|-----|----------|-------|
+| [x] | Hands-on Codelab | https://codelabs.developers.google.com/gemini-cli-hands-on | Official Docs | Getting started tutorial; 3-hour hands-on workshop on installation, config, tools |
+| [x] | Romin Irani Tutorial Series Pt 3 | https://medium.com/google-cloud/gemini-cli-tutorial-series-part-3-configuration-settings-via-settings-json-and-env-files-669c6ab6fd44 | Blog/Community | 8-min read, 2025-07-03; config precedence (7 layers), user vs project settings, .env file search order |
+| [x] | Philipp Schmid Cheatsheet | https://www.philschmid.de/gemini-cli-cheatsheet | Blog/Community | 2025-07-24, 8-min read; comprehensive command reference, settings.json examples, custom MCP servers, keyboard shortcuts |
+| [x] | Audrey Roy Greenfeld MCP Config | https://audrey.feldroy.com/articles/2025-07-27-Gemini-CLI-Settings-With-MCP | Blog/Community | 2025-07-27; settings.json structure with MCP server examples (Git, GitHub) |
+| [x] | GitHub Issue #18776 | https://github.com/google-gemini/gemini-cli/issues/18776 | GitHub Issue | OPEN; folder trust not bypassed by yolo mode in headless context; v0.28.0 |
+| [x] | GitHub PR #20438 | https://github.com/google-gemini/gemini-cli/pull/20438 | GitHub PR | MERGED 2026-02-26; fix(policy): ask_user treated as DENY in headless mode; PolicyEngine.getExcludedTools now applies applyNonInteractiveMode |
+| [x] | GitHub Issue #20469 | https://github.com/google-gemini/gemini-cli/issues/20469 | GitHub Issue | OPEN, CRITICAL; approval-mode auto_edit ignores Policy Engine allow rules in non-interactive (-p flag); root cause: hardcoded excludes precede policy resolution |
+| [x] | GitHub Issue #2748 | https://github.com/google-gemini/gemini-cli/issues/2748 | GitHub Issue | CLOSED; non-interactive mode in scripting scenarios; context for upstream feature requests |
+| [x] | GitHub PR #21935 | https://github.com/google-gemini/gemini-cli/pull/21935 | GitHub PR | MERGED; feat(core): tool isolation config for subagents; enables agent-scoped tool restrictions |
+| [x] | GitHub PR #20536 | https://github.com/google-gemini/gemini-cli/pull/20536 | GitHub PR | MERGED 2026-02-27; stats output in non-interactive mode |
+| [x] | GitHub PR #22670 | https://github.com/google-gemini/gemini-cli/pull/22670 | GitHub PR | IN PROGRESS; feat(plan): support plan mode in non-interactive context |
+| [x] | GitHub Issue #23054 | https://github.com/google-gemini/gemini-cli/issues/23054 | GitHub Issue | OPEN; non-interactive mode produces fragmented traces (separate Trace ID per tool call); APM correlation issue |
+| [x] | GitHub PR #23414 | https://github.com/google-gemini/gemini-cli/pull/23414 | GitHub PR | IN PROGRESS; allow -i/--prompt-interactive with piped stdin (blurs interactive/non-interactive boundary) |
+| [x] | Reddit: Approval Mode Confusion | https://www.reddit.com/r/GeminiAI/comments/1poqd9g/how_do_i_stop_gemini_cli_from_asking_permissions/ | Reddit/Community | 2025-12-17; user documents multiple failed attempts at approval config (yolo, autoAccept, toolPermissions); likely folder trust issue |
+| [x] | Reddit: Maestro v1.1.0 Update | https://www.reddit.com/r/GeminiCLI/comments/1r5wo95/update_maestro_v110_multiagent_orchestration_for/ | Reddit/Community | 2026-02-16; multi-agent orchestration framework, 12-agent team, parallel dispatch, 4-phase workflow; all agents run in --yolo mode |
+| [x] | Maestro GitHub Repo | https://github.com/josstei/maestro-gemini | GitHub Project | 116 stars; multi-agent orchestration extension; TechLead orchestrator, 12 subagents, prompt-level tool restrictions, structured handoffs |
+| [x] | StackOverflow: Auto-Approve Settings | https://stackoverflow.com/questions/79682468/how-to-automatically-accept-suggestions-in-gemini-cli-without-accepting-every-ti | Q&A | 2025-06-27; users ask how to suppress approval prompts; settings approach doesn't work in all contexts |
+| [x] | Inventive HQ: YOLO Mode Guide | https://inventivehq.com/knowledge-base/gemini/how-to-use-yolo-mode | Knowledge Base | Comprehensive YOLO mode tutorial; --yolo flag, Ctrl+Y shortcut, CI/CD integration patterns |
+
+### Key Findings
+
+**Approval System Architecture:**
+- Three approval modes in settings.json: `default`, `auto_edit`, `plan`
+- YOLO mode is CLI-only (`--yolo` or keyboard `Ctrl+Y`), never in settings.json
+- Yolo mode works reliably in headless (-p flag) contexts
+- Settings.json approval options DO NOT work reliably in headless mode
+
+**Headless/Non-Interactive Mode:**
+- Invocation: `gemini -p "prompt"` (single response, no REPL)
+- Alternative: `echo "prompt" | gemini` (piped stdin)
+- Output control: `--quiet` flag, `output.format` setting for JSON export
+- Approval modes have **inconsistent behavior** in headless:
+  - `--yolo` ✅ works
+  - `--approval-mode auto_edit` ❌ fails with Policy Engine conflict (issue #20469)
+  - `default` ❌ part of hardcoded headless excludes
+  - Policy Engine cannot re-allow tools once hardcoded-excluded
+
+**Folder Trust System:**
+- Independent from approval modes (orthogonal security layers)
+- Must be pre-trusted before headless execution: `gemini --trust-folder .`
+- Stored in `~/.gemini/trusted_folders.json` (configurable)
+- Yolo mode does NOT bypass folder trust checks
+
+**Community Patterns:**
+- **Maestro framework** is the standard for multi-agent orchestration (12-agent model, all in --yolo)
+- Agents run as **separate CLI processes**, not conversation branches
+- Tool restrictions enforced at **prompt level**, not via approval modes
+- **Structured handoffs** (Downstream Context) reduce hallucination
+
+### Critical Issues for Autonomous Review Pipelines
+
+1. **#20469 (OPEN)**: Hardcoded tool excludes in auto_edit + headless prevent Policy Engine from re-allowing tools
+   - Workaround: Use `--yolo` instead of `--approval-mode auto_edit`
+
+2. **#18776 (OPEN)**: Folder trust not bypassed by yolo mode
+   - Workaround: Pre-trust with `gemini --trust-folder .` before headless execution
+
+3. **#23054 (OPEN)**: Non-interactive mode produces fragmented traces (separate Trace ID per tool call)
+   - Impact: APM/observability correlation broken
+   - Workaround: Log parent trace ID in initial prompt
+
+### Gaps
+
+- Policy Engine design flaw (#20469) blocks enterprise approval workflows in headless
+- No "ask only for dangerous tools" feature (requested in #23374)
+- Settings.json approval options underdocumented for headless use cases
+- No official guidance on subprocess agent orchestration (community filled gap with Maestro)
+- Enterprise policy/permission model not publicly detailed
+

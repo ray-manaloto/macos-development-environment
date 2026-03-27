@@ -1,0 +1,57 @@
+id: finding-gemini-cli-policy-engine-headless-bug
+timestamp: "2026-03-27T00:00:00Z"
+source: https://github.com/google-gemini/gemini-cli/issues/20469
+agent: researcher
+finding_type: correction
+confidence: confirmed
+confident_about: |
+  Critical design flaw in Gemini CLI's Policy Engine prevents re-allowing tools that are
+  hardcoded-excluded in non-interactive mode. When running `gemini -p` with `--approval-mode auto_edit`
+  and a policy rule that allows run_shell_command, the CLI still reports "Tool not found" error.
+  Root cause: hardcoded excludes are applied to the ToolRegistry BEFORE the Policy Engine is consulted.
+  The Policy Engine can only ADD exclusions, never REMOVE them.
+gaps: |
+  - Exact timeline for fix (issue reported 2026-02-26, marked as ongoing)
+  - Design decision rationale for why hardcoded excludes precede policy rules
+  - Whether this affects other approval modes beyond auto_edit
+  - Impact assessment across enterprise deployments using Policy Engine
+evidence: |
+  GitHub issue #20469 (2026-02-26) includes:
+  1. Exact reproduction steps with policy TOML and fake responses
+  2. Error message: "Tool 'run_shell_command' not found"
+  3. Root cause analysis showing the getExcludedTools() method never removes tools
+  4. Behavior matrix across modes:
+     - yolo: Success (bypasses hardcoded excludes)
+     - auto_edit: Failure (hardcoded exclude, policy can't override)
+     - default: Failure (hardcoded exclude)
+     - plan: Failure (hardcoded exclude)
+
+  Code snippet from issue:
+  ```typescript
+  getExcludeTools(): Set<string> {
+    const excludeToolsSet = new Set([...this.excludeTools]); // Hardcoded excludes
+    // Policy Engine can only ADD to this set, never remove
+    const policyExclusions = this.policyEngine.getExcludedTools(...);
+    for (const tool of policyExclusions) {
+      excludeToolsSet.add(tool); // Can't remove if already in set
+    }
+    return excludeToolsSet;
+  }
+  ```
+implication: |
+  Enterprise and automation teams cannot use Policy Engine to selectively enable tools in
+  non-interactive/headless contexts. Policy enforcement is broken for tool re-allowance in
+  subprocess-based agents. For now, this forces teams to:
+  1. Use --yolo mode (disables all approval restrictions)
+  2. Enforce tool boundaries at prompt level instead
+  3. Wait for fix (no ETA provided)
+
+  This is a blocker for policy-driven automation where approval modes should be the source of truth.
+tags:
+  - gemini-cli
+  - policy-engine
+  - headless-mode
+  - non-interactive
+  - infrastructure-issue
+  - design-flaw
+status: discovered

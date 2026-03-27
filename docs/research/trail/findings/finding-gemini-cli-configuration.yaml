@@ -1,0 +1,80 @@
+id: finding-gemini-cli-configuration
+timestamp: "2026-03-27T22:55:00Z"
+source: https://geminicli.com/docs/reference/
+agent: researcher
+finding_type: reference
+confidence: confirmed
+confident_about: |
+  - Gemini CLI has 40+ configurable settings across 11 categories (general, ui, output, model, tools, telemetry, billing, agents, context, ide, top-level)
+  - 7-layer configuration precedence: defaults → system defaults → user settings → project settings → system settings → env vars → CLI flags
+  - Settings stored in .gemini/settings.json (user global or project-local)
+  - Three approval modes in settings (default, auto_edit, plan); YOLO mode is CLI-only flag
+  - OpenTelemetry telemetry support with Google Cloud, local file, or custom OTLP endpoints
+  - Non-interactive mode via -p flag with JSON output format for scripting
+  - 25+ slash commands for session control, context, tools, agents
+  - Custom commands support in ~/.gemini/commands/ (user) and .gemini/commands/ (project)
+  - All setting keys verified against official documentation
+
+gaps: |
+  - No documented way to validate settings.json without loading Gemini CLI
+  - Enterprise configuration docs referenced but not provided (see /docs/cli/enterprise)
+  - Exact schema version number not specified in documentation
+  - No documented rate limiting for telemetry exports to GCP
+  - Custom extension .env file loading mechanism not detailed (just "loads automatically")
+  - Security/permissions model for policyPaths not documented
+
+evidence: |
+  From https://geminicli.com/docs/reference/configuration/:
+  - "Configuration is applied in the following order of precedence (lower numbers are overridden by higher numbers): 1. Default values 2. System defaults file 3. User settings file 4. Project settings file 5. System settings file 6. Environment variables 7. Command-line arguments"
+  - Settings file locations: ~/.gemini/settings.json (user), .gemini/settings.json (project)
+  - "Settings are organized into categories. All settings should be placed within their corresponding top-level category object"
+  - "String values within your settings.json and gemini-extension.json files can reference environment variables using either $VAR_NAME or ${VAR_NAME} syntax"
+
+  From https://geminicli.com/docs/cli/settings/:
+  - "Workspace settings override user settings"
+  - General.defaultApprovalMode: "'default' prompts for approval, 'auto_edit' auto-approves edit tools, and 'plan' is read-only mode. YOLO mode (auto-approve all actions) can only be enabled via command line (—yolo or —approval-mode=yolo)"
+  - 40+ settings documented with types, defaults, descriptions
+  - "ui.incrementalRendering: Enable incremental rendering for the UI. This option will reduce flickering but may cause rendering artifacts. Only supported when useAlternateBuffer is enabled"
+
+  From https://geminicli.com/docs/cli/telemetry/:
+  - "Gemini CLI integrates with OpenTelemetry, a vendor-neutral, industry-standard observability framework"
+  - Telemetry table: enabled, target (gcp/local), otlpEndpoint, otlpProtocol (grpc/http), outfile, logPrompts, useCollector, useCliAuth
+  - "Note on boolean environment variables: For boolean settings like enabled, setting the environment variable to true or 1 enables the feature"
+  - "Method B: CLI Auth (Direct export only): Simplest method for local users...set useCliAuth: true in your .gemini/settings.json"
+  - "Note: This setting requires Direct export (in-process exporters) and cannot be used when useCollector is true. If both are enabled, telemetry will be disabled"
+
+  From https://geminicli.com/docs/cli/custom-commands/:
+  - "User commands (global): Located in ~/.gemini/commands/. These commands are available in any project"
+  - "Project commands (local): Located in <your-project-root>/.gemini/commands/. These commands are specific to the current project"
+  - "If a command in the project directory has the same name as a command in the user directory, the project command will always be used"
+
+  From https://geminicli.com/docs/reference/commands/:
+  - Slash commands: /about, /agents, /approve, /clear, /context, /custom, /deny, /exit, /help, /memory, /model, /plugins, /settings, /telemetry, /tools
+
+  From https://geminicli.com/docs/cli/cli-reference/:
+  - Non-interactive modes: gemini -p "query" (non-interactive), gemini "query" (continue to interactive), gemini -i "query" (interactive with initial query)
+  - Output format can be "text" or "json" via output.format setting
+
+implication: |
+  1. For mde integration: Gemini CLI can be configured declaratively via .gemini/settings.json with environment variable substitution, enabling CI/CD and automated environments to pre-configure the tool
+  2. For headless automation: Use -p flag with output.format: "json" to capture structured results for scripting
+  3. For observability: OpenTelemetry integration enables integration with existing monitoring stacks (GCP, Datadog, Prometheus, etc.)
+  4. For approval/security: YOLO mode cannot be configured in settings, only via CLI flag—this is intentional design to prevent accidental auto-approval in persistent configs
+  5. For settings validation: Configuration hierarchy is deep (7 layers) — debugging requires checking all locations in precedence order
+  6. For telemetry privacy: Set telemetry.logPrompts: false if handling sensitive data
+  7. For context management: discoveryMaxDirs and respectGitIgnore are key for performance in large codebases
+  8. For custom workflows: User and project custom commands enable team-specific automation patterns
+
+tags:
+  - gemini-cli
+  - configuration
+  - settings-schema
+  - approval-modes
+  - headless-mode
+  - telemetry
+  - opentelemetry
+  - custom-commands
+  - slash-commands
+  - environment-variables
+  - api-reference
+status: discovered

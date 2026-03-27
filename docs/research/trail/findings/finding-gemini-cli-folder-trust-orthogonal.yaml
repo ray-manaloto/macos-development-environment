@@ -1,0 +1,55 @@
+id: finding-gemini-cli-folder-trust-orthogonal
+timestamp: "2026-03-27T00:00:00Z"
+source: https://github.com/google-gemini/gemini-cli/issues/18776
+agent: researcher
+finding_type: insight
+confidence: confirmed
+confident_about: |
+  Folder trust and approval modes are orthogonal security systems in Gemini CLI. The --yolo flag
+  does NOT bypass folder trust checks. Yolo mode auto-approves tool calls, but folder trust
+  gates whether tools can even be invoked. This causes headless execution to fail silently
+  or with "permission denied" errors even when yolo mode is enabled, because the folder
+  has not been explicitly trusted.
+gaps: |
+  - Exact error message when folder is untrusted (varies by tool type)
+  - Whether folder trust can be configured via settings.json or only via CLI
+  - Persistent vs session-specific folder trust across tool invocations
+  - How folder trust interacts with sandboxed execution (--sandbox flag)
+evidence: |
+  GitHub issue #18776 (2026-02-10, OPEN):
+  User reports: `gemini -y -p "Write a file that says hello"` still fails because folder not trusted
+  Expected: yolo mode should trust by default in headless context
+  Actual: tool calls rejected, user must pre-trust folder
+
+  Workaround documented:
+  ```bash
+  gemini --trust-folder .
+  gemini --yolo -p "your task"
+  ```
+
+  Folder trust stored in: `~/.gemini/trusted_folders.json` (user-level, not project-level)
+  Made configurable in PR #8306 (2025-09-11) via `trustedFoldersPath` in settings.json
+implication: |
+  For autonomous review pipelines, ALWAYS pre-trust project directories:
+  ```bash
+  # In your automation script
+  gemini --trust-folder /workspace
+  gemini --trust-folder /home/user/projects
+
+  # Then run headless operations
+  gemini --yolo -p "code review task"
+  ```
+
+  The two-step initialization (trust + yolo) must be explicit. Do not expect yolo mode alone
+  to enable all functionality. Folder trust is a separate, permanent configuration step that
+  must be done once per development environment, not per invocation.
+
+  For CI/CD environments where you control the image: pre-trust directories in Docker entrypoint
+  or during image build. For shared developer machines: document the pre-trust requirement.
+tags:
+  - gemini-cli
+  - security-model
+  - folder-trust
+  - headless-mode
+  - setup-requirements
+status: discovered
