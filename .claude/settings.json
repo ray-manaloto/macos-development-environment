@@ -103,11 +103,6 @@
             "type": "command",
             "command": "uv run mde-py hooks persist-transcripts",
             "timeout": 30
-          },
-          {
-            "type": "prompt",
-            "prompt": "Check if research findings, deep reviews, or provenance records were mentioned in the conversation but not written to docs/research/trail/. Respond with ONLY valid JSON: {\"decision\": \"yes\"} if all findings are persisted to disk, or {\"decision\": \"no\", \"reason\": \"list missing items\"} if findings exist only in context.",
-            "timeout": 15
           }
         ]
       }
@@ -120,11 +115,6 @@
             "type": "command",
             "command": "uv run mde-py hooks persist-transcripts",
             "timeout": 30
-          },
-          {
-            "type": "prompt",
-            "prompt": "Before compaction, check: (1) Are there research findings not yet written to docs/research/trail/findings/*.yaml? (2) Are there decisions or preferences that should be saved to auto memory? Respond with ONLY valid JSON: {\"decision\": \"yes\"} if all is persisted, or {\"decision\": \"no\", \"reason\": \"list unpersisted items\"}.",
-            "timeout": 15
           }
         ]
       }
