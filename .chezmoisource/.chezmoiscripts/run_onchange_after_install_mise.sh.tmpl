@@ -12,3 +12,14 @@ fi
 "$MISE_BIN" trust ~/.config/mise
 "$MISE_BIN" install --yes
 "$MISE_BIN" reshim
+
+# ── Post-install bootstraps for tools that need init after binary install ──
+
+# RTK (Rust Token Killer): mise installs the binary, but `rtk init -g` creates
+# the Claude Code hook (~/.claude/hooks/rtk-rewrite.sh), RTK.md, and filters.
+# Idempotent — safe to re-run. Non-interactive (defaults to N for settings.json patch).
+if command -v rtk &>/dev/null; then
+  if ! rtk init -g; then
+    echo "WARNING: rtk init -g failed — RTK hook not installed" >&2
+  fi
+fi

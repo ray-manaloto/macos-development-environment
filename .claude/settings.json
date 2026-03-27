@@ -14,7 +14,8 @@
     "OTEL_LOG_TOOL_DETAILS": "1",
     "OTEL_METRICS_INCLUDE_SESSION_ID": "true",
     "OTEL_METRICS_INCLUDE_VERSION": "true",
-    "OTEL_RESOURCE_ATTRIBUTES": "project=mde,environment=dev"
+    "OTEL_RESOURCE_ATTRIBUTES": "project=mde,environment=dev",
+    "CLAUDE_PLUGIN_DATA": "$HOME/.claude-octopus"
   },
   "permissions": {
     "defaultMode": "default"
@@ -31,6 +32,10 @@
           {
             "type": "command",
             "command": "uv run mde-py hooks guard-dotfile-edit"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/rtk-rewrite.sh"
           }
         ]
       }

@@ -47,6 +47,13 @@ __hook_meta__ = {
 - Hook wiring: `.claude/settings.json` hooks section — command must be `uv run mde-py hooks <kebab>`
 - NEVER create hooks outside `src/mde/hooks/` — no `scripts/`, no `.claude/hooks/`, no plugin `hooks.json` for project-level hooks
 
+## Third-party hook exceptions
+
+Hooks maintained by external tools (e.g., `rtk init -g` creates `$HOME/.claude/hooks/rtk-rewrite.sh`)
+are exempt from the auto-discovery requirement. These are upstream-managed artifacts, not project
+automation. Wire them in `.claude/settings.json` using `$HOME` (not absolute paths) for portability.
+Do not use third-party hooks as precedent for adding project `.sh` files.
+
 ## Non-hook modules
 
 Modules without `__hook_meta__` (e.g., `_common.py`, `_agent_frontmatter_model.py`)

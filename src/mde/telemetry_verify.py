@@ -48,9 +48,10 @@ _OFFICIAL_VARS: set[str] = {
 # MUST NOT overlap with _OFFICIAL_VARS. Add new Claude Code feature flags here,
 # never to _OFFICIAL_VARS (which tracks only official monitoring docs).
 _NON_TELEMETRY_VARS: set[str] = {
-    "ENABLE_LSP_TOOL",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS",
+    "CLAUDE_PLUGIN_DATA",
     "ENABLE_CLAUDEAI_MCP_SERVERS",
+    "ENABLE_LSP_TOOL",
     "ENABLE_TOOL_SEARCH",
 }
 
