@@ -229,6 +229,21 @@ class TestValidateSecretsParity:
             result = validate_secrets_parity()
         assert result == 1
 
+    def test_returns_one_when_fnox_has_extra_keys(self) -> None:
+        """Returns 1 when fnox has keys not in Doppler."""
+        fnox_output = " KEY1   provider (keychain)  KEY1\n KEY2   provider (keychain)  KEY2\n"
+        with (
+            patch("mde.secrets.validate_parity.is_doppler_available", return_value=True),
+            patch("mde.secrets.validate_parity.doppler_list_secrets") as mock_list,
+            patch("mde.secrets.validate_parity.subprocess.run") as mock_run,
+        ):
+            mock_list.return_value = {"KEY1": "val1"}
+            mock_run.return_value = MagicMock(returncode=0, stdout=fnox_output)
+            from mde.secrets.validate_parity import validate_secrets_parity
+
+            result = validate_secrets_parity()
+        assert result == 1
+
     def test_returns_one_when_fnox_list_fails(self) -> None:
         """Returns 1 if fnox list fails."""
         with (
