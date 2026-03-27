@@ -323,6 +323,71 @@ def invoke_all(
     return results
 
 
+async def invoke_all_parallel(
+    prompt: str,
+    models: list[str] | None = None,
+    timeout_seconds: int = 300,
+    output_dir: Path | None = None,
+) -> list[InvocationResult]:
+    """Invoke multiple models concurrently using asyncio.
+
+    Each model runs in a thread via asyncio.to_thread() so subprocess
+    calls don't block the event loop. Results are gathered with
+    asyncio.gather().
+
+    Args:
+        prompt: The prompt to send to all models.
+        models: List of model names. Defaults to ["codex", "gemini"].
+        timeout_seconds: Timeout per model in seconds.
+        output_dir: Optional directory to save results as JSON files.
+
+    Returns:
+        List of InvocationResult (one per model).
+    """
+    import asyncio
+
+    if models is None:
+        models = ["codex", "gemini"]
+
+    def _save_result(dir_path: Path, model_name: str, result: InvocationResult) -> None:
+        dir_path.mkdir(parents=True, exist_ok=True)
+        outfile = dir_path / f"{model_name}.json"
+        outfile.write_text(json.dumps(result.model_dump(), indent=2))
+
+    async def _invoke_one(model_name: str) -> InvocationResult:
+        try:
+            model = DebateModel(model_name)
+        except ValueError:
+            return InvocationResult(
+                model=model_name,
+                prompt=prompt,
+                response="",
+                success=False,
+                duration_seconds=0.0,
+                error=f"Unknown model: {model_name}",
+            )
+
+        if model in (DebateModel.CLAUDE, DebateModel.SONNET):
+            return InvocationResult(
+                model=model_name,
+                prompt=prompt,
+                response="",
+                success=False,
+                duration_seconds=0.0,
+                error=f"{model_name} must be invoked via Agent tool, not subprocess",
+            )
+
+        result = await asyncio.to_thread(invoke_model, model, prompt, timeout_seconds)
+
+        if output_dir:
+            await asyncio.to_thread(_save_result, output_dir, model_name, result)
+
+        return result
+
+    results = await asyncio.gather(*[_invoke_one(m) for m in models])
+    return list(results)
+
+
 # ── Noise stripping ───────────────────────────────────────────────────────
 
 

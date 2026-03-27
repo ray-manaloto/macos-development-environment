@@ -11,6 +11,7 @@ from mde.debate.invoke import (
     _strip_codex_noise,
     _strip_gemini_noise,
     invoke_all,
+    invoke_all_parallel,
     invoke_model,
 )
 
@@ -203,3 +204,60 @@ class TestInvokeAll:
         assert len(results) == 1
         assert results[0].success is False
         assert "Unknown model" in (results[0].error or "")
+
+
+# ── Async parallel invocation ────────────────────────────────────────────
+
+
+class TestInvokeAllParallel:
+    """Test async parallel multi-model invocation."""
+
+    @patch("mde.debate.invoke._invoke_codex")
+    @patch("mde.debate.invoke._invoke_gemini")
+    def test_invokes_both_concurrently(self, mock_gemini: MagicMock, mock_codex: MagicMock) -> None:
+        import asyncio
+
+        mock_codex.return_value = InvocationResult(
+            model="codex", prompt="q", response="a", success=True, duration_seconds=1.0
+        )
+        mock_gemini.return_value = InvocationResult(
+            model="gemini", prompt="q", response="b", success=True, duration_seconds=2.0
+        )
+        results = asyncio.run(invoke_all_parallel("question"))
+        assert len(results) == 2
+        models = [r.model for r in results]
+        assert "codex" in models
+        assert "gemini" in models
+
+    @patch("mde.debate.invoke._invoke_codex")
+    @patch("mde.debate.invoke._invoke_gemini")
+    def test_saves_to_output_dir(
+        self, mock_gemini: MagicMock, mock_codex: MagicMock, tmp_path: Path
+    ) -> None:
+        import asyncio
+
+        mock_codex.return_value = InvocationResult(
+            model="codex", prompt="q", response="a", success=True, duration_seconds=1.0
+        )
+        mock_gemini.return_value = InvocationResult(
+            model="gemini", prompt="q", response="b", success=True, duration_seconds=2.0
+        )
+        asyncio.run(invoke_all_parallel("question", output_dir=tmp_path))
+        assert (tmp_path / "codex.json").exists()
+        assert (tmp_path / "gemini.json").exists()
+
+    def test_unknown_model_returns_error(self) -> None:
+        import asyncio
+
+        results = asyncio.run(invoke_all_parallel("q", models=["unknown"]))
+        assert len(results) == 1
+        assert results[0].success is False
+        assert "Unknown model" in (results[0].error or "")
+
+    def test_claude_sonnet_return_errors(self) -> None:
+        import asyncio
+
+        results = asyncio.run(invoke_all_parallel("q", models=["claude", "sonnet"]))
+        assert len(results) == 2
+        assert all(not r.success for r in results)
+        assert all("Agent tool" in (r.error or "") for r in results)
