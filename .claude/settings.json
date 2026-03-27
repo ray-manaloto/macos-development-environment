@@ -1,6 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
+    "ENABLE_TOOL_SEARCH": "true",
     "ENABLE_LSP_TOOL": "1",
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "OTEL_METRICS_EXPORTER": "otlp",
@@ -151,35 +154,297 @@
     ]
   },
   "enabledPlugins": {
-    "pyright-lsp@claude-plugins-official": true,
-    "hookify@claude-plugins-official": false,
-    "engineering@knowledge-work-plugins": true,
-    "remember@claude-plugins-official": true,
-    "design@knowledge-work-plugins": false,
-    "nimble@knowledge-work-plugins": false,
-    "voltagent-lang@voltagent-subagents": false,
-    "voltagent-dev-exp@voltagent-subagents": false,
-    "voltagent-qa-sec@voltagent-subagents": false,
-    "chezmoi-toolkit@rsm-subagents": true,
-    "devcontainer-toolkit@rsm-subagents": true,
-    "hk-toolkit@rsm-subagents": true,
-    "mise-toolkit@rsm-subagents": true,
-    "research-review-toolkit@rsm-subagents": true,
-    "test-generator@claude-community": true,
-    "token-saver@claude-community": true,
-    "safety-net@claude-community": true,
-    "challenger@claude-community": true,
-    "codebase-quality@claude-community": true,
+    "accessibility-compliance@claude-code-workflows": false,
+    "adspirer-ads-agent@knowledge-work-plugins": true,
+    "agent-orchestration@claude-code-workflows": true,
+    "agent-sdk-dev@claude-plugins-official": true,
+    "agent-teams@claude-code-workflows": true,
+    "ai-firstify@knowledge-work-plugins": true,
+    "api-scaffolding@claude-code-workflows": true,
+    "api-testing-observability@claude-code-workflows": true,
+    "apollo@knowledge-work-plugins": true,
+    "application-performance@claude-code-workflows": true,
+    "astral@astral-sh": true,
+    "atlan@knowledge-work-plugins": true,
+    "atomic-agents@claude-plugins-official": true,
+    "backend-api-security@claude-code-workflows": false,
+    "backend-development@claude-code-workflows": false,
+    "basedpyright@claude-code-lsps": true,
+    "beta-mcp-skills@docker": true,
+    "blockchain-web3@claude-code-workflows": false,
+    "brand-voice@knowledge-work-plugins": true,
+    "brightdata-plugin@knowledge-work-plugins": true,
     "bugbash@claude-community": true,
+    "business-analytics@claude-code-workflows": false,
+    "c4-architecture@claude-code-workflows": false,
+    "challenger@claude-community": true,
+    "chezmoi-toolkit@rsm-subagents": true,
+    "chrome-devtools-mcp@claude-plugins-official": true,
+    "cicd-automation@claude-code-workflows": true,
+    "clangd-lsp@claude-plugins-official": true,
+    "clangd@claude-code-lsps": true,
+    "claude-api@anthropic-agent-skills": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "claudelint@pdugan20-plugins": true,
+    "cli-anything@cli-anything": true,
+    "cloud-infrastructure@claude-code-workflows": false,
+    "cloudinary@knowledge-work-plugins": true,
+    "cockroachdb@knowledge-work-plugins": true,
+    "code-documentation@claude-code-workflows": true,
+    "code-refactoring@claude-code-workflows": true,
+    "code-review@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "codebase-cleanup@claude-code-workflows": true,
+    "codebase-quality@claude-community": true,
+    "commit-commands@claude-plugins-official": true,
+    "common-room@knowledge-work-plugins": true,
+    "comprehensive-review@claude-code-workflows": true,
+    "conductor@claude-code-workflows": true,
+    "content-marketing@claude-code-workflows": false,
+    "context-management@claude-code-workflows": true,
+    "context7-plugin@context7-marketplace": true,
+    "context7@claude-plugins-official": true,
+    "cowork-plugin-management@knowledge-work-plugins": true,
+    "csharp-lsp@claude-plugins-official": true,
+    "customer-sales-automation@claude-code-workflows": false,
+    "customer-support@knowledge-work-plugins": true,
+    "daloopa@knowledge-work-plugins": true,
+    "data-engineering@claude-code-workflows": true,
+    "data-validation-suite@claude-code-workflows": true,
+    "data@knowledge-work-plugins": true,
+    "database-cloud-optimization@claude-code-workflows": false,
+    "database-design@claude-code-workflows": false,
+    "database-migrations@claude-code-workflows": false,
+    "debugging-toolkit@claude-code-workflows": true,
+    "dependency-management@claude-code-workflows": true,
+    "deployment-strategies@claude-code-workflows": true,
+    "deployment-validation@claude-code-workflows": true,
+    "design@knowledge-work-plugins": false,
+    "devcontainer-toolkit@rsm-subagents": true,
+    "developer-essentials@claude-code-workflows": true,
+    "discord@claude-plugins-official": true,
+    "distributed-debugging@claude-code-workflows": true,
+    "document-skills@anthropic-agent-skills": true,
+    "documentation-generation@claude-code-workflows": true,
+    "dotnet-contribution@claude-code-workflows": true,
+    "engineering@knowledge-work-plugins": true,
+    "enterprise-search@knowledge-work-plugins": true,
+    "error-debugging@claude-code-workflows": true,
+    "error-diagnostics@claude-code-workflows": true,
+    "example-skills@anthropic-agent-skills": true,
+    "explanatory-output-style@claude-plugins-official": true,
+    "fakechat@claude-plugins-official": true,
+    "fastly-agent-toolkit@knowledge-work-plugins": true,
+    "feature-dev@claude-plugins-official": true,
+    "figma@knowledge-work-plugins": true,
+    "finance@knowledge-work-plugins": true,
+    "framework-migration@claude-code-workflows": true,
+    "frontend-mobile-development@claude-code-workflows": false,
+    "frontend-mobile-security@claude-code-workflows": false,
+    "full-stack-orchestration@claude-code-workflows": false,
+    "functional-programming@claude-code-workflows": true,
+    "git-pr-workflows@claude-code-workflows": true,
+    "github@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": true,
+    "gopls@claude-code-lsps": true,
+    "hk-toolkit@rsm-subagents": true,
+    "honcho-dev@honcho": true,
+    "honcho@honcho": true,
+    "hookify@claude-plugins-official": false,
+    "hr-legal-compliance@claude-code-workflows": false,
+    "human-resources@knowledge-work-plugins": true,
+    "incident-response@claude-code-workflows": true,
+    "intercom@knowledge-work-plugins": true,
+    "javascript-typescript@claude-code-workflows": true,
+    "jdtls-lsp@claude-plugins-official": true,
+    "jdtls@claude-code-lsps": true,
+    "jvm-languages@claude-code-workflows": true,
+    "kotlin-lsp@claude-code-lsps": true,
+    "kotlin-lsp@claude-plugins-official": true,
+    "kubernetes-operations@claude-code-workflows": false,
+    "last30days@last30days-skill": true,
+    "learning-output-style@claude-plugins-official": true,
+    "legal@knowledge-work-plugins": true,
+    "llm-application-dev@claude-code-workflows": true,
+    "lua-lsp@claude-plugins-official": true,
+    "machine-learning-ops@claude-code-workflows": true,
+    "marketing@knowledge-work-plugins": true,
+    "marketplace-evaluator@rsm-subagents": true,
+    "mcp-toolkit@docker": true,
+    "mdbase-lsp@claude-code-lsps": true,
+    "meigen-ai-design@claude-code-workflows": false,
+    "mintlify@knowledge-work-plugins": true,
+    "mise-toolkit@rsm-subagents": true,
+    "multi-platform-apps@claude-code-workflows": true,
+    "nimble@knowledge-work-plugins": false,
+    "observability-monitoring@claude-code-workflows": true,
+    "obsidian@obsidian-skills": true,
+    "octo@nyldn-plugins": true,
+    "operations@knowledge-work-plugins": true,
+    "payment-processing@claude-code-workflows": false,
+    "performance-testing-review@claude-code-workflows": true,
+    "php-lsp@claude-plugins-official": true,
+    "planetscale@knowledge-work-plugins": true,
+    "plugin-dev@claude-plugins-official": true,
+    "postiz@knowledge-work-plugins": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "prisma@knowledge-work-plugins": true,
+    "product-management@knowledge-work-plugins": true,
+    "product-tracking-skills@knowledge-work-plugins": true,
+    "productivity@knowledge-work-plugins": true,
+    "promptup@claude-community": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "pyright@claude-code-lsps": true,
+    "python-development@claude-code-workflows": true,
     "python-remote-debug-skill@claude-community": true,
-    "marketplace-evaluator@rsm-subagents": true
+    "quantitative-trading@claude-code-workflows": false,
+    "remember@claude-plugins-official": true,
+    "research-review-toolkit@rsm-subagents": true,
+    "reverse-engineering@claude-code-workflows": true,
+    "ruby-lsp@claude-code-lsps": true,
+    "ruby-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "rust-analyzer@claude-code-lsps": true,
+    "safety-net@claude-community": true,
+    "sales@knowledge-work-plugins": true,
+    "sanity-plugin@knowledge-work-plugins": true,
+    "searchfit-seo@knowledge-work-plugins": true,
+    "security-compliance@claude-code-workflows": true,
+    "security-guidance@claude-plugins-official": true,
+    "security-scanning@claude-code-workflows": false,
+    "seo-analysis-monitoring@claude-code-workflows": false,
+    "seo-content-creation@claude-code-workflows": false,
+    "seo-technical-optimization@claude-code-workflows": false,
+    "shell-scripting@claude-code-workflows": true,
+    "skill-creator@claude-plugins-official": true,
+    "slack-by-salesforce@knowledge-work-plugins": true,
+    "startup-business-analyst@claude-code-workflows": false,
+    "superpowers@claude-plugins-official": true,
+    "svelte-lsp@claude-code-lsps": true,
+    "swift-lsp@claude-plugins-official": true,
+    "systems-programming@claude-code-workflows": true,
+    "tdd-workflows@claude-code-workflows": true,
+    "team-collaboration@claude-code-workflows": true,
+    "telegram@claude-plugins-official": true,
+    "test-generator@claude-community": true,
+    "texlab@claude-code-lsps": true,
+    "token-saver@claude-community": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "ui-design@claude-code-workflows": false,
+    "unit-testing@claude-code-workflows": true,
+    "voltagent-dev-exp@voltagent-subagents": false,
+    "voltagent-lang@voltagent-subagents": false,
+    "voltagent-qa-sec@voltagent-subagents": false,
+    "vscode-langservers@claude-code-lsps": true,
+    "vtsls@claude-code-lsps": true,
+    "vue-volar@claude-code-lsps": true,
+    "web-scripting@claude-code-workflows": true,
+    "zapier@knowledge-work-plugins": true,
+    "zoominfo@knowledge-work-plugins": true
   },
   "extraKnownMarketplaces": {
+    "anthropic-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills"
+      }
+    },
+    "astral-sh": {
+      "source": {
+        "source": "github",
+        "repo": "astral-sh/claude-code-plugins"
+      }
+    },
+    "claude-code-lsps": {
+      "source": {
+        "source": "github",
+        "repo": "Piebald-AI/claude-code-lsps"
+      }
+    },
+    "claude-community": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-community"
+      }
+    },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "cli-anything": {
+      "source": {
+        "source": "github",
+        "repo": "HKUDS/CLI-Anything"
+      }
+    },
+    "context7-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "upstash/context7"
+      }
+    },
+    "docker": {
+      "source": {
+        "source": "github",
+        "repo": "docker/claude-plugins"
+      },
+      "autoUpdate": true
+    },
+    "honcho": {
+      "source": {
+        "source": "github",
+        "repo": "plastic-labs/claude-honcho"
+      }
+    },
+    "knowledge-work-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/knowledge-work-plugins"
+      }
+    },
+    "last30days-skill": {
+      "source": {
+        "source": "github",
+        "repo": "mvanhorn/last30days-skill"
+      }
+    },
+    "nyldn-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "nyldn/claude-octopus"
+      }
+    },
+    "obsidian-skills": {
+      "source": {
+        "source": "github",
+        "repo": "kepano/obsidian-skills"
+      }
+    },
+    "pdugan20-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "pdugan20/claudelint"
+      }
+    },
     "rsm-subagents": {
       "source": {
         "source": "directory",
         "path": "/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/rsm-subagents"
       }
+    },
+    "voltagent-subagents": {
+      "source": {
+        "source": "github",
+        "repo": "VoltAgent/awesome-claude-code-subagents"
+      }
     }
-  }
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "cd /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment && uv run mde-py statusline render"
+  },
+  "spinnerTipsEnabled": true
 }
