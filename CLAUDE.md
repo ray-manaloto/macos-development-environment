@@ -70,6 +70,7 @@ All secrets: **Doppler (source of truth) -> sync -> fnox (Keychain cache) -> mis
 Use CLI wrappers, never MCP tool schemas in context:
 - `mcp2cli @github <tool> [args]` for GitHub
 - `mcp2cli @docker <tool> [args]` for Docker
+- `mcp2cli @exa <tool> [args]` for web search (Exa)
 - `npx agent-fetch "<url>" --json` for URL content (never WebFetch for research)
 
 Subdirectory CLAUDE.md files can be added for module-specific instructions (e.g., `rsm-subagents/CLAUDE.md`).

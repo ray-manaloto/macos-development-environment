@@ -44,7 +44,7 @@ chezmoi execute-template '{{ doppler "KEY" }}'                     # From chezmo
 ```bash
 uv run mde-py secrets validate    # Compare Doppler vs fnox parity
 fnox list | grep KEY               # Check local provider is (keychain)
-doppler secrets ls --project dotfiles --config dev | grep KEY      # Check Doppler has it
+doppler secrets --project dotfiles --config dev | grep KEY      # Check Doppler has it
 ```
 
 ## One-time migration (already done)
@@ -56,7 +56,7 @@ uv run mde-py secrets validate    # Verify parity
 
 ## Current secrets inventory
 
-Run `doppler secrets ls --project dotfiles --config dev` for the canonical list.
+Run `doppler secrets --project dotfiles --config dev` for the canonical list.
 Key categories:
 - **LLM API keys**: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY
 - **MCP server keys**: EXA_API_KEY
