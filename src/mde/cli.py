@@ -32,6 +32,94 @@ def _traced_command(command: str, **extra: object) -> Generator[dict[str, Any]]:
 _SUBPARSERS: dict[str, argparse.ArgumentParser] = {}
 
 
+def _discover_hooks() -> dict[str, tuple[str, str, str]]:
+    """Scan src/mde/hooks/ for modules with __hook_meta__ and return dispatch info.
+
+    Returns a dict mapping command-name -> (module_path, function_name, help_text).
+    Modules without __hook_meta__ are silently skipped.
+    Uses AST parsing to avoid importing hook modules at startup.
+    """
+    import ast
+    from pathlib import Path
+
+    hooks_dir = Path(__file__).parent / "hooks"
+    result: dict[str, tuple[str, str, str]] = {}
+
+    for py_file in sorted(hooks_dir.glob("*.py")):
+        if py_file.name.startswith("_") or py_file.name == "__init__.py":
+            continue
+
+        try:
+            tree = ast.parse(py_file.read_text())
+        except SyntaxError:
+            continue
+
+        meta = _extract_hook_meta(tree)
+        if meta is None:
+            continue
+
+        module_stem = py_file.stem
+        cmd_name = meta.get("name", module_stem.replace("_", "-"))
+        module_path = f"mde.hooks.{module_stem}"
+        entry_fn = meta["entry"]
+        help_text = meta["help"]
+
+        if cmd_name in result:
+            existing_mod = result[cmd_name][0]
+            msg = (
+                f"Hook command collision: '{cmd_name}' defined by both "
+                f"{existing_mod} and {module_path}"
+            )
+            raise ValueError(msg)
+
+        result[cmd_name] = (module_path, entry_fn, help_text)
+
+    return result
+
+
+def _extract_hook_meta(tree: object) -> dict[str, str] | None:
+    """Extract __hook_meta__ dict from an AST tree, or return None.
+
+    Supports both plain assignment (ast.Assign) and annotated assignment
+    (ast.AnnAssign), e.g. ``__hook_meta__: dict[str, str] = {...}``.
+    """
+    import ast
+
+    for node in ast.iter_child_nodes(tree):  # type: ignore[arg-type]
+        if (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == "__hook_meta__"
+            and isinstance(node.value, ast.Dict)
+        ):
+            return _parse_dict_literal(node.value)
+        if (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == "__hook_meta__"
+            and node.value is not None
+            and isinstance(node.value, ast.Dict)
+        ):
+            return _parse_dict_literal(node.value)
+    return None
+
+
+def _parse_dict_literal(node: object) -> dict[str, str] | None:
+    """Parse an ast.Dict of string constants into a plain dict."""
+    import ast
+
+    if not isinstance(node, ast.Dict):
+        return None
+    meta: dict[str, str] = {}
+    for key, value in zip(node.keys, node.values, strict=False):
+        if isinstance(key, ast.Constant) and isinstance(value, ast.Constant):
+            meta[str(key.value)] = str(value.value)
+    if "help" in meta and "entry" in meta:
+        return meta
+    return None
+
+
 def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     """Build the top-level argument parser."""
     parser = argparse.ArgumentParser(
@@ -165,18 +253,13 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     telemetry_p.add_argument("action", choices=["verify"], help="Telemetry action")
 
     # hooks
+    # HOOKS AUTO-DISCOVERY: Scans src/mde/hooks/ for modules with __hook_meta__.
+    # Adding a new hook requires ONLY creating a new module — cli.py is NOT modified.
+    # See .claude/rules/hooks-auto-discovery.md for the full convention.
     hooks_p = sub.add_parser("hooks", help="Claude Code hook handlers")
     hooks_sub = hooks_p.add_subparsers(dest="hooks_action")
-    hooks_sub.add_parser("log-edit-outcome", help="PostToolUse logger")
-    hooks_sub.add_parser("log-agent-event", help="SubagentStart/SubagentStop logger")
-    hooks_sub.add_parser("guard-install", help="PreToolUse install guard")
-    hooks_sub.add_parser("guard-dotfile-edit", help="PreToolUse dotfile edit guard")
-    hooks_sub.add_parser("remind-chezmoi-commit", help="PostToolUse chezmoi reminder")
-    hooks_sub.add_parser("session-start", help="SessionStart context setup")
-    hooks_sub.add_parser("post-compact", help="PostCompact research state save")
-    hooks_sub.add_parser("team-quality-gate", help="Per-team quality gate validation")
-    hooks_sub.add_parser("validate-plugins", help="PostToolUse rsm-subagents validator")
-    hooks_sub.add_parser("persist-transcripts", help="PreCompact/Stop agent transcript saver")
+    for cmd_name, entry in _discover_hooks().items():
+        hooks_sub.add_parser(cmd_name, help=entry[2])
     _SUBPARSERS["hooks"] = hooks_p
 
     # research
@@ -491,26 +574,13 @@ def _cmd_telemetry(args: argparse.Namespace) -> int:
         return result
 
 
-_HOOKS_DISPATCH: dict[str, tuple[str, str]] = {
-    "log-edit-outcome": ("mde.hooks.log_outcome", "log_edit_outcome"),
-    "log-agent-event": ("mde.hooks.log_agent_event", "log_agent_event"),
-    "guard-install": ("mde.hooks.guard_install", "guard_install"),
-    "guard-dotfile-edit": ("mde.hooks.guard_dotfile_edit", "guard_dotfile_edit"),
-    "remind-chezmoi-commit": ("mde.hooks.remind_chezmoi_commit", "remind_chezmoi_commit"),
-    "session-start": ("mde.hooks.session_start", "session_start"),
-    "post-compact": ("mde.hooks.post_compact", "post_compact"),
-    "team-quality-gate": ("mde.hooks.team_quality_gates", "team_quality_gate_hook"),
-    "validate-plugins": ("mde.hooks.validate_plugins", "validate_plugins_hook"),
-    "persist-transcripts": ("mde.hooks.persist_transcripts", "persist_transcripts"),
-}
-
-
 def _cmd_hooks(args: argparse.Namespace) -> int:
     action = args.hooks_action
     if action is None:
         _SUBPARSERS["hooks"].print_help()
         return 1
-    entry = _HOOKS_DISPATCH.get(action)
+    hooks = _discover_hooks()
+    entry = hooks.get(action)
     if entry is None:
         print(f"Unknown hooks action: {action}", file=sys.stderr)
         return 1

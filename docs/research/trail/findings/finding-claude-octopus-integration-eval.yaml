@@ -1,0 +1,89 @@
+id: finding-claude-octopus-integration-eval
+timestamp: "2026-03-25T23:00:00Z"
+source: https://github.com/nyldn/claude-octopus
+agent: researcher
+finding_type: integration-evaluation
+confidence: confirmed
+confident_about: |
+  1. Claude Octopus is a mature Claude Code plugin (v9.13.0, MIT licensed)
+  2. It ships with 47 commands, 50 skills, 32 personas, and full consensus gate logic (75% threshold)
+  3. The plugin requires ONLY Claude Code (no external API keys to ship, optional for multi-model)
+  4. It is structured as a shell-based orchestrator with modular lib/ architecture
+  5. The consensus gate is fully functional and production-ready
+  6. It uses subprocess dispatch to Codex/Gemini CLIs (not API keys)
+
+gaps: |
+  1. Unclear if plugin can be installed into a project-scoped .claude/ hierarchy vs global registry only
+  2. No explicit verification that consensus gate extracts cleanly without shell orchestration overhead
+  3. Unknown licensing interaction between MIT clause-octopus + any commercial use of artifacts
+  4. Not tested: whether debate.sh and quality.sh can run standalone outside orchestrate.sh wrapper
+  5. No clarity on how to override the "8 tentacle" provider model for our 3-provider setup (Codex CLI, Gemini CLI, Claude)
+
+evidence: |
+  README section "How It Works" explicitly details the 75% consensus gate:
+    "A 75% consensus quality gate prevents questionable work from shipping. Only Claude is required — all others are optional and auto-detected."
+
+  scripts/lib/debate.sh implements:
+    - grapple_debate() function with 3-round adversarial cross-model review
+    - ANTI-CONTRARIAN, ANTI-RUBBER-STAMP, EVIDENCE-BASED debate integrity rules
+    - Blinded mode (independent evaluation) vs cross-critique (ACH falsification)
+    - Run-in-parallel for proposal generation, sequential for synthesis
+
+  scripts/lib/quality.sh implements:
+    - evaluate_quality_branch() returns: proceed, proceed_warn, retry, escalate, abort
+    - Thresholds: >= 90% → proceed, >= QUALITY_THRESHOLD (75%) → proceed_warn
+    - Autonomy modes: supervised (escalate failures), semi-autonomous (retry), autonomous (proceed)
+    - Provider lockout mechanism to prevent retry loops
+
+  Preflight checks (scripts/lib/preflight.sh) show:
+    - Codex: checks ~/.codex/auth.json OR OPENAI_API_KEY
+    - Gemini: checks ~/.gemini/oauth_creds.json OR GEMINI_API_KEY
+    - Claude: built-in (no auth needed)
+    - Perplexity, Copilot, Qwen, Ollama: all OPTIONAL with auto-detection
+    - NO REQUIRED API KEYS except for multi-model features (which are optional)
+
+  Architecture doc states:
+    "Only Claude is required — all others are optional and auto-detected."
+    "Zero providers needed to start. Add them one at a time — each activates automatically when detected."
+
+  Project is structured as:
+    - package.json: @anthropic-plugins/claude-octopus v9.13.0
+    - Main: scripts/orchestrate.sh (entry point)
+    - 50+ lib files in scripts/lib/ for modular decomposition
+    - Verified Claude Code v2.1.50+ features in providers.sh
+    - MIT License (permissive, allows commercial derivatives)
+
+implication: |
+  VERDICT: ADAPT with HIGH CONFIDENCE
+
+  Claude Octopus provides 80% of the autonomous-fix-review skill's consensus gate and multi-model orchestration needs. The plugin is:
+
+  1. **DIRECTLY REUSABLE** (debate.sh, quality.sh) for the 75% consensus gate
+  2. **INSTALLABLE** as a Claude Code plugin into the project
+  3. **API-KEY SAFE** — runs without external keys on Claude alone; multi-AI features are opt-in
+  4. **SUBPROCESS-NATIVE** — already uses Codex/Gemini CLIs via subprocess dispatch (not APIs)
+  5. **ADVERSARIAL REVIEW READY** — implements the exact role-assignment and debate integrity rules we need
+  6. **MIT LICENSED** — compatible with any use (including commercial)
+
+  CRITICAL ADAPTATION NEEDED:
+  - We cannot import the full 47-command plugin into autonomous-fix-review (scope explosion)
+  - Extract debate.sh + quality.sh + lib/intelligence.sh into mde Python library
+  - Adapt shell grapple_debate() → Python async debate orchestrator with trio parallelism
+  - Port providers.sh detection to mde CLI (detect codex/gemini CLIs, not API keys)
+  - Map octopus debate integrity rules to our SecurityAuditor/CodeReviewer personas
+
+  GAPS TO RESOLVE BEFORE EXTRACTION:
+  1. Verify debate.sh runs standalone (without full orchestrate.sh context)
+  2. Test whether quality gate thresholds can be configured per-workflow
+  3. Check if openslaw/mcp-server needs to come with the plugin (currently ~400 LOC of interop)
+  4. Map octopus's 32 personas to our existing specialist agents (5-8 overlap expected)
+  5. Document how to replace ${CLAUDE_OCTOPUS_WORKSPACE} with ${CLAUDE_PLUGIN_DATA}
+
+tags: [consensus-gate, multi-model-orchestration, adversarial-review, debate-logic, quality-scoring, subprocess-cli, MIT-license, claude-code-plugin, shell-to-python-port]
+status: discovered
+next_steps: |
+  1. Extract debate.sh and quality.sh into a standalone Python module
+  2. Implement debate orchestration in /autonomous-fix-review skill
+  3. Test consensus gate on a sample PR with codex + gemini CLIs
+  4. Verify threshold configuration doesn't break existing workflows
+  5. Document the adaptation process for future multi-model integrations

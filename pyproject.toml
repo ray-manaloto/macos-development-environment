@@ -76,7 +76,7 @@ ignore = [
     "E501",     # generated file — long descriptions from schema
     "COM812",   # generated file — trailing comma style
 ]
-"src/mde/hooks/agent_frontmatter_model.py" = [
+"src/mde/hooks/_agent_frontmatter_model.py" = [
     "D100",     # generated file — no module docstring
     "D101",     # generated file — no class docstrings
     "ERA001",   # generated file — codegen header comments
@@ -90,6 +90,16 @@ ignore = [
     "ERA001",   # generated file — codegen header comments
     "E501",     # generated file — long descriptions from schema
     "COM812",   # generated file — trailing comma style
+]
+"src/mde/domain/claude_code_settings_models.py" = [
+    "D100",     # generated file — no module docstring
+    "D101",     # generated file — no class docstrings
+    "ERA001",   # generated file — codegen header comments
+    "N815",     # generated file — camelCase field names match Claude Code settings
+    "E501",     # generated file — long descriptions from schema
+    "COM812",   # generated file — trailing comma style
+    "RUF001",   # generated file — unicode chars from schema descriptions
+    "S108",     # generated file — /tmp paths in schema examples
 ]
 "tests/**/*.py" = [
     "S101",     # assert is expected in tests
@@ -111,6 +121,7 @@ ignore = [
 "src/mde/fix/*.py" = ["T201"]
 "src/mde/hooks/session_start.py" = ["T201"]
 "src/mde/hooks/post_compact.py" = ["T201"]
+"src/mde/hooks/save_memory_on_clear.py" = ["T201"]
 "src/mde/hooks/validate_agents.py" = ["T201"]
 "src/mde/install/*.py" = ["T201"]
 "src/mde/learn/*.py" = ["T201"]
@@ -141,7 +152,7 @@ python-version = "3.12"
 
 [tool.ty.src]
 include = ["src/mde"]
-exclude = [".agents/skills", "src/mde/hooks/agent_frontmatter_model.py", "generated", "src/mde/domain/honcho_models.py"]
+exclude = [".agents/skills", "src/mde/hooks/_agent_frontmatter_model.py", "generated", "src/mde/domain/honcho_models.py", "src/mde/domain/claude_code_settings_models.py"]
 
 [tool.ty.rules]
 # Enable ALL rules that default to "ignore" — no silent type errors
@@ -155,9 +166,10 @@ unused-ignore-comment = "warn"
 # ── pyright ──
 [tool.pyright]
 exclude = [
-    "src/mde/hooks/agent_frontmatter_model.py",
+    "src/mde/hooks/_agent_frontmatter_model.py",
     "generated",
     "src/mde/domain/honcho_models.py",
+    "src/mde/domain/claude_code_settings_models.py",
 ]
 
 # ── pytest ──

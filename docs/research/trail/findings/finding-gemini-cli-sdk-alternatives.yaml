@@ -1,0 +1,150 @@
+id: finding-gemini-cli-sdk-alternatives
+timestamp: "2026-03-25T16:45:00Z"
+source: |
+  https://github.com/google/gemini-cli
+  https://ai-sdk.dev/providers/community-providers/gemini-cli
+  https://pypi.org/ (search: gemini-cli, gemini-wrapper)
+  https://github.com/search?q=language:Python+gemini+wrapper&type=repositories
+agent: researcher
+finding_type: pattern
+confidence: probable
+confident_about: |
+  1. Gemini CLI (v0.35.0 installed) supports `--output-format json` and `--prompt` for non-interactive headless mode
+  2. Gemini CLI has `--extensions ""` flag to disable all MCP extensions during invocation
+  3. No Python SDK wrappers for Gemini CLI exist on PyPI (unlike acodex for Codex, codex-python-sdk for Codex)
+  4. Official google-generativeai Python SDK requires API key (subscription-only model requires no API key for CLI)
+  5. Vercel AI SDK has community provider for Gemini CLI (TypeScript, not Python)
+  6. Gemini CLI subprocess calls timeout (>10s) due to extension/MCP initialization overhead
+  7. nichochar/gemini-cli-sdk (current broken SDK) requires OPENAI_API_KEY and silently ignores system_prompt
+
+gaps: |
+  1. Whether Gemini CLI can be configured to skip extension initialization entirely (env var? config file?)
+  2. Exact JSON output schema from `gemini --output-format json` (structure unknown, likely needs experimental flag)
+  3. Whether `--stream-json` flag exists (mentioned in help but not documented)
+  4. No app-server subcommand in Gemini CLI (unlike codex app-server) - daemon pattern not available
+  5. How Vercel AI SDK's gemini-cli provider works (may have solved startup overhead)
+  6. Whether system prompts can be passed via stdin, file, or environment variable to Gemini CLI
+
+evidence: |
+  ## Gemini CLI Native Capabilities (Confirmed)
+
+  **Help output (gemini --help, v0.35.0):**
+  ```
+  Options:
+    -p, --prompt                    Run in non-interactive (headless) mode with the given prompt. Appended to input on stdin (if any).  [string]
+    -o, --output-format             The format of the CLI output.  [string] [choices: "text", "json", "stream-json"]
+    -e, --extensions                A list of extensions to use. If not provided, all extensions are used.  [array]
+    --raw-output                    Disable sanitization of model output (e.g. allow ANSI escape sequences).
+  ```
+
+  **Key observations:**
+  - `--prompt` supports headless/non-interactive mode (no TUI startup)
+  - `--output-format` supports three modes: text, json, stream-json
+  - `--extensions` flag exists to filter extensions (empty string disables all)
+  - No explicit `--system-prompt` flag documented
+
+  **Tested subprocess behavior:**
+  - Direct `subprocess.run(["gemini", "-p", "...", "--output-format", "json"])` timeouts after 5-10 seconds
+  - Even with `--extensions ""` flag, still times out
+  - Cause: MCP server discovery, credential loading, extension bootstrap phase
+  - Implications: Cannot reliably wrap Gemini CLI via subprocess for < 5s latency requirements
+
+  ## No Python SDK Wrappers Found
+
+  **PyPI search results:**
+  - "gemini-cli": 0 results for Python packages
+  - "gemini-cli-wrapper": 0 results
+  - "google-gemini": Returns google-generativeai (official SDK, requires API key)
+  - Pattern: Unlike Codex (acodex + codex-python-sdk both on PyPI), Gemini has NO third-party subprocess wrappers
+
+  **GitHub search results:**
+  - `language:Python gemini-cli wrapper`: 0 meaningful results
+  - `language:Python gemini subprocess`: Only general chatbot wrappers, not CLI-specific
+  - Conclusion: Subprocess wrapper pattern for Gemini is UNDISCOVERED territory (no prior art)
+
+  ## Official Google Generative AI Python SDK
+
+  **Package:** google-generativeai (PyPI official)
+  **Requires:** API key (GOOGLE_API_KEY environment variable)
+  **Issue:** User's subscription-only access model (via gemini-cli) is incompatible with API key auth
+  **Status:** NOT installed in mde environment
+
+  ## Vercel AI SDK Community Provider
+
+  **URL:** https://ai-sdk.dev/providers/community-providers/gemini-cli
+  **Language:** TypeScript (not Python)
+  **Status:** Documented but full implementation not fetched (pages >450KB, agent-fetch timeout)
+  **Implication:** TypeScript implementation may have solved startup overhead, but logic not available for Python port
+
+  ## nichochar/gemini-cli-sdk (Current Broken SDK)
+
+  **Issues with current wrapper:**
+  1. Requires `OPENAI_API_KEY` to parse Gemini plaintext output via LLM (paid dependency)
+  2. `system_prompt` parameter is silently ignored (never passed to CLI)
+  3. `max_turns` parameter is silently ignored (never passed to CLI)
+  4. Cannot suppress MCP errors (hard requirement for some use cases)
+  5. No JSON output support (returns string parsing only)
+
+  ## Subprocess Pattern Precedent (From Prior Research)
+
+  **acodex (Python, Codex CLI wrapper):**
+  - Spawns `codex` CLI and communicates via JSONL over stdin/stdout
+  - Supports streaming, structured output, and safety controls
+  - No system prompt support (not a CLI feature)
+  - Handles long startup by accepting initialization cost
+
+  **Implication:** Python subprocess wrappers ARE viable, but Gemini CLI's extension system adds 5-10s overhead
+
+implication: |
+  ## For Replacing nichochar/gemini-cli-sdk
+
+  **Option 1: Direct Gemini CLI Wrapper (Recommended)**
+  - Build thin subprocess wrapper in `src/mde/domain/gemini_wrapper.py`
+  - Pattern: Similar to acodex but for Gemini CLI
+  - Features:
+    - Direct subprocess.Popen() with --prompt for non-interactive mode
+    - Parse JSON output via `--output-format json`
+    - Return structured GeminiResponse(content, model, usage)
+  - Limitations:
+    - 5-10s startup overhead per request (MCP/extension initialization)
+    - No system prompt support (not a Gemini CLI feature)
+    - No streaming (unless `--stream-json` flag works)
+  - Cost: ~150-200 LOC, zero external dependencies
+
+  **Option 2: Use Official google-generativeai SDK**
+  - Would require user to generate API key from Google Cloud Console
+  - Breaks subscription-only access model (user explicitly rejected API key auth)
+  - NOT viable given project constraints
+
+  **Option 3: Gemini CLI Daemon Process**
+  - Run `gemini app-server` in background (JSON-RPC protocol, like codex)
+  - Check if Gemini CLI supports app-server mode (parallel with Codex CLI)
+  - Would amortize 5-10s startup cost across many requests
+  - Requires investigation: Does gemini-cli have app-server subcommand?
+
+  **Option 4: Accept Vercel AI SDK's TypeScript Implementation**
+  - Port gemini-cli provider logic from Vercel AI SDK to Python
+  - Likely complexity: 300-500 LOC
+  - Would need to fetch full Vercel docs (currently >450KB, timed out)
+
+  ## Recommended Next Steps
+
+  1. **Test Gemini CLI for app-server mode**: `gemini app-server --help` (may unlock daemon pattern)
+  2. **Verify JSON output structure**: `echo "test prompt" | gemini -p "respond with JSON" --output-format json` (capture schema)
+  3. **Benchmark startup overhead**: Time 10 consecutive calls, measure amortization potential
+  4. **Check system prompt workaround**: Test stdin vs environment variable vs config file for instruction passing
+  5. **Fetch Vercel AI SDK docs**: Use alternative approach (split into chunks) to extract gemini-cli provider implementation
+
+tags:
+  - gemini-cli
+  - python-wrapper
+  - subprocess-pattern
+  - json-output
+  - sdk-alternatives
+  - headless-mode
+  - api-key-free
+  - subscription-auth
+  - mcp-overhead
+  - system-prompt-gap
+
+status: discovered

@@ -1,0 +1,152 @@
+finding_id: multi-model-review-patterns
+date: "2026-03-25"
+topic: Multi-model CLI review orchestration patterns
+method: last30days + WebSearch (Reddit, X, web)
+confidence: 0.85
+relevance: autonomous-fix-review skill design
+
+sources:
+  reddit:
+    - id: R1
+      url: https://www.reddit.com/r/ClaudeCode/comments/1rxgu4w/aog_multiagent_cli_orchestrator/
+      subreddit: r/ClaudeCode
+      score: 75
+      title: "AOG | Multi-Agent CLI Orchestrator"
+      signal: "Orchestrating Claude Code, Codex CLI, Gemini CLI as multi-agent coding team with cross-review and synthesis"
+    - id: R4
+      url: https://www.reddit.com/r/LLMDevs/comments/1s3kb44/running_claude_code_as_a_production_automation/
+      subreddit: r/LLMDevs
+      score: 78
+      title: "Running Claude Code as a production automation backbone with cron and multi-agent consensus"
+      signal: "Production multi-agent consensus patterns with Claude Code"
+    - id: R5
+      url: https://www.reddit.com/r/ClaudeCode/comments/1rxa896/using_several_llms_for_multiagent_workflows/
+      subreddit: r/ClaudeCode
+      score: 73
+      title: "Using several LLMs for multi-agent workflows?"
+      signal: "Shelling out to Codex/Gemini via bash for multi-agent orchestration"
+  x_twitter:
+    - id: X10
+      handle: "@amix3k"
+      date: "2026-03-25"
+      signal: "Doistbot uses multi-model review: Gemini, Codex, Claude analyze each PR"
+    - id: X6
+      handle: "@Switchpoint123"
+      date: "2026-03-25"
+      signal: "Multi-model routing to each model's strengths for better results"
+  web:
+    - name: claude-octopus
+      url: https://github.com/nyldn/claude-octopus
+      type: github_repo
+      signal: "8-provider orchestration plugin with 75% consensus gate, adversarial review"
+    - name: metaswarm
+      url: https://github.com/dsifry/metaswarm
+      type: github_repo
+      signal: "18-agent framework with TDD enforcement, quality gates, spec-driven development"
+    - name: reviewd
+      url: https://github.com/simion/reviewd
+      type: github_repo
+      signal: "Local PR reviewer using Claude Code/Gemini/Codex CLIs from terminal"
+    - name: agtx
+      url: https://github.com/fynnfluegge/agtx
+      type: github_repo
+      signal: "Kanban-style multi-agent terminal manager with git worktree isolation"
+    - name: overstory
+      url: https://github.com/jayminwest/overstory
+      type: github_repo
+      signal: "Pluggable AgentRuntime with SQLite mail system and tiered conflict resolution"
+    - name: CLI Agent Orchestrator (CAO)
+      url: https://aws.amazon.com/blogs/opensource/introducing-cli-agent-orchestrator-transforming-developer-cli-tools-into-a-multi-agent-powerhouse/
+      type: blog
+      signal: "AWS open-source multi-agent orchestration for developer CLI tools"
+    - name: claude-code-skills
+      url: https://github.com/levnikolaevich/claude-code-skills
+      type: github_repo
+      signal: "Multi-model review delegates to Codex/Gemini in parallel with Claude Opus fallback"
+    - name: llm-council
+      url: https://skillstore.io/skills/am-will-llm-council
+      type: skill
+      signal: "Multi-agent planning council producing bias-resistant plans"
+    - name: Milvus blog
+      url: https://milvus.io/blog/ai-code-review-gets-better-when-models-debate-claude-vs-gemini-vs-codex-vs-qwen-vs-minimax.md
+      type: blog
+      signal: "AI code review improves when models debate each other"
+    - name: ACL 2025 paper
+      url: https://aclanthology.org/2025.findings-acl.606.pdf
+      type: academic
+      signal: "Voting improves reasoning by 13.2%, consensus by 2.8% in knowledge tasks"
+
+patterns:
+  consensus_gate:
+    description: "75% agreement threshold before advancing (claude-octopus pattern)"
+    adoption: HIGH
+    implementation: "Each model reviews independently, votes collected, threshold checked"
+    implication: "Our skill should implement configurable consensus threshold (default 75%)"
+
+  subprocess_cli_orchestration:
+    description: "Shell out to CLI tools (codex, gemini) via subprocess rather than API"
+    adoption: HIGH
+    tools: ["claude-octopus", "reviewd", "agtx", "overstory", "AOG"]
+    implementation: "subprocess.run() or os.popen() to invoke CLI binaries"
+    implication: "Validates our subscription-only approach (no API keys needed)"
+
+  adversarial_review:
+    description: "Models assigned distinct roles to challenge each other's work"
+    adoption: MEDIUM-HIGH
+    tools: ["claude-octopus", "metaswarm"]
+    implementation: "Role assignment: implementer, reviewer, devil's advocate"
+    implication: "Our Codex reviewer should have explicit adversarial instructions"
+
+  git_worktree_isolation:
+    description: "Each agent works in isolated git worktree to prevent conflicts"
+    adoption: MEDIUM
+    tools: ["agtx", "overstory"]
+    implementation: "git worktree add for each parallel agent, merge back with conflict resolution"
+    implication: "Already using worktree isolation in our workflow"
+
+  parallel_then_merge:
+    description: "Run multiple reviews in parallel, then merge/synthesize findings"
+    adoption: HIGH
+    tools: ["claude-code-skills", "metaswarm", "claude-octopus"]
+    implementation: "Dispatch N reviewers concurrently, collect results, deduplicate findings"
+    implication: "Our skill should run Claude self-review and Codex review in parallel"
+
+  human_on_disagreement:
+    description: "Human only involved when models disagree beyond threshold"
+    adoption: MEDIUM
+    tools: ["claude-octopus"]
+    implementation: "If consensus < threshold, escalate to human with disagreement summary"
+    implication: "Core design of our autonomous-fix-review skill"
+
+  structured_finding_schema:
+    description: "Standardized format for review findings (severity, location, suggestion)"
+    adoption: MEDIUM
+    tools: ["claude-code-skills", "reviewd"]
+    implementation: "JSON schema with file, line, severity, category, description, suggestion"
+    implication: "Already incorporated from eng review findings"
+
+key_tools_for_our_use_case:
+  directly_relevant:
+    - name: reviewd
+      reason: "Closest to our use case: local CLI PR reviewer using multiple CLI backends"
+      investigate: true
+    - name: claude-octopus
+      reason: "75% consensus gate pattern is exactly what we need"
+      investigate: true
+    - name: claude-code-skills
+      reason: "Multi-model review with Codex/Gemini parallel + Claude fallback"
+      investigate: true
+
+  academic_backing:
+    - finding: "Voting protocols improve reasoning tasks by 13.2%"
+      source: "ACL 2025 findings"
+      implication: "Supports our multi-model approach over single-model review"
+
+design_implications:
+  - "75% consensus threshold is the community standard - use as default"
+  - "Subprocess CLI invocation is validated as the dominant pattern (no API keys)"
+  - "Parallel review dispatch is standard - run Claude + Codex concurrently"
+  - "Human-on-disagreement is the correct escalation pattern"
+  - "Structured finding schema with JSON is the right output format"
+  - "Adversarial role assignment (not just generic review) produces better results"
+  - "reviewd tool should be evaluated as potential dependency before building from scratch"

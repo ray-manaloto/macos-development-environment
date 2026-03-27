@@ -1,0 +1,127 @@
+id: acodex-sdk-usage-patterns
+timestamp: "2026-03-25T16:05:00Z"
+source: https://github.com/maksimzayats/acodex
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: |
+  - acodex is NOT a native Python SDK but a subprocess wrapper around Codex CLI
+  - Provides fully typed async/sync interfaces over JSONL IPC
+  - Designed for structured output via Pydantic models
+  - Streams individual events (ItemCompletedEvent, TurnCompletedEvent, TurnFailedEvent)
+  - Maintains TypeScript SDK parity via vendored source + compatibility tests
+  - Threads persisted to `~/.codex/sessions/` for resumption
+
+gaps: |
+  - No active real-world GitHub examples of acodex usage (very new/niche project)
+  - Limited error recovery patterns documented beyond basic event handling
+  - No multi-model consensus/orchestration examples (single Codex instance)
+  - Missing timeout/context-window management strategies
+
+evidence: |
+  ## Core Architecture
+
+  **Not an SDK but a CLI wrapper:**
+  - Spawns subprocess: `codex` CLI (must be on PATH)
+  - IPC: stdin/stdout JSONL exchange
+  - No runtime dependencies by default (structured-output extra is optional)
+  - Thread persistence: `~/.codex/sessions/thread-{id}.jsonl`
+
+  ## API Surface (High-Level)
+
+  ```python
+  from acodex import Codex, AsyncCodex, Thread, AsyncThread
+  from acodex import ItemCompletedEvent, TurnCompletedEvent, TurnFailedEvent
+  from pydantic import BaseModel
+
+  # Sync usage
+  codex = Codex()
+  thread = codex.start_thread(sandbox_mode="read-only", approval_policy="on-request")
+  turn = thread.run("Summarize this repo.", output_type=SummaryPayload)
+  print(turn.structured_response.summary)
+
+  # Async usage
+  thread = AsyncCodex().start_thread()
+  turn = await thread.run("Say hello")
+
+  # Streaming events
+  streamed = thread.run_streamed("List top 3 risks")
+  for event in streamed.events:
+      if isinstance(event, ItemCompletedEvent):
+          print("item", event.item)
+      elif isinstance(event, TurnCompletedEvent):
+          print("usage", event.usage)
+  turn = streamed.result  # Available after events consumed
+
+  # Thread resumption
+  thread_id = thread.id
+  resumed = codex.resume_thread(thread_id)
+  ```
+
+  ## Key Export Types
+
+  - **Thread Control**: `Thread`, `AsyncThread`, `ThreadOptions`
+  - **Events**: `ItemCompletedEvent`, `ItemStartedEvent`, `ItemUpdatedEvent`, `TurnCompletedEvent`, `TurnFailedEvent`, `TurnStartedEvent`, `ThreadStartedEvent`, `ThreadErrorEvent`
+  - **Items**: `AgentMessageItem`, `CommandExecutionItem`, `FileChangeItem`, `McpToolCallItem`, `ReasoningItem`, `TodoListItem`, `WebSearchItem`
+  - **Options**: `SandboxMode` (read-only, read-write), `ApprovalMode` (on-request, ...), `WebSearchMode` (enabled, disabled), `ModelReasoningEffort`
+  - **Input/Output**: `Input`, `UserInput`, `UserInputLocalImage`
+  - **Usage tracking**: `Usage` (model-provided token counts)
+
+  ## Distinguishing Features vs Native SDKs
+
+  | Feature | acodex | openai-sdk | anthropic-sdk |
+  |---------|--------|-----------|--------------|
+  | Process Model | Subprocess | Direct connection | Direct connection |
+  | IPC | JSONL over stdin/stdout | HTTP/WebSocket | HTTP/WebSocket |
+  | Thread Persistence | Filesystem (~/.codex/sessions) | Manual (app responsibility) | Manual |
+  | Event Streaming | Yes (ItemCompleted, TurnCompleted) | Yes (token stream) | Yes (content block stream) |
+  | Structured Output | Pydantic models via output_type | Schema validation | Manual parsing |
+  | Safety Controls | Explicit (sandbox_mode, approval_policy) | Not exposed | Not exposed |
+  | Multi-Model | No (depends on codex CLI config) | Yes (model parameter) | Yes |
+
+  ## Quality Gates
+
+  - Ruff + mypy strict
+  - 100% test coverage
+  - CI: Hourly workflow bumps vendored TypeScript SDK on new releases
+  - Compatibility policy: COMPATIBILITY.md + DIFFERENCES.md + tests for drift detection
+
+  ## Design Philosophy
+
+  - "Subprocess-first for isolation" (implied by architecture)
+  - "Type safety over convenience" (full dataclass/Pydantic coverage)
+  - "Upstream parity" (vendored TypeScript SDK as source of truth)
+
+implication: |
+  ### For Multi-Model Consensus Orchestration
+
+  1. **acodex is NOT suitable for direct multi-model consensus** (single CLI backend)
+     - But pattern is replicable: wrap codex/gemini/claude CLIs separately, aggregate results
+
+  2. **Event-based aggregation strategy**
+     - Each subprocess yields events (ItemCompleted, TurnCompleted)
+     - Collect `turn.structured_response` from each model
+     - Run consensus loop over collected results
+
+  3. **Timeout/Context Management**
+     - acodex doesn't expose timeout controls directly
+     - Could wrap `run_streamed()` with `asyncio.wait_for()` for hard timeouts
+     - Context persistence via thread IDs prevents token-limit surprises across sessions
+
+  4. **Structured Output Best Practice**
+     - Define Pydantic model for your codex output
+     - Pass as `output_type=YourModel` to `run()`
+     - Access via `turn.structured_response.field_name`
+     - No JSON parsing/validation needed by caller
+
+tags:
+  - acodex
+  - python-sdk
+  - subprocess-wrapper
+  - cli-integration
+  - structured-output
+  - pydantic
+  - thread-persistence
+  - jsonl-ipc
+  - event-streaming
+status: discovered

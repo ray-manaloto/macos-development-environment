@@ -22,13 +22,17 @@ mise fmt --check               # mise config formatting
 ## Architecture
 
 - `src/mde/` — All automation lives here as Python modules. **No shell scripts.**
-- `src/mde/cli.py` — CLI dispatcher with lazy imports for startup speed
-- `src/mde/hooks/` — Claude Code hook handlers (called via `uv run mde-py hooks <subcommand>`)
+- `src/mde/cli.py` — CLI dispatcher with lazy imports for startup speed (keep minimal, delegate to modules)
+- `src/mde/hooks/` — Claude Code hook handlers (auto-discovered via `__hook_meta__`, never edit cli.py to add hooks)
 - `src/mde/validate/` — Validators for configs, plugins, brew, docker
 - `src/mde/research/` — Research pipeline CLI and clients
 - `src/mde/domain/` — Pydantic domain models (some codegen'd — don't hand-edit `*_models.py`)
+- `src/mde/codegen/` — Codegen postprocessors (run via `mise run mde:codegen:all`)
+- `docs/schemas/` — JSON Schema sources for codegen (including official `claude-code-settings.schema.json`)
 - `tests/` — pytest tests; `@pytest.mark.integration` for tests needing external tools
-- `.claude/rules/` — 16 policy files loaded automatically (mise-first, no-shell-scripts, etc.)
+- `.claude/rules/` — Policy files loaded automatically (mise-first, no-shell-scripts, etc.)
+- `.generated/` — Runtime artifacts, reports, logs, remember data (gitignored, never committed)
+- `.remember` — Symlink to `.generated/remember/` (remember plugin compatibility)
 - `rsm-subagents/` — Local plugin marketplace for Claude Code plugins
 
 ## Conventions
@@ -49,10 +53,13 @@ mise fmt --check               # mise config formatting
 - Plugin validation (`uv run mde-py validate --plugins`) must produce 0 errors AND 0 warnings
 - Unrelated errors encountered during work must be cataloged as GitHub Issues via `gh issue create`
 - Before building any new tool/plugin/agent: search community plugins (`claude-plugins-community`), existing skills, and PyPI/npm first — build new is LAST RESORT
+- Every candidate plugin/tool MUST be evaluated — never skip without explicit user approval. Write a verdict (INSTALL/EXTRACT/REJECT) with rationale for EACH candidate. Missing verdicts = incomplete work.
+- ALWAYS invoke `/remember` before compaction, `/clear`, or session end — memory loss is permanent
+- All runtime/transient data goes under `.generated/` — never create new artifact dirs at repo root
 
 ## Subagents
 
-Defined in `.claude/agents/`. Use matching specialist types. Core: researcher (Haiku), coder, tester (pytest/ruff/ty), reviewer (Sonnet, read-only). Specialists: python-coder, mise-specialist, chezmoi-specialist, brew-specialist, security-auditor, claude-code-specialist.
+Defined in `.claude/agents/`. Use matching specialist types. Core: researcher (Haiku), coder, tester (pytest/ruff/ty), reviewer (Sonnet, read-only). Specialists: python-coder, mise-specialist, chezmoi-specialist, brew-specialist, security-auditor, claude-code-specialist, remember-specialist.
 
 ## MCP Access
 

@@ -1,0 +1,69 @@
+id: cli-sdk-patterns-codex-gemini
+timestamp: "2026-03-25T06:15:00Z"
+source: "https://github.com/maksimzayats/acodex, https://github.com/badlogic/pi-mono, https://github.com/opencode-ai/opencode"
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  - acodex (Python) spawns Codex CLI via subprocess + JSONL over stdin/stdout (confirmed in README + implementation)
+  - pi-mono (TypeScript) implements unified multi-provider API with GoogleGeminiCliOptions for Gemini CLI (confirmed in src/providers/google-gemini-cli.ts)
+  - opencode (Go) is archived; moved to Charm's Crush project; originally supported multiple LLM APIs via providers pattern
+  - All three projects use subprocess/CLI invocation pattern instead of direct API calls
+  - acodex has no runtime dependencies by default; only requires Codex CLI external installation
+gaps: |
+  - Exact opencode Codex provider implementation (repo archived, moved to Crush)
+  - pi-mono's full CLI invocation mechanism (likely subprocess but not explicitly documented in fetched files)
+  - How DSPy's SubprocessLMProvider differs from these production patterns
+  - Rate limiting/retry patterns in acodex vs pi-mono
+evidence: |
+  acodex README (https://raw.githubusercontent.com/maksimzayats/acodex/main/README.md):
+  "acodex spawns the `codex` CLI and exchanges JSONL events over stdin/stdout so you can run agent threads from Python with a fully typed surface: sync + async clients, streaming events, structured output, image inputs, resumable threads, and safety controls exposed as explicit options."
+
+  acodex initialization pattern (codex.py):
+  - CodexExec class wraps CLI process
+  - Thread instances manage JSONL event stream
+  - Optional `codex_path_override` for custom executable location
+  - Environment variable and config override support
+
+  pi-mono google-gemini-cli provider (google-gemini-cli.ts):
+  - DEFAULT_ENDPOINT = "https://cloudcode-pa.googleapis.com"
+  - ANTIGRAVITY_ENDPOINT variants for sandbox/daily/autopush
+  - Custom headers including User-Agent, Client-Metadata
+  - Thinking config (budgetTokens for Gemini 2.x, level for Gemini 3)
+  - MAX_RETRIES = 3 with exponential backoff (BASE_DELAY_MS = 1000)
+
+  pi-mono openai-codex-responses provider (openai-codex-responses.ts):
+  - DEFAULT_CODEX_BASE_URL = "https://chatgpt.com/backend-api"
+  - Response streaming via SSE or WebSocket
+  - JWT account ID extraction from API key
+  - Response status tracking: completed/incomplete/failed/cancelled/queued/in_progress
+
+  acodex pyproject.toml:
+  - Zero runtime dependencies (dependencies = [])
+  - Optional pydantic for structured output
+  - Mypy strict mode enabled
+  - 100% test coverage requirement
+
+implication: |
+  1. **Subprocess pattern is production-validated**: Both acodex and pi-mono use subprocess/API patterns successfully at scale
+  2. **No shared SDK/framework**: Each project independently implements CLI wrapping or API client logic — no standard library
+  3. **Streaming JSONL is core**: acodex explicitly uses JSONL event streaming (matches Codex CLI protocol)
+  4. **Structured typing prevents drift**: acodex vendorizes TypeScript SDK for parity testing; pi-mono uses TypeBox for schema validation
+  5. **Multi-model support requires runtime provider registry**: pi-mono's ApiRegistry pattern (dynamic provider registration) is battle-tested
+  6. **Rate limiting/retries are mandatory**: Both projects implement exponential backoff (pi-mono: BASE_DELAY_MS * 2^attempt)
+  7. **No direct dependency on specific LLM SDKs**: All three use HTTP/subprocess, not openai/anthropic/google Python packages
+  8. **Authentication is transport-specific**: API keys passed per-request (pi-mono) vs environment variables (acodex)
+
+tags:
+  - cli-invocation
+  - subprocess-streaming
+  - jsonl-protocol
+  - multi-model-abstraction
+  - typescript-parity
+  - rate-limiting
+  - structured-output
+  - provider-registry
+  - gemini-cli
+  - codex-cli
+
+status: discovered

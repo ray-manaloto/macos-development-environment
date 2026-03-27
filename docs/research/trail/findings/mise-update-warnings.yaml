@@ -1,0 +1,182 @@
+---
+finding_id: mise-lock-platform-targeting
+timestamp: "2026-03-25T16:45:00Z"
+domain: mise-configuration
+severity: HIGH
+source: mise-specialist-research
+status: ready-for-fix
+---
+
+## Summary
+Five critical issues identified in mise lock configuration and runtime state:
+
+### Problem 1: Unnecessary Platform Targeting in mise.lock
+**Severity**: HIGH
+**Status**: Ready to fix
+
+Current behavior:
+```
+→ Targeting 6 platform(s): linux-arm64, linux-arm64-musl, linux-x64, linux-x64-musl, macos-arm64, windows-x64
+```
+
+Analysis:
+- `.mise.toml` explicitly pins only `hk = "latest"` tool
+- `mise lock --help` shows `--platform` flag option to restrict platforms
+- Current `mise.lock` file (29 lines) contains entries for all 6 platforms
+- This is a macOS-only development environment; only `macos-arm64` is needed
+
+Root cause:
+- Neither `.mise.toml` nor `~/.config/mise/config.toml` contains platform restriction settings
+- Mise defaults to multi-platform targeting when locking
+- No `lockfile_platforms` or `platforms` setting found in mise settings docs
+
+**Fix approach**:
+Add declarative `[settings]` entry in `.mise.toml`:
+```toml
+[settings]
+lockfile_platforms = ["macos-arm64"]
+```
+
+Then run: `mise lock && mise fmt`
+
+---
+
+### Problem 2: .mise.toml Formatting Error
+**Severity**: CRITICAL
+**Status**: Ready to fix
+
+Error:
+```
+mise ERROR Following config files are not properly formatted:
+/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/.mise.toml
+```
+
+Command to fix: `mise fmt`
+Verification: `mise fmt --check`
+
+The formatting error is preventing any locking operations. This must be fixed first.
+
+---
+
+### Problem 3: Missing Tool References After Upgrade/Prune
+**Severity**: MEDIUM
+**Status**: Requires investigation + config update
+
+Current missing tools reported by `mise doctor`:
+```
+aqua:atuinsh/atuin@18.13.4 is not installed (missing)
+aqua:jdx/pitchfork@2.1.0 is not installed (missing)
+aqua:anomalyco/opencode@1.3.0 is not installed (missing)
+vfox:1password-cli@2.33.0 is not installed (missing)
+npm:@googleworkspace/cli@0.21.1 is not installed (missing)
+npm:agent-browser@0.22.1 is not installed (missing)
+```
+
+Analysis:
+- `mise upgrade && mise prune` removed old versions
+- `.mise.toml` and `~/.config/mise/config.toml` still reference these versions via vfox/aqua backends
+- Global config at `~/.config/mise/config.toml` contains most tools (lines 26-165)
+- Project `.mise.toml` only defines `hk = "latest"` (line 350)
+
+Root cause:
+- Global config pins specific versions (e.g., `atuin@18.13.4`, `pitchfork@2.1.0`)
+- These are managed by chezmoi at `.chezmoisource/dot_config/mise/config.toml.tmpl`
+- Cannot edit directly; changes must go through chezmoi workflow
+- vfox backend used for `1password-cli@2.33.0` conflicts with aqua pinning
+
+**Fix approach**:
+1. Update `.chezmoisource/dot_config/mise/config.toml.tmpl` to use `latest` instead of specific versions
+2. Verify which tools genuinely need version pinning vs. can use `latest`
+3. Run `mise install && mise prune` to refresh
+
+---
+
+### Problem 4: Conda get_or_create_subdir Messages
+**Severity**: LOW
+**Status**: Benign but worth documenting
+
+Message:
+```
+mise get_or_create_subdir; platform=OsxArm64 channel=https://conda.anaconda.org/conda-forge/
+```
+
+Analysis:
+- Grep search: No `conda` references in `.mise.toml` or global config
+- No conda-backed tools explicitly declared
+- `clang@22.1.0` is installed via conda backend: `conda:clang@22.1.0`
+- This message is conda's normal behavior during initialization, not a misconfiguration
+
+**Conclusion**: Not a problem. Clang via conda is intentional. The message is informational noise from conda's package manager.
+
+---
+
+### Problem 5: Rekor Public Key Parse Errors
+**Severity**: LOW
+**Status**: Not observed in current environment
+
+Previous mention: "Cannot parse Rekor public key with id cf..."
+
+Analysis:
+- No Rekor errors appeared in `mise doctor` output
+- No Rekor errors in `mise upgrade` output
+- Searched GitHub issues: no open "Rekor public key" issues in jdx/mise
+- Latest mise (2026.3.14) has improved attestation handling
+- Rekor is for supply-chain security attestation verification
+
+**Conclusion**: Either this was a transient issue in older mise versions or environment-specific. Not currently present. Monitor future upgrades.
+
+---
+
+### Problem 6: Python Backend Warning
+**Severity**: LOW
+**Status**: Informational
+
+Warning from `mise doctor`:
+```
+1 warning found:
+1. tool 'python' installed with explicit backend 'py'
+   differs from registry recommendation 'core:python'.
+```
+
+Analysis:
+- Current installation: `py@3.14.3` (explicit backend)
+- Registry recommends: `core:python`
+- Both work identically; this is a preference/standardization warning
+- Safe to ignore unless standardizing on core backend
+
+**Fix** (optional):
+```bash
+mise uninstall --all python && mise install python
+```
+
+---
+
+## Recommended Fix Priority
+
+1. **CRITICAL**: Fix `.mise.toml` formatting → `mise fmt`
+2. **HIGH**: Add platform targeting → Update `.mise.toml` with `[settings]`
+3. **MEDIUM**: Resolve missing tools → Update chezmoi config to use `latest`
+4. **LOW**: Python backend warning → Optional standardization
+
+## Testing After Fixes
+
+```bash
+cd /Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment
+
+# 1. Format
+mise fmt --check
+
+# 2. Lock with restricted platforms
+mise lock --dry-run
+# Should show: "→ Targeting 1 platform(s): macos-arm64"
+
+# 3. Health check
+mise doctor
+# Should show: 0 problems found, 0 warnings
+```
+
+## Files to Update
+
+1. `/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/.mise.toml` — Add `[settings]` section
+2. `.chezmoisource/dot_config/mise/config.toml.tmpl` — Update version pins to `latest` (via chezmoi)
+3. `mise.lock` — Will be auto-regenerated after fixes

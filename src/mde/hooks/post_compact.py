@@ -7,6 +7,13 @@ Always exits 0 (never blocks compaction).
 
 from __future__ import annotations
 
+# AUTO-DISCOVERED: This hook is registered automatically by cli.py via __hook_meta__.
+# To add a new hook, create a new module in src/mde/hooks/ with __hook_meta__ — do NOT edit cli.py.
+__hook_meta__ = {
+    "help": "PostCompact research state save",
+    "entry": "post_compact",
+}
+
 import json
 import subprocess
 import sys

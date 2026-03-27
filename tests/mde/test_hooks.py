@@ -628,11 +628,12 @@ class TestHookOutputSchema:
             parsed = json.loads(output)  # Must be valid JSON
             assert isinstance(parsed, dict)
 
-    def test_hooks_dispatch_matches_subparsers(self) -> None:
-        """Every _HOOKS_DISPATCH entry must have a matching subparser."""
-        from mde.cli import _HOOKS_DISPATCH, _build_parser
+    def test_hooks_subparsers_populated_from_discovery(self) -> None:
+        """Auto-discovered hooks must all appear as subparser choices."""
+        from mde.cli import _build_parser, _discover_hooks
 
         parser = _build_parser()
+        discovered = _discover_hooks()
         # Find the hooks subparser and extract registered action names
         hooks_choices: set[str] = set()
         subparsers = parser._subparsers
@@ -650,9 +651,7 @@ class TestHookOutputSchema:
                                 if sub_choices is not None:
                                     hooks_choices = set(sub_choices.keys())
         assert hooks_choices, "Could not find hooks subparser"
-        dispatch_keys = set(_HOOKS_DISPATCH.keys())
-        missing = dispatch_keys - hooks_choices
-        assert not missing, f"Dispatch keys without subparsers: {missing}"
+        assert hooks_choices == set(discovered.keys())
 
 
 class TestNoSilentFailures:
@@ -695,3 +694,141 @@ class TestNoSilentFailures:
                                 "without logging or comment"
                             )
         assert not violations, "Silent failure patterns found:\n" + "\n".join(violations)
+
+
+class TestHooksAutoDiscovery:
+    """Tests for the hooks auto-discovery mechanism."""
+
+    def test_all_hook_modules_have_hook_meta(self) -> None:
+        """Every non-private hook module must have __hook_meta__."""
+        hooks_dir = Path("src/mde/hooks")
+        missing: list[str] = []
+        for py_file in sorted(hooks_dir.glob("*.py")):
+            if py_file.name.startswith("_") or py_file.name == "__init__.py":
+                continue
+            source = py_file.read_text()
+            tree = ast.parse(source)
+            has_meta = any(
+                isinstance(node, ast.Assign)
+                and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id == "__hook_meta__"
+                for node in ast.iter_child_nodes(tree)
+            )
+            if not has_meta:
+                missing.append(py_file.name)
+        assert not missing, f"Hook modules without __hook_meta__: {missing}"
+
+    def test_hook_meta_has_required_keys(self) -> None:
+        """Every __hook_meta__ must have 'help' and 'entry' keys."""
+        from mde.cli import _discover_hooks
+
+        hooks = _discover_hooks()
+        assert len(hooks) > 0, "No hooks discovered"
+        for cmd_name, (mod_path, fn_name, help_text) in hooks.items():
+            assert help_text, f"{cmd_name}: empty help text"
+            assert fn_name, f"{cmd_name}: empty entry function name"
+            assert mod_path.startswith("mde.hooks."), f"{cmd_name}: bad module path {mod_path}"
+
+    def test_entry_functions_exist(self) -> None:
+        """Every __hook_meta__ entry function must exist in its module."""
+        import importlib
+
+        from mde.cli import _discover_hooks
+
+        hooks = _discover_hooks()
+        for cmd_name, (mod_path, fn_name, _help) in hooks.items():
+            mod = importlib.import_module(mod_path)
+            assert hasattr(mod, fn_name), f"{cmd_name}: {mod_path} has no function '{fn_name}'"
+            assert callable(getattr(mod, fn_name)), (
+                f"{cmd_name}: {mod_path}.{fn_name} is not callable"
+            )
+
+    def test_discover_hooks_returns_expected_commands(self) -> None:
+        """Auto-discovery must find all known hook commands."""
+        from mde.cli import _discover_hooks
+
+        hooks = _discover_hooks()
+        expected = {
+            "log-edit-outcome",
+            "log-agent-event",
+            "guard-install",
+            "guard-dotfile-edit",
+            "remind-chezmoi-commit",
+            "session-start",
+            "post-compact",
+            "team-quality-gate",
+            "validate-plugins",
+            "persist-transcripts",
+            "validate-agents",
+        }
+        assert expected.issubset(set(hooks.keys())), (
+            f"Missing hooks: {expected - set(hooks.keys())}"
+        )
+
+    def test_extract_hook_meta_from_mock_module(self) -> None:
+        """_extract_hook_meta correctly parses __hook_meta__ from AST."""
+        from mde.cli import _extract_hook_meta
+
+        source = """
+__hook_meta__ = {
+    "help": "Test hook help",
+    "entry": "my_function",
+}
+"""
+        tree = ast.parse(source)
+        meta = _extract_hook_meta(tree)
+        assert meta is not None
+        assert meta["help"] == "Test hook help"
+        assert meta["entry"] == "my_function"
+
+    def test_extract_hook_meta_missing(self) -> None:
+        """Modules without __hook_meta__ return None."""
+        from mde.cli import _extract_hook_meta
+
+        source = "x = 42\n"
+        tree = ast.parse(source)
+        assert _extract_hook_meta(tree) is None
+
+    def test_extract_hook_meta_incomplete(self) -> None:
+        """__hook_meta__ without required keys returns None."""
+        from mde.cli import _extract_hook_meta
+
+        source = '__hook_meta__ = {"help": "only help"}\n'
+        tree = ast.parse(source)
+        assert _extract_hook_meta(tree) is None
+
+    def test_no_manual_hooks_dispatch_in_cli(self) -> None:
+        """cli.py must not have a hardcoded _HOOKS_DISPATCH dict."""
+        cli_source = Path("src/mde/cli.py").read_text()
+        assert "_HOOKS_DISPATCH" not in cli_source, (
+            "cli.py still has hardcoded _HOOKS_DISPATCH — should be auto-discovered"
+        )
+
+    def test_extract_hook_meta_annotated_assign(self) -> None:
+        """__hook_meta__ with type annotation (AnnAssign) should be parsed."""
+        from mde.cli import _extract_hook_meta
+
+        source = """
+__hook_meta__: dict[str, str] = {
+    "help": "Annotated hook help",
+    "entry": "annotated_function",
+}
+"""
+        tree = ast.parse(source)
+        meta = _extract_hook_meta(tree)
+        assert meta is not None
+        assert meta["help"] == "Annotated hook help"
+        assert meta["entry"] == "annotated_function"
+
+    def test_no_hook_command_collisions(self) -> None:
+        """All discovered hooks must have unique command names."""
+        from mde.cli import _discover_hooks
+
+        # If this raises ValueError, there's a collision
+        hooks = _discover_hooks()
+        # Double-check: all command names are unique
+        cmd_names = list(hooks.keys())
+        assert len(cmd_names) == len(set(cmd_names)), (
+            f"Duplicate hook command names: {[n for n in cmd_names if cmd_names.count(n) > 1]}"
+        )

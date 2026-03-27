@@ -1,13 +1,8 @@
 """Claude Code hook handlers for the mde CLI.
 
-Subcommands (dispatched via _HOOKS_DISPATCH in cli.py):
-- guard-install: PreToolUse install guard (exit 2 blocks)
-- log-edit-outcome: PostToolUse logger (always exit 0)
-- log-agent-event: SubagentStart/SubagentStop logger (always exit 0)
-- session-start: SessionStart context setup (always exit 0)
-- post-compact: PostCompact event logger (always exit 0)
-- validate-agents: PostToolUse validator for .claude/agents/ frontmatter (exit 1 blocks)
-- team-quality-gate: Per-team quality gate validation (exit 1 on failure)
+Hooks are auto-discovered from modules in this package via __hook_meta__.
+See .claude/rules/hooks-auto-discovery.md for the convention.
+To add a new hook, create a new module with __hook_meta__ — do NOT edit cli.py.
 """
 
 from __future__ import annotations

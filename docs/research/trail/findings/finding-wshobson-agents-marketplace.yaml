@@ -1,0 +1,97 @@
+id: finding-wshobson-agents-marketplace
+timestamp: "2026-03-25T20:45:00Z"
+source: https://github.com/wshobson/agents
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: >
+  wshobson/agents is the largest Claude Code plugin marketplace (32,251 stars).
+  Contains 72 focused plugins, 112 agents, 146 skills, 16 orchestrators, 79 tools.
+  The python-development plugin has 3 agents (python-pro, django-pro, fastapi-pro),
+  1 command (python-scaffold), and 16 skills. Skills are pure markdown SKILL.md files
+  with progressive disclosure (loaded only when activated). No hooks in any plugin.
+  Repo is 99% markdown (515 .md files out of 613 total). Only 3 Python files exist
+  (2 in skill asset dirs, 1 standalone tool). Only 1 shell script (helm chart validation).
+  marketplace.json lives at .claude-plugin/marketplace.json with flat plugin array.
+  Each plugin has its own .claude-plugin/plugin.json with name, version, description.
+gaps: >
+  No ruff-specific skill, no ty skill, no pyright skill, no pytest-specific skill.
+  Ruff/mypy/pyright are MENTIONED in python-code-style and python-type-safety skills
+  as text guidance but there are no tool-wrapping skills that actually invoke these tools.
+  No hooks at all in any plugin. No Python modules for automation. Everything is
+  instructional markdown, not executable. The python-pro agent references mypy/pyright
+  but not ty specifically. No quality gate pattern. No pre-commit integration.
+evidence: |
+  marketplace.json structure:
+    {
+      "name": "claude-code-workflows",
+      "owner": { "name": "Seth Hobson", "email": "..." },
+      "metadata": { "description": "...", "version": "1.5.6" },
+      "plugins": [{ "name": "...", "source": "./plugins/...", "description": "...",
+                     "version": "...", "author": {...}, "category": "..." }]
+    }
+
+  plugin.json structure (python-development):
+    { "name": "python-development", "version": "1.2.2",
+      "description": "Modern Python development with Python 3.12+...",
+      "author": {...}, "license": "MIT" }
+
+  python-development plugin contents:
+    agents/: python-pro.md (opus model), django-pro.md, fastapi-pro.md
+    commands/: python-scaffold.md
+    skills/: 16 SKILL.md files covering:
+      - async-python-patterns, python-anti-patterns, python-background-jobs
+      - python-code-style (mentions ruff, mypy), python-configuration
+      - python-design-patterns, python-error-handling, python-observability
+      - python-packaging, python-performance-optimization
+      - python-project-structure, python-resilience, python-resource-management
+      - python-testing-patterns (mentions pytest), python-type-safety (mentions mypy/pyright)
+      - uv-package-manager
+
+  File type breakdown: .md=515, .json=76, .yml=6, .yaml=4, .py=3, .sh=1
+
+  Competing marketplaces:
+    - anthropics/claude-plugins-official: 14,638 stars (official Anthropic directory)
+    - jeremylongshore/claude-code-plugins-plus-skills: 1,710 stars (340 plugins, 1367 skills)
+    - obra/superpowers-marketplace: 731 stars (curated)
+    - thedotmack/claude-mem: 40,569 stars (memory plugin, not marketplace)
+implication: |
+  For our python-quality-toolkit plugin:
+
+  REUSE from wshobson/agents:
+  - marketplace.json schema (name, owner, metadata, plugins array)
+  - plugin.json schema (name, version, description, author, license)
+  - Skill file convention: skills/<skill-name>/SKILL.md with frontmatter (name, description)
+  - Agent file convention: agents/<name>.md with frontmatter (name, description, model)
+  - Command file convention: commands/<name>.md
+  - Progressive disclosure pattern (skills loaded only when activated)
+  - Plugin isolation pattern (each plugin self-contained)
+  - Category system for organizing plugins
+
+  BUILD (gaps in wshobson ecosystem):
+  - Tool-wrapping skills that actually INVOKE ruff, ty, pyright, pytest (not just describe them)
+  - Hooks (pre-commit, post-save) -- zero hooks in any wshobson plugin
+  - Python automation modules (their repo is 99% markdown instruction, 0% executable code)
+  - Quality gate integration (run ruff+ty+pytest as a gate)
+  - pyproject.toml configuration skills (their skills mention it but don't generate configs)
+  - ty-specific skill (wshobson has no ty coverage at all)
+  - mise integration (wshobson assumes pip/uv but not mise-managed tools)
+
+  PATTERN to adopt:
+  - Single-purpose plugins with 2-8 components (their average is 3.4)
+  - Skills as progressive disclosure markdown (load knowledge only when activated)
+  - Keep agents at opus model for deep expertise, sonnet for reviews
+  - Flat directory structure: plugins/<name>/{agents,commands,skills,hooks}/
+tags:
+  - claude-code-plugins
+  - marketplace-structure
+  - python-development
+  - wshobson-agents
+  - plugin-architecture
+  - skill-patterns
+  - ruff
+  - ty
+  - pytest
+  - pyright
+  - quality-gate
+status: discovered

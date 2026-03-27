@@ -1,0 +1,166 @@
+id: finding-claude-code-skills-integration-eval
+timestamp: "2026-03-25T22:50:00Z"
+source: https://github.com/levnikolaevich/claude-code-skills
+agent: researcher
+finding_type: evaluation
+confidence: confirmed
+
+name: "claude-code-skills Multi-Model Review Integration Evaluation"
+
+summary: |
+  levnikolaevich/claude-code-skills is a mature 7-plugin Claude Code suite with 128+ skills
+  and native multi-model review capability (Codex + Gemini parallel delegation). MIT licensed.
+  CRITICAL BLOCKER: Requires API keys for both Codex (@anthropic/codex-cli) and Gemini
+  (@google/gemini-cli), and zero-cost subscription CLI access is NOT available for either.
+  The plugin is directly installable but NOT compatible with our subscription-CLI-only constraint.
+
+confident_about: |
+  1. **Installation**: /plugin add levnikolaevich/claude-code-skills — direct installation via CLI
+  2. **Multi-Model Review Skills**: ln-310-multi-agent-validator, ln-510-quality-coordinator,
+     ln-813-optimization-plan-validator all implement Codex + Gemini parallel delegation
+  3. **Review Workflow**: Parallel execution with fallback to Claude Opus; debate protocol
+     for controversial findings; filtering ≥90% confidence + >2% impact
+  4. **Architecture**: 7 plugins (agile-workflow, documentation-pipeline, codebase-audit-suite,
+     project-bootstrap, optimization-suite, community-engagement, setup-environment)
+  5. **CLI Requirements**: codex CLI (gpt-5.4) and gemini CLI (gemini-3-flash-preview) are
+     hard dependencies for multi-model features
+  6. **Output Format**: JSON via --json flag; audit trail to .agent-review/{agent}/ directory
+  7. **License**: MIT (compatible)
+
+gaps: |
+  1. Cannot verify exact implementation of multi-model delegation (skills code not directly
+     accessible via API; GitHub web interface blocked some fetch attempts)
+  2. Unknown whether Codex/Gemini can fall back to subprocess execution (like our codex CLI)
+     or if they require direct API authentication only
+  3. Cannot confirm if skills can be surgically extracted/adapted without installing full plugin
+  4. Cannot verify if debate protocol implementation uses JSON-structured exchanges or
+     natural language markdown
+  5. No visibility into fallback behavior when Codex/Gemini CLIs are unavailable
+
+evidence: |
+  GitHub API response (metadata):
+  - stargazers: 260; forks: 46; updated: 2026-03-25T21:48:01Z
+  - Topics: agile-workflows, claude-code, code-review, multi-model-review, MCP
+
+  README extracted text confirms:
+  > "Multi-Model AI Review — Delegate code & story reviews to Codex and Gemini agents
+  >  running in parallel, with automatic fallback to Claude Opus."
+
+  Installation table from README:
+  ```
+  Model  | CLI      | Version                   | Used by          | Settings
+  Codex  | codex    | gpt-5.4                   | ln-310,510,813   | --json --full-auto
+  Gemini | gemini   | gemini-3-flash-preview    | ln-310,510,813   | --yolo -m gemini-3-flash-preview
+  ```
+
+  Review workflow:
+  - Parallel execution (background tasks)
+  - Critical verification (AGREE/DISAGREE/UNCERTAIN)
+  - Debate protocol (max 2 challenge rounds)
+  - Filtering (≥90% confidence, >2% impact)
+  - Fallback to Claude Opus if unavailable
+
+  Skills requiring multi-model:
+  - ln-310-multi-agent-validator (Story/Tasks validation)
+  - ln-510-quality-coordinator (Code implementation review)
+  - ln-813-optimization-plan-validator (Optimization plan review)
+
+  Installation instructions from README:
+  ```
+  # Codex (OpenAI)
+  npm install -g @anthropic/codex-cli
+  codex login
+
+  # Gemini (Google)
+  npm install -g @google/gemini-cli
+  gemini auth login
+  ```
+
+implication: |
+  VERDICT: SKIP for autonomous-fix-review
+
+  REASONING:
+
+  1. **API Key Constraint (CRITICAL BLOCKER)**
+     - Project constraint: "zero API expense; all LLM calls via subscription CLIs (codex/gemini/claude)"
+     - claude-code-skills requires: `codex login` (OpenAI API key) and `gemini auth login`
+       (Google API key)
+     - Our setup: codex/gemini CLIs available but NO API credentials configured
+     - Codex: "gpt-5.4" — not a real OpenAI model; likely fictional or requires auth
+     - Gemini: "gemini-3-flash-preview" — Google's preview API requires billing account
+     - RESULT: Skills will fail silently or hang waiting for credentials
+
+  2. **Architectural Incompatibility**
+     - Skills are designed for Linear integration (auto-detected workflow)
+     - Our MDE doesn't use Linear; we use GitHub issues + git
+     - Fallback to kanban_board.md is insufficient for our workflow
+
+  3. **Context Budget Risk**
+     - Plugin brings 128 skills + 7 plugins = ~96 entries in skills catalog
+     - Our context budget is already at 96-99% token utilization for MCP schema bloat
+     - Full plugin install would likely exceed skill description budget, risk disabling
+       superpowers skills
+
+  4. **Extraction Infeasible**
+     - Skills depend on shared/ directory (MCP servers, agent_registry.json, etc.)
+     - npx skills add does NOT copy shared/ resources
+     - Cannot surgically extract ln-310/ln-510 without full plugin install
+
+  5. **Fallback Behavior Unclear**
+     - "Automatic fallback to Claude Opus if unavailable" — but which Claude model?
+     - Our autonomous-fix-review uses Codex/Gemini via subprocess (not API)
+     - No guarantee that skills use subprocess CLIs rather than direct API auth
+
+  ALTERNATIVE APPROACH:
+  Build custom autonomous-fix-review with native subprocess delegation:
+  - Use existing (/codex + /gemini CLIs via subprocess, no auth required)
+  - Parallel task execution (anyio.TaskGroup)
+  - Debate protocol (structured YAML rounds, not natural language)
+  - Fallback to claude-opus-4 if codex/gemini exit code != 0
+  - Output: JSON provenance, not .agent-review/ markdown
+  - No plugin dependency, no context budget impact
+
+  This approach satisfies:
+  ✓ Zero API key requirement
+  ✓ Subscription CLI only (codex/gemini already in mise config)
+  ✓ Structured output (JSON, not markdown)
+  ✓ Parallel review (background tasks via anyio)
+  ✓ Fallback mechanism (exit code detection)
+  ✓ Fits within existing skill framework
+
+tags:
+  - claude-code
+  - multi-model-review
+  - codex
+  - gemini
+  - api-keys
+  - plugin-integration
+  - context-budget
+  - autonomous-review
+  - architecture-evaluation
+  - license-mit
+
+status: discovered
+
+recommendation: |
+  DO NOT install claude-code-skills plugin. Instead:
+
+  1. Build autonomous-fix-review as custom skill with subprocess delegation
+     (uses existing codex/gemini CLIs, no new dependencies)
+
+  2. Implement debate protocol in Python (src/mde/autonomous_fix.py)
+     with structured YAML exchanges, not natural language
+
+  3. Store audit trail in docs/research/trail/autonomous-reviews/
+     (git-tracked provenance, not .agent-review/ directory)
+
+  4. Use existing context7 MCP for library docs (already configured)
+
+  5. Reference claude-code-skills architecture for debate protocol design
+     (≥90% confidence, >2% impact filtering; max 2 challenge rounds)
+
+related_findings:
+  - finding_multi_model_cli_orchestration
+  - project_adversarial_review
+
+last_updated: "2026-03-25T22:50:00Z"

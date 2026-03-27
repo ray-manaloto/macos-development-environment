@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
     "ENABLE_LSP_TOOL": "1",
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
@@ -135,6 +136,18 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks save-memory-on-clear",
+            "timeout": 60
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
@@ -152,7 +165,6 @@
     "hk-toolkit@rsm-subagents": true,
     "mise-toolkit@rsm-subagents": true,
     "research-review-toolkit@rsm-subagents": true,
-    "guide@claude-community": true,
     "test-generator@claude-community": true,
     "token-saver@claude-community": true,
     "safety-net@claude-community": true,
@@ -160,7 +172,6 @@
     "codebase-quality@claude-community": true,
     "bugbash@claude-community": true,
     "python-remote-debug-skill@claude-community": true,
-    "vitals@claude-community": true,
     "marketplace-evaluator@rsm-subagents": true
   },
   "extraKnownMarketplaces": {

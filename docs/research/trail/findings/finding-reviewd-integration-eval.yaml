@@ -1,0 +1,99 @@
+id: finding-reviewd-integration-eval
+timestamp: "2026-03-25T22:50:00Z"
+source: "https://github.com/simion/reviewd"
+agent: researcher
+finding_type: tool-evaluation
+confidence: confirmed
+confident_about: |
+  1. reviewd is a production-ready Python package (PyPI, v0.6.0, MIT license)
+  2. It invokes claude/gemini/codex CLIs via subprocess with NO API key requirements
+  3. It outputs structured JSON schema with severity-tagged findings and line-level inline comments
+  4. It can be installed as a dependency (pip/uv tool install reviewd)
+  5. It uses git worktrees for isolated PR checkout and runs test commands
+  6. It has no consensus/voting logic between models (single-model review per repo)
+  7. Source code is modular and partially importable as a library (models.py, reviewer.py)
+gaps: |
+  1. No explicit multi-model consensus/voting—each repo uses ONE model at a time
+  2. No documented library API for programmatic use (though internal modules are importable)
+  3. Requires GitHub/BitBucket tokens (for PR fetch/comment), but NOT for AI invocation
+  4. Does not natively support concurrent multi-model review with consensus logic
+implication: |
+  reviewd is a strong foundation for autonomous-fix-review skill but requires a WRAPPER layer:
+
+  1. VERDICT: ADAPT — Use reviewd as a dependency but wrap it for multi-model consensus
+  2. Architecture:
+     - Install reviewd as a Python dependency in pyproject.toml
+     - Build a thin orchestrator module that:
+       a) Invokes review_single_pr() 3x (once per model: claude/gemini/codex)
+       b) Collects structured JSON findings from each
+       c) Implements consensus voting on severity/approval (e.g., "critical only if 2/3 models agree")
+       d) Merges findings by deduplication + weighted aggregation
+     - No code changes needed to reviewd itself
+
+  3. Adapter pattern: create src/mde/skills/autonomous_fix_review/consensus.py that:
+     - Accepts PR metadata + repo path
+     - Calls reviewd.reviewer.invoke_cli() 3x in parallel
+     - Parses JSON output
+     - Applies voting logic
+     - Returns aggregated ReviewResult
+
+  4. CLI integration: use /finishing-a-development-branch skill to spawn 3 codex/claude/gemini
+     subprocesses (reviewd does this already, just replicate for your skill)
+
+  5. Cost: zero—all invocations are subscription CLIs (claude/gemini/codex), no API keys needed
+
+evidence: |
+  CLI invocation (no API keys):
+  - src/reviewd/reviewer.py line 274-283: CLI_DEFAULTS shows base commands for claude/gemini/codex
+  - Lines 361-395: subprocess.Popen with prompt passed via stdin or -p flag
+  - Line 398: env.pop('CLAUDECODE', None)—explicitly unsets CLAUDECODE to avoid nested sessions
+  - Config check (src/reviewd/config.py): GitHub/BitBucket tokens are for PR fetching, NOT for AI
+
+  Structured output:
+  - src/reviewd/reviewer.py lines 223-247: REVIEW_SCHEMA JSON schema with severity enum
+  - Severity: critical|suggestion|nitpick|good (exact match your mde findings)
+  - Per-finding: file, line, issue, fix, category
+  - Approval decision: approve bool + approve_reason
+
+  Installation:
+  - pyproject.toml: dependencies = [click, httpx, pyyaml, questionary]
+  - PyPI: https://pypi.org/project/reviewd/ (v0.6.0, Python 3.12+)
+  - Entry point: [project.scripts] reviewd = "reviewd.cli:main"
+
+  Modularity:
+  - src/reviewd/models.py: dataclasses (Severity, Finding, ReviewResult, ProjectConfig)
+  - src/reviewd/reviewer.py: invoke_cli(), create_worktree(), get_diff_lines() (importable)
+  - src/reviewd/prompt.py: build_review_prompt() (pure function, reusable)
+  - src/reviewd/daemon.py: review_single_pr() (orchestration function)
+
+  No multi-model consensus:
+  - README "Multi-repo, multi-AI" means: different repos can use different models
+  - NOT: one PR reviewed by multiple models in parallel
+  - You must implement consensus orchestration
+
+tags: [autonomous-fix-review, multi-model, subprocess-cli, json-findings, consensus-voting, git-worktree, code-review]
+
+status: discovered
+
+verdict: |
+  USE reviewd as a PYTHON DEPENDENCY + ADAPT with consensus wrapper.
+
+  DON'T:
+  - Rewrite code review logic (reviewd is battle-tested)
+  - Use the CLI directly (need programmatic control for 3-model consensus)
+
+  DO:
+  - Add reviewd to pyproject.toml [dependencies]
+  - Create src/mde/skills/autonomous_fix_review/consensus.py
+  - Wrap reviewer.invoke_cli() to collect 3 findings
+  - Implement majority-vote logic on severity/approval
+  - Use /ship or /finishing-a-development-branch to post consolidated comment
+
+  Timeline: 1-2 sprints to wire up consensus layer + validation tests
+
+next_steps: |
+  1. Verify reviewd works with your claude/gemini/codex CLIs (may need --strict-mcp-config override)
+  2. Test invoke_cli() in isolation: call it 3x with same repo/PR, compare outputs
+  3. Build consensus voting: critical only if 2+/3 agree; suggestion if 1+/3; good if all
+  4. Add to pyproject.toml, run `uv sync`, verify imports work
+  5. Sketch /autonomous-fix-review skill (or integrate into existing review skill)

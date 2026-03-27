@@ -5,13 +5,20 @@ via datamodel-code-generator. Regenerate the model after schema changes:
 
     uv run datamodel-codegen \
       --input docs/schemas/agent-frontmatter.schema.json \
-      --output src/mde/hooks/agent_frontmatter_model.py \
+      --output src/mde/hooks/_agent_frontmatter_model.py \
       --input-file-type jsonschema \
       --output-model-type pydantic_v2.BaseModel \
       --target-python-version 3.12
 """
 
 from __future__ import annotations
+
+# AUTO-DISCOVERED: This hook is registered automatically by cli.py via __hook_meta__.
+# To add a new hook, create a new module in src/mde/hooks/ with __hook_meta__ — do NOT edit cli.py.
+__hook_meta__ = {
+    "help": "PostToolUse agent frontmatter validator",
+    "entry": "validate_agents_hook",
+}
 
 import json
 import sys
@@ -24,8 +31,8 @@ from pydantic import ValidationError
 if TYPE_CHECKING:
     from pydantic_core import ErrorDetails
 
+from mde.hooks._agent_frontmatter_model import ClaudeCodeAgentFrontmatter
 from mde.hooks._common import hook_span, parse_hook_stdin
-from mde.hooks.agent_frontmatter_model import ClaudeCodeAgentFrontmatter
 from mde.log import logger
 
 _AGENTS_DIR = ".claude/agents/"

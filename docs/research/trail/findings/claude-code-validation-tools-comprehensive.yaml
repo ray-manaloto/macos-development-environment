@@ -1,0 +1,181 @@
+id: claude-code-validation-tools-comprehensive
+timestamp: "2026-03-26T21:00:00Z"
+agent: claude-opus-4.6
+finding_type: research
+confidence: confirmed
+source: "16 plugin marketplaces scanned, 35+ official/community plugins examined"
+
+summary: |
+  Comprehensive catalog of community tools for Claude Code configuration validation
+  and self-improvement. Organized by category with installation status and verdicts.
+
+config_validation:
+  - name: claudelint
+    marketplace: pdugan20-plugins
+    status: CACHED (not enabled)
+    npm_package: claude-code-lint v0.3.0
+    url: https://github.com/pdugan20/claudelint
+    skills: [validate-all, validate-cc-md, validate-hooks, validate-mcp,
+             validate-plugin, validate-settings, validate-skills, format-cc, optimize-cc-md]
+    verdict: INSTALL - fills 5 validation gaps (settings, hooks, MCP, CLAUDE.md quality, skill quality)
+
+  - name: claude-md-management
+    marketplace: claude-plugins-official (Anthropic)
+    status: CACHED (not enabled)
+    skills: [claude-md-improver]
+    commands: [revise-claude-md]
+    verdict: INSTALL - official Anthropic; CLAUDE.md quality audit + session learning capture
+
+  - name: claude-code-setup
+    marketplace: claude-plugins-official (Anthropic)
+    status: CACHED (not enabled)
+    skills: [claude-automation-recommender]
+    verdict: INSTALL - official Anthropic; one-time automation gap analysis
+
+  - name: skill-doctor
+    marketplace: claude-community
+    url: https://github.com/amaljithkuttamath/skill-doctor
+    verdict: EXTRACT - overlaps mde-py validate; extract 12-item quality checklist
+
+  - name: skill-validator
+    marketplace: claude-community
+    verdict: EVALUATE - may overlap claudelint validate-skills
+
+  - name: bake-claude-md-files
+    marketplace: claude-community
+    url: https://github.com/publicala/bake-claude-md-files
+    verdict: EXTRACT - extract audit methodology for converting rules to checks
+
+security_safety:
+  - name: safety-net
+    marketplace: claude-community
+    status: INSTALLED + ENABLED
+    verdict: INSTALLED
+
+  - name: security-guidance
+    marketplace: claude-plugins-official (Anthropic)
+    status: CACHED (not enabled)
+    verdict: CONSIDER - official Anthropic; code pattern warnings (XSS, injection)
+
+  - name: hookify
+    marketplace: claude-plugins-official (Anthropic)
+    status: CACHED (disabled)
+    verdict: CONSIDER - discover new hook opportunities from conversation patterns
+
+code_quality:
+  - name: codebase-quality
+    status: INSTALLED + ENABLED
+    verdict: INSTALLED
+  - name: challenger
+    status: INSTALLED + ENABLED
+    verdict: INSTALLED
+  - name: vitals
+    status: INSTALLED + ENABLED
+    verdict: INSTALLED
+  - name: code-review
+    marketplace: claude-plugins-official (Anthropic)
+    status: CACHED (not enabled)
+    verdict: CONSIDER - multi-agent PR review with confidence scoring
+  - name: pr-review-toolkit
+    marketplace: claude-plugins-official (Anthropic)
+    status: CACHED (not enabled)
+    verdict: CONSIDER - 6 specialized review agents
+  - name: code-simplifier
+    marketplace: claude-plugins-official (Anthropic)
+    status: CACHED (not enabled)
+    verdict: CONSIDER - periodic refactoring tool
+
+testing_debugging:
+  - name: test-generator
+    status: INSTALLED + ENABLED
+    verdict: INSTALLED
+  - name: bugbash
+    status: INSTALLED + ENABLED
+    verdict: INSTALLED
+  - name: python-remote-debug-skill
+    status: INSTALLED + ENABLED
+    verdict: INSTALLED
+
+self_improvement:
+  - name: remember
+    status: INSTALLED + ENABLED (PROJECT_DIR bug known)
+    verdict: INSTALLED
+  - name: marketplace-evaluator
+    status: INSTALLED + ENABLED (local)
+    verdict: INSTALLED
+  - name: ai-firstify
+    marketplace: knowledge-work-plugins
+    status: CACHED (not enabled)
+    verdict: EVALUATE - one-time AI-first audit
+  - name: promptup
+    marketplace: claude-community
+    status: CACHED (not enabled)
+    verdict: CONSIDER - prompt optimization for SKILL.md/agents
+
+context_management:
+  - name: token-saver
+    status: INSTALLED + ENABLED
+    verdict: INSTALLED
+
+multi_model:
+  - name: octo
+    marketplace: nyldn-plugins
+    version: 9.13.0
+    url: https://github.com/nyldn/claude-octopus
+    skills_count: 50+
+    commands_count: 47+
+    verdict: EVALUATE - massive; context budget concern; has /doctor command
+
+doctor_healthcheck_tools:
+  - name: mde-py doctor
+    location: src/mde/status/health.py
+    scope: tool presence checks (mise, chezmoi, brew, git, python3, uv, ruff)
+    status: BUILT-IN
+  - name: mde-py validate --all
+    location: src/mde/validate/
+    scope: configs, plugins, brew, docker, memory, chezmoi, mise
+    status: BUILT-IN
+  - name: mde-py quality
+    scope: ruff check + ruff format + ty check + pytest
+    status: BUILT-IN
+  - name: claudelint validate-all
+    scope: CLAUDE.md, skills, settings, hooks, MCP, plugins
+    status: NOT INSTALLED
+  - name: skill-doctor
+    scope: skill/agent audit and upgrade
+    status: NOT INSTALLED
+  - name: octo doctor
+    scope: multi-LLM orchestration health
+    status: NOT INSTALLED
+
+gaps:
+  - area: settings.json validation
+    solution: claudelint validate-settings
+  - area: hooks schema validation
+    solution: claudelint validate-hooks
+  - area: MCP config validation
+    solution: claudelint validate-mcp
+  - area: CLAUDE.md quality audit
+    solution: claudelint validate-cc-md + claude-md-management
+  - area: skill quality checklist
+    solution: claudelint validate-skills + skill-doctor checklist
+  - area: automation gap detection
+    solution: claude-code-setup automation-recommender
+  - area: security pattern scanning
+    solution: security-guidance (official Anthropic)
+
+recommendations:
+  install_now:
+    - claudelint (fills 5 validation gaps; npm package)
+    - claude-md-management (official Anthropic; CLAUDE.md quality)
+    - claude-code-setup (official Anthropic; automation gap analysis)
+  evaluate_next:
+    - security-guidance (official; code pattern warnings)
+    - hookify (official; discover hook opportunities)
+    - code-review or pr-review-toolkit (official; structured PR review)
+  context_budget_warning: >
+    Currently 20 plugins enabled. Each adds skill descriptions to context.
+    Consider disabling python-remote-debug-skill and guide before adding new ones.
+
+marketplaces_scanned: 16
+total_plugins_examined: 35+

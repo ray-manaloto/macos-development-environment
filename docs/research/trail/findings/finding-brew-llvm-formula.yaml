@@ -1,0 +1,203 @@
+id: finding-brew-llvm-formula
+timestamp: "2026-03-25T20:12:00Z"
+source: https://formulae.brew.sh/formula/llvm
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: >
+  Complete caveats, dependencies, keg-only status, environment variables,
+  bottle availability, and LLD separation for Homebrew LLVM 22.1.1 on
+  macOS ARM64 (Apple Silicon).
+gaps: >
+  No data on whether ~/.config/clang config files are needed for our setup
+  vs relying on CLT. No investigation of what our current .zshrc/mise config
+  actually sets for LLVM paths. No comparison with system Apple Clang version.
+evidence: |
+  All data from `brew info --json=v2 llvm`, `brew info llvm`, `brew info lld`,
+  and https://formulae.brew.sh/formula/llvm (fetched 2026-03-25).
+implication: >
+  Our mise/chezmoi setup must account for keg-only status, PATH prepending,
+  LDFLAGS/CPPFLAGS if using bundled libc++, LLD as separate formula, and
+  the clang config file directories. Missing any of these means brew LLVM
+  clang may silently fall back to Apple Clang or fail to find libraries.
+tags:
+  - homebrew
+  - llvm
+  - clang
+  - lld
+  - keg-only
+  - compiler
+  - macos
+  - arm64
+  - PATH
+  - LDFLAGS
+  - CPPFLAGS
+status: discovered
+
+# ============================================================
+# STRUCTURED ANALYSIS
+# ============================================================
+
+version:
+  stable: "22.1.1"
+  head: HEAD
+  also_known_as: llvm@22
+  license: "Apache-2.0 WITH LLVM-exception"
+  formula_code: "https://github.com/Homebrew/homebrew-core/blob/e380ff39b3e9ae24030f1e159e9d4b74d93a1044/Formula/l/llvm.rb"
+
+keg_only:
+  status: true
+  reason: >
+    macOS already provides this software and installing another version in
+    parallel can cause all kinds of trouble.
+  effect: >
+    NOT symlinked into /opt/homebrew. Binaries like clang, clang++, llvm-ar,
+    etc. are NOT on PATH by default. Libraries are NOT in default search paths.
+    You must explicitly prepend PATH and set LDFLAGS/CPPFLAGS.
+
+bottle_availability:
+  arm64_tahoe: true
+  arm64_sequoia: true
+  arm64_sonoma: true
+  intel_sonoma: true
+  arm64_linux: true
+  x86_64_linux: true
+  note: "Pre-built bottles available for all current macOS ARM64 versions including sequoia."
+
+dependencies:
+  required:
+    - name: python@3.14
+      version: "3.14.3"
+    - name: xz
+      version: "5.8.2"
+    - name: z3
+      version: "4.15.4"
+      note: "High-performance theorem prover (used by LLVM static analysis)"
+    - name: zstd
+      version: "1.5.7"
+  build_only:
+    - name: cmake
+      version: "4.3.0"
+    - name: ninja
+      version: "1.13.2"
+    - name: swig
+      version: "4.4.1"
+  optional: []
+
+conflicts: []
+# No conflicts listed in the formula JSON.
+
+# ============================================================
+# CAVEATS (EXACT TEXT from `brew info llvm`)
+# ============================================================
+caveats_exact: |
+  CLANG_CONFIG_FILE_SYSTEM_DIR: /opt/homebrew/etc/clang
+  CLANG_CONFIG_FILE_USER_DIR:   ~/.config/clang
+
+  LLD is now provided in a separate formula:
+    brew install lld
+
+  Using `clang`, `clang++`, etc., requires a CLT installation at `/Library/Developer/CommandLineTools`.
+  If you don't want to install the CLT, you can write appropriate configuration files pointing to your
+  SDK at ~/.config/clang.
+
+  To use the bundled libunwind please use the following LDFLAGS:
+    LDFLAGS="-L/opt/homebrew/opt/llvm/lib/unwind -lunwind"
+
+  To use the bundled libc++ please use the following LDFLAGS:
+    LDFLAGS="-L/opt/homebrew/opt/llvm/lib/c++ -L/opt/homebrew/opt/llvm/lib/unwind -lunwind"
+  Features newer than system libc++ will require the following define to enable
+  (support for this may be removed in a future major LLVM release):
+    CPPFLAGS="-D_LIBCPP_DISABLE_AVAILABILITY"
+
+  NOTE: You probably want to use the libunwind and libc++ provided by macOS unless you know what you're doing.
+
+  llvm is keg-only, which means it was not symlinked into /opt/homebrew,
+  because macOS already provides this software and installing another version in
+  parallel can cause all kinds of trouble.
+
+  If you need to have llvm first in your PATH, run:
+    echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
+
+  For compilers to find llvm you may need to set:
+    export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+    export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+
+# ============================================================
+# ENVIRONMENT VARIABLES (brew recommended)
+# ============================================================
+environment_variables:
+  path:
+    instruction: 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"'
+    file: ~/.zshrc
+    note: "Required to make brew clang the default over Apple clang"
+  ldflags:
+    basic: 'export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"'
+    with_libunwind: 'LDFLAGS="-L/opt/homebrew/opt/llvm/lib/unwind -lunwind"'
+    with_libcxx: 'LDFLAGS="-L/opt/homebrew/opt/llvm/lib/c++ -L/opt/homebrew/opt/llvm/lib/unwind -lunwind"'
+  cppflags:
+    basic: 'export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"'
+    libcxx_availability: 'CPPFLAGS="-D_LIBCPP_DISABLE_AVAILABILITY"'
+    note: "_LIBCPP_DISABLE_AVAILABILITY needed only if using features newer than system libc++"
+  clang_config_dirs:
+    system: "/opt/homebrew/etc/clang"
+    user: "~/.config/clang"
+    note: >
+      Clang config files can specify default flags, sysroot, etc.
+      Alternative to CLT if you don't want to install Command Line Tools.
+
+# ============================================================
+# INSTALLATION
+# ============================================================
+installation:
+  basic: "brew install llvm"
+  with_lld: "brew install llvm lld"
+  head: "brew install llvm --HEAD"
+  note: "No special flags needed for ARM64. Bottle pours automatically."
+
+# ============================================================
+# LLD (separate formula since LLVM 22)
+# ============================================================
+lld:
+  version: "22.1.1"
+  formula: "https://formulae.brew.sh/formula/lld"
+  install: "brew install lld"
+  depends_on:
+    - llvm
+    - zstd
+  build_depends_on:
+    - cmake
+  keg_only: false
+  note: >
+    LLD was split out of the llvm formula. Must be installed separately.
+    No caveats of its own. Provides ld.lld, ld64.lld, lld-link, wasm-ld.
+  analytics:
+    installs_30d: 14826
+    installs_on_request_30d: 14103
+
+# ============================================================
+# BREW-SPECIFIC RECOMMENDATIONS for default clang
+# ============================================================
+making_clang_default:
+  method: "PATH prepending"
+  instruction: 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"'
+  where: ~/.zshrc
+  notes:
+    - "Brew recommends ~/.zshrc, NOT ~/.zprofile for this export"
+    - "No other mechanism (alternatives, symlinks) is provided or recommended"
+    - "Keg-only means NO symlinks are created in /opt/homebrew/bin"
+    - "After PATH prepend, `which clang` should show /opt/homebrew/opt/llvm/bin/clang"
+    - "CLT must still be installed for SDK headers unless using clang config files"
+    - "brew does NOT recommend setting CC/CXX globally -- only PATH"
+
+# ============================================================
+# ANALYTICS (popularity indicator)
+# ============================================================
+analytics:
+  installs_30d: 63070
+  installs_on_request_30d: 28600
+  build_errors_30d: 411
+  installs_365d: 882236
+  note: >
+    ~28.6k direct installs/month. ~34.5k are pulled in as dependencies.
+    411 build errors in 30 days (0.65% failure rate from source).

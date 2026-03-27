@@ -1,0 +1,91 @@
+id: finding-mise-strict
+timestamp: "2026-03-25T19:30:00Z"
+source: "https://github.com/jdx/mise (official repo) + project-specific research"
+agent: researcher
+finding_type: correction
+confidence: probable
+confident_about: |
+  1. **No official MISE_STRICT environment variable exists in mise core**
+     - Searched mise repository and official documentation
+     - No strict mode flag in mise settings or environment variables
+     - The term "strict mode" in this project refers to MDE_AUTOFIX_STRICT environment variable
+
+  2. **Project-specific strict mode: MDE_AUTOFIX_STRICT**
+     - Defined in scripts/macos-dev-maintenance.sh (line 8)
+     - Defaults to 0 (disabled)
+     - Only activated when both MDE_AUTOFIX=1 AND MDE_AUTOFIX_STRICT=1
+     - Purpose: Remove brew-managed runtimes (node, go, rust, python) in favor of mise-managed versions
+     - Invokes remove_brew_runtimes() function (line 598-602)
+
+  3. **Official mise environment variables identified**
+     - MISE_PIN=1: Pins exact versions instead of fuzzy versions
+     - MISE_YES=1: Auto-answers "yes" to prompts (equivalent to config yes = true)
+     - MISE_TRUSTED_CONFIG_PATHS: Colon-separated paths for trusted config files
+     - MISE_BACKENDS_<TOOL>: Override backend for specific tools (e.g., MISE_BACKENDS_CLAUDE)
+     - MISE_ENV_CACHE=1: Enables mise env caching for secret resolution with fnox
+
+  4. **Status.missing_tools setting (not strict mode)**
+     - Available in mise settings at [settings] section of config.toml
+     - Controls behavior when tools are missing
+     - Options include: "if_other_versions_installed" (default) and others
+     - Related to warning behavior, not strict mode
+
+gaps: |
+  - No official mise documentation confirms existence of MISE_STRICT environment variable
+  - Official mise "strict mode" concept (if it exists) not documented in current mise version
+  - Unclear if future mise versions plan to introduce MISE_STRICT for validation enforcement
+  - Not clear what all possible values of status.missing_tools setting are
+
+evidence: |
+  **Project References**:
+  - scripts/macos-dev-maintenance.sh line 8: `MDE_AUTOFIX_STRICT="${MDE_AUTOFIX_STRICT:-0}"`
+  - scripts/macos-dev-maintenance.sh lines 192-217: remove_brew_runtimes() function
+  - scripts/macos-dev-maintenance.sh lines 598-602: Invocation guard
+  - README.md lines 81-82: Documentation reference
+
+  **Project Behavior**:
+  When `MDE_AUTOFIX_STRICT=1` is set:
+  ```bash
+  # Removes brew-managed runtimes to force mise as source of truth
+  for formula in node go rust python; do
+    if brew_has "$formula"; then
+      brew uninstall "$formula"
+    fi
+  done
+  ```
+
+  **Official mise Environment Variables Found**:
+  - docs/plans/2026-02-28-research-r1-mise-core.md lines 232-233 document MISE_YES and MISE_TRUSTED_CONFIG_PATHS
+  - docs/mise-config.md line 47 documents MISE_ENV_CACHE=1
+  - docs/mise-config.md line 39 documents MISE_BACKENDS_CLAUDE
+
+  **Settings (not env vars)**:
+  - docs/setup-notes.md mentions status.missing_tools setting
+  - rsm-subagents/plugins/mise-toolkit/skills/mise-config-settings/SKILL.md line 41 lists status.missing_tools with value "if_other_versions_installed"
+
+implication: |
+  1. **For this project**: The README.md reference to "strict mode" should be clarified as "MDE_AUTOFIX_STRICT environment variable" rather than "strict mode" (which could be confused with mise core features).
+
+  2. **For mise integration**: If planning to add official strict mode validation to mise, consider that project-specific automation may already be using "strict" terminology for different purposes.
+
+  3. **Documentation improvement**: Create a STRICT_MODE.md file documenting MDE_AUTOFIX_STRICT behavior, when to use it, and what it does:
+     - Only removes brew-managed runtimes
+     - Requires MDE_AUTOFIX=1 as prerequisite
+     - Is destructive (uninstalls brew formulas)
+     - Intended for ci/cd or aggressive host cleanup workflows
+
+  4. **Settings reference**: Document all status.missing_tools possible values in the skill reference for mise-config-settings
+
+  5. **For future mise research**: Check if jdx/mise has issue discussions or PRs about "strict mode" as an official feature (e.g., for schema validation, missing tool errors instead of warnings)
+
+tags:
+  - mise-environment-variables
+  - project-automation
+  - strict-mode
+  - MDE_AUTOFIX_STRICT
+  - brew-runtime-removal
+  - configuration-settings
+  - missing-tools-warning
+  - fnox-integration
+
+status: discovered

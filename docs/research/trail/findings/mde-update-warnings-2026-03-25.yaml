@@ -1,0 +1,80 @@
+---
+title: "mde update warnings investigation: Rekor key parse + chezmoi 1password shim"
+date: 2026-03-25
+investigator: claude-opus-4.6
+confidence: HIGH
+
+findings:
+  - id: rekor-key-parse-warning
+    summary: "Rekor public key parse error is a known sigstore-rs bug, fix merged but unreleased"
+    severity: LOW
+    is_real_error: false
+    security_impact: NONE
+    details: |
+      The error "Cannot parse Rekor public key with id cf1199...Ecdsa-P256 from der bytes
+      to public key failed: unknown/unsupported algorithm OID: 1.2.840.10045.2.1" is a
+      known bug in sigstore-rs (GitHub issue sigstore/sigstore-rs#508).
+
+      ROOT CAUSE: Sigstore's TUF trust root contains two Rekor keys: a current ECDSA P256
+      key and an older Ed25519 key. The sigstore-rs library hardcodes ECDSA P256 as the
+      signing scheme, so it successfully parses the newer key but fails on the older Ed25519
+      key. The error is logged at INFO level and is non-fatal.
+
+      SECURITY IMPACT: None. The attestation verification still succeeds because:
+      1. The current (ECDSA P256) key parses correctly
+      2. Verification proceeds with the valid key
+      3. Both atuin and uv report "GitHub artifact attestations verified" after the warning
+
+      FIX STATUS: PR sigstore/sigstore-rs#551 ("fix(cosign): parse Ed25519 Rekor keys when
+      building client from upstream TUF root") was merged 2026-03-11. However, the latest
+      sigstore-rs release is v0.13.0 (2025-10-16), so the fix is NOT yet in any release.
+      Mise uses sigstore 0.13.0 and will need to update once a new release ships.
+
+      UPSTREAM: jdx/mise has issues disabled; there's a discussion at
+      https://github.com/jdx/mise/discussions/8142#discussioncomment-15811001
+
+    recommendation: |
+      - Do NOT file a mise issue (issues are disabled on jdx/mise)
+      - Do NOT flag this in mde validate -- it's upstream noise, not a project problem
+      - The warning will disappear when mise updates its sigstore-rs dependency
+      - No action required from us
+
+  - id: chezmoi-1password-shim-race
+    summary: "chezmoi doctor triggers mise auto-install of 1password-cli via shim during upgrade window"
+    severity: MEDIUM
+    is_real_error: true
+    security_impact: NONE
+    details: |
+      During `mde update`, the sequence is:
+      1. `mise upgrade` upgrades 1password-cli 2.33.0 -> 2.33.1
+      2. `mise prune` removes old version 2.33.0
+      3. `validate_all` runs `chezmoi doctor`
+      4. chezmoi doctor checks [1password-command] by running `op --version`
+      5. chezmoi finds the SHIM at ~/.local/share/mise/shims/op
+      6. The shim triggers a mise auto-install, outputting "mise 1password-cli@2.33.0 [1/3] install..."
+      7. chezmoi cannot parse this output as a version number -> WARNING
+
+      NOTE: When tested now (after update completes), `op --version` returns "2.33.0"
+      correctly and `chezmoi doctor` shows "ok 1password-command". The problem is
+      transient and only occurs during the upgrade window.
+
+      The issue is a RACE CONDITION: chezmoi doctor runs while mise is still installing/
+      configuring the new version, or when the shim points to a version that was pruned
+      but not yet reinstalled.
+
+    recommendation: |
+      Two approaches to fix:
+      1. STEP ORDERING (preferred): Ensure `mise install` and `mise reshim` complete
+         BEFORE any validation that invokes mise-managed tools. The current order already
+         does this (mise install -> mise prune -> chezmoi apply -> validate_all), but the
+         error suggests the shim was in a bad state during a previous run or the tool
+         was being lazily installed.
+      2. VALIDATE GUARD: In `_check_chezmoi_doctor`, add "1password-command" to the
+         _BENIGN_CHECK_NAMES set when the message contains "mise" and "install", since
+         this is a known transient condition during updates.
+
+      Option 1 is the clean fix. The update step order is already correct (mise prune
+      runs before validate_all). The error likely occurred in a run where the update
+      was interrupted or where an older version was pruned before the new one was
+      fully installed. Running `mise install --yes` explicitly before validation
+      should ensure all tools are in a good state.

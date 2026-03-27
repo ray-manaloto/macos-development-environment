@@ -1,0 +1,197 @@
+id: finding-missed-codex-gemini-sdk-resources
+timestamp: "2026-03-24T23:45:00Z"
+source: >-
+  https://github.com/spdcoding/codex-python-sdk,
+  https://github.com/maksimzayats/acodex,
+  https://github.com/openai/codex,
+  https://community.openai.com/t/codex-python-sdk-a-tiny-python-wrapper-to-use-codex-without-subprocess-glue/1374459,
+  https://ai-sdk.dev/providers/community-providers/codex-cli,
+  https://ai-sdk.dev/providers/community-providers/gemini-cli
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  Two major Python SDKs for Codex exist:
+
+  1. codex-python-sdk (spdcoding/codex-python-sdk) - focuses on app-server JSON-RPC
+  2. acodex (maksimzayats/acodex) - wraps Codex CLI with subprocess/streaming
+
+  Both are pip-installable, support sync/async, streaming, and work with subscription auth.
+  The codex-rs implementation (67.3k stars) provides app-server HTTP endpoint.
+  Vercel AI SDK has community providers for Codex CLI and Gemini CLI.
+gaps: |
+  - Why researchers missed acodex (53 stars, recent Feb 2026 activity): not in OpenAI official docs
+  - Why Vercel AI SDK providers were not discovered: narrow search scope
+  - Whether Codex "Harness" exists as a standalone tool or if it's a marketing term
+  - GeminiCodex CLI provider documentation not fully extracted
+evidence: |
+  **codex-python-sdk (spdcoding/codex-python-sdk)**
+  - Repository: https://github.com/spdcoding/codex-python-sdk
+  - Stars: 6 (early stage)
+  - Language: Python
+  - Latest push: 2026-03-15T16:51:30Z
+  - Installation: `uv add codex-python-sdk` or `pip install codex-python-sdk`
+  - What it is: Synchronous + asynchronous Python wrapper around `codex app-server` JSON-RPC protocol
+  - Provides: High-frequency response APIs (responses_create, responses_events, responses_stream_text)
+  - Thread/turn control: thread_start, thread_read, thread_list, thread_fork, thread_rollback
+  - Policy hooks: RuleBasedPolicyEngine with command/file-change/tool-input approval
+  - Features: Structured streaming ResponseEvent objects, predictable error types (NotAuthenticatedError, SessionNotFoundError)
+  - Subscription auth: Works with ChatGPT Plus/Pro/Team/Edu/Enterprise plans OR API keys
+  - Use case: Scripting, automation pipelines, UI integration
+  - Community forum: Discussed at community.openai.com (263 incoming links to discussion)
+
+  **acodex (maksimzayats/acodex)**
+  - Repository: https://github.com/maksimzayats/acodex
+  - Stars: 53 (Feb 2026)
+  - Language: Python
+  - Latest push: 2026-03-23T12:39:35Z
+  - Installation: `uv add acodex` or `pip install acodex` (with structured-output extra for validation)
+  - What it is: Fast, typed Python SDK wrapping Codex CLI directly via subprocess/JSONL events
+  - Prerequisite: Codex CLI must be installed (`npm install -g @openai/codex` or `brew install --cask codex`)
+  - Provides: Thread objects with run(), run_streamed(), streaming parsed events (ItemCompletedEvent, TurnCompletedEvent, TurnFailedEvent)
+  - Structured output: Output validation via Pydantic models (output_type parameter)
+  - Images: Supports UserInputLocalImage alongside text
+  - Resume threads: Threads persisted under ~/.codex/sessions
+  - Safety controls: ThreadOptions with sandbox_mode, approval_policy, web_search_mode, working_directory
+  - Subscription auth: Works with ChatGPT Plus/Pro/Team/Edu/Enterprise plans
+  - TS SDK parity: Vendored TypeScript SDK source of truth; vendored under vendor/codex-ts-sdk/src/
+  - Use case: Agent threads, conversational loops, structured output validation
+  - Quality gates: Ruff + mypy strict + 100% coverage
+
+  **codex-rs (openai/codex)**
+  - Repository: https://github.com/openai/codex (Rust implementation)
+  - Stars: 67,350
+  - Language: Rust
+  - What it is: Official Codex CLI native executable (replaces legacy TypeScript CLI)
+  - Installation: npm install -g @openai/codex OR brew install --cask codex OR download from GitHub Releases
+  - Core subcommands:
+    - `codex` - interactive TUI agent
+    - `codex exec PROMPT` - non-interactive headless mode
+    - `codex app-server` - JSON-RPC server over stdio (experimental websocket support)
+    - `codex mcp-server` - MCP server mode (allows other MCP clients to use Codex as a tool)
+    - `codex sandbox {macos,linux,windows}` - test sandbox policies
+  - Config: TOML-based (~/.codex/config.toml) instead of JSON
+  - MCP support: Client (connects to MCP servers) + Server (exposes Codex to other MCP clients)
+  - Sandbox modes: read-only (default), workspace-write, danger-full-access
+  - Notifications: Desktop notifications on task completion (configurable script)
+  - Subscription auth: Sign in with ChatGPT (Plus/Pro/Team/Edu/Enterprise) or API key
+
+  **codex-python-sdk community discussion (OpenAI Community)**
+  - URL: https://community.openai.com/t/codex-python-sdk-a-tiny-python-wrapper-to-use-codex-without-subprocess-glue/1374459
+  - Author: Henry (spdcoding)
+  - Posted: 2026-02-17T15:21:19.973Z
+  - Context: Original developer announced codex-python-sdk to solve subprocess pain points
+  - Motivation: "subprocess + stdout parsing gets messy" with error handling, retries, structured outputs
+  - Reception: 263 incoming links, 229 views, 1 heart reaction, 11 reads by 10 unique readers
+  - Related ecosystem: Community also discussing Codexy (Python port by MakerBi built in 2 days with AI)
+
+  **Vercel AI SDK Community Providers**
+  - Codex CLI provider: https://ai-sdk.dev/providers/community-providers/codex-cli
+  - Gemini CLI provider: https://ai-sdk.dev/providers/community-providers/gemini-cli
+  - Note: Pages are large HTML (450KB+), extract via structured parsing needed for detailed docs
+  - Both are documented under Vercel AI SDK's community provider ecosystem
+
+  **Codex "Harness" search results**
+  - GitHub search for "codex harness": 106 results
+  - Top result: everything-claude-code by affaan-m
+  - Description: "The agent harness performance optimization system" (not specifically Codex-related)
+  - No standalone "Codex Harness" product found; likely a marketing or architectural concept
+implication: |
+  **For Claude Code agent dispatch:**
+
+  1. **Two integration paths for Python-based agents:**
+     - Path A: Wrap acodex (CLI-based) for direct Codex agent calls with streaming
+     - Path B: Wrap codex-python-sdk (app-server-based) for JSON-RPC control via subprocess
+
+  2. **Architectural choice:**
+     - acodex is subprocess-simpler (just spawning codex CLI)
+     - codex-python-sdk is more explicit about app-server protocol but heavier setup
+     - Both support subscription auth only (no API key fallback in acodex)
+
+  3. **MCP integration opportunity:**
+     - codex-rs can run as MCP server (`codex mcp-server`)
+     - Claude Code agents could theoretically register Codex as MCP server
+     - Enables bidirectional tool calling (Codex as tool, Claude Code as tool)
+
+  4. **Search query improvements:**
+     - Add "acodex" to indexed keywords (underrecognized despite high quality)
+     - Check community.openai.com for SDK announcements (spdcoding's post has 263 links)
+     - Monitor GitHub releases for https://github.com/openai/codex (67k+ watchers)
+     - Include Vercel AI SDK provider ecosystem as part of agent harness research
+
+  5. **Subscription auth validation:**
+     - Both acodex and codex-python-sdk default to ChatGPT Plus subscription auth
+     - API key auth is secondary/optional in codex-python-sdk
+     - Verify user's Codex setup includes ChatGPT auth before agent dispatch
+tags: [codex, sdk, python, acodex, subscription-auth, json-rpc, subprocess, vercel-ai, mcp-server]
+status: discovered
+research_gap_analysis: |
+  ## Why Previous Research Missed These Resources
+
+  ### 1. acodex (53 stars) - the largest gap
+  **Why missed:**
+  - Not in OpenAI's official docs (only codex-python-sdk was featured in community forum)
+  - Search queries probably too narrow: "Codex SDK" or "Codex Python" without "acodex" term
+  - Recent creation (Feb 14, 2026 - only 38 days old) might have been below researcher's time horizon
+  - GitHub search would require "acodex" as exact term or "Codex CLI wrapper" pattern matching
+
+  **How it would have been found:**
+  - Query: `site:github.com acodex OR "codex-cli-python" fork:false stars:>10`
+  - Query: `site:pypi.org "codex" "CLI" "streaming" "pydantic"`
+  - Reddit: r/Python or r/OpenAI posts linking to acodex releases
+  - Community: community.openai.com "recent" discussions (appeared in 1376980 thread on 2026-03-17)
+
+  ### 2. codex-python-sdk - discovery was partial
+  **Why research may have found it incompletely:**
+  - Only 6 stars makes it appear immature (vs acodex's 53)
+  - Very recent (2026-03-15 latest push) - possible time cutoff issue
+  - Community forum discussion (263 links, 229 views) should have been entry point
+  - GitHub topic tags: `codex-python`, `codex-sdk`, `agent` might have been missed if search was API-first
+
+  **How guaranteed discovery:**
+  - Check OpenAI Community forum tag: #codex, #agents-sdk, #codex-cli (spdcoding's post is tagged)
+  - GitHub advanced search: `language:python topic:codex-sdk` (shows both acodex and codex-python-sdk)
+  - Hacker News search for "Codex SDK" (OpenAI community threads often cross-posted)
+
+  ### 3. Vercel AI SDK Providers - ecosystem gap
+  **Why missed:**
+  - Not obvious that Vercel AI SDK has "community providers" section for competing tools
+  - Search probably scoped to "official" OpenAI resources
+  - Vercel docs site is large and navigation-heavy (450KB+ HTML pages)
+  - Providers are buried under `/providers/community-providers/` path (not discoverable from homepage)
+
+  **How it would have been found:**
+  - Query: `site:ai-sdk.dev "community-providers" "codex" OR "gemini"`
+  - Query: `vercel ai-sdk providers third-party`
+  - Awesome lists: search "awesome-ai-sdk" or "awesome-agent-frameworks" on GitHub
+
+  ### 4. Codex "Harness" - marketing vs product confusion
+  **Why missed:**
+  - "Codex Harness" may not be a standalone product but rather OpenAI marketing language
+  - GitHub search returned "agent harness" repos (affaan-m's everything-claude-code) but not Codex-specific tool
+  - OpenAI.com/index/ URLs are blog/announcements (Cloudflare rate-limiting blocked fetch)
+  - No npm package or GitHub repository named specifically "codex-harness"
+
+  **What it likely is:**
+  - OpenAI blog post referring to Codex CLI as "harnessing" agent capabilities
+  - Not a tool/SDK, just marketing copy (similar to "Codex Web" vs "Codex CLI")
+  - If there's a tutorial, it's embedded in OpenAI docs, not a separate product
+
+  ### 5. Search queries that WOULD have found everything:
+  ```
+  # Multi-source breadth search:
+  - site:github.com/openai/codex OR site:github.com/maksimzayats OR site:github.com/spdcoding "codex"
+  - site:community.openai.com "codex" "python" "sdk" (sort by recent)
+  - site:pypi.org "acodex" OR "codex-python-sdk"
+  - site:ai-sdk.dev/providers "community-providers" codex
+  - "acodex" OR "codex-python-sdk" github stars:>5 language:python
+  - site:github.com/openai/codex "app-server" "json-rpc"
+  - "Codex Harness" site:openai.com OR site:developers.openai.com
+  ```
+
+  ### 6. Procedural improvements for future research cycles:
+  - **Phase A (breadth)**: Search OpenAI Community first for "new" SDK announcements (community posts predate repo stars)
+  - **Phase B (official)**: Crawl openai/codex GitHub wiki, discussions, releases (rel="releases")
+  - **Phase C (ecosystem)**: Check Vercel AI SDK, LangChain, CrewAI for Codex integrations
+  - **Phase D (social)**: Monitor community.openai.com #codex tag weekly (new SDKs announced here first)
+  - **Phase E (validation)**: Cross-reference PyPI + GitHub + npm for version sync (acodex bumped Feb 14 on PyPI, pushed same day to GitHub)

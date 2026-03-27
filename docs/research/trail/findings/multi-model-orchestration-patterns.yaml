@@ -1,0 +1,323 @@
+id: multi-model-orchestration-patterns
+timestamp: "2026-03-25T16:10:00Z"
+source: https://github.com/opencode-ai/opencode https://github.com/badlogic/pi-mono
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: |
+  - Two distinct production patterns exist: provider-factory (opencode) and registry (pi-mono)
+  - Both handle tool calling, streaming, usage tracking, and session management
+  - Provider-factory is more extensible for custom consensus layers
+  - Registry pattern is more type-safe across heterogeneous API shapes
+  - Tool execution can be sequential or parallel (opencode explicitly supports cancellation)
+
+gaps: |
+  - No consensus/voting mechanisms visible in production codebases
+  - Disagreement resolution strategies not documented
+  - Cost optimization across models not addressed
+  - Failover/retry patterns only partially visible
+
+evidence: |
+  ## opencode Provider-Factory Pattern (Most Suitable for Consensus)
+
+  ### Architecture
+  ```go
+  // Provider interface (unified)
+  type Provider interface {
+      SendMessages(ctx, messages, tools) (*ProviderResponse, error)
+      StreamResponse(ctx, messages, tools) <-chan ProviderEvent
+      Model() Model
+  }
+
+  // Factory creates type-specific client
+  type baseProvider[C ProviderClient] struct {
+      options providerClientOptions
+      client  C  // AnthropicClient | OpenAIClient | GeminiClient | CopilotClient | ...
+  }
+
+  func NewProvider(providerName string, opts ...ProviderClientOption) (Provider, error) {
+      switch providerName {
+      case models.ProviderCopilot:
+          return &baseProvider[CopilotClient]{...}
+      case models.ProviderAnthropic:
+          return &baseProvider[AnthropicClient]{...}
+      // ... more providers
+      }
+  }
+  ```
+
+  ### Concrete Example: Instantiating Multiple Models
+  ```go
+  // Create agents for consensus
+  agents := map[string]Provider{}
+
+  for _, modelName := range []string{
+      models.ModelClaude3Sonnet,
+      models.ModelGemini2Pro,
+      models.ModelGPT4Turbo,
+  } {
+      model := models.SupportedModels[modelName]
+      provider, err := NewProvider(model.Provider,
+          WithModel(model),
+          WithAPIKey(apiKey),
+          WithSystemMessage(prompt),
+      )
+      agents[modelName] = provider
+  }
+
+  // Stream from all in parallel
+  type AgentResult struct {
+      model string
+      response *ProviderResponse
+      err error
+  }
+
+  results := make([]AgentResult, 0)
+  for name, agent := range agents {
+      go func(n string, a Provider) {
+          resp, err := a.SendMessages(ctx, messages, tools)
+          results = append(results, AgentResult{n, resp, err})
+      }(name, agent)
+  }
+  ```
+
+  ### Tool Execution Loop (Sequential + Parallel)
+  ```go
+  // From agent.go: streamAndHandleEvents
+
+  // Tool calls collected from streaming response
+  toolCalls := assistantMsg.ToolCalls()  // []ToolCall
+
+  // Sequential execution with early cancellation:
+  for i, toolCall := range toolCalls {
+      select {
+      case <-ctx.Done():
+          // Cancel remaining tools
+          for j := i; j < len(toolCalls); j++ {
+              toolResults[j] = ToolResult{
+                  ToolCallID: toolCalls[j].ID,
+                  Content: "Tool execution canceled by user",
+                  IsError: true,
+              }
+          }
+          goto out
+      default:
+          toolResult, err := tool.Run(ctx, toolCall)
+          toolResults[i] = ToolResult{
+              ToolCallID: toolCall.ID,
+              Content: toolResult.Content,
+              IsError: err != nil,
+          }
+      }
+  }
+
+  // With parallel execution possible via goroutines:
+  wg := sync.WaitGroup{}
+  for i, toolCall := range toolCalls {
+      wg.Add(1)
+      go func(idx int, tc ToolCall) {
+          defer wg.Done()
+          tool.Run(ctx, tc)  // Parallel execution
+      }(i, toolCall)
+  }
+  wg.Wait()
+  ```
+
+  ### Event Stream Types
+  ```go
+  type ProviderEvent struct {
+      Type EventType  // content_start, tool_use_start, tool_use_delta, tool_use_stop,
+                      // content_delta, thinking_delta, content_stop, complete, error
+      Content string
+      Thinking string
+      ToolCall *ToolCall
+      Response *ProviderResponse
+      Error error
+  }
+  ```
+
+  ### Cost Tracking (Built-in)
+  ```go
+  func (a *agent) TrackUsage(ctx, sessionID string, model Model, usage TokenUsage) error {
+      sess, _ := a.sessions.Get(ctx, sessionID)
+
+      // Calculate cost per model
+      cost := model.CostPer1MInCached/1e6*float64(usage.CacheCreationTokens) +
+              model.CostPer1MOutCached/1e6*float64(usage.CacheReadTokens) +
+              model.CostPer1MIn/1e6*float64(usage.InputTokens) +
+              model.CostPer1MOut/1e6*float64(usage.OutputTokens)
+
+      sess.Cost += cost
+      sess.CompletionTokens = usage.OutputTokens + usage.CacheReadTokens
+      sess.PromptTokens = usage.InputTokens + usage.CacheCreationTokens
+
+      a.sessions.Save(ctx, sess)
+  }
+  ```
+
+  ---
+
+  ## pi-mono Registry Pattern (Best Type Safety)
+
+  ### Architecture
+  ```typescript
+  // Model registry with full type safety
+  export interface Model<TApi extends Api> {
+      id: string
+      provider: KnownProvider
+      displayName: string
+      description?: string
+      cost: { input: number, output: number, ... }
+      supportsTools: boolean
+      supportsImages: boolean
+      supportsThinking: boolean
+      thinkingLevels?: ('off' | 'low' | 'medium' | 'high' | ...)[]
+  }
+
+  // Fully typed model retrieval
+  const model = getModel('openai', 'gpt-4o-mini')  // Type: Model<OpenAIApi>
+  const model2 = getModel('anthropic', 'claude-3-sonnet')  // Type: Model<AnthropicApi>
+
+  // Generic across providers
+  export function getModels<TProvider extends KnownProvider>(
+      provider: TProvider,
+  ): Model<ModelApi<TProvider, keyof MODELS[TProvider]>>[]
+  ```
+
+  ### Streaming with Events
+  ```typescript
+  const s = stream(model, context)
+
+  for await (const event of s) {
+      switch (event.type) {
+          case 'text_start': console.log('[Text started]'); break
+          case 'text_delta': process.stdout.write(event.delta); break
+          case 'text_end': console.log('[Text ended]'); break
+          case 'thinking_start': console.log('[Thinking...]'); break
+          case 'thinking_delta': process.stdout.write(event.delta); break
+          case 'toolcall_start': console.log(`[Tool: ${event.toolCall.name}]`); break
+          case 'toolcall_delta': console.log('[Streaming args]'); break
+          case 'toolcall_end': console.log(`Args: ${JSON.stringify(event.toolCall.arguments)}`); break
+          case 'done': console.log(`Reason: ${event.reason}`); break
+          case 'error': console.error(`Error: ${event.error}`); break
+      }
+  }
+
+  const finalMessage = await s.result()
+  ```
+
+  ### Tool Definition with TypeBox
+  ```typescript
+  import { Type } from '@mariozechner/pi-ai'
+
+  const tools: Tool[] = [{
+      name: 'get_time',
+      description: 'Get current time',
+      parameters: Type.Object({
+          timezone: Type.Optional(Type.String({
+              description: 'e.g., America/New_York'
+          }))
+      })
+  }]
+
+  // Note: Use StringEnum for Google compatibility, not Type.Enum
+  const weatherTool: Tool = {
+      name: 'get_weather',
+      parameters: Type.Object({
+          location: Type.String(),
+          units: StringEnum(['celsius', 'fahrenheit'], { default: 'celsius' })
+      })
+  }
+  ```
+
+  ### Cross-Provider Handoff (Unique to pi-mono)
+  ```typescript
+  // Context is serializable/transferable
+  const context: Context = {
+      systemPrompt: '...',
+      messages: [...],
+      tools: [...]
+  }
+
+  // Send to Model A
+  const response1 = await complete(modelA, context)
+  context.messages.push(response1)
+
+  // Hand off to Model B
+  const response2 = await complete(modelB, context)
+  context.messages.push(response2)
+
+  // Continue with Model C, etc.
+  ```
+
+implication: |
+  ### Recommended Multi-Model Consensus Architecture for Your Project
+
+  **Hybrid Approach: opencode factory + consensus layer**
+
+  1. **Provider wrapper per CLI (subprocess)**
+     ```go
+     // src/mde/llm/codex_wrapper.go
+     type CodexProvider struct {
+         cmd *exec.Cmd
+         stdin io.WriteCloser
+         stdout io.ReadCloser
+     }
+
+     func (p *CodexProvider) Run(ctx context.Context, prompt string) (*RunResult, error) {
+         // Write prompt to stdin, parse JSONL events from stdout
+     }
+
+     // Similar: GeminiProvider, ClaudeProvider
+     ```
+
+  2. **Consensus orchestrator**
+     ```go
+     type ConsensusOrchestrator struct {
+         providers map[string]Provider  // codex, gemini, claude
+         timeout time.Duration
+     }
+
+     func (o *ConsensusOrchestrator) RunConsensus(ctx, prompt) (string, error) {
+         results := make(map[string]*Result)
+
+         // Stream from all in parallel
+         for name, provider := range o.providers {
+             go func(n string, p Provider) {
+                 stream := p.StreamResponse(ctx, prompt)
+                 results[n] = collectEvents(stream)
+             }(name, provider)
+         }
+
+         // Vote on best result
+         return o.voteBest(results)
+     }
+     ```
+
+  3. **Event aggregation per provider**
+     - Collect `ItemCompletedEvent`, `TurnCompletedEvent` from each
+     - Parse `structured_response` or fallback to `final_response`
+     - Compare across models (token count, reasoning, tool calls)
+
+  4. **Cost tracking**
+     - Track usage per provider
+     - Sum or compare costs vs accuracy
+     - Implement cost-based ranking for future calls
+
+  **Alternative: TypeScript Port with pi-mono Patterns**
+  - More effort, but gives you full type safety across models
+  - Better for long-term maintainability
+  - Easier integration with Node.js ecosystem tools
+
+tags:
+  - multi-model-consensus
+  - provider-factory-pattern
+  - registry-pattern
+  - orchestration
+  - tool-execution
+  - streaming-events
+  - cost-tracking
+  - golang-patterns
+  - typescript-patterns
+  - hybrid-architecture
+status: discovered

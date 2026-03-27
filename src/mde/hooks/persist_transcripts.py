@@ -9,6 +9,13 @@ Always exits 0 (never blocks the session).
 
 from __future__ import annotations
 
+# AUTO-DISCOVERED: This hook is registered automatically by cli.py via __hook_meta__.
+# To add a new hook, create a new module in src/mde/hooks/ with __hook_meta__ — do NOT edit cli.py.
+__hook_meta__ = {
+    "help": "PreCompact/Stop agent transcript saver",
+    "entry": "persist_transcripts",
+}
+
 import json
 import subprocess
 from datetime import UTC, datetime

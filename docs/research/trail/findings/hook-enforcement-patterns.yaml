@@ -1,0 +1,382 @@
+finding_id: hook-enforcement-patterns
+title: "Hook-Based Enforcement Patterns for Preventing Claude Code Misconfigurations"
+date: "2026-03-26"
+source: "claude-code-hooks-mastery repo + mde project analysis"
+confidence: 0.92
+tags: [hooks, enforcement, misconfiguration-prevention, claude-code]
+
+summary: |
+  Comprehensive catalog of hook-based enforcement patterns from the
+  claude-code-hooks-mastery reference repo and the mde project's existing
+  11 hooks. Covers all 13 hook lifecycle events with enforcement-specific
+  patterns organized by prevention category.
+
+patterns:
+
+  # ============================================================
+  # PATTERN 1: PreToolUse Guards (Block Before Damage)
+  # ============================================================
+  pretooluse_guards:
+    description: |
+      PreToolUse hooks fire BEFORE tool execution and can BLOCK via:
+      - exit(2) with stderr message (shown to Claude)
+      - JSON stdout: {"decision": "block", "reason": "..."}
+      - hookSpecificOutput with permissionDecision: "deny"
+
+    examples:
+      - name: "guard-install (mde)"
+        file: "src/mde/hooks/guard_install.py"
+        what_it_prevents: "Ad-hoc global installs (npm -g, pip, brew, cargo, go)"
+        mechanism: |
+          Block-list of regex patterns against Bash command input.
+          Allow-list takes precedence (mise install, uv sync, brew bundle).
+          Returns hookSpecificOutput.permissionDecision=deny on match.
+        key_design: |
+          - Allow-list checked FIRST (whitelist over blacklist)
+          - Returns structured JSON deny, not exit(2)
+          - Tells Claude WHERE to add the tool (mise config path)
+
+      - name: "guard-dotfile-edit (mde)"
+        file: "src/mde/hooks/guard_dotfile_edit.py"
+        what_it_prevents: "Direct edits to deployed dotfiles (~/.*)"
+        mechanism: |
+          Regex patterns for vim/sed/cp/mv/echo targeting ~/.* paths.
+          Allows chezmoi commands and edits to chezmoi source directory.
+          Only checks first line of command (prevents multi-line bypass).
+        key_design: |
+          - Multi-line bypass prevention (split on \n, check first line only)
+          - Tells Claude the correct workflow (chezmoi edit/add/cd)
+          - References the skill doc for detailed guidance
+
+      - name: "dangerous-rm blocker (mastery)"
+        file: ".claude/hooks/pre_tool_use.py"
+        what_it_prevents: "rm -rf / and destructive file operations"
+        mechanism: |
+          Comprehensive regex matching for rm variants:
+          rm -rf, rm -fr, rm --recursive --force, plus dangerous paths
+          (/, /*, ~, $HOME, .., *, .)
+        key_design: |
+          Uses exit(2) to block and show stderr to Claude.
+          Separate from .env protection (different concern).
+
+      - name: ".env file access blocker (mastery)"
+        file: ".claude/hooks/pre_tool_use.py"
+        what_it_prevents: "Reading/writing .env files with secrets"
+        mechanism: |
+          Checks file_path for Read/Edit/Write tools.
+          Checks bash commands for cat/echo/cp/mv targeting .env.
+          Allows .env.sample access.
+        key_design: |
+          Cross-tool protection (covers Bash, Read, Edit, Write).
+          Whitelist for safe variants (.env.sample).
+
+  # ============================================================
+  # PATTERN 2: PostToolUse Validators (Verify After Action)
+  # ============================================================
+  posttooluse_validators:
+    description: |
+      PostToolUse hooks fire AFTER tool execution. Cannot undo the action but CAN:
+      - Return {"decision": "block", "reason": "..."} to prompt Claude to fix
+      - Run validation tools and report errors
+      - Log outcomes for pattern analysis
+      - Trigger downstream actions (auto-format, reminders)
+
+    examples:
+      - name: "validate-plugins (mde)"
+        file: "src/mde/hooks/validate_plugins.py"
+        what_it_enforces: "Zero-warning plugin validation after rsm-subagents edits"
+        mechanism: |
+          Triggered on Write|Edit matcher. Checks if file_path contains
+          rsm-subagents/. Runs `uv run mde-py validate --plugins`.
+          Returns exit 1 on validation failure.
+        key_design: |
+          - Path-based filtering (only runs for relevant files)
+          - Delegates to existing validation command
+          - 120s timeout for thorough validation
+
+      - name: "validate-agents (mde)"
+        file: "src/mde/hooks/validate_agents.py"
+        what_it_enforces: "Agent frontmatter schema conformance"
+        mechanism: |
+          Uses Pydantic model (code-generated from JSON Schema) to
+          validate YAML frontmatter in .claude/agents/*.md files.
+          Checks: required fields, unknown fields, name-filename match.
+        key_design: |
+          - Schema-driven (model auto-generated from JSON Schema)
+          - Validates structural correctness, not just syntax
+          - Path filter: only triggers for .claude/agents/ files
+
+      - name: "auto-format on edit (mde)"
+        file: ".claude/settings.json inline jq command"
+        what_it_enforces: "Consistent Python formatting"
+        mechanism: |
+          Inline jq + ruff format command in settings.json.
+          Extracts file_path from tool_input, runs ruff format if .py.
+        key_design: |
+          - Runs as lightweight inline command (no Python module)
+          - 15s timeout, statusMessage for user feedback
+          - Fails silently (|| true) to never block
+
+      - name: "ruff validator (mastery)"
+        file: ".claude/hooks/validators/ruff_validator.py"
+        what_it_enforces: "Python lint compliance on every file write"
+        mechanism: |
+          Runs `uvx ruff check <file>` on Python files after Write.
+          Returns {"decision": "block", "reason": "..."} on lint failure.
+          Claude sees the error and auto-fixes.
+        key_design: |
+          - Uses PostToolUse decision=block to trigger auto-fix loop
+          - Only targets Python files (extension check)
+          - Skips gracefully if ruff not installed
+
+      - name: "remind-chezmoi-commit (mde)"
+        file: "src/mde/hooks/remind_chezmoi_commit.py"
+        what_it_enforces: "Chezmoi source commits after apply/re-add"
+        mechanism: |
+          Triggered on Bash matcher. Checks if command contains
+          chezmoi apply/re-add/add. Checks chezmoi source for uncommitted
+          changes and prints reminder.
+        key_design: |
+          - Non-blocking reminder (informational, not enforcement)
+          - Checks actual git status of source directory
+          - Skips dry-run commands
+
+      - name: "log-edit-outcome (mde)"
+        file: "src/mde/hooks/log_outcome.py"
+        what_it_enforces: "Edit audit trail for self-learning"
+        mechanism: |
+          Logs every Write/Edit to JSONL file with timestamp, tool,
+          file path, and operation type. Never blocks.
+        key_design: |
+          - Append-only JSONL format (crash-safe)
+          - Creates parent dirs on first use
+          - Fails silently on I/O errors
+
+  # ============================================================
+  # PATTERN 3: SessionStart Config Validation
+  # ============================================================
+  sessionstart_validation:
+    description: |
+      SessionStart hooks fire when a session begins (startup/resume/clear).
+      Cannot block, but CAN inject context via stdout that Claude sees.
+
+    examples:
+      - name: "session-start context (mde)"
+        file: "src/mde/hooks/session_start.py"
+        what_it_provides: "Recent git context (20 commits + current branch)"
+        mechanism: |
+          Runs git log --oneline -20 and git branch --show-current.
+          Prints to stdout so Claude sees project state immediately.
+        key_design: |
+          - Always exits 0 (never blocks session start)
+          - 5s timeout on git commands
+          - Graceful degradation if git unavailable
+
+      - name: "development context loader (mastery)"
+        file: ".claude/hooks/session_start.py"
+        what_it_provides: "Git status, GitHub issues, project context files"
+        mechanism: |
+          Loads git branch + uncommitted changes count.
+          Reads .claude/CONTEXT.md, .claude/TODO.md, TODO.md.
+          Fetches recent open GitHub issues via gh CLI.
+        key_design: |
+          - Multi-source context injection
+          - Truncates files to 1000 chars (context budget)
+          - Checks gh CLI availability before calling
+
+  # ============================================================
+  # PATTERN 4: Setup Hook (Environment Validation)
+  # ============================================================
+  setup_validation:
+    description: |
+      Setup hooks fire on init (entering repo) and maintenance (periodic).
+      Use CLAUDE_ENV_FILE to persist environment variables across the session.
+
+    examples:
+      - name: "dependency checker (mastery)"
+        file: ".claude/hooks/setup.py"
+        what_it_validates: "Node, Python, uv, git availability"
+        mechanism: |
+          Checks for common tools via subprocess.
+          Optionally installs project dependencies (npm, pip, uv sync).
+          Persists env vars via CLAUDE_ENV_FILE.
+        key_design: |
+          - CLAUDE_ENV_FILE for cross-hook env persistence
+          - Separate check vs install phases
+          - Auto-detects package manager from lockfiles
+
+  # ============================================================
+  # PATTERN 5: PermissionRequest Auto-Allow/Deny
+  # ============================================================
+  permission_control:
+    description: |
+      PermissionRequest hooks fire when user sees a permission dialog.
+      Can auto-allow (bypass dialog), deny, or modify tool inputs.
+      Output: hookSpecificOutput.decision.behavior = "allow"|"deny"
+
+    examples:
+      - name: "read-only auto-allow (mastery)"
+        file: ".claude/hooks/permission_request.py"
+        what_it_does: "Auto-allows Read, Glob, Grep, and safe Bash commands"
+        mechanism: |
+          Pattern matching on tool_name. For Bash, validates against
+          safe command patterns (ls, pwd, git status, etc.).
+          Returns decision.behavior=allow for read-only ops.
+        key_design: |
+          - Per-tool checker functions in dispatch dict
+          - Safe bash patterns use regex whitelist
+          - Reduces permission dialog fatigue
+
+  # ============================================================
+  # PATTERN 6: Stop Hook (Completion Enforcement)
+  # ============================================================
+  stop_enforcement:
+    description: |
+      Stop hooks fire when Claude tries to finish responding.
+      CAN BLOCK via {"decision": "block", "reason": "..."}.
+      Use carefully to prevent premature completion.
+
+    examples:
+      - name: "persist-transcripts (mde)"
+        file: ".claude/settings.json Stop hook"
+        what_it_enforces: "Transcript persistence before session end"
+        mechanism: |
+          Runs persist-transcripts command.
+          Prompt-type hook asks Claude to verify findings are on disk.
+        key_design: |
+          - Combines command hook (save transcripts) + prompt hook (verify)
+          - Prompt hook acts as a checklist (did agent persist everything?)
+
+      - name: "test completion enforcer (mastery pattern)"
+        what_it_enforces: "All tests pass before Claude stops"
+        mechanism: |
+          In Stop hook, check if tests pass.
+          Return decision=block with reason if tests fail.
+          Forces Claude to continue and fix.
+        key_design: |
+          - CAUTION: Can cause infinite loops
+          - Must have a counter or escape hatch
+          - Best for CI-like enforcement
+
+  # ============================================================
+  # PATTERN 7: PreCompact Memory Preservation
+  # ============================================================
+  precompact_preservation:
+    description: |
+      PreCompact hooks fire before context compaction.
+      Cannot block, but can save state before context is lost.
+
+    examples:
+      - name: "memory preservation (mde)"
+        file: ".claude/settings.json PreCompact hook"
+        what_it_preserves: "Research findings and decisions"
+        mechanism: |
+          Runs persist-transcripts command.
+          Prompt hook asks Claude to list unpersisted items.
+        key_design: |
+          - Last chance to save context before compaction
+          - Prompt hook forces explicit accounting of unpersisted work
+
+  # ============================================================
+  # PATTERN 8: Team Quality Gates
+  # ============================================================
+  team_quality:
+    description: |
+      Custom quality gate dispatch based on team type.
+      Not tied to a specific hook event -- can be called from any hook.
+
+    examples:
+      - name: "team-quality-gate (mde)"
+        file: "src/mde/hooks/team_quality_gates.py"
+        what_it_enforces: "Per-team-type quality checks"
+        mechanism: |
+          Dispatch table maps team types to check functions:
+          python-dev -> ruff + ty + pytest
+          research -> YAML provenance files exist
+          dotfiles -> mde-py validate --all
+          infrastructure -> brewfile + mise doctor
+        key_design: |
+          - Composable gate functions
+          - Returns structured JSON (passed, checks, output)
+          - Each gate runs independently
+
+# ============================================================
+# ARCHITECTURAL PATTERNS (cross-cutting)
+# ============================================================
+architectural_patterns:
+
+  json_output_protocol:
+    description: |
+      Hooks communicate decisions via structured JSON stdout:
+      - PreToolUse: hookSpecificOutput.permissionDecision = "deny"
+      - PostToolUse: {"decision": "block", "reason": "..."}
+      - Stop: {"decision": "block", "reason": "..."}
+      - PermissionRequest: hookSpecificOutput.decision.behavior = "allow"|"deny"
+    note: "Each hook type has DIFFERENT JSON schemas. Do not mix them."
+
+  graceful_degradation:
+    description: |
+      All hooks MUST handle failures gracefully:
+      - JSONDecodeError on stdin -> return 0 (never block on parse failure)
+      - FileNotFoundError for external tools -> return 0 (skip, don't crash)
+      - Timeouts -> return 0 or log warning
+      - Never block session on hook infrastructure failure.
+
+  path_filtering:
+    description: |
+      Most PostToolUse hooks check file_path before running:
+      - Extract from tool_input.file_path
+      - String match against target directory (rsm-subagents/, .claude/agents/)
+      - Skip with exit 0 if file is not in scope
+
+  opentelemetry_tracing:
+    description: |
+      mde hooks use OpenTelemetry spans via hook_span() context manager.
+      Each span carries: hook.event, claude.session_id, claude.tool_use_id.
+      Custom attributes: hook.blocked, hook.skipped, hook.file_path.
+
+  auto_discovery:
+    description: |
+      mde hooks use __hook_meta__ dict for auto-discovery by cli.py.
+      Keys: help (str), entry (str), optional name (str override).
+      Never edit cli.py to register a hook.
+
+# ============================================================
+# GAPS AND OPPORTUNITIES
+# ============================================================
+gaps:
+  - id: "no-settings-validation-hook"
+    description: |
+      No hook currently validates .claude/settings.json after edits.
+      A PostToolUse hook matching Write|Edit on settings.json could:
+      - Validate JSON syntax
+      - Check for required hook registrations
+      - Verify enabledPlugins consistency
+      - Warn about deprecated patterns
+
+  - id: "no-userpromptssubmit-enforcement"
+    description: |
+      mde has NO UserPromptSubmit hooks. Opportunities:
+      - Inject project policies as context before Claude sees prompts
+      - Validate prompts against security patterns
+      - Add timestamps for audit trail
+      - Block prompts that reference deprecated workflows
+
+  - id: "no-permission-request-hook"
+    description: |
+      mde has NO PermissionRequest hook. Could auto-allow:
+      - Read/Glob/Grep (always safe)
+      - Safe Bash commands (git status, ls, etc.)
+      - Reduces permission dialog fatigue significantly
+
+  - id: "no-settings-drift-detection"
+    description: |
+      No hook detects when settings.json diverges from expected state.
+      A SessionStart hook could compare current settings against a
+      known-good schema and warn about misconfigurations.
+
+  - id: "no-shell-script-creation-guard"
+    description: |
+      No PreToolUse hook blocks creation of .sh files.
+      The no-shell-scripts policy is only enforced by CLAUDE.md instructions.
+      A Write/Edit guard could block file_path ending in .sh.

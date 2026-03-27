@@ -1,0 +1,89 @@
+id: codex-gemini-cli-sdk-patterns
+timestamp: "2026-03-25T16:00:00Z"
+source: https://github.com/opencode-ai/opencode
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: |
+  - opencode (Go) uses native SDK clients (anthropic-sdk-go, openai-go) NOT subprocess/CLI wrappers
+  - pi-mono (TypeScript) implements unified multi-provider API over native SDKs
+  - acodex (Python) wraps external codex CLI via subprocess + JSONL IPC, NOT native SDK
+  - Each project has distinct subprocess philosophy based on language/ecosystem
+  - All three support streaming, structured output, tool calling, context management
+
+gaps: |
+  - No evidence of Codex CLI subprocess integration in opencode/pi-mono (both use native SDKs)
+  - acodex subprocess pattern is Python-specific (CLI wrapping, not SDK wrapping)
+  - Limited info on error handling for large inputs/timeouts in streaming scenarios
+  - No detailed cost tracking comparison across codex vs gemini vs claude
+
+evidence: |
+  ## opencode (Go)
+  - Uses `anthropics/anthropic-sdk-go v1.4.0` and `openai/openai-go v0.1.0-beta.2`
+  - Architecture: Provider interface → concrete clients (AnthropicClient, OpenAIClient, GeminiClient, CopilotClient)
+  - Pattern: `NewProvider()` factory returns type-generic `baseProvider[C ProviderClient]`
+  - Streaming: `StreamResponse()` returns `<-chan ProviderEvent` with events (ContentDelta, ToolUseStart, ToolUseStop, ToolUseDelta, ThinkingDelta, Complete)
+  - Tool execution: Loop-based with tool result accumulation, supports parallel execution
+  - Session management: Uses SQLite for message history + cost tracking
+  - No subprocess calls visible; direct native SDK integration
+
+  ## pi-mono (TypeScript)
+  - Packages: @mariozechner/pi-ai (unified LLM API), @mariozechner/pi-agent-core (agent runtime)
+  - Architecture: Type-safe provider registry with model discovery
+  - Pattern: `getModel(provider, modelId)` → fully typed `Model<TApi>` with provider-specific options
+  - Streaming: `stream()` and `streamSimple()` yield typed events (text_start, text_delta, text_end, toolcall_start, toolcall_delta, toolcall_end, thinking_*)
+  - Tool definitions: TypeBox schemas for validation + serialization (avoids Type.Enum for Google compatibility)
+  - Supports: OAuth login, session persistence, cross-provider handoffs
+  - No subprocess; native SDK integrations (OpenAI, Google, Anthropic, Azure, etc.)
+
+  ## acodex (Python)
+  - Subprocess architecture: spawns `codex` CLI, exchanges JSONL events over stdin/stdout
+  - NOT a native Python SDK but a CLI wrapper with strongly-typed surface layer
+  - Classes: `Codex` (sync), `AsyncCodex` (async), `Thread`, `AsyncThread`
+  - Main methods: `start_thread()`, `resume_thread(thread_id)`, `run()`, `run_streamed()`
+  - Event streaming: `run_streamed()` → StreamedResult with typed events (ItemCompletedEvent, TurnCompletedEvent, TurnFailedEvent)
+  - Structured output: `output_type=PydanticModel` for validation
+  - Safety controls: ThreadOptions (sandbox_mode, approval_policy, web_search_mode, working_directory)
+  - Threads persisted to `~/.codex/sessions/`
+  - Quality: mypy strict, 100% coverage, vendored TypeScript SDK for compatibility testing
+
+implication: |
+  ### Multi-Model CLI Orchestration Patterns
+
+  1. **SDK vs Subprocess Trade-off**
+     - Native SDKs (opencode, pi-mono): Better for stateful agents, complex tool execution
+     - Subprocess wrappers (acodex): Better for isolation, CLI-only deployments, process reuse
+
+  2. **Streaming Architecture**
+     - All support streaming event loops with intermediate progress
+     - Go: channel-based, most efficient for concurrent tool execution
+     - TypeScript: async iterators, native promise-based error handling
+     - Python: acodex yields dataclass events from JSONL stream
+
+  3. **Structured Output Strategy**
+     - opencode: No explicit mention, assumes raw response parsing
+     - pi-mono: TypeBox JSON Schema → automatic validation via ajv
+     - acodex: Pydantic models passed as `output_type`, validated after run
+
+  4. **Multi-Provider Model Selection**
+     - opencode: Config-based (agents map to specific models, can switch mid-session via Update())
+     - pi-mono: Registry-based `getModel()` with full type safety across 20+ providers
+     - acodex: Single CLI but codex itself supports multiple providers
+
+  5. **For your mde project (Python + DSPy + SubprocessLMProvider)**
+     - Pattern 1: Follow acodex approach - wrap CLI via subprocess + JSONL IPC (clean isolation)
+     - Pattern 2: Use pi-mono's unified API layer (TypeScript advantage, but could port logic to Python)
+     - Pattern 3: Follow opencode's provider factory (most extensible for multi-model consensus)
+     - Recommendation: Hybrid - subprocess wrappers per model (codex, gemini-cli, claude-cli) + consensus layer on top
+
+tags:
+  - multi-model-orchestration
+  - subprocess-vs-sdk
+  - streaming-architecture
+  - cli-integration
+  - codex
+  - gemini-cli
+  - tool-execution
+  - structured-output
+  - agent-patterns
+status: discovered

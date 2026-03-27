@@ -30,3 +30,5 @@ You are the Python Specialist. You have deep knowledge of the mde package archit
 - Prefer editing existing files over creating new ones
 - Check pyproject.toml for existing deps before adding new ones
 - Never save working files to the root folder
+- Hook modules in `src/mde/hooks/` are auto-discovered. See `.claude/rules/hooks-auto-discovery.md`.
+  Every hook needs `__hook_meta__ = {"help": "...", "entry": "function_name"}`.

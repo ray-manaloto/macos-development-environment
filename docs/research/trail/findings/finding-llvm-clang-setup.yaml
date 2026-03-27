@@ -1,0 +1,139 @@
+id: finding-llvm-clang-setup
+timestamp: "2026-03-25T00:00:00Z"
+source: "local system inspection + brew info llvm + gh release view llvm/llvm-project + mise registry"
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: >
+  Complete analysis of 5 LLVM/Clang installation options for macOS arm64,
+  with version numbers, tool coverage, and recommended migration path from
+  conda backend to Homebrew llvm formula.
+gaps: >
+  Did not verify brew llvm install end-to-end (not installed yet).
+  Did not benchmark conda channel resolution overhead quantitatively.
+  mise github:llvm/llvm-project backend untested for actual install (binary exists but mise install not verified).
+evidence: |
+  ## Current State
+  - mise global config: `clang = "latest"` resolving to conda:clang@22.1.0
+  - conda clang install: 472MB, 279 binaries
+  - conda clang MISSING: clang-format, clang-tidy, lldb, lld (0 of 4 found)
+  - conda clang includes: clang, clang++, clang-cl, clang-cpp, llvm-* tools, cctools (ar, ld, nm, etc.)
+  - conda clang has cross-compilation prefixed tools (arm64-apple-darwin20.0.0-*)
+  - Apple CLT clang: version 21.0.0 (clang-2100.0.123.102) at /Library/Developer/CommandLineTools/usr/bin
+  - System lldb: /usr/bin/lldb (Apple version, from Xcode CLT)
+  - clang-format: NOT installed anywhere
+  - clang-tidy: NOT installed anywhere
+  - /opt/homebrew/opt/llvm/bin: exists in PATH but brew llvm NOT installed
+
+  ## Option 1: Homebrew llvm (RECOMMENDED)
+  - Current version: 22.1.1 (stable), bottled for arm64
+  - Keg-only: installs to /opt/homebrew/opt/llvm/ (no conflicts with system clang)
+  - Includes: clang, clang++, clang-format, clang-tidy, lldb, clang-tools-extra, libcxx, libunwind
+  - Does NOT include lld (separate formula: `brew install lld`)
+  - Dependencies: python@3.14, xz, z3, zstd (build: cmake, ninja, swig)
+  - Config dirs: /opt/homebrew/etc/clang (system), ~/.config/clang (user)
+  - User already has /opt/homebrew/opt/llvm/bin in PATH
+  - Install: `brew install llvm lld`
+  - 63K installs/month (well-maintained, heavily used)
+
+  ## Option 2: mise aqua backend
+  - NOT available. mise registry shows: conda:clang, asdf:mise-plugins/mise-llvm, vfox:mise-plugins/vfox-clang
+  - No aqua registry entry for llvm or clang
+
+  ## Option 3: mise github:llvm/llvm-project
+  - Releases exist: llvmorg-22.1.2 is latest (ahead of brew's 22.1.1)
+  - macOS ARM64 prebuilt binary: LLVM-22.1.2-macOS-ARM64.tar.xz (1.4GB)
+  - This is the FULL LLVM distribution (everything: clang, clang-format, clang-tidy, lld, lldb, etc.)
+  - UNTESTED: unclear if mise github backend can extract and shim correctly for this package
+  - Risk: 1.4GB download, may have path/sysroot issues on macOS without CLT integration
+
+  ## Option 4: Xcode Command Line Tools (Apple clang)
+  - Current version: Apple clang 21.0.0 (based on LLVM ~18-19, Apple versioning diverges)
+  - Always behind upstream LLVM by 1-3 major versions
+  - Includes: clang, clang++, lldb, but NOT clang-tidy, limited clang-format
+  - Coexists with brew llvm (different paths, no conflict)
+  - Free, auto-updated with Xcode updates
+  - Sufficient for basic C/C++/ObjC compilation but lacks latest C++23/26 features
+
+  ## Option 5: conda backend (CURRENT - SUBOPTIMAL)
+  - Noisy channel resolution on every mise operation (confirmed in `mise doctor` output)
+  - conda:clang is a stripped-down conda-forge build focused on cross-compilation
+  - Missing critical developer tools: clang-format, clang-tidy, lldb, lld
+  - Has conda-specific config files (arm64-apple-darwin-clang.cfg)
+  - Targets darwin20.0.0 (macOS 11) in cross-compilation tools despite running on darwin25
+  - 472MB for incomplete toolchain
+
+  ## Recommended Setup
+
+  ### Remove conda clang from mise
+  ```toml
+  # ~/.config/mise/config.toml
+  # REMOVE: clang = "latest"
+  ```
+  ```bash
+  mise uninstall clang@22.1.0
+  ```
+
+  ### Install via Homebrew
+  ```bash
+  brew install llvm lld
+  ```
+
+  ### Configure mise [env] for CC/CXX
+  ```toml
+  # ~/.config/mise/config.toml
+  [env]
+  CC = "/opt/homebrew/opt/llvm/bin/clang"
+  CXX = "/opt/homebrew/opt/llvm/bin/clang++"
+  ```
+
+  ### PATH setup (user already has this)
+  `/opt/homebrew/opt/llvm/bin` should be in PATH (already confirmed present).
+
+  ### CMake integration
+  ```bash
+  cmake -B build -DCMAKE_C_COMPILER=/opt/homebrew/opt/llvm/bin/clang \
+                  -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ \
+                  -DCMAKE_LINKER_TYPE=LLD
+  ```
+
+  ### Meson integration
+  Add to a native file or set env vars:
+  ```ini
+  [binaries]
+  c = '/opt/homebrew/opt/llvm/bin/clang'
+  cpp = '/opt/homebrew/opt/llvm/bin/clang++'
+  ```
+
+  ### What comes from where
+  | Tool         | Source              | Path                                   |
+  |-------------|---------------------|----------------------------------------|
+  | clang/clang++| brew llvm           | /opt/homebrew/opt/llvm/bin/clang       |
+  | clang-format | brew llvm           | /opt/homebrew/opt/llvm/bin/clang-format|
+  | clang-tidy   | brew llvm           | /opt/homebrew/opt/llvm/bin/clang-tidy  |
+  | lldb         | brew llvm (or CLT)  | /opt/homebrew/opt/llvm/bin/lldb        |
+  | lld          | brew lld            | /opt/homebrew/opt/llvm/bin/lld         |
+  | libc++       | macOS system        | (use system unless you need bleeding-edge)|
+
+implication: |
+  Remove `clang = "latest"` from mise global config to eliminate conda channel resolution noise.
+  Install `brew install llvm lld` instead. This gives a complete, up-to-date LLVM toolchain
+  (22.1.1) with all developer tools (clang-format, clang-tidy, lldb) that conda was missing.
+  The user's PATH already includes /opt/homebrew/opt/llvm/bin so tools will be available
+  immediately after install. Set CC/CXX in mise [env] section for build system integration.
+  This aligns with the mise-first policy (brew for system-level packages, mise for runtime versions)
+  since LLVM is better treated as a system compiler than a mise-managed runtime.
+
+tags:
+  - llvm
+  - clang
+  - homebrew
+  - macos-arm64
+  - compiler
+  - cpp
+  - mise-conda
+  - clang-format
+  - clang-tidy
+  - build-tools
+  - developer-toolchain
+status: discovered

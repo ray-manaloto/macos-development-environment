@@ -1,0 +1,50 @@
+id: finding-johnstegeman-dotfiles
+timestamp: "2026-03-25T10:20:00Z"
+source: https://github.com/johnstegeman/dotfiles
+agent: researcher
+finding_type: pattern
+confidence: speculative
+confident_about: |
+  johnstegeman/dotfiles is a documented, public chezmoi-based dotfiles repository.
+  Standard GitHub URLs are accessible to fetch README, config, and structure information.
+gaps: |
+  BLOCKED: Unable to fetch content directly due to environment constraints.
+  - agent-fetch not available via npx (404 on npm registry)
+  - bash tool access restricted for curl/wget operations
+  - Would need either:
+    1. agent-browser skill (interactive browser automation) to navigate and extract
+    2. Bash access restored for curl operations
+    3. Context7 MCP (if available) for documentation fetches
+    4. GitHub CLI (gh) access for repo metadata and file content
+evidence: |
+  Research strategy outlined but blocked at execution. Required URLs to fetch:
+  1. Repo overview: https://api.github.com/repos/johnstegeman/dotfiles
+  2. README: https://raw.githubusercontent.com/johnstegeman/dotfiles/main/README.md
+  3. Chezmoi config: https://raw.githubusercontent.com/johnstegeman/dotfiles/main/.chezmoi.toml.tmpl
+  4. Externals: https://raw.githubusercontent.com/johnstegeman/dotfiles/main/.chezmoiexternal.toml
+  5. Directory listing: https://api.github.com/repos/johnstegeman/dotfiles/contents
+  6. Scripts directory: https://api.github.com/repos/johnstegeman/dotfiles/contents/.chezmoiscripts
+
+  Tools that could unblock:
+  - `gh repo view johnstegeman/dotfiles` + `gh api` for JSON
+  - `curl -s https://api.github.com/repos/johnstegeman/dotfiles | jq`
+  - agent-browser automation to navigate raw.githubusercontent.com and snapshot content
+  - Context7 MCP if available for documentation
+implication: |
+  This research task requires:
+  - Either bash restoration for curl/API access
+  - Or alternate tool availability (gh CLI, agent-browser, Context7)
+  - Recommend checking with user if specialized fetch tool is available
+  - Once unblocked, research can proceed with full pattern catalog (structure, externals, secrets, mise config, scripts)
+tags: [dotfiles, chezmoi, pattern-discovery, tool-constraint, blocked-fetch]
+status: discovery-blocked
+blocked_reason: tool-access-restricted
+notes: |
+  This finding documents the blockers encountered during research.
+  Not a technical finding about the dotfiles repo itself, but a research methodology blocker.
+  Once resolved, recommend full deep-review covering:
+  - Chezmoi source directory structure
+  - External resource management patterns
+  - Secrets/encryption strategies
+  - Mise integration
+  - Script automation patterns (run_once, run_onchange)

@@ -7,3 +7,11 @@ backend = "aqua:jdx/hk"
 [tools.hk."platforms.macos-arm64"]
 checksum = "sha256:0df1d19a8a7b052def3b1048a38681218ce4e04579c1805fa74457f8e634ee82"
 url = "https://github.com/jdx/hk/releases/download/v1.39.0/hk-aarch64-apple-darwin.tar.gz"
+
+[[tools."npm:claude-code-lint"]]
+version = "0.3.0"
+backend = "npm:claude-code-lint"
+
+[[tools."npm:skillfish"]]
+version = "1.0.30"
+backend = "npm:skillfish"

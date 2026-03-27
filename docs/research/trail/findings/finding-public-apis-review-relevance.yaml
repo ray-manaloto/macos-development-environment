@@ -1,0 +1,82 @@
+id: finding-public-apis-review-relevance
+timestamp: "2026-03-25T22:55:00Z"
+source: https://github.com/public-apis/public-apis
+agent: researcher
+finding_type: evaluation
+confidence: confirmed
+confident_about: |
+  The public-apis repository (416k+ stars, 45k+ forks, 1,436 free APIs cataloged)
+  contains 3 APIs with partial relevance to autonomous-fix-review skill:
+  1. SonarQube REST API (OAuth required, paid cloud service)
+  2. Deepcode AI (No auth needed per catalog, but requires evaluation)
+  3. GitHub API (OAuth, excellent for diff/PR context but not code analysis)
+gaps: |
+  - NO free APIs for LLM orchestration, consensus voting, or multi-model comparison
+  - NO free APIs for diff analysis, AST parsing, or static analysis supplementation
+  - SonarQube requires cloud subscription (sonarcloud.io) — paid tier only
+  - Deepcode requires signup — "No" auth in catalog but cloud service with limitations
+  - No specialized code review aggregation APIs
+  - No free APIs for generating code quality scores without authentication
+  - GitHub API requires OAuth, not suitable for zero-key constraint
+evidence: |
+  From public-apis README.md (416k stars, community-curated):
+
+  Relevant Entries (out of 1,436 total APIs):
+
+  | Entry | Auth | HTTPS | Status |
+  |-------|------|-------|--------|
+  | SonarQube | OAuth | Yes | Paid (sonarcloud.io) |
+  | Deepcode | No | Yes | Unknown status |
+  | GitHub | OAuth | Yes | Requires auth |
+  | Travis CI | apiKey | Yes | Paired with GitHub |
+  | Buddy | OAuth | Yes | CI/CD, not review |
+  | Wandbox | No | Yes | Code compiler, not analyzer |
+  | Judge0 CE | apiKey | Yes | Code executor, not analyzer |
+  | Mozilla HTTP Scanner | No | Yes | HTTP/TLS scanner, not code review |
+
+  Search scope: grep -i for "code|review|lint|analysis|quality|security|static|diff|ast"
+  across 1,436 APIs.
+implication: |
+  VERDICT: SKIP
+
+  The public-apis repository does NOT contain useful free APIs for the autonomous-fix-review
+  skill because:
+
+  1. **Zero-Key Budget Constraint**: The project allows only subscription CLIs (codex/gemini/claude).
+     All code review APIs in the catalog require either:
+     - OAuth (GitHub, SonarQube)
+     - Cloud subscription (SonarQube paid, Deepcode enterprise)
+     - API keys (Travis CI, Judge0)
+
+  2. **Wrong Problem Space**: The catalog focuses on standalone API services, not orchestration
+     or consensus voting. The autonomous-fix-review skill needs:
+     - Multi-model coordination (not in catalog)
+     - DSPy-based voting/reasoning (not in catalog)
+     - Free static analysis to cross-reference LLM findings (not in catalog)
+
+  3. **Existing Tools Are Better**: The mde project already has:
+     - ruff (free, local, no keys needed)
+     - GitHub Actions context (PRs available locally)
+     - Direct subscription CLI access to Claude/Gemini/Codex
+
+  4. **Integration Cost Exceeds Benefit**: Using GitHub API would require:
+     - OAuth setup and token management
+     - Network calls for diff/PR context (latency)
+     - Breaking the zero-key principle
+
+  Instead, continue using:
+  - Local ruff + typer for static analysis baseline
+  - DSPy SubprocessLMProvider to orchestrate subscription CLIs
+  - In-process diff parsing (Python stdlib difflib)
+  - No external APIs (preserves zero-key constraint)
+
+tags:
+  - free-apis
+  - code-review
+  - linting
+  - static-analysis
+  - orchestration
+  - zero-key-constraint
+  - autonomous-review
+  - skill-research
+status: discovered

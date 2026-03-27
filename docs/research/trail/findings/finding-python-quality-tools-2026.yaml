@@ -1,0 +1,229 @@
+id: finding-python-quality-tools-2026
+timestamp: "2026-03-25T20:45:00Z"
+source: https://docs.astral.sh/ruff/configuration/
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: >
+  Current versions, configuration patterns, and feature status of Astral's Python
+  quality toolchain (ruff 0.15.x, ty 0.0.x alpha, uv 0.11.x) as of March 2026.
+gaps: >
+  ty is pre-1.0 alpha with weekly breaking changes; no ecosystem skills for ty exist yet;
+  ruff preview default expansion not fully documented; uv build backend (uv_build) maturity unknown.
+evidence: >
+  ruff 0.15.7 (latest stable 2026-03-19), installed 0.15.6. ty 0.0.25 (latest 2026-03-24),
+  installed 0.0.23. uv 0.11.1 (latest 2026-03-24). All from docs.astral.sh and GitHub releases.
+implication: >
+  Agent specialists must track weekly ty releases for breaking changes; ruff preview mode
+  expanding defaults in B/UP/RUF categories should be evaluated; uv workspace features mature
+  enough for monorepo use.
+tags:
+  - ruff
+  - ty
+  - uv
+  - astral
+  - python-quality
+  - type-checking
+  - linting
+  - formatting
+  - package-management
+  - agent-specialist
+status: discovered
+
+tools:
+  ruff:
+    installed_version: "0.15.6"
+    latest_version: "0.15.7"
+    latest_release_date: "2026-03-19"
+    total_rules: "900+"
+    status: stable
+    key_features_2026:
+      - "900+ lint rules reimplemented in Rust"
+      - "Built-in formatter (replaces Black)"
+      - "LSP server with hover, code actions, noqa suggestions"
+      - "Preview mode expanding defaults to include B, UP, RUF categories"
+      - "Lazy import parsing support (preview, 0.15.6+)"
+      - "Star-unpacking of comprehensions PEP 798 (preview)"
+      - "Output formats: github, gitlab, json, text"
+      - "Docker images: distroless, alpine, debian"
+    configuration_best_practices:
+      - "Use pyproject.toml [tool.ruff] section exclusively (no standalone .ruff.toml)"
+      - "select = ['ALL'] with explicit ignore list is aggressive but comprehensive"
+      - "Set target-version to match requires-python minimum"
+      - "Use src = ['src'] for proper first-party import detection"
+      - "extend-exclude for generated code, .agents, vendored dirs"
+      - "per-file-ignores for tests (S101, D102, INP001), scripts (INP001, D100), generated code"
+      - "preview = true under [tool.ruff.lint] to opt in to expanded defaults"
+      - "explicit-preview-rules = true to opt in per-rule instead of whole categories"
+      - "convention = 'google' under [tool.ruff.lint.pydocstyle] for Google-style docstrings"
+      - "docstring-code-format = true under [tool.ruff.format]"
+    preview_mode:
+      description: >
+        Preview enables unstable features. In preview, ruff expands default selection
+        to include B (bugbear), UP (pyupgrade), RUF (ruff-specific) rules.
+        Deprecated rules are disabled in preview. Preview can be enabled separately
+        for lint vs format.
+      recommendation: >
+        Enable lint preview with explicit-preview-rules for controlled adoption.
+        Do NOT enable format preview unless testing — style changes may be unstable.
+    common_agent_mistakes:
+      - "Running ruff check without --fix when autofix is safe"
+      - "Not using --output-format=json for programmatic parsing"
+      - "Ignoring ruff format after --fix (fix output may need reformatting)"
+      - "Using deprecated rule codes without checking preview status"
+      - "Not reading ALL output lines — warnings and deprecation notices matter"
+      - "Applying --unsafe-fixes without human review"
+      - "Forgetting extend-exclude for generated/vendored code"
+    integration_with_claude_code:
+      - "Run ruff check --output-format=json for structured error parsing"
+      - "Run ruff check --fix --show-fixes to see what was auto-fixed"
+      - "Run ruff format --diff to preview formatting changes"
+      - "ruff check --statistics for rule violation summary"
+      - "Use --select/--extend-select for targeted checks"
+      - "pre-commit: ruff-check before ruff-format"
+
+  ty:
+    installed_version: "0.0.23"
+    latest_version: "0.0.25"
+    latest_release_date: "2026-03-24"
+    status: "alpha (pre-1.0, weekly releases, frequent breaking changes)"
+    key_features_2026:
+      - "10-100x faster than mypy and Pyright"
+      - "Built-in LSP server with completions, code actions, auto-import, inlay hints"
+      - "Fine-grained incremental analysis"
+      - "Configurable rule levels (ignore/warn/error)"
+      - "Per-file overrides"
+      - "Suppression comments: type: ignore[ty:code]"
+      - "Intersection types (first-class)"
+      - "Advanced type narrowing and reachability analysis"
+      - "replace-imports-with-any for gradual adoption"
+      - "allowed-unresolved-imports for suppressing known-missing modules"
+      - "Online playground at play.ty.dev"
+    configuration_best_practices:
+      - "Use [tool.ty] in pyproject.toml (or standalone ty.toml)"
+      - "[tool.ty.environment] python-version = '3.12' to match project"
+      - "[tool.ty.src] include = ['src/mde'] and exclude for generated files"
+      - "[tool.ty.rules] with explicit rule-name = 'error'|'warn'|'ignore'"
+      - "[tool.ty.analysis] allowed-unresolved-imports for third-party stubs"
+      - "[tool.ty.analysis] replace-imports-with-any for untyped deps"
+      - "respect-type-ignore-comments = true (default) for gradual migration"
+    comparison_to_alternatives:
+      pyright:
+        - "ty is 10-100x faster on large codebases (benchmarked on home-assistant)"
+        - "ty has native LSP with incremental analysis"
+        - "ty supports intersection types natively"
+        - "Pyright is more mature and has wider ecosystem support"
+        - "Pyright works with Pylance in VS Code (proprietary LSP)"
+        - "ty still alpha, Pyright is production-stable"
+      mypy:
+        - "ty is dramatically faster (Rust vs Python)"
+        - "mypy has broader plugin ecosystem"
+        - "mypy daemon mode partially addresses speed gap"
+        - "ty's gradual typing support (redeclarations) is more ergonomic"
+    breaking_changes_recent:
+      - "0.0.25: type:ignore[ty:code] suppression syntax added"
+      - "0.0.23: possibly-missing-submodule split from possibly-missing-attribute"
+      - "0.0.23: possibly-missing-attribute default changed to ignore"
+    common_agent_mistakes:
+      - "Not pinning ty version — weekly releases break configs"
+      - "Treating ty as production-stable when it is alpha"
+      - "Not excluding generated files from ty checks"
+      - "Missing allowed-unresolved-imports for third-party packages without stubs"
+      - "Not using replace-imports-with-any for untyped dependencies"
+      - "Running ty without VIRTUAL_ENV set (cannot find site-packages)"
+      - "Expecting ty output format to be stable across versions"
+    integration_with_claude_code:
+      - "ty check --output-format json for structured parsing (when available)"
+      - "ty check returns non-zero on errors, zero on warnings-only"
+      - "Use --project flag when running from worktree"
+      - "Prefix worktree commands with VIRTUAL_ENV= to suppress mismatch warning"
+
+  uv:
+    installed_version: "0.11.1"
+    latest_release_date: "2026-03-24"
+    status: stable
+    key_features_2026:
+      - "Replaces pip, pip-tools, pipx, poetry, pyenv, twine, virtualenv"
+      - "10-100x faster than pip"
+      - "Universal lockfile (uv.lock)"
+      - "Workspace support for monorepos"
+      - "Script runner with inline metadata"
+      - "Python version management (uv python install)"
+      - "Tool runner (uvx, replaces pipx)"
+      - "Build backend (uv_build)"
+      - "pip-compatible interface (uv pip)"
+    workspace_support:
+      - "Single lockfile for entire workspace"
+      - "tool.uv.workspace.members = ['packages/*'] for monorepo"
+      - "workspace = true in tool.uv.sources for inter-package deps"
+      - "uv run --package <name> to run commands in specific member"
+      - "Single requires-python intersection across workspace"
+      - "Editable installs between workspace members by default"
+    lock_file:
+      - "uv.lock is deterministic and cross-platform"
+      - "uv lock operates on entire workspace"
+      - "uv sync installs from lockfile"
+      - "Lock file format is uv-specific (not requirements.txt)"
+    mise_integration:
+      - "mise manages uv binary version"
+      - "uv manages Python packages and virtualenvs"
+      - "uv run <entry-point> is the standard invocation pattern"
+      - "mise tasks can wrap uv run commands"
+      - "VIRTUAL_ENV env var bridges uv <-> ty/pyright"
+    common_agent_mistakes:
+      - "Using 'uv run python -m module' instead of 'uv run entry-point'"
+      - "Forgetting uv lock after pyproject.toml changes"
+      - "Not using uv sync before running tools"
+      - "Confusing uv pip (compatibility) with uv project commands"
+      - "Adding deps to requirements.txt instead of pyproject.toml"
+      - "Missing tool.uv.sources for workspace member deps"
+
+agent_specialist_guidance:
+  ruff_specialist:
+    - "Always run ruff check before ruff format (fix may need reformatting)"
+    - "Use --output-format=json for machine-readable output"
+    - "Know the full ignore list rationale — each ignored rule has a documented reason"
+    - "Check preview status before suggesting new rules"
+    - "Use --statistics for high-level violation summary"
+    - "Apply --fix for safe fixes, require human approval for --unsafe-fixes"
+    - "Understand per-file-ignores patterns (tests vs scripts vs generated)"
+  ty_specialist:
+    - "Pin to exact version in mise config (breaking changes weekly)"
+    - "Maintain exclude list for generated files"
+    - "Use allowed-unresolved-imports aggressively for third-party"
+    - "Monitor ty releases for rule default changes"
+    - "Test upgrade before applying — config may need adjustment"
+    - "ty is NOT a drop-in replacement for pyright yet"
+  uv_specialist:
+    - "Always use 'uv run <entry-point>' not 'uv run python'"
+    - "Run 'uv lock' after any pyproject.toml dependency change"
+    - "Use 'uv sync' to ensure environment matches lockfile"
+    - "Understand workspace vs path dependencies tradeoffs"
+    - "Use dependency-groups for dev/test/lint separation"
+
+ecosystem_skills:
+  existing:
+    - "No dedicated ruff/ty/uv skills found on skills.sh as of 2026-03-25"
+    - "Generic Python linting skills exist but are outdated (pre-ruff era)"
+    - "lobehub has basic Python development plugins, none Astral-specific"
+  gaps:
+    - "No ty-specific agent skill exists anywhere"
+    - "No ruff agent skill with preview mode awareness"
+    - "No uv workspace management skill"
+    - "No combined Astral toolchain skill"
+  recommendation: >
+    Build a combined astral-toolchain specialist agent with deep knowledge of
+    ruff/ty/uv configuration, version tracking, and migration patterns.
+    This is a genuine gap — no existing ecosystem skill covers it.
+
+project_specific_observations:
+  ruff_config_quality: >
+    Current config is well-structured: select=ALL with documented ignore rationale,
+    comprehensive per-file-ignores, Google docstring convention. Could benefit from
+    preview mode evaluation and version bump to 0.15.7.
+  ty_config_quality: >
+    Good but incomplete: explicit rule enabling is correct approach, but
+    allowed-unresolved-imports may be needed for third-party deps. Version is 2 behind latest.
+  uv_usage: >
+    Correctly using uv run entry-points. No workspace features needed for single-package project.
+    Lock file management appears solid.

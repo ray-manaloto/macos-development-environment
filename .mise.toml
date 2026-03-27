@@ -260,12 +260,52 @@ uv run datamodel-codegen \
 cp generated/honcho_models.py src/mde/domain/honcho_models.py
 """
 
+[tasks."mde:codegen:claude-code-settings"]
+description = "Regenerate Pydantic models from LOCAL patched Claude Code settings schema (does NOT fetch upstream)"
+run = """
+uv run datamodel-codegen \
+  --input docs/schemas/claude-code-settings.schema.json \
+  --output src/mde/domain/claude_code_settings_models.py \
+  --input-file-type jsonschema \
+  --output-model-type pydantic_v2.BaseModel \
+  --target-python-version 3.12 \
+  --use-annotated \
+  --field-constraints \
+  --use-double-quotes \
+  --collapse-root-models
+uv run ruff check --fix src/mde/domain/claude_code_settings_models.py
+uv run ruff format src/mde/domain/claude_code_settings_models.py
+"""
+
+[tasks."mde:schema:fetch-upstream"]
+description = "Fetch latest SchemaStore baseline to .generated/ for comparison (does NOT overwrite local schema)"
+run = """
+mkdir -p .generated/schemas
+curl -sL "https://json.schemastore.org/claude-code-settings.json" | \
+  python3 -c "import sys,json; json.dump(json.load(sys.stdin), open('.generated/schemas/claude-code-settings-upstream.json','w'), indent=2)"
+echo "Upstream schema saved to .generated/schemas/claude-code-settings-upstream.json"
+echo "Diff: diff <(python3 -m json.tool .generated/schemas/claude-code-settings-upstream.json) <(python3 -m json.tool docs/schemas/claude-code-settings.schema.json)"
+"""
+
+[tasks."mde:codegen:agent-frontmatter"]
+description = "Regenerate agent frontmatter Pydantic model from JSON Schema"
+run = """
+uv run datamodel-codegen \
+  --input docs/schemas/agent-frontmatter.schema.json \
+  --output src/mde/hooks/_agent_frontmatter_model.py \
+  --input-file-type jsonschema \
+  --output-model-type pydantic_v2.BaseModel \
+  --target-python-version 3.12
+"""
+
 [tasks."mde:codegen:all"]
 description = "Run all codegen tasks"
 depends = [
   "mde:codegen:statusline",
   "mde:codegen:skillsmp",
   "mde:codegen:honcho",
+  "mde:codegen:claude-code-settings",
+  "mde:codegen:agent-frontmatter",
 ]
 
 [tasks."mde:lint"]
@@ -352,4 +392,5 @@ run = "scripts/clone-agent-framework-repos.sh"
 
 [tools]
 hk = "latest"
+"npm:claude-code-lint" = "latest"
 "npm:skillfish" = "latest"

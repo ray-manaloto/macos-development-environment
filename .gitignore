@@ -20,7 +20,25 @@ __pycache__/
 # Generated codegen artifacts (intermediate — copy targets are committed)
 generated/
 
+# Runtime artifacts (remember data, reports, logs — never committed)
+.generated/
+
 # Docker environment files (contain LLM API keys and passwords)
 docker/.env
 docker/memory/.env
 docker/observability/.env
+
+# Plugin/tool caches and transient state
+.claude-octopus/
+.claude/remember/
+.claude/worktrees/
+.claudelint-cache/
+.omg/
+.remember
+.vitals/
+
+# Backup archives
+*.tar.gz
+
+# Local settings (session-accumulated permissions — not committed)
+.claude/settings.local.json

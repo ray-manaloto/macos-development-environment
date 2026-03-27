@@ -6,6 +6,13 @@ not by directly modifying deployed files in ~/.
 
 from __future__ import annotations
 
+# AUTO-DISCOVERED: This hook is registered automatically by cli.py via __hook_meta__.
+# To add a new hook, create a new module in src/mde/hooks/ with __hook_meta__ — do NOT edit cli.py.
+__hook_meta__ = {
+    "help": "PreToolUse dotfile edit guard",
+    "entry": "guard_dotfile_edit",
+}
+
 import json
 import re
 import sys

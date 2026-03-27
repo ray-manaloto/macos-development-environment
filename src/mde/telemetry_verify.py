@@ -219,12 +219,12 @@ def _check_hooks_dispatch() -> list[tuple[str, str, str]]:
     Returns:
         List of (hook_name, status, detail) tuples.
     """
-    from mde.cli import _HOOKS_DISPATCH, _build_parser
+    from mde.cli import _build_parser, _discover_hooks
 
     results: list[tuple[str, str, str]] = []
     parser = _build_parser()
 
-    for hook_name in _HOOKS_DISPATCH:
+    for hook_name in _discover_hooks():
         try:
             parser.parse_args(["hooks", hook_name])
             results.append((hook_name, "OK", "has matching subparser"))

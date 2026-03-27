@@ -7,6 +7,13 @@ Always exits 0 (never blocks session start).
 
 from __future__ import annotations
 
+# AUTO-DISCOVERED: This hook is registered automatically by cli.py via __hook_meta__.
+# To add a new hook, create a new module in src/mde/hooks/ with __hook_meta__ — do NOT edit cli.py.
+__hook_meta__ = {
+    "help": "SessionStart context setup",
+    "entry": "session_start",
+}
+
 import subprocess
 import sys
 

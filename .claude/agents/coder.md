@@ -32,3 +32,5 @@ For fetching URL content (docs, references), use `npx agent-fetch "<url>" --json
 - Never save working files to the root folder
 - Never use `uv run python` -- use `uv run <entry-point>` or `uv run <tool>`
 - Check `pyproject.toml` for existing dependencies before adding new ones
+- When creating Claude Code hooks, follow `.claude/rules/hooks-auto-discovery.md`.
+  Create `src/mde/hooks/<name>.py` with `__hook_meta__`. Never edit cli.py for hooks.

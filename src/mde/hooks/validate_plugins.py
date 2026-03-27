@@ -6,6 +6,14 @@ is modified via Edit or Write tools.
 
 from __future__ import annotations
 
+# AUTO-DISCOVERED: This hook is registered automatically by cli.py via __hook_meta__.
+# To add a new hook, create a new module in src/mde/hooks/ with __hook_meta__ — do NOT edit cli.py.
+__hook_meta__ = {
+    "name": "validate-plugins",  # override: validate_plugins.py → validate-plugins
+    "help": "PostToolUse rsm-subagents validator",
+    "entry": "validate_plugins_hook",
+}
+
 import json
 import subprocess
 import sys
