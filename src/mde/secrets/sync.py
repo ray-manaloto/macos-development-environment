@@ -25,12 +25,17 @@ def sync_doppler_to_fnox(*, project: str = "dotfiles", config: str = "dev") -> i
 
     failed = 0
     for key, value in secrets.items():
-        result = subprocess.run(
-            ["fnox", "set", key, value, "--provider", "keychain", "--global"],
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
+        try:
+            result = subprocess.run(
+                ["fnox", "set", key, value, "--provider", "keychain", "--global"],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+        except subprocess.TimeoutExpired:
+            logger.bind(key=key).error("fnox_set_timeout")
+            failed += 1
+            continue
         if result.returncode != 0:
             logger.bind(key=key, stderr=result.stderr).error("fnox_set_failed")
             failed += 1
