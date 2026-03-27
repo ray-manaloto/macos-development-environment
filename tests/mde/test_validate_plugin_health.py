@@ -158,3 +158,84 @@ def test_malformed_installed_json(tmp_path: Path) -> None:
     errors = [f for f in result.findings if f.rule == "plugin-health.parse-error"]
     assert len(errors) == 1
     assert not result.passed
+
+
+def _make_lsp_plugin(plugins_dir: Path, marketplace: str, plugin: str, lsp_data: dict) -> Path:
+    """Create an LSP plugin with .lsp.json and return the plugin dir."""
+    plugin_dir = plugins_dir / "cache" / marketplace / plugin / "1.0.0"
+    plugin_dir.mkdir(parents=True, exist_ok=True)
+    (plugin_dir / ".lsp.json").write_text(json.dumps(lsp_data))
+    (plugin_dir / "plugin.json").write_text(
+        json.dumps({"name": plugin, "version": "1.0.0", "description": "test"})
+    )
+    return plugin_dir
+
+
+def _make_settings(path: Path, enabled_plugins: dict) -> Path:
+    """Write a minimal settings.json with enabledPlugins."""
+    settings = path / "settings.json"
+    settings.write_text(json.dumps({"enabledPlugins": enabled_plugins}))
+    return settings
+
+
+def test_lsp_binary_missing(tmp_path: Path) -> None:
+    """Enabled LSP plugin with missing command binary is flagged as error."""
+    pd = tmp_path / "plugins"
+    _make_installed_json(pd, {})
+    _make_lsp_plugin(
+        pd,
+        "claude-code-lsps",
+        "fake-lsp",
+        {"markdown": {"command": "nonexistent-binary-xyz-12345", "args": [], "transport": "stdio"}},
+    )
+    settings = _make_settings(tmp_path, {"fake-lsp@claude-code-lsps": True})
+
+    result = validate_plugin_health(
+        plugins_dir=pd, mcp_json_path=tmp_path / "no-mcp.json", settings_path=settings
+    )
+
+    errors = [f for f in result.findings if f.rule == "plugin-health.lsp-binary-missing"]
+    assert len(errors) == 1
+    assert "nonexistent-binary-xyz-12345" in errors[0].message
+    assert "fake-lsp" in errors[0].message
+    assert not result.passed
+
+
+def test_lsp_binary_found(tmp_path: Path) -> None:
+    """Enabled LSP plugin with available command binary passes cleanly."""
+    pd = tmp_path / "plugins"
+    _make_installed_json(pd, {})
+    _make_lsp_plugin(
+        pd,
+        "claude-code-lsps",
+        "py-lsp",
+        {"python": {"command": "python3", "args": ["--version"], "transport": "stdio"}},
+    )
+    settings = _make_settings(tmp_path, {"py-lsp@claude-code-lsps": True})
+
+    result = validate_plugin_health(
+        plugins_dir=pd, mcp_json_path=tmp_path / "no-mcp.json", settings_path=settings
+    )
+
+    errors = [f for f in result.findings if f.rule == "plugin-health.lsp-binary-missing"]
+    assert len(errors) == 0
+
+
+def test_lsp_disabled_plugin_skipped(tmp_path: Path) -> None:
+    """Disabled LSP plugin with missing binary is NOT flagged."""
+    pd = tmp_path / "plugins"
+    _make_installed_json(pd, {})
+    _make_lsp_plugin(
+        pd,
+        "claude-code-lsps",
+        "disabled-lsp",
+        {"markdown": {"command": "nonexistent-binary-xyz-99999", "args": [], "transport": "stdio"}},
+    )
+    settings = _make_settings(tmp_path, {"disabled-lsp@claude-code-lsps": False})
+
+    result = validate_plugin_health(
+        plugins_dir=pd, mcp_json_path=tmp_path / "no-mcp.json", settings_path=settings
+    )
+
+    errors = [f for f in result.findings if f.rule == "plugin-health.lsp-binary-missing"]
+    assert len(errors) == 0

@@ -1,12 +1,13 @@
 """Validate Claude Code plugin installation health.
 
 Checks for broken install paths, stale temp_git_* cache directories,
-and MCP server dedup conflicts across installed plugins.
+MCP server dedup conflicts, and missing LSP binary commands across installed plugins.
 """
 
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 from mde.models.result import ValidationResult
@@ -18,24 +19,56 @@ def validate_plugin_health(
     *,
     plugins_dir: Path | None = None,
     mcp_json_path: Path | None = None,
+    settings_path: Path | None = None,
 ) -> ValidationResult:
     """Run all plugin health checks.
 
     Args:
         plugins_dir: Override ~/.claude/plugins/ for testing.
         mcp_json_path: Override .mcp.json path for testing.
+        settings_path: Override .claude/settings.json for testing enabled plugins.
 
     Returns:
         ValidationResult with findings.
     """
     result = ValidationResult()
     pd = plugins_dir or _PLUGINS_DIR
+    enabled = _load_enabled_plugins(settings_path)
 
     _check_broken_install_paths(result, pd)
     _check_stale_temp_dirs(result, pd)
     _check_mcp_dedup(result, pd, mcp_json_path)
+    _check_lsp_binaries(result, pd, enabled)
 
     return result
+
+
+def _load_enabled_plugins(settings_path: Path | None) -> set[str] | None:
+    """Load enabled plugin names from settings.json.
+
+    Returns a set of 'name@marketplace' strings that are explicitly enabled,
+    or None if no settings file could be read (fall back to checking all plugins).
+    """
+    paths_to_try = (
+        [settings_path]
+        if settings_path
+        else [
+            Path.cwd() / ".claude" / "settings.json",
+            Path.home() / ".claude" / "settings.json",
+        ]
+    )
+
+    for sp in paths_to_try:
+        if sp and sp.exists():
+            try:
+                data = json.loads(sp.read_text(encoding="utf-8"))
+                enabled_plugins = data.get("enabledPlugins", {})
+                if isinstance(enabled_plugins, dict):
+                    return {k for k, v in enabled_plugins.items() if v is True}
+            except (json.JSONDecodeError, OSError):
+                continue
+
+    return None
 
 
 def _check_broken_install_paths(result: ValidationResult, plugins_dir: Path) -> None:
@@ -177,3 +210,71 @@ def _collect_mcp_from_hooks(servers: dict[str, list[str]], hooks_json: Path) -> 
         for server_name in data.get("mcpServers", {}):
             source = str(hooks_json.parent.parent)  # plugin dir
             servers.setdefault(server_name, []).append(source)
+
+
+def _check_lsp_binaries(
+    result: ValidationResult, plugins_dir: Path, enabled: set[str] | None
+) -> None:
+    """Find enabled LSP plugins whose command binary is not on PATH."""
+    cache_dir = plugins_dir / "cache"
+    if not cache_dir.exists():
+        return
+
+    lsp_files = list(cache_dir.rglob(".lsp.json"))
+    if not lsp_files:
+        return
+
+    result.files_checked += 1
+    missing_count = 0
+    checked_count = 0
+
+    for lsp_json in lsp_files:
+        # Derive plugin identity: cache/<marketplace>/<name>/<version>/.lsp.json
+        plugin_dir = lsp_json.parent
+        plugin_name = plugin_dir.parent.name
+        marketplace = plugin_dir.parent.parent.name
+        plugin_key = f"{plugin_name}@{marketplace}"
+
+        # Skip disabled plugins when settings are available
+        if enabled is not None and plugin_key not in enabled:
+            continue
+
+        checked_count += 1
+        missing_count += _check_single_lsp(result, lsp_json, cache_dir)
+
+    if missing_count == 0 and checked_count > 0:
+        result.add_info(
+            str(cache_dir),
+            f"All {checked_count} enabled LSP plugin binaries found on PATH",
+            rule="plugin-health.lsp-ok",
+        )
+
+
+def _check_single_lsp(result: ValidationResult, lsp_json: Path, cache_dir: Path) -> int:
+    """Check a single .lsp.json file. Return count of missing binaries."""
+    try:
+        data = json.loads(lsp_json.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return 0
+
+    if not isinstance(data, dict):
+        return 0
+
+    plugin_dir = lsp_json.parent
+    plugin_name = plugin_dir.parent.name if plugin_dir.parent != cache_dir else plugin_dir.name
+    missing = 0
+
+    for lang, config in data.items():
+        if not isinstance(config, dict):
+            continue
+        command = config.get("command", "")
+        if command and shutil.which(command) is None:
+            missing += 1
+            result.add_error(
+                str(lsp_json),
+                f"LSP plugin '{plugin_name}' command '{command}' not found on PATH "
+                f"(language: {lang})",
+                rule="plugin-health.lsp-binary-missing",
+            )
+
+    return missing

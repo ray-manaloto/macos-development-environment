@@ -1,8 +1,9 @@
 # Plugin Health Policy
 
 ## Validation
-- `uv run mde-py validate --plugins-health` checks installation health (broken paths, stale cache, MCP dedup)
+- `uv run mde-py validate --plugins-health` checks installation health (broken paths, stale cache, MCP dedup, LSP binaries)
 - Included automatically in `validate --all`
+- Only **enabled** plugins are checked for LSP binaries (reads `enabledPlugins` from settings.json)
 - Zero errors = pass; warnings for stale dirs and MCP collisions
 
 ## Error Categories
@@ -29,6 +30,20 @@ rm -rf ~/.claude/plugins/cache/<marketplace>/temp_git_*
 **Symptom**: Multiple plugins or `.mcp.json` register the same MCP server name.
 **Cause**: Plugin hooks.json and project .mcp.json both declare a server, or two plugins register the same name.
 **Fix**: Disable the duplicate source — either remove from `.mcp.json` or disable the conflicting plugin.
+
+### 4. Missing LSP Binary Commands
+**Symptom**: `/plugin` shows `spawn <binary> ENOENT` error for an LSP plugin.
+**Cause**: LSP plugin declares a `command` in `.lsp.json` but the binary is not installed on PATH.
+**Fix**:
+```bash
+# Option A: Install the missing binary
+mise use <tool>                    # if available in mise registry
+npm install -g <package>           # for node-based LSP servers
+
+# Option B: Disable the plugin if you don't need it
+# Set to false in .claude/settings.json enabledPlugins
+```
+**Note**: The validator only checks enabled plugins. Disabling a plugin in settings.json stops both the ENOENT error and the validation warning.
 
 ## Investigation Playbook
 1. Run `uv run mde-py validate --plugins-health` for automated checks
