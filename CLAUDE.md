@@ -61,6 +61,10 @@ mise fmt --check               # mise config formatting
 
 Defined in `.claude/agents/`. Use matching specialist types. Core: researcher (Haiku), coder, tester (pytest/ruff/ty), reviewer (Sonnet, read-only). Specialists: python-coder, mise-specialist, chezmoi-specialist, brew-specialist, security-auditor, claude-code-specialist, remember-specialist.
 
+## Secrets
+
+All secrets: **fnox (Keychain) -> mise (env) -> tools**. Set: `fnox set KEY --provider keychain --global`. Validate: `fnox list | grep KEY` (must show `provider (keychain)`). See `.claude/rules/secrets-management.md` for full guide.
+
 ## MCP Access
 
 Use CLI wrappers, never MCP tool schemas in context:
