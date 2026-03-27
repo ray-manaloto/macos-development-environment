@@ -1,85 +1,76 @@
 ---
-description: Enforce tiered secrets management
-globs: ["scripts/*.sh", "fnox.toml", ".env*", ".mcp.json"]
+description: Enforce Doppler-first secrets management
+globs: ["scripts/*.sh", "fnox.toml", ".env*", ".mcp.json", "src/mde/secrets/*.py"]
 ---
 
 # Secrets Management
 
 ## Architecture
 
-All secrets flow through a single chain: **fnox (Keychain) -> mise (env) -> tools (.mcp.json, scripts)**
+All secrets flow through: **Doppler (source of truth) -> sync -> fnox (Keychain cache) -> mise (env) -> tools**
 
-1. **fnox** stores secrets in macOS Keychain (encrypted, never plaintext on disk)
-2. **mise** loads them via `_.fnox-env = { tools = true }` in `~/.config/mise/config.toml`
-3. **`.mcp.json`** and other configs reference them as `${VAR_NAME}` — mise resolves at shell init
-4. **chezmoi** manages the mise config file, ensuring `_.fnox-env` persists across machines
-5. **chezmoi apply** does NOT affect Keychain entries — secrets survive config reapplication
+1. **Doppler** (project: `dotfiles`, config: `dev`) stores canonical secrets in the cloud
+2. **`uv run mde-py secrets sync`** pulls Doppler secrets into fnox/Keychain
+3. **fnox** caches secrets in macOS Keychain (encrypted, works offline)
+4. **mise** loads them via `_.fnox-env = { tools = true }` in `~/.config/mise/config.toml`
+5. **`.mcp.json`** and other configs reference them as `${VAR_NAME}` — mise resolves at shell init
+6. **chezmoi** manages the mise config file AND has `[doppler]` config for template functions
+7. **chezmoi templates** can use `{{ doppler "KEY" }}` to resolve secrets directly
 
-## Setting a new secret
+## Adding a new secret
 
 ```bash
-# CORRECT: stores in macOS Keychain, available globally via mise
-fnox set SECRET_NAME --provider keychain --global
+# 1. Add to Doppler (source of truth)
+doppler secrets set KEY=VALUE --project dotfiles --config dev
 
-# WRONG: stores as local "stored value", not in Keychain
-fnox set SECRET_NAME  # Missing --provider keychain --global
+# 2. Sync to local Keychain
+uv run mde-py secrets sync
+
+# 3. Validate parity
+uv run mde-py secrets validate
 ```
 
-Always use `--provider keychain --global` to ensure the secret is:
-- Stored in macOS Keychain (encrypted, survives reboots and chezmoi apply)
-- Available globally (not scoped to a single project's fnox.toml)
-- Loaded by mise automatically via `_.fnox-env = { tools = true }`
-
-## Getting/reading a secret
+## Reading a secret
 
 ```bash
-fnox get SECRET_NAME            # Print the value from fnox
-mise env | grep SECRET_NAME     # Verify mise resolves it
-mise exec -- bash -c 'echo $SECRET_NAME'  # Test in a fresh mise shell
+doppler secrets get KEY --project dotfiles --config dev --plain   # From Doppler
+fnox get KEY                                                       # From local Keychain
+mise env | grep KEY                                                # From mise env
+chezmoi execute-template '{{ doppler "KEY" }}'                     # From chezmoi template
 ```
 
-## Validating secrets are correctly configured
+## Validating secrets
 
 ```bash
-# 1. Check fnox has it as provider (keychain), NOT "stored value"
-fnox list | grep SECRET_NAME
-# Expected: SECRET_NAME  provider (keychain)  SECRET_NAME
-# Bad:      SECRET_NAME  stored value
-
-# 2. Check mise loads it
-mise env | grep SECRET_NAME
-# Expected: export SECRET_NAME=<value>
-
-# 3. Check it's in macOS Keychain directly
-security find-generic-password -s "SECRET_NAME" -w 2>/dev/null && echo "IN KEYCHAIN" || echo "NOT IN KEYCHAIN"
-
-# 4. Test in a fresh shell (current session may be stale)
-mise exec -- bash -c 'echo "SECRET_NAME=$SECRET_NAME"'
+uv run mde-py secrets validate    # Compare Doppler vs fnox parity
+fnox list | grep KEY               # Check local provider is (keychain)
+doppler secrets ls --project dotfiles --config dev | grep KEY      # Check Doppler has it
 ```
 
-## Fixing a mistyped secret (stored value instead of keychain)
+## One-time migration (already done)
 
 ```bash
-fnox remove SECRET_NAME                              # Remove local entry
-fnox set SECRET_NAME --provider keychain --global     # Re-add to Keychain
-fnox list | grep SECRET_NAME                          # Verify: provider (keychain)
+uv run mde-py secrets export      # fnox -> Doppler (40 secrets migrated)
+uv run mde-py secrets validate    # Verify parity
 ```
 
 ## Current secrets inventory
 
-Run `fnox list` to see all secrets. Keychain-backed entries show `provider (keychain)`.
+Run `doppler secrets ls --project dotfiles --config dev` for the canonical list.
 Key categories:
 - **LLM API keys**: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY
-- **MCP server keys**: EXA_API_KEY (used by `.mcp.json`)
+- **MCP server keys**: EXA_API_KEY
 - **Cloud/infra**: AWS_*, GITHUB_TOKEN, GITHUB_MCP_PAT
 - **Observability**: OTEL_*, GRAFANA_*, LOKI_*, MIMIR_*, TEMPO_*
-- **Age-encrypted**: OP_SERVICE_ACCOUNT_TOKEN (provider: age)
+- **Age-encrypted**: OP_SERVICE_ACCOUNT_TOKEN (fnox provider: age, not in Doppler)
 
 ## Rules
 
-- NEVER commit plaintext secrets — use fnox + Keychain
-- NEVER use `fnox set KEY` without `--provider keychain --global`
+- NEVER commit plaintext secrets — use Doppler + fnox/Keychain
+- NEVER add secrets directly to fnox without also adding to Doppler
 - NEVER add secrets to `.env` files, shell profiles, or mise `[env]` blocks
 - `.mcp.json` secrets use `${VAR_NAME}` syntax — mise resolves them from fnox/Keychain
+- New secrets go to Doppler FIRST, then `uv run mde-py secrets sync`
 - For AI agent access to secrets: `fnox mcp`
 - Backup tier: age + sops for git-safe encrypted values (fnox.toml with `provider (age)`)
+- Doppler meta keys (DOPPLER_CONFIG, DOPPLER_ENVIRONMENT, DOPPLER_PROJECT) are auto-injected and excluded from parity validation

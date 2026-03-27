@@ -63,7 +63,7 @@ Defined in `.claude/agents/`. Use matching specialist types. Core: researcher (H
 
 ## Secrets
 
-All secrets: **fnox (Keychain) -> mise (env) -> tools**. Set: `fnox set KEY --provider keychain --global`. Validate: `fnox list | grep KEY` (must show `provider (keychain)`). See `.claude/rules/secrets-management.md` for full guide.
+All secrets: **Doppler (source of truth) -> sync -> fnox (Keychain cache) -> mise (env) -> tools**. New secrets: `doppler secrets set KEY=VAL --project dotfiles --config dev`, then `uv run mde-py secrets sync`. Validate: `uv run mde-py secrets validate`. See `.claude/rules/secrets-management.md` for full guide.
 
 ## MCP Access
 
