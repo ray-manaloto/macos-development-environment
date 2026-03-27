@@ -144,6 +144,11 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
         help="Plugin validation only",
     )
     validate_p.add_argument(
+        "--plugins-health",
+        action="store_true",
+        help="Plugin installation health only (broken paths, stale cache, MCP dedup)",
+    )
+    validate_p.add_argument(
         "--evaluations",
         action="store_true",
         help="Research evaluation completeness only",
@@ -360,6 +365,7 @@ def _cmd_validate(args: argparse.Namespace) -> int:
                 package_managers_only=getattr(args, "package_managers", False),
                 skills_only=args.skills,
                 plugins_only=args.plugins,
+                plugins_health_only=getattr(args, "plugins_health", False),
             )
         ctx["result"] = result
         return result

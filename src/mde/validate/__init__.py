@@ -13,6 +13,7 @@ from mde.validate.json_validator import validate_json_files
 from mde.validate.memory import validate_memory
 from mde.validate.mise import validate_mise
 from mde.validate.package_managers import validate_package_managers
+from mde.validate.plugin_health import validate_plugin_health
 from mde.validate.plugins import validate_plugins
 from mde.validate.shell import validate_shell_scripts
 from mde.validate.skill_frontmatter import validate_skill_frontmatter
@@ -32,6 +33,7 @@ def validate_all(
     package_managers_only: bool = False,
     skills_only: bool = False,
     plugins_only: bool = False,
+    plugins_health_only: bool = False,
 ) -> int:
     """Run validators and return exit code.
 
@@ -44,6 +46,7 @@ def validate_all(
         package_managers_only: Only run package manager dedup validation.
         skills_only: Only run skill frontmatter validation.
         plugins_only: Only run rsm-subagents plugin validation.
+        plugins_health_only: Only run plugin installation health checks.
 
     Returns:
         0 if all checks pass, 1 otherwise.
@@ -61,6 +64,8 @@ def validate_all(
         result.merge(validate_skill_frontmatter())
     elif plugins_only:
         result.merge(validate_plugins())
+    elif plugins_health_only:
+        result.merge(validate_plugin_health())
     else:
         # Full validation
         result.merge(validate_toml_files(fix=fix))
@@ -76,6 +81,7 @@ def validate_all(
         result.merge(validate_skill_sync())
 
         result.merge(validate_plugins())
+        result.merge(validate_plugin_health())
 
         if not configs_only:
             result.merge(validate_shell_scripts())
