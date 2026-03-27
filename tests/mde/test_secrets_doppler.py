@@ -99,3 +99,48 @@ class TestDopplerSetSecrets:
                 config="dev",
             )
         assert result == 1
+
+
+class TestExportFnoxToDoppler:
+    """Tests for export_fnox_to_doppler."""
+
+    def test_exports_keychain_secrets_to_doppler(self) -> None:
+        """Exports only keychain-provider secrets to Doppler, skipping age entries."""
+        mock_fnox_list = (
+            " OPENAI_API_KEY   provider (keychain)  OPENAI_API_KEY\n"
+            " GEMINI_API_KEY   provider (keychain)  GEMINI_API_KEY\n"
+            " OP_TOKEN         provider (age)       OP_TOKEN\n"
+        )
+        with (
+            patch("mde.secrets.export_to_doppler.subprocess.run") as mock_run,
+            patch("mde.secrets.export_to_doppler.doppler_set_secrets") as mock_set,
+        ):
+            mock_run.side_effect = [
+                MagicMock(returncode=0, stdout=mock_fnox_list),  # fnox list
+                MagicMock(returncode=0, stdout="sk-abc123\n"),  # fnox get OPENAI
+                MagicMock(returncode=0, stdout="key-xyz789\n"),  # fnox get GEMINI
+            ]
+            mock_set.return_value = 0
+            from mde.secrets.export_to_doppler import export_fnox_to_doppler
+
+            result = export_fnox_to_doppler()
+        assert result == 0
+        mock_set.assert_called_once()
+        secrets_arg = mock_set.call_args[0][0]
+        assert "OPENAI_API_KEY" in secrets_arg
+        assert "GEMINI_API_KEY" in secrets_arg
+        assert "OP_TOKEN" not in secrets_arg  # age provider should be excluded
+
+    def test_returns_one_when_fnox_list_fails(self) -> None:
+        """Returns exit code 1 when fnox list fails."""
+        with (
+            patch("mde.secrets.export_to_doppler.subprocess.run") as mock_run,
+            patch("mde.secrets.export_to_doppler.doppler_set_secrets"),
+        ):
+            mock_run.return_value = MagicMock(
+                returncode=1, stdout="", stderr="fnox: command failed"
+            )
+            from mde.secrets.export_to_doppler import export_fnox_to_doppler
+
+            result = export_fnox_to_doppler()
+        assert result == 1

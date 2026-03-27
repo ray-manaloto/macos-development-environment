@@ -20,4 +20,8 @@ def dispatch_secrets(action: str) -> int:
         from mde.secrets.smoke import run_smoke_test
 
         return run_smoke_test()
+    if action == "export":
+        from mde.secrets.export_to_doppler import export_fnox_to_doppler
+
+        return export_fnox_to_doppler()
     return 1

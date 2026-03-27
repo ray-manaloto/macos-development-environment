@@ -184,7 +184,7 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
 
     # secrets
     secrets_p = sub.add_parser("secrets", help="Secrets management")
-    secrets_p.add_argument("action", choices=["refresh", "smoke"], help="Secrets action")
+    secrets_p.add_argument("action", choices=["refresh", "smoke", "export"], help="Secrets action")
 
     # learn
     learn_p = sub.add_parser("learn", help="Learning system")
