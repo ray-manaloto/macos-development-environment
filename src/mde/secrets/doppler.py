@@ -42,7 +42,11 @@ def doppler_list_secrets(*, project: str = _PROJECT, config: str = _CONFIG) -> d
     if result.returncode != 0:
         logger.bind(stderr=result.stderr).error("doppler_list_failed")
         return {}
-    return json.loads(result.stdout)
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        logger.bind(stdout=result.stdout).error("doppler_list_invalid_json")
+        return {}
 
 
 def doppler_get_secret(key: str, *, project: str = _PROJECT, config: str = _CONFIG) -> str | None:
@@ -64,6 +68,7 @@ def doppler_get_secret(key: str, *, project: str = _PROJECT, config: str = _CONF
         timeout=15,
     )
     if result.returncode != 0:
+        logger.bind(stderr=result.stderr).error("doppler_get_failed")
         return None
     return result.stdout.strip()
 
