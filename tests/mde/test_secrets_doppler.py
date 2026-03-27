@@ -258,6 +258,26 @@ class TestValidateSecretsParity:
             result = validate_secrets_parity()
         assert result == 1
 
+    def test_ignores_doppler_meta_keys(self) -> None:
+        """Doppler meta keys (DOPPLER_CONFIG etc.) are excluded from parity check."""
+        fnox_output = " KEY1   provider (keychain)  KEY1\n"
+        with (
+            patch("mde.secrets.validate_parity.is_doppler_available", return_value=True),
+            patch("mde.secrets.validate_parity.doppler_list_secrets") as mock_list,
+            patch("mde.secrets.validate_parity.subprocess.run") as mock_run,
+        ):
+            mock_list.return_value = {
+                "KEY1": "val1",
+                "DOPPLER_CONFIG": "dev",
+                "DOPPLER_ENVIRONMENT": "dev",
+                "DOPPLER_PROJECT": "dotfiles",
+            }
+            mock_run.return_value = MagicMock(returncode=0, stdout=fnox_output)
+            from mde.secrets.validate_parity import validate_secrets_parity
+
+            result = validate_secrets_parity()
+        assert result == 0
+
 
 class TestSyncDopplerToFnox:
     """Tests for sync_doppler_to_fnox."""

@@ -7,6 +7,9 @@ import subprocess
 from mde.log import logger
 from mde.secrets.doppler import doppler_list_secrets, is_doppler_available
 
+# Doppler auto-injects these meta keys; exclude from parity checks.
+_DOPPLER_META = frozenset({"DOPPLER_CONFIG", "DOPPLER_ENVIRONMENT", "DOPPLER_PROJECT"})
+
 
 def validate_secrets_parity(*, project: str = "dotfiles", config: str = "dev") -> int:
     """Compare Doppler secrets against fnox/Keychain entries.
@@ -18,7 +21,7 @@ def validate_secrets_parity(*, project: str = "dotfiles", config: str = "dev") -
         logger.error("doppler_not_available")
         return 1
 
-    doppler_keys = set(doppler_list_secrets(project=project, config=config).keys())
+    doppler_keys = set(doppler_list_secrets(project=project, config=config).keys()) - _DOPPLER_META
     if not doppler_keys:
         logger.error("validate_no_doppler_secrets")
         return 1
