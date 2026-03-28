@@ -23,14 +23,22 @@ GIT_TERMINAL_PROMPT = "0"
 NOTEBOOKLM_HOME = "~/.notebooklm"
 
 {{ if eq .chezmoi.os "darwin" -}}
+{{   $brewPrefix := "/opt/homebrew" -}}
+{{   if eq .chezmoi.arch "amd64" -}}
+{{     $brewPrefix = "/usr/local" -}}
+{{   end -}}
+{{   $llvmPrefix := printf "%s/opt/llvm" $brewPrefix -}}
+{{   if stat $llvmPrefix -}}
 # LLVM/Clang: Homebrew's latest LLVM (clang-format, clang-tidy, lldb, lld included)
 # Brew formula: https://formulae.brew.sh/formula/llvm (keg-only, needs explicit paths)
-_.path = ["/opt/homebrew/opt/llvm/bin"]
-CC = "/opt/homebrew/opt/llvm/bin/clang"
-CXX = "/opt/homebrew/opt/llvm/bin/clang++"
-LDFLAGS = "-L/opt/homebrew/opt/llvm/lib -L/opt/homebrew/opt/llvm/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++"
-CPPFLAGS = "-I/opt/homebrew/opt/llvm/include"
-PKG_CONFIG_PATH = "/opt/homebrew/opt/llvm/lib/pkgconfig"
+# Prefix is arch-aware: arm64=/opt/homebrew, amd64=/usr/local
+_.path = ["{{ $llvmPrefix }}/bin"]
+CC = "{{ $llvmPrefix }}/bin/clang"
+CXX = "{{ $llvmPrefix }}/bin/clang++"
+LDFLAGS = "-L{{ $llvmPrefix }}/lib -L{{ $llvmPrefix }}/lib/c++ -Wl,-rpath,{{ $llvmPrefix }}/lib/c++"
+CPPFLAGS = "-I{{ $llvmPrefix }}/include"
+PKG_CONFIG_PATH = "{{ $llvmPrefix }}/lib/pkgconfig"
+{{   end -}}
 {{ end -}}
 
 [tools]
