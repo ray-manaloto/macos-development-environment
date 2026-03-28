@@ -127,3 +127,66 @@ def test_detect_platform_matches_system() -> None:
         assert result.endswith("-arm64"), f"Expected *-arm64, got {result}"
     elif machine in ("x86_64", "amd64"):
         assert result.endswith("-x64"), f"Expected *-x64, got {result}"
+
+
+def test_run_mise_lock_logs_and_returns_first_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """_run_mise_lock logs failures and propagates a non-zero exit code."""
+    from mde.maintain import update
+
+    monkeypatch.setattr(update.shutil, "which", lambda _: "/usr/bin/mise")
+    monkeypatch.setattr(update, "_detect_platform", lambda: "macos-arm64")
+
+    responses = iter(
+        [
+            subprocess.CompletedProcess(["mise", "lock", "--platform", "macos-arm64"], 23),
+            subprocess.CompletedProcess(
+                ["mise", "lock", "--global", "--platform", "macos-arm64"],
+                0,
+            ),
+        ]
+    )
+
+    def fake_run(command: list[str], *, timeout: int) -> subprocess.CompletedProcess[str]:
+        assert timeout == 120
+        assert command[0:2] == ["mise", "lock"]
+        return next(responses)
+
+    monkeypatch.setattr(update.subprocess, "run", fake_run)
+
+    result = update._run_mise_lock()
+
+    assert result == 23
+    captured = capsys.readouterr()
+    assert "mise lock --platform macos-arm64 exited 23" in captured.out
+
+
+def test_run_mise_lock_logs_exceptions(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """_run_mise_lock logs exceptions instead of swallowing them silently."""
+    from mde.maintain import update
+
+    monkeypatch.setattr(update.shutil, "which", lambda _: "/usr/bin/mise")
+    monkeypatch.setattr(update, "_detect_platform", lambda: "macos-arm64")
+
+    calls = {"count": 0}
+
+    def fake_run(command: list[str], *, timeout: int) -> subprocess.CompletedProcess[str]:
+        del timeout
+        calls["count"] += 1
+        if calls["count"] == 1:
+            message = "boom"
+            raise OSError(message)
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(update.subprocess, "run", fake_run)
+
+    result = update._run_mise_lock()
+
+    assert result == 1
+    captured = capsys.readouterr()
+    assert "mise lock --platform macos-arm64 failed: boom" in captured.out

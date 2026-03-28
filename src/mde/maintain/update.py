@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import shutil
 import subprocess
 from typing import TYPE_CHECKING
@@ -90,9 +89,12 @@ def _run_brew_update() -> int:
 def _run_mise_self_update() -> int:
     if not shutil.which("mise"):
         return 0
-    with contextlib.suppress(subprocess.TimeoutExpired, OSError):
-        subprocess.run(["mise", "self-update", "--yes"], timeout=120)
-    return 0
+    try:
+        proc = subprocess.run(["mise", "self-update", "--yes"], timeout=120)
+    except (subprocess.TimeoutExpired, OSError):
+        return 1
+    else:
+        return proc.returncode
 
 
 def _run_mise_upgrade() -> int:
@@ -114,17 +116,32 @@ def _run_mise_lock() -> int:
     The --platform flag limits lock to the current machine's platform,
     avoiding unnecessary checksum resolution for linux/windows platforms
     that this macOS machine will never use.
+
+    Logs failures for each lock command and returns the first non-zero
+    exit code encountered so the caller can surface the failure.
     """
     if not shutil.which("mise"):
         return 0
     platform = _detect_platform()
-    # Update project lockfile (current platform only)
-    with contextlib.suppress(subprocess.TimeoutExpired, OSError):
-        subprocess.run(["mise", "lock", "--platform", platform], timeout=120)
-    # Update global lockfile (current platform only)
-    with contextlib.suppress(subprocess.TimeoutExpired, OSError):
-        subprocess.run(["mise", "lock", "--global", "--platform", platform], timeout=120)
-    return 0
+    commands = [
+        ["mise", "lock", "--platform", platform],
+        ["mise", "lock", "--global", "--platform", platform],
+    ]
+    return_code = 0
+    for command in commands:
+        command_label = " ".join(command)
+        try:
+            proc = subprocess.run(command, timeout=120)
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            print(f"  {command_label} failed: {exc}")
+            if return_code == 0:
+                return_code = 1
+            continue
+        if proc.returncode != 0:
+            print(f"  {command_label} exited {proc.returncode}")
+            if return_code == 0:
+                return_code = proc.returncode
+    return return_code
 
 
 def _detect_platform() -> str:
@@ -145,9 +162,12 @@ def _detect_platform() -> str:
 def _run_mise_reshim() -> int:
     if not shutil.which("mise"):
         return 0
-    with contextlib.suppress(subprocess.TimeoutExpired, OSError):
-        subprocess.run(["mise", "reshim"], timeout=60)
-    return 0
+    try:
+        proc = subprocess.run(["mise", "reshim"], timeout=60)
+    except (subprocess.TimeoutExpired, OSError):
+        return 1
+    else:
+        return proc.returncode
 
 
 def _run_mise_install() -> int:
@@ -175,6 +195,9 @@ def _run_mise_doctor() -> int:
 def _run_chezmoi_apply() -> int:
     if not shutil.which("chezmoi"):
         return 0
-    with contextlib.suppress(subprocess.TimeoutExpired, OSError):
-        subprocess.run(["chezmoi", "apply", "--force"], timeout=120)
-    return 0
+    try:
+        proc = subprocess.run(["chezmoi", "apply", "--force"], timeout=120)
+    except (subprocess.TimeoutExpired, OSError):
+        return 1
+    else:
+        return proc.returncode
