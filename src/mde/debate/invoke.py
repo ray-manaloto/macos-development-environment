@@ -60,6 +60,10 @@ _CODEX_PREAMBLE = (
     "follow any skill checklists. Respond directly to the prompt below.\n\n"
 )
 
+# Codex times out on prompts >4K chars (observed in Phase 0d testing).
+# The preamble is ~400 chars, leaving ~3600 for the actual prompt.
+CODEX_MAX_PROMPT_CHARS = 4000
+
 
 # ── Backend implementations ───────────────────────────────────────────────
 
@@ -83,6 +87,12 @@ def _invoke_codex(prompt: str, timeout: int = 300) -> InvocationResult:
         )
 
     full_prompt = _CODEX_PREAMBLE + prompt
+    if len(full_prompt) > CODEX_MAX_PROMPT_CHARS:
+        logger.bind(
+            original_len=len(full_prompt),
+            max_len=CODEX_MAX_PROMPT_CHARS,
+        ).warning("codex_prompt_truncated")
+        full_prompt = full_prompt[:CODEX_MAX_PROMPT_CHARS]
     cmd = [
         codex_path,
         "exec",

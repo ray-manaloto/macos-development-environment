@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from mde.debate.invoke import (
+    CODEX_MAX_PROMPT_CHARS,
     DebateModel,
     InvocationResult,
     _extract_gemini_json,
@@ -384,3 +385,45 @@ class TestGeminiIsolatedEnv:
         call_kwargs = mock_run.call_args[1]
         env = call_kwargs.get("env", {})
         assert "GEMINI_CLI_SYSTEM_SETTINGS_PATH" in env
+
+
+# ── Codex prompt truncation guard ────────────────────────────────────────
+
+
+class TestCodexPromptTruncation:
+    """Test that codex prompts are truncated to prevent timeout."""
+
+    def test_max_prompt_chars_constant_exists(self) -> None:
+        assert CODEX_MAX_PROMPT_CHARS == 4000
+
+    @patch("mde.debate.invoke.subprocess.run")
+    @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/codex")
+    def test_long_prompt_is_truncated(self, mock_which: MagicMock, mock_run: MagicMock) -> None:
+        _ = mock_which
+        mock_run.return_value = MagicMock(
+            returncode=0, stdout="response\ntokens used\n100\n", stderr=""
+        )
+        from mde.debate.invoke import _invoke_codex
+
+        long_prompt = "x" * 5000
+        _invoke_codex(long_prompt)
+        # The full_prompt (preamble + prompt) passed to the command should be truncated
+        cmd = mock_run.call_args[0][0]
+        # Last positional arg is the prompt
+        actual_prompt = cmd[-1]
+        assert len(actual_prompt) <= CODEX_MAX_PROMPT_CHARS
+
+    @patch("mde.debate.invoke.subprocess.run")
+    @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/codex")
+    def test_short_prompt_not_truncated(self, mock_which: MagicMock, mock_run: MagicMock) -> None:
+        _ = mock_which
+        mock_run.return_value = MagicMock(
+            returncode=0, stdout="response\ntokens used\n100\n", stderr=""
+        )
+        from mde.debate.invoke import _invoke_codex
+
+        short_prompt = "Review this code"
+        _invoke_codex(short_prompt)
+        cmd = mock_run.call_args[0][0]
+        actual_prompt = cmd[-1]
+        assert "Review this code" in actual_prompt
