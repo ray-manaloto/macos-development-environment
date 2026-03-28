@@ -568,3 +568,58 @@ See deep review: `docs/research/trail/deep-reviews/python-docker-packaging-strat
 - No official guidance on subprocess agent orchestration (community filled gap with Maestro)
 - Enterprise policy/permission model not publicly detailed
 
+
+---
+
+## Chezmoi Documentation Review (2026-03-28)
+
+| # | Source | URL | Type | Finding |
+|---|--------|-----|------|---------|
+| 1 | chezmoi reference | https://www.chezmoi.io/reference/configuration-file/warnings/ | REFERENCE — Warnings system with [warnings] section configuration; only configFileTemplateHasChanged currently documented (default: true) | CONFIRMED |
+| 2 | chezmoi reference | https://www.chezmoi.io/reference/commands/doctor/ | REFERENCE — Problem detection tool with --no-network flag; first step for troubleshooting per FAQ | CONFIRMED |
+| 3 | chezmoi reference | https://www.chezmoi.io/reference/commands/verify/ | REFERENCE — Exit code validation (0=success, 1=mismatch); supports --exclude/--include types, --init, --parent-dirs, --recursive | CONFIRMED |
+| 4 | chezmoi user guide | https://www.chezmoi.io/user-guide/daily-operations/ | TUTORIAL — Edit workflows (edit, edit --apply, edit --watch); update pattern; git auto-commit/autoPush config; one-liner install; --one-shot for ephemeral envs | CONFIRMED |
+| 5 | chezmoi user guide | https://www.chezmoi.io/user-guide/include-files-from-elsewhere/ | TUTORIAL — .chezmoiexternal.toml for importing external repos (archives, git repos); supports Oh My Zsh, plugins, powerlevel10k patterns | CONFIRMED |
+| 6 | chezmoi user guide | https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/ | TUTORIAL — run_/run_onchange_/run_once_ script types; .chezmoiscripts directory; .tmpl templating; scriptEnv section; state management (entryState/scriptState buckets) | CONFIRMED |
+| 7 | chezmoi user guide | https://www.chezmoi.io/user-guide/machines/general/ | TUTORIAL — Template patterns for laptop/desktop detection, CPU core/thread detection cross-platform; macOS uses system_profiler, Linux uses hostnamectl, Windows uses PowerShell | CONFIRMED |
+| 8 | chezmoi user guide | https://www.chezmoi.io/user-guide/machines/macos/ | TUTORIAL — brew bundle integration via run_onchange_before_install-packages-darwin.sh.tmpl; scutil for stable ComputerName; sw_vers for version-triggered scripts | CONFIRMED |
+| 9 | chezmoi user guide | https://www.chezmoi.io/user-guide/advanced/install-packages-declaratively/ | TUTORIAL — .chezmoidata/packages.yaml declarative pattern; run_onchange_darwin-install-packages.sh.tmpl triggers on data changes | CONFIRMED |
+| 10 | chezmoi user guide | https://www.chezmoi.io/user-guide/advanced/use-chezmoi-with-watchman/ | TUTORIAL — Watchman integration for auto-apply on source changes; limitations: non-interactive, password manager env vars, background execution constraints | CONFIRMED |
+| 11 | chezmoi FAQ | https://www.chezmoi.io/user-guide/frequently-asked-questions/troubleshooting/ | REFERENCE — chezmoi doctor first-step troubleshooting; --verbose/--debug flags; LESS=-R for color fixes; script idempotency requirements | CONFIRMED |
+
+### Gap Analysis: mde Project Integration Opportunities
+
+**HIGH PRIORITY (Roadmap Impact)**
+1. **State API wrapper** — Python module to reset run_onchange_/run_once_ state programmatically (chezmoi state delete-bucket --bucket=entryState|scriptState)
+2. **Watchman auto-sync** — Replace manual chezmoi apply triggers with file watching; requires password manager env-var lifecycle management
+3. **Machine-specific templates** — Migrate sysctl/system_profiler calls to chezmoi template functions (laptop/desktop, CPU detection); simplify config.toml.tmpl
+4. **Declarative packages via .chezmoidata** — Move from Brewfile.tmpl imperative here-docs to .chezmoidata/packages.yaml + run_onchange_ (separation of data/logic)
+
+**MEDIUM PRIORITY (Maintainability)**
+5. **External includes (.chezmoiexternal)** — Import shared plugin configs, tool manifests across machines; version-locked external dependencies
+6. **Script environment variables (scriptEnv)** — Chezmoi-specific secrets without polluting shell env
+7. **Template SHA256 checksums** — Embed file hashes in run_onchange_ comments for change-triggered scripts
+8. **Verbose doctor output parsing** — Expose chezmoi doctor warnings as Python objects for programmatic validation
+
+**LOW PRIORITY (Nice-to-have)**
+9. Edit workflows (edit --apply, edit --watch) — Interactive dotfile editing skill
+10. Commit message templating — Custom prompts for auto-commit messages
+11. Status/diff exclusions — Hide scripts from chezmoi status output
+
+See finding-chezmoi-gap-analysis-2026-03-28.yaml for detailed analysis.
+
+---
+
+## Mise & hk Documentation (2026-03-28)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | mise doctor CLI | https://mise.jdx.dev/cli/doctor.html | IMPLEMENTED — Project calls mise doctor via subprocess in validate pipeline; parses "N warning/problem/error found" headers and captures numbered findings. Exits non-zero if issues found. | CONFIRMED |
+| [x] | mise direnv integration | https://mise.jdx.dev/direnv.html | INSTALLED BUT UNDOCUMENTED — direnv v2.37.1 present in project; no .envrc file. Integration pattern: "use mise" in .envrc for lazy loading; MISE_ENV_CACHE=1 for fnox secret optimization. Potential conflict with fnox activate. | GAP |
+| [x] | hk validate CLI | https://hk.jdx.dev/cli/validate.html | WORKS BUT MISSING FROM VALIDATE PIPELINE — `hk validate` exits 0 with "hk.pkl is valid"; NOT called in mde/validate/__init__.py. Pre-commit hook runs hk automatically, but validation pipeline never checks hk.pkl explicitly. | GAP |
+| [x] | hk mise integration | https://hk.jdx.dev/mise_integration.html | PATTERN REFERENCE — hk can run as mise task; project defines [tasks."mde:validate"] but calls Python code instead of hk check for structural validation. Opportunity to delegate hook validation to hk via mise task. | OPPORTUNITY |
+| [x] | hk builtins | https://hk.jdx.dev/builtins.html | 178 BUILTINS AVAILABLE, 3 USED — Project uses ruff, ruff_format, shellcheck. Unused: prettier (docs markdown), markdown_lint, yamllint (YAML), typos (spelling), go_fmt, etc. hk.pkl has no [profiles] section for slow/fast optimization. | GAP |
+
+**Summary**: mise doctor is correctly integrated; hk validate and builtins are available but underutilized. direnv is installed but integration with fnox unclear. hk.pkl amends v1.38.0 while running v1.39.0 (potential drift).
+
+See finding-mise-hk-gap-analysis-2026-03-28.yaml for detailed priority recommendations (5 action items).

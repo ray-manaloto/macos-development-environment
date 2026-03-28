@@ -157,9 +157,10 @@ def _find_foreign_platforms(lock_path: Path, current: str) -> set[str]:
 def _check_mise_doctor(result: ValidationResult) -> None:
     """Run mise doctor for health checks.
 
-    Parses the summary/problem sections from mise doctor output.
+    Parses the summary sections from mise doctor output.
     mise doctor uses three severity categories: warning, problem, error.
-    All are surfaced as ERROR findings — nothing is filtered.
+    All three are matched in "found:" headers and surfaced as ERROR
+    findings — nothing is filtered.
 
     If mise doctor exits non-zero, that alone is an error even if no
     keywords matched (guards against output format changes).
@@ -192,8 +193,10 @@ def _check_mise_doctor(result: ValidationResult) -> None:
             line_lower = line.lower()
             stripped = line.strip()
 
-            # Track when we've passed a "N warning/problem found:" header
-            if "found:" in line_lower and ("warning" in line_lower or "problem" in line_lower):
+            # Track when we've passed a "N warning/problem/error found:" header
+            if "found:" in line_lower and (
+                "warning" in line_lower or "problem" in line_lower or "error" in line_lower
+            ):
                 # Skip "No problems found" — success message
                 if "no" in line_lower and "found" in line_lower:
                     continue

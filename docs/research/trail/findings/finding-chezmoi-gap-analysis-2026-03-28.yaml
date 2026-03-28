@@ -1,0 +1,155 @@
+id: finding-chezmoi-gap-analysis-2026-03-28
+timestamp: "2026-03-28T22:58:00Z"
+source: "https://www.chezmoi.io/reference/configuration-file/warnings/, https://www.chezmoi.io/reference/commands/doctor/, https://www.chezmoi.io/reference/commands/verify/, https://www.chezmoi.io/user-guide/daily-operations/, https://www.chezmoi.io/user-guide/include-files-from-elsewhere/, https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/, https://www.chezmoi.io/user-guide/machines/general/, https://www.chezmoi.io/user-guide/machines/macos/, https://www.chezmoi.io/user-guide/advanced/install-packages-declaratively/, https://www.chezmoi.io/user-guide/advanced/use-chezmoi-with-watchman/, https://www.chezmoi.io/user-guide/frequently-asked-questions/troubleshooting/"
+agent: researcher
+finding_type: gap-analysis
+confidence: confirmed
+title: "Chezmoi Documentation Gap Analysis for macOS Development Environment"
+
+key_features_discovered:
+  warnings_system:
+    - "Configurable via [warnings] section in ~/.config/chezmoi/chezmoi.toml"
+    - "Only one warning currently documented: configFileTemplateHasChanged (default: true)"
+    - "Can suppress individual warnings per TOML config"
+
+  doctor_command:
+    - "Detects potential problems in chezmoi setup"
+    - "Supports --no-network flag to skip network checks"
+    - "Key diagnostic tool for troubleshooting (referenced as first step in FAQ)"
+
+  verify_command:
+    - "Exit code 0 (success) if all targets match target state, 1 (failure) if divergence"
+    - "Supports --exclude <types> to skip specific entry types (scripts, encrypted, etc.)"
+    - "Supports --include <types> to check only specific types"
+    - "--init flag regenerates config file from template before verifying"
+    - "--parent-dirs flag recursively verifies parent directories"
+    - "--recursive (enabled by default) for subdirectory traversal"
+
+  daily_operations:
+    - "chezmoi edit --apply: auto-run apply when editor exits"
+    - "chezmoi edit --watch: auto-run apply on file save"
+    - "chezmoi update: git pull + apply in single command"
+    - "chezmoi diff: preview changes before apply"
+    - "[git] section: autoCommit, autoPush, commitMessageTemplate config"
+    - "commitMessageTemplateFile for multi-line commit messages"
+    - "One-liner install: sh -c \"$(curl -fsLS get.chezmoi.io)\" -- init --apply $USER"
+    - "--one-shot flag for ephemeral environments (removes all traces post-apply)"
+
+  include_files_from_elsewhere:
+    - ".chezmoiexternal.toml/.json/.yaml for importing external sources"
+    - "Supports type=archive (tar.gz, zip), type=git-repository, etc."
+    - "exact=true for exact matching of external files"
+    - "Can include Oh My Zsh, plugins, powerlevel10k patterns"
+
+  scripts_system:
+    - "run_ prefix: executed every apply"
+    - "run_onchange_: only if content hash changed"
+    - "run_once_: executed once per unique content (SHA256 tracked)"
+    - "before_/after_ attributes for script ordering (e.g., run_once_before_install.sh)"
+    - ".chezmoiscripts directory: scripts executed without corresponding target state"
+    - "Scripts with .tmpl suffix are templated; blank output prevents execution"
+    - "scriptEnv [section] for extra environment variables"
+    - "Environment: CHEZMOI=1, CHEZMOI_OS, CHEZMOI_ARCH set automatically"
+    - "diff.exclude=[\"scripts\"] to hide scripts from chezmoi diff output"
+    - "status.exclude=[\"scripts\"] to hide scripts from chezmoi status output"
+    - "chezmoi state delete-bucket --bucket=entryState: clear run_onchange_ state"
+    - "chezmoi state delete-bucket --bucket=scriptState: clear run_once_ state"
+
+  machine_specific_config:
+    - "Template functions for chassis type detection (laptop/desktop)"
+    - "CPU core/thread detection via system_profiler (macOS), hostnamectl (Linux), PowerShell (Windows)"
+    - "scutil --get ComputerName for stable macOS hostname (vs. hostname which varies by network)"
+    - "sw_vers --buildVersion for macOS version detection in run_onchange_ scripts"
+
+  macos_specific:
+    - "brew bundle integration via run_onchange_before_install-packages-darwin.sh.tmpl"
+    - "Brewfile embedded as bash here-document in script"
+    - "Script re-runs when package list changes (content hash detection)"
+
+  package_installation:
+    - ".chezmoidata/packages.yaml for declarative package lists"
+    - "run_onchange_darwin-install-packages.sh.tmpl template-driven package installation"
+    - "Triggers on .chezmoidata changes (declarative simulation)"
+
+  watchman_integration:
+    - "Automatic chezmoi apply --force on source directory changes"
+    - "Limitations: non-interactive (can't prompt), password manager session mgmt, background execution"
+    - "Setup: watchman watch + watchman trigger with chezmoi apply --force"
+    - "watchman shutdown-server to stop monitoring"
+
+config_options_available:
+  chezmoi_toml:
+    - "[warnings] configFileTemplateHasChanged = false"
+    - "[git] autoCommit = true, autoPush = true, commitMessageTemplate, commitMessageTemplateFile"
+    - "[scriptEnv] <VAR> = <value>"
+    - "[diff] exclude = [\"scripts\"]"
+    - "[status] exclude = [\"scripts\"]"
+
+  template_data:
+    - ".chezmoi.os, .chezmoi.arch"
+    - ".chezmoi.sourceDir, .chezmoi.homeDir"
+    - "Template functions: output(), contains(), include(), joinPath(), quote(), atoi(), trim()"
+
+  cli_flags:
+    - "chezmoi verify --exclude=<types>, --include=<types>, --init, --parent-dirs, --recursive"
+    - "chezmoi edit --apply, --watch"
+    - "chezmoi doctor --no-network"
+    - "chezmoi apply --force (suppress prompts)"
+    - "chezmoi state delete-bucket --bucket=<name>"
+
+warning_and_error_handling:
+  mechanisms:
+    - "configFileTemplateHasChanged: warns when config file template structure changes"
+    - "chezmoi doctor: automated problem detection (3-level: ok/warning/error)"
+    - "--verbose, --debug flags for troubleshooting"
+    - "LESS=-R env var to fix color output in diffs"
+    - "Script idempotency requirement (run_, run_onchange_, run_once_ must be idempotent)"
+    - "Persistent state DB for run_onchange_/run_once_ tracking (.chezmoistate)"
+
+gaps_for_mde_project:
+  HIGH_PRIORITY:
+    - "State management API: Project does not expose chezmoi state bucket clearing; could add Python wrapper for run_onchange_/run_once_ reset without shell scripting"
+    - "Watchman integration: Project manually runs chezmoi apply; could leverage watchman for auto-sync on source changes (eliminates manual apply step)"
+    - "Machine-specific config templates: Project generates LLVM arch-specific paths but doesn't use chezmoi's laptop/desktop detection or system_profiler queries; could simplify config templating"
+    - "Declarative package mgmt via .chezmoidata: Project currently uses Brewfile.tmpl; could migrate to .chezmoidata/packages.yaml + run_onchange_ for cleaner separation"
+
+  MEDIUM_PRIORITY:
+    - "External include sources (.chezmoiexternal): Project doesn't import plugins or configs from external repos; could use for sharing plugin manifests or tool configs across machines"
+    - "Script environment variables (scriptEnv): Project uses mise env but could leverage scriptEnv for chezmoi-specific secrets/config without polluting shell env"
+    - "Template SHA256 checksums: Project's run_onchange_install-packages.sh could embed file content hashes for change detection (already supported pattern)"
+    - "Verbose logging integration: Project's validation could use chezmoi doctor output parsing to expose warnings as Python objects for programmatic handling"
+    - "Configuration warnings suppression: Project could explicitly disable configFileTemplateHasChanged warning in chezmoi.toml if not using dynamic config"
+
+  LOW_PRIORITY:
+    - "Edit with auto-apply: Project doesn't expose chezmoi edit --apply/--watch; could add skill for interactive dotfile editing with auto-apply"
+    - "Commit message templating: Project's scripts auto-commit but don't use commitMessageTemplate; could add custom prompt template"
+    - "Status/diff exclusions: Project could configure diff.exclude=[\"scripts\"] in chezmoi.toml to hide script diffs from chezmoi status output"
+
+implication: |
+  The mde project currently treats chezmoi as a static dotfile deployer. Gap analysis reveals 5 high-value patterns not yet adopted:
+
+  1. **State API** (HIGH): Adding Python wrappers around `chezmoi state delete-bucket` enables programmatic reset of run_onchange_/run_once_ state without shell commands. This supports clean re-runs during testing.
+
+  2. **Watchman auto-sync** (HIGH): Replacing manual `chezmoi apply` triggers with watchman-based file watching eliminates manual apply steps and keeps dotfiles in-sync automatically.
+
+  3. **Machine-specific templates** (HIGH): Migrating from manual sysctl/system_profiler calls to chezmoi's built-in functions (e.g., laptop/desktop detection, CPU cores) simplifies config.toml.tmpl significantly.
+
+  4. **Declarative packages** (MEDIUM): Moving from Brewfile.tmpl imperative here-docs to .chezmoidata/packages.yaml + run_onchange_ separates data (package list) from logic (installation script), improving maintainability.
+
+  5. **External includes** (MEDIUM): Using .chezmoiexternal.toml to import shared plugin configs or tool manifests reduces duplication across chezmoi repos and enables version-locked external dependencies.
+
+  **Recommended next step**: Evaluate HIGH-priority gaps against project roadmap. State API (1) is lowest risk, highest ROI for testing automation. Watchman integration (2) requires careful env-var handling for password managers but unlocks auto-sync.
+
+tags:
+  - chezmoi
+  - dotfiles
+  - declarative-config
+  - mde-integration
+  - machine-specific
+  - package-management
+  - state-management
+  - watchman
+  - macos-toolkit
+  - gap-analysis
+
+status: discovered

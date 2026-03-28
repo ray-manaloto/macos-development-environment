@@ -1,0 +1,142 @@
+id: finding-mise-hk-gap-analysis-2026-03-28
+timestamp: "2026-03-28T23:00:00Z"
+source: |
+  1. https://mise.jdx.dev/cli/doctor.html
+  2. https://mise.jdx.dev/direnv.html
+  3. https://hk.jdx.dev/cli/validate.html
+  4. https://hk.jdx.dev/mise_integration.html
+  5. https://hk.jdx.dev/builtins.html
+agent: researcher
+finding_type: gap-analysis
+confidence: confirmed
+confident_about: |
+  - mise doctor is implemented in mde project; parses summary sections correctly
+  - hk validate works and validates hk.pkl configuration
+  - hk builtins are available (178 builtins including ruff, shellcheck, ty, etc.)
+  - direnv IS installed in the project (v2.37.1 via mise)
+  - hk.pkl AMENDS v1.38.0; project is on hk v1.39.0 (upstream)
+  - hk is in the pre-commit hook workflow; not integrated into validation pipeline
+  - mise fmt --check is called; lockfile platform validation is implemented
+  - No hk validate call exists in the validation pipeline (mde/validate/__init__.py)
+gaps: |
+  1. **hk validate not in validation pipeline**: mde/validate/__init__.py calls validate_mise()
+     but does NOT call hk validate. The pre-commit hook runs hk check automatically, but
+     the validate CLI subcommand never explicitly tests hk.pkl config validity.
+
+  2. **direnv installed but not documented in CLAUDE.md**: direnv v2.37.1 is present;
+     no mention in project instructions. Could conflict with fnox secret activation
+     (both use shell hooks) — compatibility unclear.
+
+  3. **mise direnv integration not explored**: mise.jdx.dev/direnv.html covers:
+     - Using direnv with mise via `use mise` in .envrc
+     - Lazy loading tools via direnv
+     - Integration with MISE_ENV_CACHE for fnox
+     - Project has direnv installed but no .envrc file present
+
+  4. **hk builtins documentation not used in project**: 178 builtins available (ruff,
+     shellcheck, ty, mixed_line_ending, etc.). Project only uses ruff, ruff_format,
+     shellcheck in hk.pkl. Other useful builtins not exposed:
+     - prettier (for docs markdown)
+     - markdown_lint (for docs validation)
+     - yamllint (for config files)
+     - typos (spelling check)
+
+  5. **hk profiles not utilized**: hk supports --profile flag with slow/fast syntax.
+     Project's hk.pkl has no [profiles] section. Could optimize pre-commit (fast)
+     vs pre-push (slow + full quality gate).
+
+  6. **mise integration with hk not fully exploited**: hk can run via mise tasks.
+     Project defines [tasks."mde:validate"] but it calls `uv run mde-py validate`
+     (Python code) instead of `hk check` or delegating to hk for structural checks.
+
+  7. **Documentation gaps**:
+     - No integration guide between fnox activate and direnv activate
+     - hk.pkl amends upstream but upstream changes not monitored
+     - Builtins like prettier/yamllint not adopted despite availability
+evidence: |
+  **mise doctor (implemented, working correctly)**:
+  - Location: src/mde/validate/mise.py, function _check_mise_doctor()
+  - Calls: subprocess.run(["mise", "doctor"], timeout=30s)
+  - Parsing: Scans for "N warning/problem/error found:" headers
+  - Result: Captures numbered findings (e.g., "1. tool...") as ERROR severity
+  - Status: Line 35 shows call in validate_mise() → validates on every validate run
+
+  **hk validate (works but NOT in validate pipeline)**:
+  - Command: `hk validate` exits 0 with message "hk.pkl is valid"
+  - Expected: Should be called in validate_all() in src/mde/validate/__init__.py
+  - Current: NOT called. validate_mise() runs but no validate_hk() equivalent.
+  - Pre-commit: hk runs automatically via .git/hooks/pre-commit (set by `hk install`)
+  - Missing: Could add _check_hk_validate() to validate_mise() or new validate_hk.py
+
+  **hk builtins (178 available, 3 used)**:
+  - Used: ruff, ruff_format, shellcheck (in hk.pkl fixers section)
+  - Available: prettier, markdown_lint, yamllint, typos, go_fmt, shellcheck, etc.
+  - Unused opportunity: prettier for docs; yamllint for YAML; typos for spelling
+  - Evidence: `hk builtins` lists all 178 with descriptions
+
+  **direnv integration (installed but undocumented)**:
+  - Status: Installed v2.37.1 (via mise)
+  - Location: /Users/rmanaloto/.local/share/mise/installs/direnv/2.37.1/direnv
+  - Usage: Not documented in CLAUDE.md; no .envrc file in project
+  - Potential conflict: Both fnox and direnv activate secrets via shell hooks
+  - Mise integration: mise.jdx.dev/direnv.html shows "use mise" in .envrc for lazy loading
+  - Not adopted: Could use for: `use mise` lazy loading, MISE_ENV_CACHE=1 optimization
+
+  **hk.pkl amends upstream v1.38.0; project runs v1.39.0**:
+  - Config line 1: amends "package://github.com/jdx/hk/releases/download/v1.38.0/hk@1.38.0#/Config.pkl"
+  - Installed: hk v1.39.0 (from `hk --version`)
+  - Risk: Amending v1.38.0 while running v1.39.0 may cause config drift if upstream changed
+  - Recommendation: Check if v1.39.0 Config.pkl has breaking changes
+
+  **mise fmt --check (implemented)**:
+  - Location: src/mde/validate/mise.py, function _check_mise_fmt()
+  - Calls: subprocess.run(["mise", "fmt", "--check"])
+  - Status: Checks .mise.toml formatting on every validate run
+
+  **mise lockfile platform validation (implemented)**:
+  - Location: src/mde/validate/mise.py, function _check_mise_lockfile_platforms()
+  - Checks: mise.lock and ~/.config/mise/mise.lock for non-local platforms
+  - Status: Verifies lockfiles only contain current platform (macos-arm64)
+
+implication: |
+  **Priority 1: Add hk validate to validation pipeline**
+  - Create src/mde/validate/hk.py with validate_hk() function
+  - Call in validate_all() to ensure hk.pkl is syntactically valid
+  - Rationale: Pre-commit hooks run hk automatically; explicit validate adds safety gate
+  - Effort: ~50 lines of Python (mirror mise validation pattern)
+
+  **Priority 2: Document direnv/fnox integration or remove direnv**
+  - Decision: Keep direnv or migrate fully to fnox?
+  - If keep: Create .envrc with `use mise` and MISE_ENV_CACHE=1
+  - If remove: Add `mise remove direnv` to cleanup; remove from .mise.toml
+  - Update CLAUDE.md to clarify secret activation strategy
+  - Effort: Documentation + 1 line config change
+
+  **Priority 3: Update hk.pkl amend to v1.39.0 (or verify compatibility)**
+  - Check jdx/hk v1.39.0 Config.pkl for breaking changes
+  - Update line 1 to v1.39.0 if compatible
+  - Effort: Verify via `hk validate` after change; ~5 min
+
+  **Priority 4: Adopt hk builtins for missing validators (optional)**
+  - Add prettier to fixers for docs markdown
+  - Add yamllint for YAML config files
+  - Add typos for spelling validation
+  - Rationale: Closes gaps identified in validation coverage
+  - Effort: ~3 lines per builtin in hk.pkl
+
+  **Priority 5: Implement hk profiles for pre-commit vs pre-push**
+  - Split hk.pkl hooks: pre-commit (fast) vs pre-push (slow)
+  - Use [profiles] section with slow = { ... }
+  - Rationale: Faster commits while maintaining quality gate on push
+  - Effort: ~20 lines in hk.pkl
+
+tags:
+  - mise
+  - hk
+  - validation
+  - git-hooks
+  - direnv
+  - gap-analysis
+  - configuration
+  - tooling
+status: discovered

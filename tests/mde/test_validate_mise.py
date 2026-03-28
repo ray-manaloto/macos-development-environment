@@ -66,3 +66,73 @@ class TestLockfilePlatformValidation:
         errors = [f for f in result.findings if f.rule == "mise.lockfile-corrupt"]
         assert len(errors) == 1
         assert "corrupted" in errors[0].message
+
+
+class TestMiseDoctorErrorKeyword:
+    """Tests for finding #8: mise doctor parser must match 'error found:' headers."""
+
+    def test_error_found_header_captured(self) -> None:
+        """Mise doctor output with 'N error found:' must be parsed."""
+        from unittest.mock import patch
+
+        from mde.models.result import ValidationResult
+        from mde.validate.mise import _check_mise_doctor
+
+        doctor_output = "1 error found:\n\n1. tool node is not installed\n"
+        mock_result = type(
+            "CompletedProcess", (), {"returncode": 1, "stdout": doctor_output, "stderr": ""}
+        )()
+
+        result = ValidationResult()
+        with patch("mde.validate.mise.subprocess.run", return_value=mock_result):
+            _check_mise_doctor(result)
+
+        errors = [f for f in result.findings if f.rule == "mise.doctor"]
+        assert len(errors) >= 1
+        assert any("tool node" in e.message for e in errors)
+
+    def test_warning_and_problem_still_captured(self) -> None:
+        """Existing warning/problem keywords still work after adding error."""
+        from unittest.mock import patch
+
+        from mde.models.result import ValidationResult
+        from mde.validate.mise import _check_mise_doctor
+
+        doctor_output = (
+            "1 warning found:\n"
+            "\n"
+            "1. mise outdated for tool rust\n"
+            "\n"
+            "1 problem found:\n"
+            "\n"
+            "1. missing shims directory\n"
+        )
+        mock_result = type(
+            "CompletedProcess", (), {"returncode": 1, "stdout": doctor_output, "stderr": ""}
+        )()
+
+        result = ValidationResult()
+        with patch("mde.validate.mise.subprocess.run", return_value=mock_result):
+            _check_mise_doctor(result)
+
+        errors = [f for f in result.findings if f.rule == "mise.doctor"]
+        assert len(errors) == 2
+
+    def test_no_errors_found_skipped(self) -> None:
+        """'No errors found' should not trigger a finding."""
+        from unittest.mock import patch
+
+        from mde.models.result import ValidationResult
+        from mde.validate.mise import _check_mise_doctor
+
+        doctor_output = "No errors found\nNo problems found\n"
+        mock_result = type(
+            "CompletedProcess", (), {"returncode": 0, "stdout": doctor_output, "stderr": ""}
+        )()
+
+        result = ValidationResult()
+        with patch("mde.validate.mise.subprocess.run", return_value=mock_result):
+            _check_mise_doctor(result)
+
+        errors = [f for f in result.findings if f.rule == "mise.doctor"]
+        assert len(errors) == 0

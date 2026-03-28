@@ -156,3 +156,90 @@ class TestPluginValidation:
         """Missing rsm-subagents directory should return clean result."""
         result = validate_plugins(root=tmp_path)
         assert result.passed is True
+
+
+class TestMarketplacePathPortability:
+    """Finding #10: marketplace path in settings.json must be relative."""
+
+    def test_absolute_path_warns(self, tmp_path: Path) -> None:
+        """Absolute marketplace path should produce a warning."""
+        from mde.validate.plugins import _check_marketplace_path_portability
+
+        settings_dir = tmp_path / ".claude"
+        settings_dir.mkdir()
+        (settings_dir / "settings.json").write_text(
+            json.dumps(
+                {
+                    "pluginMarketplaces": {
+                        "rsm-subagents": {
+                            "source": {
+                                "source": "directory",
+                                "path": "/Users/someone/project/rsm-subagents",
+                            }
+                        }
+                    }
+                }
+            )
+        )
+
+        from mde.models.result import ValidationResult
+
+        result = ValidationResult()
+        _check_marketplace_path_portability(result, tmp_path)
+        warnings = [f for f in result.findings if f.rule == "plugin.absolute-marketplace-path"]
+        assert len(warnings) == 1
+
+    def test_relative_path_clean(self, tmp_path: Path) -> None:
+        """Relative marketplace path should produce no warnings."""
+        from mde.validate.plugins import _check_marketplace_path_portability
+
+        settings_dir = tmp_path / ".claude"
+        settings_dir.mkdir()
+        (settings_dir / "settings.json").write_text(
+            json.dumps(
+                {
+                    "pluginMarketplaces": {
+                        "rsm-subagents": {
+                            "source": {
+                                "source": "directory",
+                                "path": "./rsm-subagents",
+                            }
+                        }
+                    }
+                }
+            )
+        )
+
+        from mde.models.result import ValidationResult
+
+        result = ValidationResult()
+        _check_marketplace_path_portability(result, tmp_path)
+        warnings = [f for f in result.findings if f.rule == "plugin.absolute-marketplace-path"]
+        assert len(warnings) == 0
+
+    def test_github_marketplace_ignored(self, tmp_path: Path) -> None:
+        """GitHub-sourced marketplaces should not trigger the check."""
+        from mde.validate.plugins import _check_marketplace_path_portability
+
+        settings_dir = tmp_path / ".claude"
+        settings_dir.mkdir()
+        (settings_dir / "settings.json").write_text(
+            json.dumps(
+                {
+                    "pluginMarketplaces": {
+                        "other": {
+                            "source": {
+                                "source": "github",
+                                "repo": "someone/plugins",
+                            }
+                        }
+                    }
+                }
+            )
+        )
+
+        from mde.models.result import ValidationResult
+
+        result = ValidationResult()
+        _check_marketplace_path_portability(result, tmp_path)
+        assert len(result.findings) == 0

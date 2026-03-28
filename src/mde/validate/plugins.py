@@ -46,6 +46,9 @@ def validate_plugins(root: Path | None = None) -> ValidationResult:
         )
         return result
 
+    # 0. Check for absolute marketplace paths in settings.json
+    _check_marketplace_path_portability(result, root)
+
     # 1. Validate marketplace manifest
     _validate_marketplace_cli(result, marketplace_dir)
 
@@ -111,6 +114,31 @@ def validate_plugins(root: Path | None = None) -> ValidationResult:
         _validate_hooks(result, plugin_dir, plugin_name)
 
     return result
+
+
+def _check_marketplace_path_portability(result: ValidationResult, root: Path) -> None:
+    """Warn if settings.json has absolute paths for marketplace directories."""
+    settings_path = root / ".claude" / "settings.json"
+    if not settings_path.exists():
+        return
+
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return
+
+    marketplaces = data.get("pluginMarketplaces", {})
+    for name, config in marketplaces.items():
+        source = config.get("source", {})
+        if source.get("source") == "directory":
+            path = source.get("path", "")
+            if path.startswith("/"):
+                result.add_warning(
+                    str(settings_path),
+                    f"Marketplace '{name}' uses absolute path '{path}' — "
+                    "use a relative path (e.g. './rsm-subagents') for portability",
+                    rule="plugin.absolute-marketplace-path",
+                )
 
 
 def _run_claude_validate(target: Path) -> tuple[bool, str]:

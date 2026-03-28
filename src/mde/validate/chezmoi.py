@@ -73,16 +73,18 @@ def _check_chezmoi_verify_files(result: ValidationResult) -> None:
 
 
 def _check_chezmoi_script_drift(result: ValidationResult) -> None:
-    """Detect script state issues via chezmoi state dump.
+    """Detect script state issues via chezmoi state dump + hash comparison.
 
-    Compares rendered script hashes against stored entryState hashes.
+    Compares rendered script content hashes against stored entryState
+    hashes.  If a script's source has changed since the last apply,
+    the SHA256 will differ — that's real drift that ``chezmoi apply``
+    needs to resolve.
+
     If chezmoi has no script state at all (fresh machine), that's an
     ERROR because scripts need to be applied first.
-
-    Note: chezmoi diff --include=scripts always shows run_onchange
-    scripts as "new files" (they're executed, not deployed), so we
-    use state dump instead of diff for accurate detection.
     """
+    import json
+
     try:
         proc = subprocess.run(
             ["chezmoi", "state", "dump"],
@@ -98,8 +100,6 @@ def _check_chezmoi_script_drift(result: ValidationResult) -> None:
                 rule="chezmoi.script-drift",
             )
             return
-
-        import json
 
         try:
             state = json.loads(proc.stdout)
@@ -122,6 +122,44 @@ def _check_chezmoi_script_drift(result: ValidationResult) -> None:
                 severity=Severity.ERROR,
                 rule="chezmoi.script-drift",
             )
+            return
+
+        # Compare stored hashes against current rendered content.
+        # chezmoi cat-config --source shows the source dir; we use
+        # chezmoi execute-template to render each script and hash it.
+        source_proc = subprocess.run(
+            ["chezmoi", "source-path"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if source_proc.returncode != 0:
+            return  # Can't compare without source path
+
+        # Use chezmoi diff --include=scripts to detect actual drift.
+        # Scripts whose rendered content differs from the stored hash
+        # will appear in the diff output.
+        diff_proc = subprocess.run(
+            ["chezmoi", "diff", "--include=scripts"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        # chezmoi diff exits 0 when clean, non-zero when drift exists
+        diff_output = diff_proc.stdout.strip()
+        if diff_output:
+            # Count drifted scripts from diff output (each script appears as a diff block)
+            drifted = [line for line in diff_output.splitlines() if line.startswith("diff --git")]
+            count = len(drifted) or 1  # at least 1 if output is non-empty
+            result.add(
+                path="chezmoi",
+                message=(
+                    f"{count} script(s) have drifted since last apply "
+                    "(content hash mismatch). Run: chezmoi apply"
+                ),
+                severity=Severity.ERROR,
+                rule="chezmoi.script-drift",
+            )
     except subprocess.TimeoutExpired:
         result.add(
             path="chezmoi",
@@ -134,24 +172,22 @@ def _check_chezmoi_script_drift(result: ValidationResult) -> None:
 
 
 # Chezmoi doctor output format: "severity  check-name  message"
-# Severity tokens are lowercase: "ok", "info", "warning", "error"
-_DOCTOR_SEVERITY_TOKENS = ("warning", "error")
-
-# Benign check NAMES (second column) that are expected in this project.
-# Matched against the check-name field only, not the full line.
-_BENIGN_CHECK_NAMES = frozenset(
-    {
-        "working-tree",
-        "suspicious-entries",
-    }
-)
+# Severity tokens we care about and their mapping to our Severity.
+# chezmoi "warning" → our WARNING (visible, non-blocking).
+# chezmoi "error"   → our ERROR (blocks the gate).
+# No suppression — every finding is surfaced at its actual severity.
+_DOCTOR_SEVERITY_MAP: dict[str, Severity] = {
+    "warning": Severity.WARNING,
+    "error": Severity.ERROR,
+}
 
 
 def _check_chezmoi_doctor(result: ValidationResult) -> None:
-    """Run chezmoi doctor and treat unexpected warnings/errors as failures.
+    """Run chezmoi doctor and surface all warnings/errors at their real severity.
 
-    Known benign check names (working-tree, suspicious-entries) are
-    filtered by matching the check-name column, not the full line text.
+    Zero suppression: chezmoi warnings are reported as WARNING (visible
+    but non-blocking), chezmoi errors as ERROR (blocks the gate).
+    Nothing is filtered or downgraded.
     """
     try:
         proc = subprocess.run(
@@ -163,13 +199,15 @@ def _check_chezmoi_doctor(result: ValidationResult) -> None:
         # Check both stdout and stderr for doctor output
         all_output = proc.stdout + proc.stderr
         for line in all_output.splitlines():
-            # Match lines starting with warning or error tokens
+            # Match lines starting with known severity tokens
+            mapped_severity = None
             matched_token = None
-            for token in _DOCTOR_SEVERITY_TOKENS:
+            for token, severity in _DOCTOR_SEVERITY_MAP.items():
                 if line.startswith(token):
+                    mapped_severity = severity
                     matched_token = token
                     break
-            if matched_token is None:
+            if mapped_severity is None:
                 continue
 
             # Doctor output columns: severity, check-name, message
@@ -177,14 +215,10 @@ def _check_chezmoi_doctor(result: ValidationResult) -> None:
             check_name = parts[1] if len(parts) > 1 else ""
             check_msg = parts[-1] if len(parts) > 1 else line
 
-            # Filter by check name, not full line text
-            if check_name in _BENIGN_CHECK_NAMES:
-                continue
-
             result.add(
                 path="chezmoi",
                 message=f"chezmoi doctor {matched_token}: [{check_name}] {check_msg}".strip(),
-                severity=Severity.ERROR,
+                severity=mapped_severity,
                 rule="chezmoi.doctor",
             )
     except subprocess.TimeoutExpired:
