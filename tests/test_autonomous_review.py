@@ -131,7 +131,7 @@ class TestReviewPipelineConfig:
     def test_default_config(self) -> None:
         config = ReviewPipelineConfig()
         assert config.autonomy == AutonomyMode.SEMI_AUTONOMOUS
-        assert config.models == ["claude", "codex", "gemini"]
+        assert config.models == ["codex", "gemini"]
         assert config.max_retries == 2
         assert config.run_quality_gate is True
 
@@ -186,33 +186,30 @@ class TestRunMultiModelReview:
         reviews = run_multi_model_review(
             prompt="Review this diff",
             cwd="/tmp/test",
-            models=["claude", "codex", "gemini"],
+            models=["codex", "gemini"],
         )
-        assert len(reviews) == 3
-        assert mock_invoke.call_count == 3
+        assert len(reviews) == 2
+        assert mock_invoke.call_count == 2
         assert all(r.approve for r in reviews)
 
     @patch("mde.autonomous_review.invoke_model")
     def test_handles_mixed_approve_reject(self, mock_invoke: MagicMock) -> None:
         mock_invoke.side_effect = [
-            _make_invocation_result(model="claude", response=_make_review_json(approve=True)),
             _make_invocation_result(model="codex", response=_make_reject_json()),
             _make_invocation_result(model="gemini", response=_make_review_json(approve=True)),
         ]
         reviews = run_multi_model_review(
             prompt="Review this diff",
             cwd="/tmp/test",
-            models=["claude", "codex", "gemini"],
+            models=["codex", "gemini"],
         )
-        assert reviews[0].approve is True
-        assert reviews[1].approve is False
-        assert reviews[2].approve is True
+        assert reviews[0].approve is False
+        assert reviews[1].approve is True
 
     @patch("mde.autonomous_review.invoke_model")
     def test_cli_failure_produces_reject_review(self, mock_invoke: MagicMock) -> None:
         """If a CLI invocation fails, treat it as a rejection with error."""
         mock_invoke.side_effect = [
-            _make_invocation_result(model="claude", response=_make_review_json(approve=True)),
             _make_invocation_result(
                 model="codex", response="", success=False, error="codex crashed"
             ),
@@ -221,12 +218,12 @@ class TestRunMultiModelReview:
         reviews = run_multi_model_review(
             prompt="Review this diff",
             cwd="/tmp/test",
-            models=["claude", "codex", "gemini"],
+            models=["codex", "gemini"],
         )
-        assert len(reviews) == 3
+        assert len(reviews) == 2
         # Failed CLI → synthetic rejection
-        assert reviews[1].approve is False
-        assert reviews[1].critical_count == 0
+        assert reviews[0].approve is False
+        assert reviews[0].critical_count == 0
 
     @patch("mde.autonomous_review.invoke_model")
     def test_malformed_json_produces_reject(self, mock_invoke: MagicMock) -> None:
@@ -307,9 +304,8 @@ class TestReviewPipeline:
     @patch("mde.autonomous_review.invoke_model")
     def test_supervised_mode_escalates_on_warn(self, mock_invoke: MagicMock) -> None:
         """SUPERVISED + PROCEED_WARN → ESCALATE (human must approve)."""
-        # 3 of 4 approve (75%) → PROCEED_WARN, supervised → ESCALATE
+        # 2 of 3 approve (67%) → PROCEED_WARN, supervised → ESCALATE
         mock_invoke.side_effect = [
-            _make_invocation_result(model="claude", response=_make_review_json(approve=True)),
             _make_invocation_result(model="codex", response=_make_review_json(approve=True)),
             _make_invocation_result(model="gemini", response=_make_review_json(approve=True)),
             _make_invocation_result(model="extra", response=_make_review_json(approve=False)),
@@ -317,7 +313,7 @@ class TestReviewPipeline:
         pipeline = ReviewPipeline(
             config=ReviewPipelineConfig(
                 autonomy=AutonomyMode.SUPERVISED,
-                models=["claude", "codex", "gemini", "extra"],
+                models=["codex", "gemini", "extra"],
                 run_quality_gate=False,
             ),
         )
@@ -339,9 +335,8 @@ class TestReviewPipeline:
         finding = Finding(description="Fix something", source="cli")
         result = pipeline.run_review_phase(finding, cwd="/tmp/test")
 
-        assert len(result.reviews) == 3
+        assert len(result.reviews) == 2
         model_names = [r.model for r in result.reviews]
-        assert "claude" in model_names
         assert "codex" in model_names
         assert "gemini" in model_names
 
@@ -358,7 +353,7 @@ class TestReviewPipeline:
         finding = Finding(description="Fix something", source="cli")
         result = pipeline.run_review_phase(finding, cwd="/tmp/test")
 
-        # All three reviews have no findings → rubber stamp violations
+        # Both reviews have no findings → rubber stamp violations
         assert len(result.integrity_violations) > 0
 
 

@@ -74,7 +74,7 @@ class ReviewPipelineConfig(BaseModel):
     """Configuration for the review pipeline."""
 
     autonomy: AutonomyMode = AutonomyMode.SEMI_AUTONOMOUS
-    models: list[str] = ["claude", "codex", "gemini"]
+    models: list[str] = ["codex", "gemini"]
     max_retries: int = 2
     run_quality_gate: bool = True
     timeout: int = 600
@@ -237,7 +237,7 @@ def run_multi_model_review(
         List of ModelReview results (one per model).
     """
     if models is None:
-        models = ["claude", "codex", "gemini"]
+        models = ["codex", "gemini"]
 
     reviews: list[ModelReview] = []
     for model in models:
