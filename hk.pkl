@@ -1,5 +1,5 @@
-amends "package://github.com/jdx/hk/releases/download/v1.38.0/hk@1.38.0#/Config.pkl"
-import "package://github.com/jdx/hk/releases/download/v1.38.0/hk@1.38.0#/Builtins.pkl"
+amends "package://github.com/jdx/hk/releases/download/v1.39.0/hk@1.39.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.39.0/hk@1.39.0#/Builtins.pkl"
 
 // All quality checks flow through `uv run mde-py quality`.
 // Individual ruff/shellcheck steps kept for `hk fix` (auto-fix on commit).
@@ -11,6 +11,8 @@ local fixers = new Mapping<String, Step> {
         exclude = List(".agents/skills/**")
     }
     ["shellcheck"] = Builtins.shellcheck
+    ["typos"] = Builtins.typos
+    ["yamllint"] = Builtins.yamllint
 }
 
 local quality_gate = new Mapping<String, Step> {

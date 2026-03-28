@@ -1,0 +1,25 @@
+[default.extend-words]
+# Intentional variable/concept names
+criticals = "criticals"
+reviewd = "reviewd"
+# Brand names (appear in non-excluded docs)
+Hashi = "Hashi"
+Canva = "Canva"
+Skool = "Skool"
+# Technical terms
+invokable = "invokable"
+selectin = "selectin"
+
+[files]
+extend-exclude = [
+    # Research artifacts contain quoted third-party output
+    "docs/research/trail/deep-reviews/",
+    "docs/research/trail/findings/",
+    "docs/superpowers/specs/",
+    # Generated/cached content
+    ".omc/",
+    ".generated/",
+    ".claude/agent-memory/",
+    # Log files
+    "*.log",
+]

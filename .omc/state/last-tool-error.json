@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"uv run mde-py quality 2>&1\",\"timeout\":120000,\"description\":\"Run full quality gate\"}",
+  "error": "Exit code 1\nRunning 6 quality checks...\n\n  [ruff-check] Lint rules...\n  [ruff-check] All checks passed!\n  [ruff-format] Format check...\n  [ruff-format] 178 files already formatted\n  [ty] Type check (ty)...\n  [ty] All checks passed!\n  [pyright] Type check (pyright)...\n  [pyright] 0 errors, 0 warnings, 0 information\n  [pytest] Test suite...\n  [pytest] FAILED (exit 1)\n    E         stdout: \n    E         stderr: \n    E       assert 1 == 0\n    E        +  where 1 = CompletedProcess(args=['chezmoi',...",
+  "timestamp": "2026-03-28T21:17:05.087Z",
+  "retry_count": 1
+}
