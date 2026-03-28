@@ -182,7 +182,7 @@ def _invoke_gemini(prompt: str, timeout: int = 300) -> InvocationResult:
             capture_output=True,
             text=True,
             timeout=timeout,
-            env=_clean_env(),
+            env=_gemini_isolated_env(),
         )
         duration = time.monotonic() - start
 
@@ -536,3 +536,42 @@ def _clean_env() -> dict[str, str]:
         ):
             del env[key]
     return env
+
+
+def _gemini_isolated_env() -> dict[str, str]:
+    """Return environment with gemini config isolation.
+
+    Points GEMINI_CLI_SYSTEM_SETTINGS_PATH at a minimal settings file that
+    disables MCP servers and extensions. System settings override user
+    settings (~/.gemini/settings.json) in gemini's config precedence.
+
+    This prevents the user's MCP servers from loading during headless
+    invocations, which would otherwise cause extension boot timeouts.
+    """
+    env = _clean_env()
+    settings_path = _get_gemini_isolation_settings()
+    env["GEMINI_CLI_SYSTEM_SETTINGS_PATH"] = str(settings_path)
+    return env
+
+
+def _get_gemini_isolation_settings() -> Path:
+    """Return path to a minimal gemini settings file for isolated invocation.
+
+    Creates a JSON file under .generated/gemini/ that disables MCP and extensions.
+    The file is cached — only written once per directory.
+    """
+    isolation_dir = Path.cwd() / ".generated" / "gemini"
+    settings_path = isolation_dir / "isolated-settings.json"
+    if not settings_path.exists():
+        isolation_dir.mkdir(parents=True, exist_ok=True)
+        settings = {
+            "admin": {
+                "extensions": {"enabled": False},
+                "mcp": {"enabled": False},
+            },
+            "tools": {
+                "sandboxNetworkAccess": False,
+            },
+        }
+        settings_path.write_text(json.dumps(settings, indent=2))
+    return settings_path

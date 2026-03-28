@@ -338,3 +338,49 @@ class TestGeminiUsesJsonOutput:
         assert "-o" in cmd
         json_idx = cmd.index("-o")
         assert cmd[json_idx + 1] == "json"
+
+
+# ── Gemini env isolation ─────────────────────────────────────────────────
+
+
+class TestGeminiIsolatedEnv:
+    """Test gemini config isolation via system settings override."""
+
+    def test_isolation_settings_file_created(self, tmp_path: Path) -> None:
+        from mde.debate.invoke import _get_gemini_isolation_settings
+
+        settings_dir = tmp_path / ".generated" / "gemini"
+        settings_dir.mkdir(parents=True)
+        # Patch Path.cwd() to return tmp_path
+        with patch("mde.debate.invoke.Path.cwd", return_value=tmp_path):
+            settings_path = _get_gemini_isolation_settings()
+        assert settings_path.exists()
+        data = json.loads(settings_path.read_text())
+        assert data["admin"]["extensions"]["enabled"] is False
+        assert data["admin"]["mcp"]["enabled"] is False
+
+    def test_isolation_env_sets_system_settings_path(self) -> None:
+        from mde.debate.invoke import _gemini_isolated_env
+
+        env = _gemini_isolated_env()
+        assert "GEMINI_CLI_SYSTEM_SETTINGS_PATH" in env
+        assert env["GEMINI_CLI_SYSTEM_SETTINGS_PATH"].endswith("isolated-settings.json")
+
+    @patch("mde.debate.invoke.subprocess.run")
+    @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/gemini")
+    def test_gemini_invocation_uses_isolated_env(
+        self, mock_which: MagicMock, mock_run: MagicMock
+    ) -> None:
+        _ = mock_which  # consumed by @patch decorator
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout=json.dumps([{"text": "response"}]),
+            stderr="",
+        )
+        from mde.debate.invoke import _invoke_gemini
+
+        _invoke_gemini("test")
+        # Verify env kwarg contains isolation key
+        call_kwargs = mock_run.call_args[1]
+        env = call_kwargs.get("env", {})
+        assert "GEMINI_CLI_SYSTEM_SETTINGS_PATH" in env
