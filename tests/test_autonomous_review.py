@@ -23,6 +23,7 @@ from mde.autonomous_review import (
     _extract_json,
     parse_finding_input,
     run_multi_model_review,
+    run_multi_model_review_parallel,
 )
 from mde.consensus import (
     AutonomyMode,
@@ -403,3 +404,76 @@ class TestReviewPhaseError:
         err = ReviewPhaseError(ReviewPhase.REVIEW, "CLI timed out")
         assert err.phase == ReviewPhase.REVIEW
         assert "CLI timed out" in str(err)
+
+
+# ── Parallel multi-model review ──────────────────────────────────────────
+
+
+class TestRunMultiModelReviewParallel:
+    """Test async parallel multi-model review invocation."""
+
+    @patch("mde.autonomous_review.invoke_all_parallel")
+    def test_parallel_invokes_all_models(self, mock_parallel: MagicMock) -> None:
+        import asyncio
+
+        mock_parallel.return_value = [
+            _make_invocation_result("codex", _make_review_json(approve=True)),
+            _make_invocation_result("gemini", _make_review_json(approve=True)),
+        ]
+        reviews = asyncio.run(
+            run_multi_model_review_parallel("Review this", models=["codex", "gemini"])
+        )
+        assert len(reviews) == 2
+        assert all(r.approve for r in reviews)
+        mock_parallel.assert_called_once()
+
+    @patch("mde.autonomous_review.invoke_all_parallel")
+    def test_parallel_handles_cli_failure(self, mock_parallel: MagicMock) -> None:
+        import asyncio
+
+        mock_parallel.return_value = [
+            _make_invocation_result("codex", "", success=False, error="timeout"),
+            _make_invocation_result("gemini", _make_review_json(approve=True)),
+        ]
+        reviews = asyncio.run(
+            run_multi_model_review_parallel("Review this", models=["codex", "gemini"])
+        )
+        assert len(reviews) == 2
+        assert reviews[0].approve is False
+        assert reviews[1].approve is True
+
+    @patch("mde.autonomous_review.invoke_all_parallel")
+    def test_parallel_handles_json_parse_failure(self, mock_parallel: MagicMock) -> None:
+        import asyncio
+
+        mock_parallel.return_value = [
+            _make_invocation_result("codex", "not json at all"),
+        ]
+        reviews = asyncio.run(run_multi_model_review_parallel("Review this", models=["codex"]))
+        assert len(reviews) == 1
+        assert reviews[0].approve is False
+        assert "Parse error" in reviews[0].approve_reason
+
+
+class TestReviewPipelineParallel:
+    """Test pipeline with parallel review phase."""
+
+    @patch("mde.autonomous_review.invoke_all_parallel")
+    def test_parallel_pipeline_unanimous_approve(self, mock_parallel: MagicMock) -> None:
+        import asyncio
+
+        mock_parallel.return_value = [
+            _make_invocation_result("codex", _make_review_json(approve=True)),
+            _make_invocation_result("gemini", _make_review_json(approve=True)),
+        ]
+        pipeline = ReviewPipeline(
+            config=ReviewPipelineConfig(
+                models=["codex", "gemini"],
+                run_quality_gate=False,
+            ),
+        )
+        finding = Finding(description="Fix null pointer", source="cli")
+        result = asyncio.run(pipeline.run_review_phase_parallel(finding))
+
+        assert result.consensus_decision == ConsensusDecision.PROCEED
+        assert result.success is True

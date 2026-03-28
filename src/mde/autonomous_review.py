@@ -42,7 +42,7 @@ from mde.consensus import (
     check_debate_integrity,
     evaluate_consensus,
 )
-from mde.debate.invoke import InvocationResult, invoke_model
+from mde.debate.invoke import InvocationResult, invoke_all_parallel, invoke_model
 from mde.log import logger
 
 # ── Enums ─────────────────────────────────────────────────────────────────
@@ -247,6 +247,79 @@ def run_multi_model_review(
     return reviews
 
 
+async def run_multi_model_review_parallel(
+    prompt: str,
+    models: list[str] | None = None,
+    timeout_seconds: int = 600,
+) -> list[ModelReview]:
+    """Run review across multiple models concurrently.
+
+    Uses invoke_all_parallel() to run codex+gemini in parallel threads.
+    Each InvocationResult is converted to a ModelReview for the consensus gate.
+
+    Args:
+        prompt: The review prompt.
+        models: List of model names. Defaults to codex, gemini.
+        timeout_seconds: CLI timeout in seconds per model.
+
+    Returns:
+        List of ModelReview results (one per model).
+    """
+    if models is None:
+        models = ["codex", "gemini"]
+
+    results = await invoke_all_parallel(prompt, models=models, timeout_seconds=timeout_seconds)
+
+    reviews: list[ModelReview] = []
+    for result in results:
+        if not result.success:
+            logger.bind(model=result.model).warning(f"CLI invocation failed: {result.error}")
+            reviews.append(
+                ModelReview(
+                    model=result.model,
+                    approve=False,
+                    approve_reason=f"CLI error: {result.error}",
+                    findings=[],
+                    critical_count=0,
+                    suggestion_count=0,
+                )
+            )
+            continue
+
+        try:
+            data = _extract_json(result.response)
+        except (json.JSONDecodeError, ValueError, TypeError) as exc:
+            logger.bind(model=result.model).warning(f"JSON parse failed: {exc}")
+            reviews.append(
+                ModelReview(
+                    model=result.model,
+                    approve=False,
+                    approve_reason=f"Parse error: {exc}",
+                    findings=[],
+                    critical_count=0,
+                    suggestion_count=0,
+                )
+            )
+            continue
+
+        findings_raw: list[dict[str, Any]] = data.get("findings", [])
+        critical_count = sum(1 for f in findings_raw if f.get("severity") == "critical")
+        suggestion_count = sum(1 for f in findings_raw if f.get("severity") == "suggestion")
+
+        reviews.append(
+            ModelReview(
+                model=result.model,
+                approve=bool(data.get("approve", False)),
+                approve_reason=data.get("approve_reason", ""),
+                findings=findings_raw,
+                critical_count=critical_count,
+                suggestion_count=suggestion_count,
+            )
+        )
+
+    return reviews
+
+
 # ── Pipeline orchestrator ─────────────────────────────────────────────────
 
 
@@ -279,7 +352,7 @@ class ReviewPipeline:
         Returns:
             ReviewPipelineResult with consensus decision and metadata.
         """
-        # Phase 3: REVIEW — invoke all models
+        # Phase 3: REVIEW — invoke all models (sequential)
         prompt = self._build_review_prompt(finding)
         reviews = run_multi_model_review(
             prompt=prompt,
@@ -287,7 +360,40 @@ class ReviewPipeline:
             models=self.config.models,
             timeout=self.config.timeout,
         )
+        return self._evaluate_reviews(finding, reviews)
 
+    async def run_review_phase_parallel(
+        self,
+        finding: Finding,
+    ) -> ReviewPipelineResult:
+        """Execute phases 3-5 with parallel model invocation.
+
+        Same as run_review_phase but uses invoke_all_parallel() to run
+        codex+gemini concurrently instead of sequentially.
+
+        Args:
+            finding: The finding being reviewed.
+
+        Returns:
+            ReviewPipelineResult with consensus decision and metadata.
+        """
+        prompt = self._build_review_prompt(finding)
+        reviews = await run_multi_model_review_parallel(
+            prompt=prompt,
+            models=self.config.models,
+            timeout_seconds=self.config.timeout,
+        )
+        return self._evaluate_reviews(finding, reviews)
+
+    def _evaluate_reviews(
+        self,
+        finding: Finding,
+        reviews: list[ModelReview],
+    ) -> ReviewPipelineResult:
+        """Evaluate reviews through integrity check, consensus, and autonomy gate.
+
+        Shared by both sync and async review phase methods.
+        """
         # Phase 3.5: Check debate integrity
         integrity_violations: dict[str, list[DebateIntegrityRule]] = {}
         for review in reviews:
@@ -350,8 +456,6 @@ def cli_review(args: Any) -> int:
         Exit code (0 = success/proceed, 1 = escalate/abort, 2 = error).
     """
     finding_input: str = args.finding
-    cwd = str(Path.cwd())
-
     finding = parse_finding_input(finding_input)
     logger.bind(finding=finding.description, source=finding.source).info("review_start")
 
@@ -365,7 +469,9 @@ def cli_review(args: Any) -> int:
     pipeline = ReviewPipeline(config=config)
 
     try:
-        result = pipeline.run_review_phase(finding, cwd=cwd)
+        import asyncio
+
+        result = asyncio.run(pipeline.run_review_phase_parallel(finding))
     except ReviewPhaseError as exc:
         logger.error(f"Pipeline failed: {exc}")
         sys.stderr.write(f"ERROR: {exc}\n")
