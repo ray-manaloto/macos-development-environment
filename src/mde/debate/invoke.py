@@ -182,6 +182,10 @@ def _invoke_gemini(prompt: str, timeout: int = 300) -> InvocationResult:
         "-o",
         "json",  # structured output — noise to stderr, clean JSON to stdout
         "-y",  # --approval-mode yolo shorthand
+        "-e",
+        "_none",  # blocks all extension loading (requires at least 1 arg)
+        "--allowed-mcp-server-names",
+        "_none",  # blocks all MCP server loading
     ]
 
     start = time.monotonic()
@@ -447,11 +451,17 @@ def _strip_codex_noise(output: str) -> str:
 def _extract_gemini_json(stdout: str) -> str:
     """Extract text content from gemini -o json output.
 
-    Gemini JSON output is an array of response parts. Each part has a "text" field.
+    Gemini -o json wraps responses in {"session_id":..., "response":..., "stats":...}.
+    Trailing OTEL errors may appear after the JSON object, causing "Extra data" errors.
+    We use json.JSONDecoder to parse only the first valid JSON object.
+
     Falls back to the old noise stripping if JSON parsing fails.
     """
     try:
-        data = json.loads(stdout)
+        decoder = json.JSONDecoder()
+        # Skip leading whitespace/noise to find start of JSON
+        stripped = stdout.lstrip()
+        data, _ = decoder.raw_decode(stripped)
         # Gemini outputs an array of parts or a single object
         if isinstance(data, list):
             # Concatenate all text parts
@@ -465,7 +475,7 @@ def _extract_gemini_json(stdout: str) -> str:
         if isinstance(data, dict):
             return str(data.get("text", data.get("response", stdout))).strip()
         return stdout.strip()
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, ValueError, TypeError):
         # Fallback: strip noise from text output (shouldn't happen with -o json)
         return _strip_gemini_noise(stdout)
 
