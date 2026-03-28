@@ -213,7 +213,8 @@ def _check_chezmoi_doctor(result: ValidationResult) -> None:
             # Doctor output columns: severity, check-name, message
             parts = line.split(None, maxsplit=2)
             check_name = parts[1] if len(parts) > 1 else ""
-            check_msg = parts[-1] if len(parts) > 1 else line
+            # parts[2] is the message column; absent for two-token lines
+            check_msg = parts[2:3][0] if parts[2:3] else ""
 
             result.add(
                 path="chezmoi",

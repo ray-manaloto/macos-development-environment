@@ -56,14 +56,14 @@ def validate_hk(root: Path | None = None) -> ValidationResult:
             # hk validate failed — surface the full error
             message = all_output or f"hk validate exited with code {proc.returncode}"
             result.add(
-                path=str(hk_pkl),
+                path="hk",
                 message=f"hk validate failed: {message}",
                 severity=Severity.ERROR,
                 rule="hk.validate",
             )
     except subprocess.TimeoutExpired:
         result.add(
-            path=str(hk_pkl),
+            path="hk",
             message="hk validate timed out (30s)",
             severity=Severity.ERROR,
             rule="hk.timeout",

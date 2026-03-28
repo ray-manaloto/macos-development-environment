@@ -152,6 +152,21 @@ class TestChezmoiDoctorZeroSuppression:
         assert result.passed is True
         assert result.warning_count == 2
 
+    def test_two_token_line_no_duplicate(self) -> None:
+        """Two-token doctor line should not duplicate the check-name as message."""
+        doctor_output = "warning  check-name\n"
+        result = ValidationResult()
+        with patch(
+            "mde.validate.chezmoi.subprocess.run",
+            return_value=_mock_proc(stdout=doctor_output),
+        ):
+            _check_chezmoi_doctor(result)
+        findings = [f for f in result.findings if f.rule == "chezmoi.doctor"]
+        assert len(findings) == 1
+        # The message should NOT contain the check-name twice
+        msg = findings[0].message
+        assert msg.count("check-name") == 1
+
     def test_ok_and_info_lines_ignored(self) -> None:
         """Lines with ok/info severity should not produce findings."""
         doctor_output = "ok        version       v2.70.0\ninfo      diff-command  not set\n"
