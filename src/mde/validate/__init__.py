@@ -9,6 +9,7 @@ from mde.models.result import ValidationResult
 from mde.validate.brew import validate_brew
 from mde.validate.chezmoi import validate_chezmoi
 from mde.validate.docker import validate_docker
+from mde.validate.hk import validate_hk
 from mde.validate.json_validator import validate_json_files
 from mde.validate.memory import validate_memory
 from mde.validate.mise import validate_mise
@@ -85,6 +86,8 @@ def validate_all(
 
         if not configs_only:
             result.merge(validate_shell_scripts())
+
+        result.merge(validate_hk())
 
         result.merge(validate_structural())
 
