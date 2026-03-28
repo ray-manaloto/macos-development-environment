@@ -654,6 +654,129 @@ class TestHookOutputSchema:
         assert hooks_choices == set(discovered.keys())
 
 
+class TestGuardDotfileEdit:
+    """Tests for the dotfile edit guard hook (PreToolUse:Bash/Write/Edit)."""
+
+    def test_bash_blocks_direct_edit(self) -> None:
+        from mde.hooks.guard_dotfile_edit import check_dotfile_edit
+
+        result = check_dotfile_edit("sed -i 's/old/new/' ~/.zshrc")
+        assert result is not None
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+    def test_bash_allows_chezmoi_edit(self) -> None:
+        from mde.hooks.guard_dotfile_edit import check_dotfile_edit
+
+        assert check_dotfile_edit("chezmoi edit ~/.zshrc") is None
+
+    def test_bash_allows_chezmoi_source(self) -> None:
+        from mde.hooks.guard_dotfile_edit import check_dotfile_edit
+
+        assert check_dotfile_edit("cat ~/.local/share/chezmoi/dot_zshrc") is None
+
+    def test_bash_allows_safe_command(self) -> None:
+        from mde.hooks.guard_dotfile_edit import check_dotfile_edit
+
+        assert check_dotfile_edit("ls ~/projects") is None
+
+    def test_file_path_blocks_zshrc(self) -> None:
+        from mde.hooks.guard_dotfile_edit import check_file_path_edit
+
+        home = str(Path("~").expanduser())
+        result = check_file_path_edit(f"{home}/.zshrc")
+        assert result is not None
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+    def test_file_path_blocks_config_dir(self) -> None:
+        from mde.hooks.guard_dotfile_edit import check_file_path_edit
+
+        home = str(Path("~").expanduser())
+        result = check_file_path_edit(f"{home}/.config/starship.toml")
+        assert result is not None
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+    def test_file_path_blocks_gitconfig(self) -> None:
+        from mde.hooks.guard_dotfile_edit import check_file_path_edit
+
+        home = str(Path("~").expanduser())
+        result = check_file_path_edit(f"{home}/.gitconfig")
+        assert result is not None
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+    def test_file_path_allows_chezmoi_source(self) -> None:
+        from mde.hooks.guard_dotfile_edit import check_file_path_edit
+
+        home = str(Path("~").expanduser())
+        assert check_file_path_edit(f"{home}/.local/share/chezmoi/dot_zshrc") is None
+
+    def test_file_path_allows_project_file(self) -> None:
+        from mde.hooks.guard_dotfile_edit import check_file_path_edit
+
+        assert check_file_path_edit("/tmp/src/main.py") is None
+
+    def test_file_path_allows_empty(self) -> None:
+        from mde.hooks.guard_dotfile_edit import check_file_path_edit
+
+        assert check_file_path_edit("") is None
+
+    def test_file_path_with_tilde(self) -> None:
+        from mde.hooks.guard_dotfile_edit import check_file_path_edit
+
+        result = check_file_path_edit("~/.zshrc")
+        assert result is not None
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+    def test_hook_handles_write_tool(self) -> None:
+        from mde.hooks.guard_dotfile_edit import guard_dotfile_edit
+
+        home = str(Path("~").expanduser())
+        data = {
+            "tool_name": "Write",
+            "tool_input": {"file_path": f"{home}/.zshrc"},
+        }
+        stdin = io.StringIO(json.dumps(data))
+        stdout = io.StringIO()
+        with patch.object(sys, "stdin", stdin), patch.object(sys, "stdout", stdout):
+            exit_code = guard_dotfile_edit()
+        assert exit_code == 0
+        output = stdout.getvalue()
+        assert output.strip()
+        parsed = json.loads(output)
+        assert parsed["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+    def test_hook_handles_edit_tool(self) -> None:
+        from mde.hooks.guard_dotfile_edit import guard_dotfile_edit
+
+        home = str(Path("~").expanduser())
+        data = {
+            "tool_name": "Edit",
+            "tool_input": {"file_path": f"{home}/.config/mise/config.toml"},
+        }
+        stdin = io.StringIO(json.dumps(data))
+        stdout = io.StringIO()
+        with patch.object(sys, "stdin", stdin), patch.object(sys, "stdout", stdout):
+            exit_code = guard_dotfile_edit()
+        assert exit_code == 0
+        output = stdout.getvalue()
+        assert output.strip()
+        parsed = json.loads(output)
+        assert parsed["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+    def test_hook_allows_write_to_project_file(self) -> None:
+        from mde.hooks.guard_dotfile_edit import guard_dotfile_edit
+
+        data = {
+            "tool_name": "Write",
+            "tool_input": {"file_path": "/tmp/src/main.py"},
+        }
+        stdin = io.StringIO(json.dumps(data))
+        stdout = io.StringIO()
+        with patch.object(sys, "stdin", stdin), patch.object(sys, "stdout", stdout):
+            exit_code = guard_dotfile_edit()
+        assert exit_code == 0
+        assert stdout.getvalue() == ""
+
+
 class TestNoSilentFailures:
     """Ensure hooks don't silently swallow errors."""
 

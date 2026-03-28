@@ -2,6 +2,9 @@
 
 Enforces the source-first workflow: edits must go through chezmoi source,
 not by directly modifying deployed files in ~/.
+
+Wired for PreToolUse:Bash, PreToolUse:Write, and PreToolUse:Edit matchers.
+Bash commands are checked via regex; Write/Edit are checked via file_path.
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ __hook_meta__ = {
 import json
 import re
 import sys
+from pathlib import Path
 from typing import Any
 
 from mde.hooks._common import hook_span, parse_hook_stdin
@@ -42,6 +46,23 @@ _DENY_REASON = (
     "See the chezmoi-workflows skill for guidance."
 )
 
+_HOME = str(Path("~").expanduser())
+
+_PROTECTED_PREFIXES = (
+    str(Path(_HOME) / ".zshrc"),
+    str(Path(_HOME) / ".zprofile"),
+    str(Path(_HOME) / ".zshenv"),
+    str(Path(_HOME) / ".bashrc"),
+    str(Path(_HOME) / ".bash_profile"),
+    str(Path(_HOME) / ".gitconfig"),
+    str(Path(_HOME) / ".config") + "/",
+    str(Path(_HOME) / ".ssh" / "config"),
+    str(Path(_HOME) / ".tmux.conf"),
+    str(Path(_HOME) / ".starship.toml"),
+)
+
+_CHEZMOI_SOURCE_DIR = str(Path(_HOME) / ".local/share/chezmoi")
+
 
 def check_dotfile_edit(command: str) -> dict[str, Any] | None:
     """Return a deny decision if command directly edits a managed dotfile."""
@@ -58,19 +79,49 @@ def check_dotfile_edit(command: str) -> dict[str, Any] | None:
 
     for pattern in _DOTFILE_EDIT_PATTERNS:
         if pattern.search(first_line):
-            return {
-                "hookSpecificOutput": {
-                    "hookEventName": "PreToolUse",
-                    "permissionDecision": "deny",
-                    "permissionDecisionReason": _DENY_REASON,
-                },
-            }
+            return _deny_result()
 
     return None
 
 
+def check_file_path_edit(file_path: str) -> dict[str, Any] | None:
+    """Return a deny decision if file_path targets a deployed dotfile."""
+    if not file_path:
+        return None
+
+    resolved = str(Path(file_path).expanduser().resolve())
+
+    # Allow edits to chezmoi source directory
+    if resolved.startswith(_CHEZMOI_SOURCE_DIR):
+        return None
+
+    for prefix in _PROTECTED_PREFIXES:
+        if prefix.endswith("/"):
+            if resolved.startswith(prefix) or resolved == prefix.rstrip("/"):
+                return _deny_result()
+        elif resolved == prefix:
+            return _deny_result()
+
+    return None
+
+
+def _deny_result() -> dict[str, Any]:
+    return {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": _DENY_REASON,
+        },
+    }
+
+
 def guard_dotfile_edit() -> int:
-    """Entry point: read JSON from stdin, block if direct dotfile edit detected."""
+    """Entry point: read JSON from stdin, block if direct dotfile edit detected.
+
+    Handles three tool types:
+    - Bash: checks command string via regex patterns
+    - Write/Edit: checks file_path against protected prefixes
+    """
     try:
         data = parse_hook_stdin()
     except (json.JSONDecodeError, ValueError) as exc:
@@ -81,12 +132,20 @@ def guard_dotfile_edit() -> int:
         tool_input = data.get("tool_input") or {}
         if not isinstance(tool_input, dict):
             tool_input = {}
-        command = tool_input.get("command", "")
-        if not command:
-            span.set_attribute("hook.blocked", False)  # noqa: FBT003
-            return 0
 
-        result = check_dotfile_edit(command)
+        tool_name = data.get("tool_name", "")
+        result: dict[str, Any] | None = None
+
+        if tool_name in ("Write", "Edit"):
+            file_path = tool_input.get("file_path", "")
+            result = check_file_path_edit(file_path)
+        else:
+            command = tool_input.get("command", "")
+            if not command:
+                span.set_attribute("hook.blocked", False)  # noqa: FBT003
+                return 0
+            result = check_dotfile_edit(command)
+
         blocked = result is not None
         span.set_attribute("hook.blocked", blocked)
         if result is not None:
@@ -95,6 +154,6 @@ def guard_dotfile_edit() -> int:
         logger.bind(
             hook="guard_dotfile_edit",
             blocked=str(blocked),
-            command=command,
+            tool=tool_name,
         ).info("hook_completed")
         return 0

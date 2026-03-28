@@ -95,7 +95,16 @@ def _check_mise_lockfile_platforms(root: Path, result: ValidationResult) -> None
         if not lock_path.exists():
             continue
         result.files_checked += 1
-        foreign = _find_foreign_platforms(lock_path, current)
+        try:
+            foreign = _find_foreign_platforms(lock_path, current)
+        except LockfileParseError as exc:
+            result.add(
+                path=str(lock_path),
+                message=str(exc),
+                severity=Severity.ERROR,
+                rule="mise.lockfile-corrupt",
+            )
+            continue
         if foreign:
             result.add(
                 path=str(lock_path),
@@ -110,14 +119,26 @@ def _check_mise_lockfile_platforms(root: Path, result: ValidationResult) -> None
             )
 
 
+class LockfileParseError(Exception):
+    """Raised when a lockfile cannot be parsed."""
+
+
 def _find_foreign_platforms(lock_path: Path, current: str) -> set[str]:
-    """Extract platform names from a lockfile that don't match current."""
+    """Extract platform names from a lockfile that don't match current.
+
+    Raises:
+        LockfileParseError: If the lockfile cannot be read or parsed.
+    """
     import tomllib
 
     try:
         data = tomllib.loads(lock_path.read_text())
-    except (OSError, tomllib.TOMLDecodeError):
-        return set()
+    except OSError as exc:
+        msg = f"cannot read lockfile {lock_path}: {exc}"
+        raise LockfileParseError(msg) from exc
+    except tomllib.TOMLDecodeError as exc:
+        msg = f"corrupted lockfile {lock_path}: {exc}"
+        raise LockfileParseError(msg) from exc
 
     foreign: set[str] = set()
     for tool_entries in data.get("tools", {}).values():

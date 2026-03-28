@@ -38,6 +38,15 @@
             "command": "$HOME/.claude/hooks/rtk-rewrite.sh"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks guard-dotfile-edit"
+          }
+        ]
       }
     ],
     "PostToolUse": [

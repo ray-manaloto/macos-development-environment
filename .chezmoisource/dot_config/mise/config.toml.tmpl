@@ -36,7 +36,7 @@ _.path = ["{{ $llvmPrefix }}/bin"]
 CC = "{{ $llvmPrefix }}/bin/clang"
 CXX = "{{ $llvmPrefix }}/bin/clang++"
 LDFLAGS = "-L{{ $llvmPrefix }}/lib -L{{ $llvmPrefix }}/lib/c++ -Wl,-rpath,{{ $llvmPrefix }}/lib/c++"
-CPPFLAGS = "-I{{ $llvmPrefix }}/include"
+CPPFLAGS = "-I{{ $llvmPrefix }}/include -D_LIBCPP_DISABLE_AVAILABILITY"
 PKG_CONFIG_PATH = "{{ $llvmPrefix }}/lib/pkgconfig"
 {{   end -}}
 {{ end -}}
