@@ -95,10 +95,10 @@ mise:
     infrastructure_darwin:
       - name: 1password-cli
         version: latest
-      - name: awscli
+      - name: aws-cli
         version: latest
         config:
-          symlink_bins: "true"
+          symlink_bins: true
       - name: azure-cli
         version: latest
       - name: pitchfork

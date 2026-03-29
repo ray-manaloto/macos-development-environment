@@ -48,7 +48,7 @@ PKG_CONFIG_PATH = "{{ $llvmPrefix }}/lib/pkgconfig"
 {{-     if hasKey . "config" }}
 {{-       $cfg := .config }}
 {{-       if hasKey $cfg "symlink_bins" }}
-{{ template "toml-key" .name }} = { version = {{ .version | quote }}, symlink_bins = {{ get $cfg "symlink_bins" | quote }} }
+{{ template "toml-key" .name }} = { version = {{ .version | quote }}, symlink_bins = {{ get $cfg "symlink_bins" }} }
 {{-       else if hasKey $cfg "extras" }}
 {{ template "toml-key" .name }} = { version = {{ .version | quote }}, extras = {{ get $cfg "extras" | quote }} }
 {{-       else }}
