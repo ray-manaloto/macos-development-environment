@@ -152,6 +152,22 @@ Before ANY compaction, /clear, or session end:
 3. Check recent pipeline logs for successful saves
 4. If no recent save, trigger: `save-session.sh --force`
 
+## remember.md Lifecycle (CRITICAL — read this)
+
+`remember.md` is a ONE-SHOT briefing file with this lifecycle:
+1. `/remember` skill writes structured handoff → `remember.md`
+2. SessionStart hook reads it, injects into context, then CLEARS it (`:>`)
+3. After session start, `remember.md` is ALWAYS empty until `/remember` runs again
+4. If session ends without `/remember`, next session has empty `remember.md`
+
+**Fallback**: `now.md` and `today-*.md` are ALWAYS loaded at session start regardless.
+The Stop hook (`remember_stop.py`) writes to `now.md`, not `remember.md`.
+
+**When advising the user about handoffs**:
+- NEVER tell them to "read .remember/remember.md" — it's likely empty
+- Instead say "Read the handoff" and let the plugin's SessionStart inject all memory files
+- If `remember.md` is empty, check `now.md` and `today-*.md` for session context
+
 ## Self-Learning Protocol
 
 When processing memory files (`now.md`, `today-*.md`, `recent.md`, `archive.md`):

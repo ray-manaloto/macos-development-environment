@@ -10,8 +10,15 @@
 - ALWAYS invoke `/remember` before any compaction, `/clear`, or session end
 - This writes the handoff note so the next session has context
 - NOTE: There is no automatic hook that triggers `/remember` yet — this is a manual discipline
-- TODO: Add PreCompact and Stop hooks to automate this (see hooks inventory: 22 events available)
 - Verify handoff was written: the file `.remember/remember.md` should be non-empty after invocation
+
+## remember.md Lifecycle (important)
+- `remember.md` is a ONE-SHOT briefing: SessionStart reads it, then CLEARS it (`:>`)
+- After session start, `remember.md` is always empty until `/remember` is invoked again
+- If a session ends without `/remember`, the next session has no handoff in `remember.md`
+- HOWEVER: `now.md` and `today-*.md` are ALWAYS loaded at session start as fallback context
+- When instructing the next session, say "Read the handoff" (not "at .remember/remember.md")
+  because the plugin loads all memory files automatically — the handoff may be in now.md
 
 ## Self-Learning from Memory
 - When memory files exist (now.md, today-*.md, recent.md, archive.md), agents SHOULD read them for project learnings
@@ -40,10 +47,11 @@ The remember plugin requires these hooks in `.claude/settings.json`:
 - `PostToolUse`: triggers auto-save when tool call delta exceeds threshold
 - `UserPromptSubmit` (optional): injects timestamp
 
-Missing hooks to add for memory preservation:
-- `SessionEnd` (matcher: `clear`): auto-save memory before `/clear` destroys context
-- `PreCompact` (exit 2 blocks): save memory before compaction
-- `Stop` (exit 2 continues): remind to run `/remember` before session end
+Implemented memory preservation hooks (in settings.json):
+- `SessionEnd` (matcher: `clear`): `save-memory-on-clear` saves context before `/clear`
+- `PreCompact`: `remember-precompact` saves checkpoint before compaction
+- `Stop`: `remember-stop` writes to `now.md` + `dream-extract` runs pattern extraction
+- NOTE: These hooks write to `now.md`, NOT `remember.md` — `/remember` is still manual
 
 IMPORTANT: `/clear` CANNOT be intercepted via UserPromptSubmit — slash commands are
 processed by the CLI before hooks fire. Use SessionEnd with reason "clear" instead.

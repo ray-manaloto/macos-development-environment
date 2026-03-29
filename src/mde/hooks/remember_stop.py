@@ -1,6 +1,9 @@
-"""Stop hook — reminds to run /remember before session ends.
+"""Stop hook — writes checkpoint to now.md on session stop.
 
-Writes a checkpoint to .generated/remember/now.md and logs the event.
+Appends a timestamped entry with recent git commits to now.md.
+Does NOT write to remember.md — that file is owned by the /remember
+skill (Claude writes structured handoff notes there). The SessionStart
+hook reads now.md as fallback context when remember.md is empty.
 Exits 0 (never blocks session exit — the user chose to stop).
 """
 
