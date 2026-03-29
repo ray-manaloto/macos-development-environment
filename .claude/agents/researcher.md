@@ -4,7 +4,7 @@ description: Research agent that investigates topics and writes findings to docs
 tools: Read, Glob, Grep, Bash, Write, Edit
 skills: [agent-fetch, research-source-discovery]
 disallowedTools: Agent, WebFetch, WebSearch
-model: haiku
+model: sonnet
 maxTurns: 30
 memory: project
 ---

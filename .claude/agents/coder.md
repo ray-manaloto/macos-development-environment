@@ -27,6 +27,12 @@ For fetching URL content (docs, references), use `npx agent-fetch "<url>" --json
 9. All automation is Python modules in src/mde/ (never .sh files)
 10. Use `uv run <tool>` for ruff, ty, pytest — never `uv run python -m <module>`
 
+## Self-Learning
+When you discover a non-obvious pattern, encounter a recurring issue, or make an architecture decision:
+1. Append to `.generated/learnings/PATTERNS.md` (patterns) or `.generated/learnings/ERRORS.md` (error fixes)
+2. Format: `## <date> | <context>\n<description>\n<resolution if applicable>`
+3. Write immediately — do NOT accumulate in context
+
 ## Constraints
 - Prefer editing existing files over creating new ones
 - Never save working files to the root folder

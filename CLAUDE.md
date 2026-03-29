@@ -25,6 +25,7 @@ mise fmt --check               # mise config formatting
 - `src/mde/cli.py` — CLI dispatcher with lazy imports for startup speed (keep minimal, delegate to modules)
 - `src/mde/hooks/` — Claude Code hook handlers (auto-discovered via `__hook_meta__`, never edit cli.py to add hooks)
 - `src/mde/validate/` — Validators for configs, plugins, brew, docker
+- `src/mde/dream/` — Self-improvement pipeline; CLI: `auto-dream` (extract/propose/apply/status) with promotion ladder and tiered autonomy
 - `src/mde/research/` — Research pipeline CLI and clients
 - `src/mde/domain/` — Pydantic domain models (some codegen'd — don't hand-edit `*_models.py`)
 - `src/mde/codegen/` — Codegen postprocessors (run via `mise run mde:codegen:all`)
@@ -52,14 +53,14 @@ mise fmt --check               # mise config formatting
 - Never use `uv run python` — use `uv run <entry-point>` or `uv run <tool>`
 - Plugin validation (`uv run mde-py validate --plugins`) must produce 0 errors AND 0 warnings
 - Unrelated errors encountered during work must be cataloged as GitHub Issues via `gh issue create`
-- Before building any new tool/plugin/agent: search community plugins (`claude-plugins-community`), existing skills, and PyPI/npm first — build new is LAST RESORT
+- Before building any new tool/plugin/agent: search community plugins (`claude-community` marketplace), existing skills, and PyPI/npm first — build new is LAST RESORT
 - Every candidate plugin/tool MUST be evaluated — never skip without explicit user approval. Write a verdict (INSTALL/EXTRACT/REJECT) with rationale for EACH candidate. Missing verdicts = incomplete work.
 - ALWAYS invoke `/remember` before compaction, `/clear`, or session end — memory loss is permanent
 - All runtime/transient data goes under `.generated/` — never create new artifact dirs at repo root
 
 ## Subagents
 
-Defined in `.claude/agents/`. Use matching specialist types. Core: researcher (Haiku), coder, tester (pytest/ruff/ty), reviewer (Sonnet, read-only). Specialists: python-coder, mise-specialist, chezmoi-specialist, brew-specialist, security-auditor, claude-code-specialist, remember-specialist.
+Defined in `.claude/agents/`. Use matching specialist types. Core: researcher (Sonnet), coder, tester (pytest/ruff/ty), reviewer (Sonnet, read-only). Specialists: python-coder, mise-specialist, chezmoi-specialist, brew-specialist, security-auditor, claude-code-specialist, remember-specialist. Agents write discoveries to `.generated/learnings/` for dream pipeline consumption.
 
 ## Secrets
 

@@ -1,7 +1,7 @@
 ---
 name: remember-specialist
 description: Remember plugin specialist for session memory, configuration validation, and self-learning. Use PROACTIVELY before any compaction, /clear, or session end. Use when diagnosing remember plugin issues, validating hooks setup, or processing memory files for project learning.
-skills: [remember]
+skills: [remember, pskoett-ai-skills:self-improvement]
 model: inherit
 memory: project
 ---

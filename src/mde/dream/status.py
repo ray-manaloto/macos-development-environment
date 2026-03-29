@@ -37,7 +37,7 @@ def _print_overview(state: DreamState) -> None:
 def _print_patterns(state: DreamState) -> None:
     """Print top patterns by recurrence."""
     if not state.patterns:
-        print("\nNo patterns extracted yet. Run: mde-py dream extract")  # noqa: T201
+        print("\nNo patterns extracted yet. Run: mde-py auto-dream extract")  # noqa: T201
         return
 
     print("\nTop Patterns (by recurrence):")  # noqa: T201

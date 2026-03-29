@@ -274,9 +274,9 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
         hooks_sub.add_parser(cmd_name, help=entry[2])
     _SUBPARSERS["hooks"] = hooks_p
 
-    # dream
+    # auto-dream (module dir is src/mde/dream/, CLI name avoids Anthropic Auto-Dream collision)
     dream_p = sub.add_parser(
-        "dream", help="Self-improvement pipeline (extract/propose/apply/status)"
+        "auto-dream", help="Self-improvement pipeline (extract/propose/apply/status)"
     )
     dream_p.add_argument(
         "action", choices=["extract", "propose", "apply", "status"], help="Dream action"
@@ -707,7 +707,7 @@ def _cmd_docker(args: argparse.Namespace) -> int:
 
 
 def _cmd_dream(args: argparse.Namespace) -> int:
-    with _traced_command("dream", action=args.action) as ctx:
+    with _traced_command("auto-dream", action=args.action) as ctx:
         from mde.dream.cli import run_dream
 
         result = run_dream(
@@ -745,5 +745,5 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "observability": _cmd_observability,
     "memory": _cmd_memory,
     "docker": _cmd_docker,
-    "dream": _cmd_dream,
+    "auto-dream": _cmd_dream,
 }

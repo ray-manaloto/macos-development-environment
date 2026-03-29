@@ -29,6 +29,7 @@ def extract_patterns() -> DreamState:
         (PatternSource.REMEMBER, _scan_remember()),
         (PatternSource.RETRO, _scan_retros()),
         (PatternSource.HOOK_FEEDBACK, _scan_hook_feedback()),
+        (PatternSource.LEARNINGS, _scan_learnings()),
     ]
 
     now = datetime.now(tz=UTC)
@@ -163,6 +164,37 @@ def _scan_hook_feedback() -> list[str]:
     patterns.extend(
         f"uncommitted.{_slugify(Path(f).stem)}" for f in data.get("uncommitted_files", [])
     )
+
+    return patterns
+
+
+def _scan_learnings() -> list[str]:
+    """Extract pattern keys from agent-written .generated/learnings/ files."""
+    learnings_dir = generated_dir() / "learnings"
+    patterns: list[str] = []
+
+    if not learnings_dir.exists():
+        return patterns
+
+    for md_file in learnings_dir.glob("*.md"):
+        try:
+            text = md_file.read_text()
+        except OSError:
+            continue
+
+        stem = md_file.stem.lower()  # patterns, errors, decisions
+
+        # Count section headers as pattern signals
+        headers = re.findall(r"^##\s+(.+)$", text, re.MULTILINE)
+        patterns.extend(f"learning.{stem}.{_slugify(header[:40])}" for header in headers)
+
+        # Extract correction language
+        patterns.extend(
+            f"learning.correction.{_slugify(match.group(1))}"
+            for match in re.finditer(
+                r"(?:never|always|don'?t|must|avoid)\s+(\w[\w\s]{3,30})", text, re.IGNORECASE
+            )
+        )
 
     return patterns
 
