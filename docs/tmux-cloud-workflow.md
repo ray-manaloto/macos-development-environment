@@ -49,7 +49,7 @@ Example commands:
 Status notes:
 - `scripts/sky-status.sh` adds AWS account + EC2 details after `sky status`.
 - Cached AWS output defaults to 60s (override with `MDE_SKY_AWS_TTL=120`).
-- Install AWS CLI for the extra AWS output (`mise use -g awscli@latest`).
+- Install AWS CLI for the extra AWS output (`mise use -g aws-cli@latest`).
 
 Template notes:
 - Uses `uv` for Python package installs on the remote host.

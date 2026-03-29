@@ -281,7 +281,7 @@ Possible issues:
 
 ## SkyPilot (AWS)
 - Install with `scripts/install-agent-stack.sh` or `uv run mde-py install tmux` (includes `skypilot[aws]`).
-- Optional: install AWS CLI for richer status output (`mise use -g awscli@latest`).
+- Optional: install AWS CLI for richer status output (`mise use -g aws-cli@latest`).
 - Add AWS keys to `fnox` using the `keychain` provider.
   Example: `fnox set AWS_ACCESS_KEY_ID "..." --provider keychain`
   Example: `fnox set AWS_SECRET_ACCESS_KEY "..." --provider keychain`

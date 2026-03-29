@@ -97,7 +97,7 @@ starship, ripgrep, fd, zoxide, bat, eza, fzf, delta, lsd, hyperfine, glow, atuin
 
 **Code quality:** shellcheck, hadolint, pre-commit (pipx backend), mgrep (pipx backend)
 
-**Infrastructure:** 1password-cli, awscli (with `symlink_bins = "true"`), azure-cli
+**Infrastructure:** 1password-cli, aws-cli (with `symlink_bins = true`), azure-cli
 
 **Development:** chezmoi, usage, pkl, pitchfork, lefthook, github-cli
 

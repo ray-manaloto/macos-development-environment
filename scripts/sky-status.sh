@@ -134,7 +134,7 @@ aws_summary() {
   fi
 
   if ! command -v aws >/dev/null 2>&1; then
-    log "AWS CLI not available. Install with: mise use -g awscli@latest"
+    log "AWS CLI not available. Install with: mise use -g aws-cli@latest"
     return 1
   fi
 
