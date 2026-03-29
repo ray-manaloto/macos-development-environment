@@ -19,6 +19,7 @@ __hook_meta__ = {
 }
 
 import json
+import os
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -39,7 +40,7 @@ def _run_git(args: list[str], *, timeout: int = 5) -> str:
             capture_output=True,
             text=True,
             timeout=timeout,
-            env={**__import__("os").environ, "GIT_TERMINAL_PROMPT": "0"},
+            env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
         )
     except (subprocess.TimeoutExpired, FileNotFoundError):
         return ""

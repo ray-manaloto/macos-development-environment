@@ -42,6 +42,7 @@ def apply_proposals(*, force: bool = False) -> int:
                 f"  → Requires approval. Run --force to apply, or --reject {pid}"
             )
 
+    state.apply_count += applied
     save_state(state)
     print(f"\nApplied {applied} proposal(s). {len(pending) - applied} awaiting approval.")  # noqa: T201
     return applied

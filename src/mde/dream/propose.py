@@ -28,8 +28,10 @@ def generate_proposals() -> list[Proposal]:
     state = load_state()
     new_proposals: list[Proposal] = []
 
-    # Track which patterns already have pending/applied proposals
-    existing_keys = {p.pattern_key for p in state.proposals if p.status in ("pending", "applied")}
+    # Track which patterns already have pending/applied/rejected proposals
+    existing_keys = {
+        p.pattern_key for p in state.proposals if p.status in ("pending", "applied", "rejected")
+    }
 
     for key, pattern in state.patterns.items():
         if key in existing_keys:
@@ -58,9 +60,13 @@ def generate_proposals() -> list[Proposal]:
 
 
 def _select_target(recurrence: int) -> PromotionTarget | None:
-    """Select the highest-tier target that the recurrence count qualifies for."""
-    # Walk targets from highest threshold to lowest
-    candidates = sorted(PROMOTION_THRESHOLDS.items(), key=lambda x: x[1], reverse=True)
+    """Select the highest-tier target that the recurrence count qualifies for.
+
+    Design: "highest tier only" — each pattern produces one proposal at its
+    highest eligible target, not one per tier. Stable sort by (threshold desc,
+    target name) to break ties deterministically (e.g. hook before skill).
+    """
+    candidates = sorted(PROMOTION_THRESHOLDS.items(), key=lambda x: (-x[1], x[0].value))
     for target, threshold in candidates:
         if recurrence >= threshold:
             return target

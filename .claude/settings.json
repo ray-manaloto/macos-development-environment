@@ -467,6 +467,5 @@
     }
   },
   "spinnerTipsEnabled": true,
-  "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true
 }
