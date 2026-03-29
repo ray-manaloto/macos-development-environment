@@ -22,14 +22,11 @@ import json
 import os
 import subprocess
 from datetime import UTC, datetime
-from pathlib import Path
 
+from mde.lib.paths import generated_dir
 from mde.log import get_tracer, logger
 
 _tracer = get_tracer(__name__)
-
-_GENERATED_DIR = Path(".generated")
-_SNAPSHOT_PATH = _GENERATED_DIR / "context-snapshot.json"
 
 
 def _run_git(args: list[str], *, timeout: int = 5) -> str:
@@ -54,9 +51,11 @@ def context_snapshot() -> int:
 
         try:
             snapshot = _build_snapshot()
-            _GENERATED_DIR.mkdir(parents=True, exist_ok=True)
-            _SNAPSHOT_PATH.write_text(json.dumps(snapshot, indent=2) + "\n")
-            logger.bind(path=str(_SNAPSHOT_PATH)).info("context_snapshot_written")
+            gen = generated_dir()
+            gen.mkdir(parents=True, exist_ok=True)
+            snapshot_path = gen / "context-snapshot.json"
+            snapshot_path.write_text(json.dumps(snapshot, indent=2) + "\n")
+            logger.bind(path=str(snapshot_path)).info("context_snapshot_written")
         except Exception:  # noqa: BLE001
             logger.opt(exception=True).warning("context_snapshot_failed")
 
