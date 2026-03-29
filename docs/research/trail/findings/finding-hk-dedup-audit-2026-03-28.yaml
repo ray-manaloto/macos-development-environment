@@ -1,0 +1,105 @@
+id: finding-hk-dedup-audit-2026-03-28
+timestamp: "2026-03-28T00:00:00Z"
+source: local-codebase
+agent: researcher
+finding_type: insight
+confidence: confirmed
+confident_about: >
+  Complete picture of hk.pkl, quality.py, validate/__init__.py, pyproject.toml,
+  and .claude/settings.json. No other hook system (pre-commit, husky, lefthook)
+  exists in the project root; only node_modules/ contain .husky dirs from
+  upstream packages.
+
+gaps: >
+  Whether hk's built-in parallel execution is actually used (hk.pkl does not
+  set `parallel: true`). Whether Builtins.ruff/ruff_format in hk run the same
+  ruff binary as `uv run ruff` in quality.py — likely yes via mise PATH, but
+  not verified. Exact list of hk built-in linters not exercised (e.g., no
+  Builtins.shellcheck fix, no YAML check) vs. what shellcheck/yamllint cover.
+
+evidence: >
+  hk.pkl lines 6-16: fixers mapping includes Builtins.ruff, Builtins.ruff_format,
+  Builtins.shellcheck, Builtins.typos, Builtins.yamllint.
+  hk.pkl lines 18-22: quality_gate mapping runs `uv run mde-py quality` as a
+  single opaque check.
+  hk.pkl lines 24-37: pre-commit hook runs fixers THEN quality_gate; fix hook
+  runs fixers only; check hook runs quality_gate only.
+  quality.py lines 21-33: quality gate runs ruff-check, ruff-format --check, ty,
+  pyright, pytest, mde-validate.
+  validate/__init__.py lines 72-92: validate_all runs 14 validator modules.
+  .claude/settings.json PostToolUse line 58-62: inline ruff format on every
+  Python file edit (third ruff invocation path).
+  .git/hooks/pre-commit: single line delegating to `mise x -- hk run pre-commit`.
+  No .pre-commit-config.yaml, no lefthook.yml, no .husky/ at project root.
+
+implication: >
+  The apparent ruff duplication is intentional and complementary, not wasteful.
+  hk fixers auto-fix staging-area files with --fix before quality gate checks
+  the fixed result. Quality gate then re-checks (ruff-format --check, ruff check
+  without --fix) to confirm the fix was clean. The design is: fix -> verify, not
+  fix -> fix again. See detailed answers below.
+
+  RUFF DUPLICATION ANSWER: Intentional. hk fixers use Builtins.ruff (--fix mode)
+  and Builtins.ruff_format (format in-place). Quality gate uses ruff check
+  (check-only) and ruff format --check (check-only). Purpose is different:
+  auto-fix first, then confirm correctness. Running both is correct behavior.
+
+  WHAT HK PROVIDES THAT QUALITY GATE DOES NOT:
+  1. Builtins.typos — spell checker over staged files (not in quality.py)
+  2. Builtins.yamllint — YAML linting (not in quality.py; validate_yaml_files
+     in validate_all does its own YAML check, but this is a different tool)
+  3. Builtins.shellcheck — shell script linting with auto-fix in hk fix mode
+     (quality.py has no shellcheck; validate_shell_scripts in validate_all runs
+     shellcheck but check-only, no fix mode)
+  4. hk fix hook — standalone auto-fixer invocable outside of commit context
+  5. hk check hook — run quality gate without the fixer prefix
+  6. Staged-file scoping — hk only checks files in the git staging area, not the
+     full repo, which is faster for incremental commits
+
+  WHAT QUALITY GATE PROVIDES THAT HK DOES NOT:
+  1. ty type checker (Builtins.ty does exist in hk but is NOT used in hk.pkl)
+  2. pyright type checker (not in hk.pkl at all)
+  3. pytest test suite (no Builtins.pytest in hk)
+  4. mde-validate (14 validators: mise, chezmoi, brew, docker, plugins, skills,
+     memory, structural, etc.) — all of validate_all
+
+  UNUSED HK FEATURES:
+  1. profiles — not configured; hk supports named profiles for running subsets
+  2. groups — not configured; hk supports step grouping for parallel control
+  3. parallel — not set; hk can run steps concurrently (default is sequential)
+  4. stash modes — pre-commit uses `stash = "none"`, but hk supports "git" and
+     "patch" modes for cleaner staged-only runs
+  5. Builtins.ty — ty builtin exists in hk but is deliberately absent from
+     hk.pkl (ty runs in quality gate instead)
+  6. Builtins.pytest — pytest builtin exists in hk but not used (pytest in gate)
+  7. file-pattern matchers per step — fixers exclude .agents/skills/** but no
+     other granular per-step file filtering is used
+
+  CONSOLIDATION RECOMMENDATION:
+  Do NOT consolidate. The separation is load-bearing:
+  - hk = fast staged-file fixers + gate trigger (runs on every commit, must be fast)
+  - quality gate = comprehensive repo-wide checks (ty, pyright, pytest, 14 validators)
+  Running pytest and all validators on every pre-commit would be too slow for
+  developer workflow. The current design correctly keeps the fast auto-fixers in
+  hk and delegates slow checks to the quality gate which hk invokes once.
+  The one genuine gap: typos and yamllint from hk fixers are NOT re-run in the
+  quality gate, meaning a non-committed invocation of `mde-py quality` skips
+  them. This is a known trade-off, not a bug.
+
+tags:
+  - hk
+  - git-hooks
+  - quality-gate
+  - ruff
+  - deduplication
+  - pre-commit
+  - typos
+  - yamllint
+  - shellcheck
+  - ty
+  - pyright
+  - pytest
+  - mde-validate
+  - audit
+
+status: discovered

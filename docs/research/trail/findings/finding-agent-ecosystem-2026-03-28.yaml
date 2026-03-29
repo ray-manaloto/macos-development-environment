@@ -1,0 +1,225 @@
+id: finding-agent-ecosystem-2026-03-28
+timestamp: "2026-03-28T00:00:00Z"
+source: local-codebase
+agent: researcher
+finding_type: insight
+confidence: confirmed
+confident_about: >
+  Octo plugin architecture, agent definition structure, hook wiring,
+  enforcement mechanisms, and retro snapshot format are all confirmed from
+  direct file inspection.
+gaps: >
+  How octo's flow-develop would introspect CLAUDE.md to auto-select specialized
+  agents (versus explicit user instruction) is undocumented. No existing bridge
+  between retro JSON snapshots and agent config update loop exists.
+evidence: >
+  .claude/agents/* (10 agent defs), rsm-subagents/plugins/mise-toolkit/agents/mise-specialist.md,
+  rsm-subagents/plugins/chezmoi-toolkit/agents/chezmoi-specialist.md,
+  rsm-subagents/plugins/hk-toolkit/skills/hk-step-management/SKILL.md,
+  .claude/settings.json (hooks wiring), .claude/rules/no-warning-suppression.md,
+  octo plugin cache at ~/.claude/plugins/cache/nyldn-plugins/octo/9.15.2/
+  (commands/octo-develop.md, commands/octo-retro.md, skills/flow-develop/SKILL.md,
+  skills/skill-parallel-agents/SKILL.md, AGENTS.md), .claude-octopus/retros/*.json,
+  .claude-octopus/state.json
+implication: >
+  Octo can dispatch to specialized agents today via the Task tool, but requires
+  explicit orchestration in flow-develop (no auto-detection of domain). The
+  retro-to-agent-update loop must be built as a new skill or hook — it does not
+  exist yet. Enforcement against linter removal is strongest as a PostToolUse
+  hook (already the pattern used for validate-plugins), not just a policy rule.
+tags:
+  [
+    octo,
+    double-diamond,
+    specialized-agents,
+    mise-specialist,
+    chezmoi-specialist,
+    hk-toolkit,
+    agent-dispatch,
+    retro,
+    enforcement,
+    hooks,
+    self-updating,
+    workflow,
+  ]
+status: discovered
+details: |
+  # Full Analysis: Octo + Specialized Agents Integration
+
+  ## Q1: Can octo call specialized agents?
+
+  ANSWER: Yes, but not automatically — it requires explicit orchestration.
+
+  Octo's flow-develop skill (v9.15.2) includes a SubagentStart pattern using the
+  Task tool for post-develop code review and E2E verification. The pattern is:
+
+    Agent(
+      subagent_type: "feature-dev:code-reviewer",
+      run_in_background: true,
+      ...
+    )
+
+  However, octo's built-in AGENTS.md defines its own generic agents
+  (backend-architect, code-reviewer, debugger, etc.) — NOT the project-local
+  specialists (mise-specialist, chezmoi-specialist). These are two separate
+  agent registries.
+
+  The project-local specialists live in:
+    - rsm-subagents/plugins/mise-toolkit/agents/mise-specialist.md
+    - rsm-subagents/plugins/chezmoi-toolkit/agents/chezmoi-specialist.md
+    - .claude/agents/researcher.md, coder.md, reviewer.md, tester.md, etc.
+
+  To have /octo:develop dispatch to mise-specialist for tool management tasks
+  or chezmoi-specialist for dotfile tasks, one of these approaches is needed:
+
+    APPROACH A (recommended): Add domain-routing logic to flow-develop skill.
+      When the task involves mise/tool management keywords, spawn:
+        Agent(subagent_type: "mise-specialist@rsm-subagents", ...)
+      When the task involves dotfile/chezmoi keywords:
+        Agent(subagent_type: "chezmoi-specialist@rsm-subagents", ...)
+
+    APPROACH B: Create a project-level SKILL.md that wraps /octo:develop with
+      domain detection before dispatching to octo.
+
+    APPROACH C: Use octo's skill-parallel-agents to run multiple specialists
+      in parallel (already supported — see orchestrate.sh spawn).
+
+  CONSTRAINT: The agent teams lifecycle policy (.claude/rules/agent-teams-lifecycle.md)
+  requires using general-purpose, agent-teams:team-*, or compatible agent types.
+  Specialist agents (mise-specialist, chezmoi-specialist) defined in plugin agent/
+  dirs need to be verified for TaskUpdate/SendMessage tool availability before
+  using in teams.
+
+
+  ## Q2: Agent update loop — can retros/remember trigger config updates?
+
+  ANSWER: No automatic mechanism exists. Must be built.
+
+  Current state:
+  - /octo:retro generates JSON snapshots at .claude-octopus/retros/<date>.json
+    containing: total_commits, top_hotspots, test_ratio, ai_assisted_commits,
+    commit_types, sessions
+  - /remember writes .remember/remember.md (handoff notes)
+  - Auto memory system at ~/.claude/projects/*/memory/ stores user/feedback/project/
+    reference memories
+  - .claude/rules/ policy files are static markdown — no dynamic update mechanism
+
+  What would be needed for a retro→agent-update loop:
+    1. A new skill (e.g., skill-agent-tuning) that:
+       - Reads .claude-octopus/retros/*.json
+       - Computes drift: hotspot files = candidates for specialized-agent routing
+       - Updates agent descriptions to include domain-specific routing examples
+       - Writes updated agent .md files (chezmoi-specialist, mise-specialist, etc.)
+    2. OR a hook (PostToolUse on Write matching .claude-octopus/retros/*.json)
+       that triggers agent description refresh
+
+  Risk: Agent self-modification creates an audit trail problem. Safer pattern:
+    - Retro generates "agent config recommendations" as a separate YAML
+    - Human reviews and approves before changes land in agent .md files
+    - The no-warning-suppression policy MUST be enforced even in generated configs
+
+
+  ## Q3: Does specialized-agent dispatching fit the Double Diamond develop phase?
+
+  ANSWER: Yes — it fits cleanly in the develop phase, not requiring a new phase.
+
+  Octo's develop phase (flow-develop) already has two distinct modes:
+    - Dev Context: code/implementation tasks
+    - Knowledge Context: PRD/strategy documents
+
+  Specialized agent dispatch maps to Dev Context and slots naturally as:
+
+    DISCOVER: Codex + Gemini analyze the task
+    DEFINE: Claude synthesizes approach
+    DEVELOP (enhanced): Claude dispatches to domain specialists:
+      - mise-specialist for tool management subtasks
+      - chezmoi-specialist for dotfile/config subtasks
+      - hk-specialist implied via hk-step-management skill
+      - coder for general implementation
+      - tester for test creation
+    DELIVER: Octo code-reviewer + E2E verification subagents (already wired)
+
+  The "tangle" phase (develop) is explicitly described as "Diverge with solutions"
+  which maps well to parallel specialist invocation.
+
+  No new Diamond phase is needed. However, the develop step needs an explicit
+  routing table that maps task domains → specialist agents.
+
+
+  ## Q4: Enforcement mechanism against linter check removal
+
+  ANSWER: PostToolUse hook is the strongest mechanism; policy file alone is insufficient.
+
+  Current enforcement stack (from .claude/settings.json):
+    PostToolUse (Write|Edit):
+      1. ruff auto-format .py files
+      2. log-edit-outcome (audit trail)
+      3. validate-plugins (zero-warning gate for rsm-subagents/)
+
+  RECOMMENDED: Add a fourth PostToolUse hook:
+    4. guard-hk-integrity: exits non-zero if hk.pkl is edited and the resulting
+       file no longer contains required steps (ruff, ty, mde-quality)
+
+  Implementation options ranked by strength:
+    STRONGEST: PostToolUse hook (blocks the edit before it's saved)
+      - matcher: "Write|Edit" on hk.pkl
+      - command: uv run mde-py hooks guard-hk-integrity
+      - The hook reads the new hk.pkl content and checks required step names exist
+      - Exit non-zero to BLOCK the write if required steps are missing
+
+    STRONG: PreToolUse hook on Bash (blocks hk step removal via CLI)
+      - Already have guard-install and guard-dotfile-edit patterns
+      - Add guard-hk-step-removal that detects "hk step remove" commands
+
+    MODERATE: Pre-commit hook (already enforced via hk.pkl itself, but circular
+      if hk.pkl is being modified)
+
+    WEAK: .claude/rules/ policy file (guidance only, not machine-enforced)
+      - no-warning-suppression.md is already present but only advisory
+
+  The existing validate-plugins PostToolUse hook is the proof-of-concept pattern:
+  it runs after every Write/Edit and fails if plugins have warnings/errors.
+  The same pattern applies directly to hk.pkl integrity.
+
+  Agent definition constraints (model: haiku, disallowedTools) cannot prevent
+  config changes — they only scope what tools the agent can invoke.
+
+
+  ## Q5: Self-updating agents from retro snapshots — feasibility and risks
+
+  ANSWER: Technically feasible; high risk without guardrails.
+
+  What retro snapshots contain (.claude-octopus/retros/*.json):
+    - top_hotspots: most-touched files → domain routing signals
+    - commit_types: feat/fix/refactor ratios → workflow calibration
+    - test_ratio: coverage health → tester agent prioritization
+    - ai_assisted_commits: AI adoption rate
+    - sessions: work cadence
+
+  Feasible self-update scenarios:
+    a) If top_hotspots shows hk.pkl is the #1 hotspot, boost hk-step-management
+       skill description prominence in the hk-toolkit plugin
+    b) If test_ratio drops below 0.10, update tester agent description to add
+       "CRITICAL: test coverage falling — prioritize test writing"
+    c) If a new domain appears repeatedly in commit messages, generate routing
+       examples in the relevant specialist agent
+
+  RISKS:
+    1. Drift amplification: self-modification based on bad signal reinforces
+       the bad behavior (e.g., high hotspot count → more routing to that area →
+       even higher hotspot count)
+    2. Auditability: agent .md files in git should be human-reviewed; auto-updates
+       bypass PR review
+    3. Prompt injection: retro data is derived from commit messages which could
+       be crafted to alter agent behavior
+    4. Circular enforcement: if the hk-integrity guard itself is an agent-updated
+       file, it could be weakened by a poorly-trained update
+
+  SAFE PATTERN for self-updating agents:
+    - Read retro snapshots → write YAML recommendations (not direct .md edits)
+    - Recommendations file: docs/research/trail/findings/agent-tuning-YYYY-MM-DD.yaml
+    - Human reviews recommendations → applies selectively
+    - OR: automated apply only for non-breaking changes (adding examples, not
+      removing constraints)
+    - NEVER allow automated removal of disallowedTools or security constraints
+    - ALWAYS gate self-updates through the quality pipeline (uv run mde-py quality)

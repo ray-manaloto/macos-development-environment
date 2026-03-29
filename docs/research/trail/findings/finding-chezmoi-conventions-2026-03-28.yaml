@@ -1,0 +1,116 @@
+id: finding-chezmoi-conventions-2026-03-28
+timestamp: "2026-03-28T19:35:00-05:00"
+source: https://www.chezmoi.io/
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: >
+  Chezmoi convention analysis across 5 official docs pages. Findings cover:
+  (1) supported use of custom sourceDir via chezmoi.toml,
+  (2) .chezmoi.toml.tmpl self-reference to preserve sourceDir across init,
+  (3) missing managed files (.zshrc, .gitconfig, .ssh/config),
+  (4) suspicious-entries doctor warning for non-standard source location,
+  (5) dirty working tree warning from mixing source with Python package repo.
+gaps: >
+  Did not confirm whether `.chezmoiroot` would help isolate the .chezmoisource/
+  subdirectory further. Did not check community dotfile repos for typical managed
+  file lists. Did not test what happens on a fresh `chezmoi init --apply` clone
+  of this repo on a new machine.
+evidence: |
+  From chezmoi quick-start: "This will create a new git local repository in
+  ~/.local/share/chezmoi where chezmoi will store its source state."
+
+  From chezmoi init reference: Steps are (1) init source dir, (2) if
+  .chezmoi.$FORMAT.tmpl exists generate config file, (3) if --apply flag run
+  chezmoi apply.
+
+  From chezmoi user-guide/setup: "Create a config file on a new machine
+  automatically: chezmoi init can also create a config file automatically,
+  if one does not already exist. If your repo contains a file called
+  .chezmoi.$FORMAT.tmpl ... chezmoi init will execute that template to
+  generate your initial config file."
+
+  From chezmoi doctor output (live):
+    warning   suspicious-entries   ~/dev/github/ray-manaloto/macos-development-environment/.chezmoisource
+    warning   working-tree         ~/dev/github/ray-manaloto/macos-development-environment is a git working tree (dirty)
+
+  From ~/.config/chezmoi/chezmoi.toml (live):
+    sourceDir = "/Users/rmanaloto/dev/github/ray-manaloto/macos-development-environment/.chezmoisource"
+
+  From .chezmoisource/.chezmoi.toml.tmpl (live):
+    sourceDir = {{ .chezmoi.sourceDir | quote }}
+    (This template regenerates chezmoi.toml on init, preserving the custom sourceDir.)
+
+  From chezmoi managed (live): No .zshrc, .gitconfig, .ssh/config in the list.
+  Managed files are: .chezmoiscripts/, .config/mise/config.toml,
+  .oh-my-zsh/custom/*.zsh, .tmux.conf, .zprofile.d/macos-dev-env.zsh, Brewfile
+
+  From customize-source-directory docs: ".chezmoiroot" file can redirect
+  chezmoi to read source state from a subdirectory of the repo root.
+
+implication: |
+  1. CUSTOM SOURCEDIR IS SUPPORTED: Using a subdirectory (.chezmoisource/) inside
+     a mixed Python+dotfiles repo IS a documented and supported chezmoi pattern.
+     The sourceDir config key is the official mechanism. NOT an anti-pattern.
+
+  2. FRESH INIT WORKS CORRECTLY: The .chezmoi.toml.tmpl includes
+     `sourceDir = {{ .chezmoi.sourceDir | quote }}` which self-references the
+     current source dir when generating the config. On a fresh machine, running
+     `chezmoi init --apply <repo-url>` would clone to ~/.local/share/chezmoi by
+     default, then the template would write THAT path into chezmoi.toml. This
+     means the repo would work on a new machine BUT the source would land in
+     ~/.local/share/chezmoi (not the .chezmoisource/ subdirectory). The custom
+     .chezmoisource/ layout requires the user to manually set sourceDir in
+     chezmoi.toml BEFORE init, or the .chezmoi.toml.tmpl logic needs to hardcode
+     the intended path. This is a BOOTSTRAP GAP for new machines.
+
+  3. DOCTOR WARNINGS ARE LEGITIMATE: The two warnings from `chezmoi doctor` are:
+     - "suspicious-entries": chezmoi found files in the source dir that don't
+       map to dotfiles (the Python src/, tests/, docs/ dirs etc.). These are
+       benign in operation but noisy. Mitigation: add .chezmoiignore to suppress.
+     - "working-tree dirty": Because .chezmoisource/ is inside a repo that has
+       pending changes (the Python package), chezmoi sees the git status as dirty.
+       This is cosmetic but constant.
+
+  4. MISSING .ZSHRC IS A REAL GAP: .zshrc is not managed by chezmoi. The managed
+     files list shows only .oh-my-zsh/custom/ and .zprofile.d/. If .zshrc drifts
+     (e.g., manual edits, tool installer appends), chezmoi cannot detect or repair
+     it. The direnv ghost warning is a symptom: direnv added itself to .zshrc, but
+     since .zshrc is unmanaged, this was never caught or removed by chezmoi.
+
+  5. OTHER COMMON DOTFILES UNMANAGED: .gitconfig, .ssh/config, .inputrc are
+     present on the system but not managed by chezmoi. This is a policy choice
+     but means drift in these files is invisible to the toolchain.
+
+  6. PYTHON+DOTFILES MIXING WORKS BUT CREATES FRICTION: Normal dotfile repos
+     ARE the chezmoi source dir. This repo is a Python package that CONTAINS
+     the chezmoi source as a subdirectory. Chezmoi supports this via sourceDir
+     config, but it creates the doctor warnings and bootstrap complexity described
+     above. The .chezmoiroot mechanism is an alternative that would let you keep
+     the repo root clean and point chezmoi at .chezmoisource/ but it's the
+     subdirectory WITHIN the source dir, not the source dir itself - so it doesn't
+     help here.
+
+tags:
+  - chezmoi
+  - dotfiles
+  - conventions
+  - sourceDir
+  - missing-managed-files
+  - zshrc
+  - bootstrap
+  - doctor-warnings
+  - python-package
+  - mixed-repo
+status: discovered
+
+questions_for_follow_up:
+  - Should .zshrc be added to chezmoi management? Risk: chezmoi apply could
+    overwrite manual customizations. Benefit: drift detection, reproducibility.
+  - Should .gitconfig be managed? It likely has machine-specific settings
+    (user.email, credential.helper) that belong in templates.
+  - Can .chezmoiignore be added to suppress suspicious-entries doctor warning?
+  - Does the bootstrap gap matter? Does anyone actually clone this repo on a
+    fresh machine, or is it only applied on the existing machine?
+  - Would splitting into a dedicated dotfiles repo (separate from mde Python
+    package) eliminate the mixing friction?

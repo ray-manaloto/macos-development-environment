@@ -1,0 +1,182 @@
+id: finding-enforcement-policy-2026-03-28
+timestamp: "2026-03-28T00:00:00Z"
+source: local-codebase
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: >
+  Current hook infrastructure uses PreToolUse deny-pattern guards (guard_install,
+  guard_dotfile_edit) that can be extended. hk.pkl has a clear structure with
+  fixers + quality_gate mappings. pyproject.toml has [tool.ruff.lint.ignore] and
+  [tool.ruff.lint.per-file-ignores] sections. PostToolUse Write|Edit hooks already
+  run on every file edit. The existing no-warning-suppression.md policy exists but
+  has no automated enforcement layer.
+gaps: >
+  - No hook exists yet to detect suppression patterns in code edits.
+  - hk.pkl has no baseline integrity check — steps can be removed silently.
+  - No escalation protocol is documented for agents stuck on linter errors.
+  - The existing PostToolUse hook at line 58 of settings.json uses `|| true`
+    and `2>/dev/null` itself (a policy violation that should be fixed).
+evidence: >
+  - .claude/rules/no-warning-suppression.md: policy exists, no enforcement.
+  - .claude/settings.json line 58: `2>/dev/null || true` in PostToolUse hook
+    (the formatter inline command suppresses errors, violating the policy it guards).
+  - src/mde/hooks/guard_install.py: PreToolUse deny-pattern model that works.
+  - src/mde/hooks/guard_dotfile_edit.py: file_path + command dual-mode guard model.
+  - src/mde/validate/hk.py: only runs `hk validate` (syntax check), no step-baseline check.
+  - hk.pkl: fixers (ruff, ruff_format, shellcheck, typos, yamllint) + quality_gate
+    (mde-quality) — these are the steps that must be protected from removal.
+  - pyproject.toml [tool.ruff.lint.ignore]: existing ignores documented in
+    .claude/rules/no-warning-suppression.md feedback memory (feedback_ruff_all_rules.md).
+implication: >
+  A four-layer enforcement system is feasible given the existing infrastructure.
+  The highest-value addition is a new PreToolUse guard hook that pattern-matches
+  suppression tokens in edits (# noqa, # type: ignore, || true, 2>/dev/null).
+  The hk.pkl baseline check can be added to validate_hk() as a structural
+  integrity check. The escalation protocol should be a new .claude/rules/ file.
+  The existing PostToolUse inline formatter (settings.json line 58) must also
+  be fixed as it itself violates the no-suppression policy.
+
+enforcement_system_design:
+  layer_1_policy:
+    file: ".claude/rules/no-linter-suppression.md"
+    scope: "Extends no-warning-suppression.md with agent-specific rules"
+    rules:
+      - "NEVER add # noqa, # noqa: <code>, # type: ignore, or # pyright: ignore to code"
+      - "NEVER add // noinspection <anything> comments"
+      - "NEVER modify [tool.ruff.lint.ignore] in pyproject.toml to add new entries"
+      - "NEVER modify [tool.ruff.lint.per-file-ignores] to add new file patterns"
+      - "NEVER remove steps from hk.pkl fixers or quality_gate mappings"
+      - "NEVER use || true, 2>/dev/null, or set +e to hide tool failures"
+      - "Escalation path: research root cause -> AskUserQuestion -> never suppress"
+    existing_gap: >
+      no-warning-suppression.md covers runtime warning suppression but does NOT
+      explicitly prohibit source-level suppression annotations (# noqa, # type: ignore).
+      A separate rule file is needed to close this gap.
+
+  layer_2_hooks:
+    new_hook:
+      name: "guard_suppression"
+      file: "src/mde/hooks/guard_suppression.py"
+      trigger: "PreToolUse Write|Edit"
+      approach: >
+        For Write: scan new_string content for suppression patterns before write.
+        For Edit: scan new_string (replacement text) for suppression patterns.
+        On detection: deny with reason explaining what to do instead.
+      detection_patterns:
+        - "# noqa"             # ruff inline ignore (any form)
+        - "# type: ignore"     # mypy/pyright inline ignore
+        - "# pyright: ignore"  # pyright-specific inline ignore
+        - "|| true"            # shell failure suppression
+        - "2>/dev/null"        # shell stderr suppression
+        - "set +e"             # shell errexit disable
+      false_positive_risk: >
+        Pattern matching in new_string is simpler than command matching because
+        the content IS the thing being checked. Risk: legitimate test code that
+        tests suppression handling. Mitigation: check file_path — allow test files
+        at tests/ path to contain these patterns in string literals (check for
+        quotes around the pattern).
+      hk_pkl_protection:
+        trigger: "PreToolUse Write|Edit on hk.pkl"
+        approach: >
+          Before allowing edit: parse current hk.pkl to extract step names.
+          After edit would apply: parse proposed content for step names.
+          Deny if any step name from fixers or quality_gate is absent in proposed.
+          Implementation note: hk.pkl is Pkl (not JSON) — use regex to extract
+          step names from Mapping<> blocks rather than full Pkl parsing.
+        protected_steps:
+          - "ruff"
+          - "ruff_format"
+          - "shellcheck"
+          - "typos"
+          - "yamllint"
+          - "mde-quality"
+
+    ruff_ignore_protection:
+      trigger: "PreToolUse Write|Edit on pyproject.toml"
+      approach: >
+        Extract [tool.ruff.lint.ignore] entries from current pyproject.toml.
+        Compare against proposed content. Deny if new entries are being added.
+        Allow removals (removing ignores is always safe). Require human approval
+        for additions via AskUserQuestion response path.
+      note: >
+        This is a medium-complexity check. The simpler alternative is to add
+        the rule to policy and rely on agent compliance + PR review. A hook
+        provides automated enforcement that survives agent model changes.
+
+    settings_json_fix:
+      existing_violation: >
+        settings.json PostToolUse hook line 58 uses `2>/dev/null || true` in the
+        inline formatter command. This violates the no-warning-suppression policy.
+        Should be replaced with a proper Python hook that surfaces errors.
+      fix_approach: >
+        Move the inline `uv run ruff format "$f"` to a proper Python hook module
+        src/mde/hooks/format_on_save.py with error handling that surfaces ruff
+        failures rather than silencing them.
+
+  layer_3_escalation_protocol:
+    file: ".claude/rules/linter-escalation-protocol.md"
+    steps:
+      1: "Read the full linter error message — understand what rule was triggered"
+      2: "Search the ruff docs for the rule code (e.g., https://docs.astral.sh/ruff/rules/RUF100)"
+      3: "Check if the issue is a false positive — look for upstream ruff issues"
+      4: "If false positive: propose adding to pyproject.toml [tool.ruff.lint.ignore] via AskUserQuestion"
+      5: "If genuine issue: fix the root cause in the source code"
+      6: "If genuinely unfixable: use AskUserQuestion to describe the situation — NEVER suppress unilaterally"
+      7: "Document the decision in the commit message with rationale"
+    forbidden_shortcuts:
+      - "Adding # noqa without human approval"
+      - "Downgrading a linter rule from error to warning in config"
+      - "Removing the failing step from hk.pkl"
+      - "Using || true or 2>/dev/null to bypass the gate"
+
+  layer_4_validation:
+    extend_validate_hk:
+      file: "src/mde/validate/hk.py"
+      current_behavior: "Runs `hk validate` — checks Pkl syntax only"
+      proposed_extension: >
+        After syntax check, parse hk.pkl to verify required steps are present.
+        Extract step names from pre-commit hooks (fix steps + check steps).
+        Compare against REQUIRED_STEPS baseline list.
+        Emit ERROR for any missing step.
+      required_steps_baseline:
+        - "ruff"
+        - "ruff_format"
+        - "shellcheck"
+        - "typos"
+        - "yamllint"
+        - "mde-quality"
+      implementation: >
+        Use Python string parsing on hk.pkl content (Pkl format is not standard
+        parseable). Extract quoted step names from Mapping<> blocks with regex:
+        pattern `r'^\s*\["(\w+)"\]'` matches step keys. Compare against baseline.
+        Emit Severity.ERROR for missing steps, include expected vs actual list.
+      integration: >
+        Add to `uv run mde-py validate --all` output. This means every commit
+        (which runs `uv run mde-py quality`) will catch missing hk.pkl steps.
+
+    ruff_ignore_audit:
+      approach: >
+        `uv run mde-py validate` can parse pyproject.toml [tool.ruff.lint.ignore]
+        and compare against a documented baseline list. Any new entry not in
+        the approved list emits WARNING (not ERROR — adding ignores may be valid
+        after human review, but should surface as a signal).
+      note: >
+        The approved ignore list itself should be version-controlled and reviewed.
+        Currently the rationale is in .claude/agent-memory/researcher/feedback_ruff_all_rules.md.
+        A better location is a comment block in pyproject.toml itself.
+
+tags:
+  - enforcement
+  - linter
+  - hooks
+  - guard
+  - suppression
+  - hk.pkl
+  - ruff
+  - pyproject
+  - policy
+  - agent-safety
+  - quality-gate
+  - no-warning-suppression
+status: discovered

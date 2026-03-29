@@ -1,0 +1,585 @@
+id: finding-hk-builtins-audit-2026-03-28
+timestamp: "2026-03-28T00:10:00Z"
+source: https://hk.jdx.dev/builtins.html
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: >
+  Full inventory of all 90+ hk builtins as of v1.39.0. Current hk.pkl enables:
+  ruff, ruff_format, shellcheck, typos, yamllint.
+  Project technology stack verified from hk.pkl, .mise.toml, pyproject.toml, and
+  directory structure.
+gaps: >
+  - taplo vs tombi: both lint/format TOML; need to evaluate which is preferred
+  - markdownlint vs rumdl: markdownlint is node-based, rumdl is rust-based; quality comparison needed
+  - Whether check-conventional-commit is already enforced elsewhere (hk.pkl or CI)
+  - actionlint/zizmor installation paths (not in global mise config yet)
+evidence: >
+  hk.pkl line 7-15: ruff, ruff_format, shellcheck, typos, yamllint enabled.
+  global mise config has: pkl, jq, yq, shellcheck, hadolint, typos, yamllint.
+  .github/workflows/ contains: devcontainer-image.yml, schema-drift-check.yml, validate.yml.
+  TOML files in repo root: _typos.toml, fnox.toml, pyproject.toml, .mise.toml.
+  Pkl files: hk.pkl.
+  Shell files: chezmoi scripts (.sh).
+  Markdown: docs/, CLAUDE.md, README.md.
+implication: >
+  6 builtins should be ENABLED (taplo-format, hadolint, shfmt, actionlint, pkl,
+  check-conventional-commit).
+  4 builtins are worth CONSIDERING (ty, mypy, markdownlint/rumdl, zizmor).
+  The rest are irrelevant to the project stack.
+tags: [hk, git-hooks, linters, builtins, pre-commit, toml, yaml, python, shell, docker, pkl, audit]
+status: discovered
+
+# ============================================================
+# FULL AUDIT — every builtin classified
+# ============================================================
+# Format per entry:
+#   verdict: ENABLE | CONSIDER | SKIP
+#   (for ENABLE/CONSIDER) what/files/binary details included
+# ============================================================
+
+builtins_audit:
+
+  # ----- Python -----
+  ruff:
+    verdict: ALREADY_ENABLED
+    notes: Enabled in hk.pkl. Lints **/*.py, **/*.pyi.
+
+  ruff_format:
+    verdict: ALREADY_ENABLED
+    notes: Enabled in hk.pkl. Formats **/*.py, **/*.pyi.
+
+  ty:
+    verdict: CONSIDER
+    what: Pyright-compatible type checker for Python (Astral's ty)
+    files: "**/*.py, **/*.pyi — src/mde/ type checking"
+    binary: "ty — already in pyproject.toml dev deps, run via uv run ty"
+    notes: >
+      Project already runs `uv run ty check src/mde/` in the quality gate.
+      Adding as a hk builtin would catch type errors at commit time (fix-phase
+      would be no-op since ty has no auto-fix). Only valuable if you want
+      type errors to block commits independently of the full quality gate.
+      Low priority — quality gate already covers this.
+
+  mypy:
+    verdict: SKIP
+    notes: Project uses ty (Astral), not mypy. Both cover **/*.py but ty is the chosen tool.
+
+  black:
+    verdict: SKIP
+    notes: Project uses ruff_format, not black. Black and ruff_format conflict.
+
+  isort:
+    verdict: SKIP
+    notes: ruff (I-rules) handles import sorting. isort would be redundant.
+
+  flake8:
+    verdict: SKIP
+    notes: ruff supersedes flake8. Having both produces duplicate findings.
+
+  pylint:
+    verdict: SKIP
+    notes: ruff covers most pylint rules. pylint is slow; no project usage.
+
+  python_check_ast:
+    verdict: CONSIDER
+    what: hk built-in util that validates Python AST syntax (catches syntax errors pre-ruff)
+    files: "**/*.py — catches syntax errors that would break ruff itself"
+    binary: "hk util — built into hk, no external binary"
+    notes: >
+      Zero-cost: uses hk's built-in util, no new tool install. Catches syntax
+      errors before ruff runs. However, ruff already reports syntax errors, so
+      this is somewhat redundant. CONSIDER adding only if ruff misses cases.
+
+  python_debug_statements:
+    verdict: CONSIDER
+    what: Detects accidental pdb/breakpoint() left in committed Python files
+    files: "**/*.py — prevents debug artifacts from landing in main"
+    binary: "hk util — built into hk, no external binary"
+    notes: >
+      Zero-cost built-in. Useful for a team project. Prevents `breakpoint()`,
+      `pdb.set_trace()`, `import pdb` from landing. Complements ruff's T100
+      rule but operates at a different level. Worth enabling.
+
+  # ----- TOML -----
+  taplo:
+    verdict: ENABLE
+    what: TOML linter and formatter
+    files: "pyproject.toml, .mise.toml, _typos.toml, fnox.toml — all TOML in repo"
+    binary: "taplo — not in global mise config yet. Add: taplo = 'latest' to global mise config"
+    notes: >
+      Project has multiple TOML files with no formatter today. taplo-format
+      would enforce consistent TOML style. taplo lint catches schema violations.
+      mise builtin covers .mise.toml files (see below), but taplo covers all TOML.
+
+  taplo_format:
+    verdict: ENABLE
+    what: TOML auto-formatter (fixes style, sorts keys optionally)
+    files: "Same as taplo: pyproject.toml, .mise.toml, _typos.toml, fnox.toml"
+    binary: "taplo — same binary as above"
+    notes: >
+      Add both taplo (lint) and taplo_format (fix) together. taplo_format as a
+      fixer runs on `hk fix` and auto-corrects formatting inconsistencies.
+
+  tombi:
+    verdict: SKIP
+    notes: >
+      tombi is an alternative TOML linter. taplo is more established and already
+      recommended by the mise ecosystem. Pick one; taplo is the better choice.
+
+  tombi_format:
+    verdict: SKIP
+    notes: Same rationale as tombi — use taplo_format instead.
+
+  # ----- Pkl -----
+  pkl:
+    verdict: ENABLE
+    what: Validates Pkl config files by evaluating them (catches syntax/type errors)
+    files: "hk.pkl — and any future *.pkl files"
+    binary: "pkl — already in global mise config (pkl = 'latest')"
+    notes: >
+      Zero installation cost — pkl is already in mise. The builtin runs
+      `pkl eval {{files}} >/dev/null`. Catches errors in hk.pkl itself before
+      commit. High value, low cost.
+
+  pkl_format:
+    verdict: CONSIDER
+    what: Formats Pkl files (checks diff, fixes with pkl format --write)
+    files: "hk.pkl"
+    binary: "pkl — already installed"
+    notes: >
+      Enforces consistent Pkl formatting. pkl_format check mode reports files
+      that need reformatting; fix mode rewrites them. Zero new tool cost.
+      Worth enabling alongside pkl validation.
+
+  # ----- Shell -----
+  shellcheck:
+    verdict: ALREADY_ENABLED
+    notes: Enabled in hk.pkl. Covers **/*.sh, **/*.bash.
+
+  shfmt:
+    verdict: ENABLE
+    what: Shell script formatter (checks and auto-fixes formatting)
+    files: "**/*.sh, **/*.bash, **/*.zsh — chezmoi scripts, any .sh files in repo"
+    binary: "shfmt — not in global mise config. Add: shfmt = 'latest'"
+    notes: >
+      Project has chezmoi shell scripts. shellcheck catches bugs; shfmt enforces
+      consistent formatting. Both together give full shell hygiene. shfmt fix
+      mode auto-corrects on `hk fix`.
+
+  # ----- YAML -----
+  yamllint:
+    verdict: ALREADY_ENABLED
+    notes: Enabled in hk.pkl. Covers **/*.yml, **/*.yaml.
+
+  yamlfmt:
+    verdict: CONSIDER
+    what: YAML formatter (check and auto-fix formatting)
+    files: "docs/research/trail/findings/*.yaml, .github/workflows/*.yml"
+    binary: "yamlfmt — not in global mise config. Add via: github:google/yamlfmt"
+    notes: >
+      yamllint checks style rules; yamlfmt enforces consistent formatting.
+      The project has many hand-written YAML files. yamlfmt as a fixer would
+      normalize them. However, yamlfmt can be aggressive about reformatting
+      comments — evaluate carefully before enabling.
+
+  yq:
+    verdict: SKIP
+    notes: >
+      yq builtin reformats YAML using yq -iP (pretty-print + sort keys).
+      This would reorder keys in all YAML files alphabetically, which would
+      mangle the logical structure of findings/*.yaml and workflow files.
+      yq is installed as a tool but not appropriate as a hk step.
+
+  # ----- JSON -----
+  jq:
+    verdict: CONSIDER
+    what: Validates and pretty-prints JSON files (check mode diffs, fix mode rewrites)
+    files: ".claude/settings.json, docs/schemas/*.json — all JSON in repo"
+    binary: "jq — already in global mise config (jq = 'latest')"
+    notes: >
+      Zero installation cost. The jq builtin validates JSON is well-formed and
+      optionally normalizes formatting. However, jq fix mode uses `jq -S` which
+      sorts keys alphabetically — this would reorder .claude/settings.json and
+      schema files destructively. Use check-only mode if enabled, NOT fix.
+      Risk: key-sort is baked into the builtin fix command. SKIP fix, CONSIDER check-only via customization.
+
+  # ----- Docker -----
+  hadolint:
+    verdict: ENABLE
+    what: Dockerfile linter (best-practice checks)
+    files: "**/Dockerfile* — project has Dockerfiles"
+    binary: "hadolint — already in global mise config (hadolint = 'latest')"
+    notes: >
+      Zero installation cost. hadolint is already globally installed via mise.
+      The project has Dockerfiles. Adding the builtin catches Dockerfile
+      anti-patterns at commit time.
+
+  # ----- Markdown -----
+  markdown_lint:
+    verdict: CONSIDER
+    what: markdownlint — enforces Markdown style rules
+    files: "docs/**/*.md, CLAUDE.md, README.md"
+    binary: "markdownlint — npm-based. Add: 'npm:markdownlint-cli' = 'latest' to global mise"
+    notes: >
+      Project has significant Markdown documentation. markdownlint catches
+      heading hierarchy issues, link formatting, trailing spaces. Requires
+      node/npm. Alternative: rumdl (Rust-based, see below).
+
+  rumdl:
+    verdict: CONSIDER
+    what: Rust-based Markdown linter/fixer (rumdl) — faster alternative to markdownlint
+    files: "**/*.md — docs/, CLAUDE.md, README.md"
+    binary: "rumdl — not in mise registry. Install via cargo or github: backend"
+    notes: >
+      rumdl has check+fix modes (markdownlint only has limited fix). Being
+      Rust-based fits the project's tool philosophy (ruff, typos are also Rust).
+      However, rumdl is newer and less battle-tested than markdownlint.
+      Pick ONE markdown linter. rumdl preferred if fix mode is important.
+
+  lychee:
+    verdict: CONSIDER
+    what: Checks URLs in files for dead links
+    files: "**/*.md — checks all links in documentation"
+    binary: "lychee — not in global mise config. Add: lychee = 'latest'"
+    notes: >
+      Useful for catching broken external links in docs. However, link checking
+      is slow (network I/O) and flaky (rate limits, redirects). Better as a CI
+      step than a pre-commit hook. SKIP for hk, run in CI instead.
+
+  # ----- Git / Commit Quality -----
+  typos:
+    verdict: ALREADY_ENABLED
+    notes: Enabled in hk.pkl. Covers **/* (spell-checking).
+
+  check_conventional_commit:
+    verdict: ENABLE
+    what: Enforces conventional commit message format (feat:, fix:, docs:, etc.)
+    files: "commit_msg_file — validates the commit message itself"
+    binary: "hk util — built into hk, no external binary"
+    notes: >
+      CLAUDE.md explicitly mandates conventional commits. This builtin
+      enforces the rule at commit time (commit-msg hook). Zero cost — uses
+      hk's built-in util. Must be added to a commit-msg hook, not pre-commit.
+
+  check_added_large_files:
+    verdict: CONSIDER
+    what: Blocks commits that add files over a size threshold
+    files: "**/* — all staged files"
+    binary: "hk util — built-in, no external binary"
+    notes: >
+      Prevents accidental large binary commits (.generated/ should be gitignored
+      but belt-and-suspenders protection is useful). Zero cost built-in.
+
+  check_merge_conflict:
+    verdict: CONSIDER
+    what: Detects merge conflict markers left in files
+    files: "**/* — all staged files"
+    binary: "hk util — built-in, no external binary"
+    notes: >
+      Catches `<<<<<<< HEAD` markers that were accidentally staged. Zero cost.
+      Complements the existing quality gate.
+
+  no_commit_to_branch:
+    verdict: SKIP
+    notes: >
+      Project uses worktree PR workflow. Direct commits to main happen regularly
+      (per git log). This would block normal workflow. SKIP.
+
+  check_case_conflict:
+    verdict: CONSIDER
+    what: Detects files that would conflict on case-insensitive filesystems (macOS)
+    files: "**/* — all staged files"
+    binary: "hk util — built-in, no external binary"
+    notes: >
+      macOS development with CI on Linux — case conflicts are a real risk.
+      Zero cost built-in. Worth enabling.
+
+  detect_private_key:
+    verdict: CONSIDER
+    what: Scans for accidentally committed private keys/secrets
+    files: "**/* — all staged files"
+    binary: "hk util — built-in, no external binary"
+    notes: >
+      Project uses Doppler+fnox for secrets. Still useful as a backstop.
+      Zero cost. Low false-positive rate for this builtin.
+
+  check_symlinks:
+    verdict: SKIP
+    notes: Symlink validation only relevant if repo has symlinks. .remember is a symlink but it's gitignored.
+
+  check_executables_have_shebangs:
+    verdict: SKIP
+    notes: Project has no shell scripts in repo that need executable bits managed this way.
+
+  newlines:
+    verdict: CONSIDER
+    what: Ensures files end with a single newline (EOF fixer)
+    files: "**/* — all staged files"
+    binary: "hk util — built-in"
+    notes: >
+      Standard hygiene. Fixes files missing trailing newlines. Zero cost.
+
+  trailing_whitespace:
+    verdict: CONSIDER
+    what: Removes trailing whitespace from all files
+    files: "**/* — all staged files"
+    binary: "hk util — built-in"
+    notes: >
+      ruff handles Python trailing whitespace. This covers YAML, TOML, Markdown,
+      and other file types. Zero cost. Worth enabling.
+
+  mixed_line_ending:
+    verdict: SKIP
+    notes: macOS-only development; CRLF line ending issues not a concern.
+
+  fix_smart_quotes:
+    verdict: SKIP
+    notes: No rich-text-to-code workflow in this project. Low value.
+
+  byte_order_marker:
+    verdict: SKIP
+    notes: macOS/Python toolchain; UTF-8 BOM not a concern.
+
+  check_byte_order_marker:
+    verdict: SKIP
+    notes: Same rationale as byte_order_marker.
+
+  fix_byte_order_marker:
+    verdict: SKIP
+    notes: Same rationale.
+
+  # ----- GitHub Actions -----
+  actionlint:
+    verdict: ENABLE
+    what: Lints GitHub Actions workflow YAML for correctness
+    files: ".github/workflows/*.yml — project has 3 workflow files"
+    binary: "actionlint — not in global mise config. Add: actionlint = 'latest'"
+    notes: >
+      Project has .github/workflows/ with 3 files. actionlint catches type
+      errors, expression syntax errors, and security issues in workflow files.
+      Highly valuable for a project that relies on CI.
+
+  ghalint_workflow:
+    verdict: CONSIDER
+    what: Security-focused GitHub Actions linter (stronger than actionlint)
+    files: ".github/workflows/* — workflow files"
+    binary: "ghalint — not in mise config. Add via github: backend"
+    notes: >
+      Complements actionlint with security-specific checks (pinned actions,
+      permission scopes). If actionlint is already added, ghalint adds
+      incremental value. CONSIDER after actionlint is stable.
+
+  ghalint_action:
+    verdict: SKIP
+    notes: Project has no custom action.yml files, only workflow files.
+
+  pinact:
+    verdict: CONSIDER
+    what: Pins GitHub Actions to exact commit SHAs (security hardening)
+    files: ".github/workflows/*.yml"
+    binary: "pinact — not in mise config. Add via github: backend"
+    notes: >
+      Security hardening tool that replaces `uses: actions/checkout@v4` with
+      `uses: actions/checkout@<sha>`. Good practice but aggressive — evaluate
+      whether the team wants SHA-pinned actions.
+
+  zizmor:
+    verdict: CONSIDER
+    what: Static analysis for GitHub Actions security (supply-chain attacks, injection)
+    files: ".github/workflows/*.yml, **/action.yml"
+    binary: "zizmor — not in mise config. Add: github:woodruffw/zizmor"
+    notes: >
+      zizmor finds injection vulnerabilities, excessive permissions, and
+      supply-chain risks in GitHub Actions. More security-focused than actionlint.
+      Has fix mode. CONSIDER if security hardening is a priority.
+
+  # ----- Miscellaneous (SKIP group) -----
+  # Everything below is for stacks not used in this project
+
+  # JavaScript/TypeScript ecosystem
+  biome: {verdict: SKIP, notes: No JS/TS in src/mde/}
+  prettier: {verdict: SKIP, notes: No JS/TS/CSS/HTML in project source}
+  eslint: {verdict: SKIP, notes: No JavaScript}
+  tsc: {verdict: SKIP, notes: No TypeScript}
+  tsserver: {verdict: SKIP, notes: No TypeScript}
+  deno: {verdict: SKIP, notes: No Deno/JS}
+  deno_check: {verdict: SKIP, notes: No Deno/JS}
+  standard_js: {verdict: SKIP, notes: No JavaScript}
+  xo: {verdict: SKIP, notes: No JavaScript}
+  ox_lint: {verdict: SKIP, notes: No JavaScript}
+  knip: {verdict: SKIP, notes: No JS/TS}
+  knip_strict: {verdict: SKIP, notes: No JS/TS}
+  sort_package_json: {verdict: SKIP, notes: No package.json in source}
+
+  # CSS/styling
+  stylelint: {verdict: SKIP, notes: No CSS/SCSS}
+
+  # Ruby ecosystem
+  rubocop: {verdict: SKIP, notes: No Ruby}
+  reek: {verdict: SKIP, notes: No Ruby}
+  brakeman: {verdict: SKIP, notes: No Ruby/Rails}
+  erb: {verdict: SKIP, notes: No ERB templates}
+  bundle_audit: {verdict: SKIP, notes: No Gemfile}
+  fasterer: {verdict: SKIP, notes: No Ruby}
+  standard_rb: {verdict: SKIP, notes: No Ruby}
+
+  # Go ecosystem
+  go_fmt: {verdict: SKIP, notes: No Go code}
+  go_fumpt: {verdict: SKIP, notes: No Go}
+  go_imports: {verdict: SKIP, notes: No Go}
+  go_lines: {verdict: SKIP, notes: No Go}
+  go_sec: {verdict: SKIP, notes: No Go}
+  go_vet: {verdict: SKIP, notes: No Go}
+  go_vuln_check: {verdict: SKIP, notes: No Go}
+  golangci_lint: {verdict: SKIP, notes: No Go}
+  gomod_tidy: {verdict: SKIP, notes: No Go}
+  err_check: {verdict: SKIP, notes: No Go}
+  revive: {verdict: SKIP, notes: No Go}
+  staticcheck: {verdict: SKIP, notes: No Go}
+
+  # Rust ecosystem
+  cargo_check: {verdict: SKIP, notes: No Rust in project src/}
+  cargo_clippy: {verdict: SKIP, notes: No Rust}
+  cargo_fmt: {verdict: SKIP, notes: No Rust}
+  rustfmt: {verdict: SKIP, notes: No Rust}
+
+  # Nix ecosystem
+  alejandra: {verdict: SKIP, notes: No Nix}
+  deadnix: {verdict: SKIP, notes: No Nix}
+  nil: {verdict: SKIP, notes: No Nix}
+  nix_fmt: {verdict: SKIP, notes: No Nix}
+  nixf_diagnose: {verdict: SKIP, notes: No Nix}
+  nixpkgs_format: {verdict: SKIP, notes: No Nix}
+
+  # Terraform/OpenTofu
+  terraform: {verdict: SKIP, notes: No Terraform}
+  tf_lint: {verdict: SKIP, notes: No Terraform}
+  tofu: {verdict: SKIP, notes: No OpenTofu}
+  hclfmt: {verdict: SKIP, notes: No HCL}
+
+  # C/C++
+  clang_format: {verdict: SKIP, notes: No C/C++}
+  cpp_lint: {verdict: SKIP, notes: No C/C++}
+
+  # Elixir
+  mix_compile: {verdict: SKIP, notes: No Elixir}
+  mix_fmt: {verdict: SKIP, notes: No Elixir}
+  mix_test: {verdict: SKIP, notes: No Elixir}
+
+  # Kotlin
+  ktlint: {verdict: SKIP, notes: No Kotlin}
+
+  # Swift
+  swiftlint: {verdict: SKIP, notes: No Swift}
+
+  # Lua
+  luacheck: {verdict: SKIP, notes: No Lua}
+  selene: {verdict: SKIP, notes: No Lua}
+
+  # Protobuf
+  buf_format: {verdict: SKIP, notes: No .proto files}
+  buf_lint: {verdict: SKIP, notes: No .proto files}
+
+  # PHP
+  php_cs: {verdict: SKIP, notes: No PHP}
+
+  # SQL
+  sql_fluff: {verdict: SKIP, notes: No SQL files}
+
+  # Asciidoc
+  asciidoctor: {verdict: SKIP, notes: No .adoc files}
+
+  # Astro
+  astro: {verdict: SKIP, notes: No Astro framework}
+
+  # XML
+  xmllint: {verdict: SKIP, notes: No XML files}
+
+  # Justfile
+  just_format: {verdict: SKIP, notes: No justfile, project uses mise tasks}
+
+  # OpenAPI
+  vacuum: {verdict: SKIP, notes: No OpenAPI specs in project}
+
+  # Vale (prose linter)
+  vale: {verdict: SKIP, notes: No prose style enforcement needed}
+
+  # contextlint
+  contextlint: {verdict: SKIP, notes: Unknown tool, no relevant files}
+
+  # dprint (polyglot formatter)
+  dprint: {verdict: SKIP, notes: Project has dedicated per-language formatters; dprint adds overlap}
+
+  # editorconfig-checker
+  editorconfig_checker: {verdict: SKIP, notes: No .editorconfig file in project}
+
+  # ryl (unknown)
+  ryl: {verdict: SKIP, notes: Obscure tool, unknown purpose, no project relevance identified}
+
+# ============================================================
+# SUMMARY
+# ============================================================
+
+summary:
+  currently_enabled: [ruff, ruff_format, shellcheck, typos, yamllint]
+
+  enable_immediately:
+    - name: taplo / taplo_format
+      rationale: "Project has pyproject.toml, .mise.toml, _typos.toml, fnox.toml — all TOML, no formatter today"
+      install: "taplo = 'latest' in global mise config"
+    - name: hadolint
+      rationale: "Project has Dockerfiles; hadolint already in global mise config"
+      install: "Already installed — zero cost"
+    - name: shfmt
+      rationale: "shellcheck catches bugs; shfmt enforces consistent formatting of chezmoi .sh scripts"
+      install: "shfmt = 'latest' in global mise config"
+    - name: actionlint
+      rationale: "3 workflow files in .github/workflows/ — catches type/expression errors"
+      install: "actionlint = 'latest' in global mise config"
+    - name: pkl
+      rationale: "hk.pkl validation; pkl already in global mise config — zero cost"
+      install: "Already installed"
+    - name: check_conventional_commit
+      rationale: "CLAUDE.md mandates conventional commits; this enforces it at commit-msg hook time"
+      install: "hk util — built-in, zero cost; add to commit-msg hook"
+
+  consider_later:
+    - name: python_debug_statements
+      rationale: "Zero-cost built-in; catches accidental pdb/breakpoint() commits"
+    - name: check_merge_conflict
+      rationale: "Zero-cost built-in; catches <<<< conflict markers"
+    - name: detect_private_key
+      rationale: "Zero-cost built-in; backstop for Doppler/fnox secrets policy"
+    - name: check_added_large_files
+      rationale: "Zero-cost built-in; prevents accidental binary commits"
+    - name: check_case_conflict
+      rationale: "Zero-cost built-in; macOS dev + Linux CI = real risk"
+    - name: newlines
+      rationale: "Zero-cost built-in; EOF newline hygiene across all file types"
+    - name: trailing_whitespace
+      rationale: "Zero-cost built-in; covers YAML/TOML/Markdown that ruff doesn't touch"
+    - name: pkl_format
+      rationale: "Formats hk.pkl; pkl already installed"
+    - name: rumdl
+      rationale: "Rust-based Markdown linter+fixer; covers docs/*.md"
+    - name: ty
+      rationale: "Already in quality gate; adds type checking at commit time"
+    - name: yamlfmt
+      rationale: "Normalizes YAML formatting; evaluate key-sort behavior first"
+    - name: zizmor
+      rationale: "GitHub Actions security scanning; supply-chain risk mitigation"
+    - name: ghalint_workflow
+      rationale: "Complements actionlint with security checks"
+
+  skip_count: 67
+  enable_count: 6
+  consider_count: 13
+  already_enabled_count: 5
+
+  new_tools_to_install:
+    - "taplo = 'latest'  # global mise"
+    - "shfmt = 'latest'  # global mise"
+    - "actionlint = 'latest'  # global mise"
+    # hadolint, pkl, jq already installed
+    # check_conventional_commit, python_debug_statements, etc. use hk util (built-in)

@@ -1,0 +1,300 @@
+id: finding-hk-docs-review-2026-03-28
+timestamp: "2026-03-29T00:05:00Z"
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+tags: [hk, pkl, mise, git-hooks, monorepo, logging, validation]
+
+sources:
+  - url: https://hk.jdx.dev/mise_integration.html
+    title: "hk mise integration"
+    status: fetched
+  - url: https://hk.jdx.dev/pkl_introduction.html
+    title: "hk pkl introduction"
+    status: fetched
+  - url: https://hk.jdx.dev/cli/validate.html
+    title: "hk validate CLI"
+    status: minimal (SPA, content via GitHub API)
+  - url: https://hk.jdx.dev/logging.html
+    title: "hk logging and debugging"
+    status: fetched
+  - url: https://hk.jdx.dev/reference/examples/monorepo.html
+    title: "hk monorepo example"
+    status: fetched
+
+# ─────────────────────────────────────────────
+# PAGE 1: mise integration
+# ─────────────────────────────────────────────
+mise_integration:
+  confident_about: >
+    Three main integration points: (1) HK_MISE=1 env var enables mise features
+    project-wide; (2) hk install --mise makes hooks use `mise x` so tools declared
+    in mise.toml are on PATH even for devs without mise activated; (3) mise tasks
+    can be called directly from hk.pkl steps using check = "mise run <task>".
+  key_features:
+    - "HK_MISE=1: enable mise integration globally"
+    - "hk init --mise: creates mise.toml with pre-commit task alias"
+    - "hk install --mise: wraps hooks with `mise x` for PATH bootstrapping"
+    - "[env] block in mise.toml: define env vars available to hooks"
+    - "mise tasks in hk steps: use `exclusive = true` to sequence them"
+  configuration_examples:
+    - |
+      # Pkl: calling a mise task from hk
+      amends "package://github.com/jdx/hk/releases/download/v1.39.0/hk@1.39.0#/Config.pkl"
+
+      `pre-commit` {
+          ["prelint"] {
+              check = "mise run prelint"
+              exclusive = true // ensures this completes before the next steps
+          }
+      }
+    - |
+      # mise.toml: env vars available to hk hooks
+      [env]
+      PRETTIER_CONFIG = ".prettierrc.json"
+  gaps_vs_mde: >
+    mde project does NOT set HK_MISE=1 and did NOT install with --mise flag.
+    The quality_gate step calls `uv run mde-py quality` directly, which is correct,
+    but there is no mise task alias for `mise run pre-commit`. The project could
+    benefit from `hk install --mise` to ensure hooks work even when mise is not
+    activated in shell (useful for IDE integration or fresh environments).
+    HK_PKL_BACKEND is not set — pklr experimental backend not being tested.
+
+# ─────────────────────────────────────────────
+# PAGE 2: pkl introduction
+# ─────────────────────────────────────────────
+pkl_introduction:
+  confident_about: >
+    pklr (built-in pkl evaluator) removes need for pkl CLI. Set HK_PKL_BACKEND=pklr.
+    Currently experimental. Current default is pkl CLI. Key pkl patterns: amends for
+    schema validation and base classes; imports for sharing; local keyword to avoid
+    exporting unexpected keys; amending objects with (base) { ... } for DRY configs.
+  key_features:
+    - "HK_PKL_BACKEND=pklr: use built-in evaluator, eliminates pkl CLI dependency"
+    - "pkl eval hk.pkl: test config without running through hk (good for debugging)"
+    - "local keyword: prevents exporting unexpected variables (hk errors on unknown keys)"
+    - "Amending objects: (base_step) { dir = 'proj_a' } — DRY step reuse"
+    - "Remote imports: import 'https://example.com/remote.pkl' for shared configs"
+    - "Caching: hk caches parsed hk.pkl until file changes (avoid env vars in pkl)"
+  configuration_examples:
+    - |
+      # Local variable (prevents hk error on unexpected export)
+      local my_step = new LinterStep {
+        check = "make lint"
+      }
+    - |
+      # Amending for DRY reuse (monorepo pattern)
+      local make_lint = new LinterStep {
+        check = "make lint"
+      }
+      local linters = new Mapping<String, Step> {
+        ["make-lint-a"] = (make_lint) {
+          dir = "proj_a"
+        }
+        ["make-lint-b"] = (make_lint) {
+          dir = "proj_b"
+        }
+      }
+    - |
+      # Testing pkl config
+      $ pkl eval hk.pkl
+      hooks {
+        ["pre-commit"] {
+          fix = true
+          steps { ... }
+        }
+      }
+  gaps_vs_mde: >
+    mde project uses pkl CLI backend (default). pklr experimental backend not tested.
+    Setting HK_PKL_BACKEND=pklr could speed up hook execution (no subprocess for pkl).
+    No test for `pkl eval hk.pkl` in the validate/hk.py — only calls `hk validate`.
+    The mde validate could optionally surface pkl eval output for debugging config issues.
+
+# ─────────────────────────────────────────────
+# PAGE 3: hk validate CLI
+# ─────────────────────────────────────────────
+validate_cli:
+  confident_about: >
+    `hk validate` has a single simple usage: `hk validate` with no subcommands
+    or flags documented. It validates the config file. The -v/--verbose flag
+    mentioned in logging docs works: `hk validate -v`.
+  evidence: |
+    # From GitHub API: https://api.github.com/repos/jdx/hk/contents/docs/cli/validate.md
+    <!-- @generated by usage-cli from usage spec -->
+    # `hk validate`
+    - **Usage**: `hk validate`
+    Validate the config file
+  gaps_vs_mde: >
+    mde/validate/hk.py correctly calls `hk validate` and captures stdout+stderr.
+    One gap: the validator does not pass -v for verbose output, which could surface
+    more detail when validation fails. Current implementation is correct and complete
+    for the documented API.
+
+# ─────────────────────────────────────────────
+# PAGE 4: logging and debugging
+# ─────────────────────────────────────────────
+logging:
+  confident_about: >
+    Five log levels: error, warn (default), info, debug, trace. CLI flags: -v = debug,
+    -vv = trace. Env: HK_LOG=debug|trace|info|warn|error. File logging:
+    HK_LOG_FILE=path, HK_LOG_FILE_LEVEL=trace. Performance: HK_TIMING_JSON=path
+    writes JSON timing per step. Tracing: HK_TRACE=1|text|json — JSON trace is JSONL
+    format. Quiet: --quiet/-q suppresses non-errors. Silent: --silent suppresses all.
+  key_features:
+    - "HK_LOG=debug|trace|info|warn|error: log level control"
+    - "hk check -v / hk check -vv: debug/trace inline"
+    - "HK_LOG_FILE=path: separate log file (default ~/.local/state/hk/hk.log)"
+    - "HK_LOG_FILE_LEVEL=trace: different level for file vs console"
+    - "HK_TIMING_JSON=/tmp/timing.json: per-step wall time report"
+    - "HK_TRACE=json: JSONL spans for programmatic analysis"
+    - "hk check --dry-run + HK_LOG=debug: see which files would be processed"
+  timing_report_format: |
+    {
+      "total": { "wall_time_ms": 12456 },
+      "steps": {
+        "lint": { "wall_time_ms": 4321, "profiles": ["ci", "fast"] },
+        "fmt": { "wall_time_ms": 2100 },
+        "typecheck": { "wall_time_ms": 6035 }
+      }
+    }
+  jsonl_trace_format: |
+    {"type":"meta","span_schema_version":1,"hk_version":"1.12.1","pid":12345}
+    {"type":"span_start","ts_ns":123456,"id":"span_0","name":"check","attrs":{}}
+    {"type":"span_start","ts_ns":456789,"id":"span_1","name":"lint","attrs":{"step":"eslint"},"parent_id":"span_0"}
+    {"type":"span_end","ts_ns":789012,"id":"span_1"}
+    {"type":"span_end","ts_ns":1234567,"id":"span_0"}
+  gaps_vs_mde: >
+    mde has NO integration with hk logging. Three actionable gaps:
+    (1) HK_TIMING_JSON could be written to .generated/hk-timing.json during CI or
+        quality gate runs to identify slow steps.
+    (2) HK_LOG_FILE could be pointed at .generated/logs/hk.log to persist hook logs.
+    (3) mde/validate/hk.py could pass -v to `hk validate` to capture more output
+        on failure. None of these are blockers but (3) is trivially achievable.
+
+# ─────────────────────────────────────────────
+# PAGE 5: monorepo example
+# ─────────────────────────────────────────────
+monorepo_example:
+  confident_about: >
+    The Group type allows organizing steps by subdirectory. Each Group has a steps
+    Mapping. Groups can be spread into a hook's steps with `["group-name"] = group_var`.
+    workspace_indicator field on builtin steps (e.g. cargo_fmt) scopes to subproject.
+    profiles field on steps enables profile-conditional execution (e.g. ci, full).
+    Shared steps across all components use `...shared` spread operator.
+  key_features:
+    - "Group type: organize steps by subdirectory/component"
+    - "workspace_indicator: scope builtin tools to a subproject root"
+    - "profiles = List('ci', 'full'): conditional step execution"
+    - "...shared spread: apply a Mapping<String, Step> across multiple hooks"
+    - "dir field: restrict step to files under a directory"
+    - "batch = true: process all files in one tool invocation (vs per-file)"
+  configuration_example: |
+    amends "package://github.com/jdx/hk/releases/download/v1.39.0/hk@1.39.0#/Config.pkl"
+    import "package://github.com/jdx/hk/releases/download/v1.39.0/hk@1.39.0#/Builtins.pkl"
+
+    local frontend = new Group {
+      steps {
+        ["prettier"] = (Builtins.prettier) {
+          dir = "frontend"
+          batch = true
+        }
+        ["eslint"] = (Builtins.eslint) {
+          dir = "frontend"
+          batch = true
+        }
+      }
+    }
+
+    local shared = new Mapping<String, Step> {
+      ["yaml"] = (Builtins.yamllint) {
+        glob = List("**/*.yaml", "**/*.yml")
+        exclude = List("**/node_modules/**")
+      }
+    }
+
+    hooks {
+      ["pre-commit"] {
+        fix = true
+        stash = "git"
+        steps {
+          ["frontend"] = frontend
+          ...shared
+        }
+      }
+    }
+  gaps_vs_mde: >
+    mde project is NOT a monorepo but could benefit from the Group pattern for
+    organizational clarity. Current hk.pkl uses a flat Mapping with fixers +
+    quality_gate. No current use of profiles, batch, or workspace_indicator.
+    The stash = "git" option (vs current "none") might be worth testing for safer
+    pre-commit behavior — stash = "none" means unfixed staged changes might include
+    unstaged content. LOW priority for single-package repo.
+
+# ─────────────────────────────────────────────
+# CROSS-CUTTING GAPS SUMMARY
+# ─────────────────────────────────────────────
+gaps_summary:
+  high:
+    - id: "hk-mise-install-flag"
+      description: >
+        hk was not installed with --mise flag. Hooks may fail for developers/IDE
+        integrations where mise is not activated. Run `hk install --mise` to wrap
+        hooks with `mise x` for robust PATH setup.
+      effort: trivial
+      command: "hk install --mise"
+
+  medium:
+    - id: "hk-log-file-integration"
+      description: >
+        No persistent hk log file. Add HK_LOG_FILE=.generated/logs/hk.log to mise
+        env or quality gate so hook failures are preserved across sessions.
+      effort: small
+      suggestion: "Add to mise.toml [env]: HK_LOG_FILE = '.generated/logs/hk.log'"
+
+    - id: "hk-timing-json-ci"
+      description: >
+        HK_TIMING_JSON not used. Per-step wall time report (.generated/hk-timing.json)
+        would help identify slow steps in the quality gate.
+      effort: small
+
+  low:
+    - id: "pklr-backend-test"
+      description: >
+        HK_PKL_BACKEND=pklr not tested. Would eliminate pkl CLI subprocess overhead.
+        Experimental but worth evaluating.
+      effort: trivial
+      command: "HK_PKL_BACKEND=pklr hk validate"
+
+    - id: "hk-validate-verbose"
+      description: >
+        mde/validate/hk.py could pass -v to `hk validate` for richer error output
+        on failure. Currently surfaces stdout+stderr but without debug detail.
+      effort: trivial
+      location: "src/mde/validate/hk.py line 51"
+
+    - id: "stash-mode"
+      description: >
+        hk.pkl uses stash = "none". stash = "git" is safer (ensures only staged
+        content is checked). Low risk for this project but worth considering.
+      effort: trivial
+
+    - id: "profiles-for-ci"
+      description: >
+        hk supports profiles = List("ci", "full") on steps for conditional execution.
+        Could make the quality_gate step CI-only or use a "fast" profile for
+        iterative development.
+      effort: small
+
+  not_applicable:
+    - id: "monorepo-groups"
+      reason: "Single-package repo — Group type not needed"
+    - id: "mise-tasks-in-hk"
+      reason: "quality gate correctly calls uv run mde-py quality directly"
+
+implication: >
+  Most urgent action: run `hk install --mise` to ensure hook PATH reliability.
+  Medium value: add HK_LOG_FILE to mise.toml env for persistent debugging.
+  The mde validate/hk.py is correct and complete — no rework needed there.
+  pklr backend worth testing once it stabilizes (eliminates pkl CLI dep).
+
+status: discovered

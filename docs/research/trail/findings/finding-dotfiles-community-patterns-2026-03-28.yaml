@@ -1,0 +1,203 @@
+id: finding-dotfiles-community-patterns-2026-03-28
+timestamp: "2026-03-28T00:00:00Z"
+source: |
+  https://github.com/johnstegeman/dotfiles
+  https://github.com/martinemde/dotfiles
+  https://github.com/rio/dotfiles
+  https://github.com/bramswenson/dotfiles
+  https://github.com/topics/chezmoi
+  https://github.com/felipecrs/dotfiles
+  https://github.com/twpayne/dotfiles
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  Community chezmoi dotfiles patterns from 6 repos examined (2 of which use
+  the same stack as mde: bramswenson uses chezmoi+mise+hk, martinemde uses
+  chezmoi+mise). twpayne is the chezmoi author's own dotfiles.
+details: |
+  ## Repo-by-Repo Summary
+
+  ### bramswenson/dotfiles (MOST RELEVANT - same stack)
+  - chezmoi source IS the repo root (not a subdirectory)
+  - Files managed: gitconfig.tmpl, .ssh/config.tmpl, .gnupg/ (private_dot_gnupg/),
+    .tmux.conf, .vimrc, .inputrc, .bramrc (modular shell rc),
+    ~/.local/bin/executable_* (scripts deployed as executables),
+    ~/.Brewfile, ~/.config/mise/config.toml, ~/.config/starship.toml
+  - Templates: .gitconfig, .ssh/config, gpg-agent.conf (OS-specific pinentry),
+    path.sh (OS-aware PATH), .chezmoi.toml.tmpl
+  - Scripts: run_once_before_01-install-mise.sh, run_once_before_02-hook-bashrc.sh,
+    run_once_after_01-mise-install.sh, run_once_after_02-vim-plugins.sh
+  - No .chezmoiexternal.toml visible; uses SOPS+GPG for secrets
+  - hk.pkl at repo root with gitleaks + SOPS enforcement
+  - mise.toml at repo root (shellcheck, hk, gitleaks) — project-local tools only
+  - Global mise config at dot_config/private_mise/config.toml (managed by chezmoi)
+  - Tier model: mise=multi-version runtimes, official scripts=devtools, brew=system+GUI
+  - Private files use private_dot_ prefix (0700/0600 auto-applied)
+  - Modular shell rc pattern: ~/.bramrc sources ~/.bramrc.d/* (aliases, path, gpg, prompt)
+  - Dynamic secrets via CLI auth flows (gh auth token, aws sso) to avoid static secrets
+
+  ### martinemde/dotfiles (AI-first, mise+chezmoi)
+  - chezmoi IS the repo root
+  - Uses znap for fast zsh plugin loading, starship prompt, mise for tool management
+  - Emphasis: minimal, stable, portable (macOS + Linux + devcontainers)
+  - 50-80% faster shell startup via caching/lazy-loading
+  - Supports non-interactive installation (CI/CD env vars: GIT_USER_NAME, etc.)
+  - Uses chezmoi init --apply for single-command install
+
+  ### rio/dotfiles (DevPod/Codespaces-aware)
+  - chezmoi IS the repo root
+  - Manages: zshrc, gitconfig, tmux, wezterm, dot_config/alacritty, git, k9s, mise,
+    nvim (LazyVim), opencode, starship, zellij
+  - .chezmoi.toml.tmpl detects: local/remote/container/cloud environment
+  - .chezmoiexternals/ used for DevPod binary and DepartureMono fonts
+  - .devcontainer/ for VS Code Dev Containers
+  - Scripts in .chezmoiscripts/ for post-install package setup
+  - mise tools visible in dot_config/mise/config.toml
+  - Codespaces-ready out of the box
+
+  ### johnstegeman/dotfiles (Fish shell, comprehensive)
+  - chezmoi IS the repo root
+  - Fish shell as primary, zsh fallback
+  - Uses Rosé Pine theme system-wide (Fish, tmux, Helix, Ghostty, WezTerm, etc.)
+  - Jujutsu (jj) as primary VCS (forward-looking choice)
+  - 1Password integration for secrets management
+  - cm alias: cm ap, cm ed, cm cd (chezmoi wrapper functions)
+  - Manages: fish config, atuin, carapace, zoxide, fzf, helix, ghostty, zellij, wezterm
+
+  ### felipecrs/dotfiles (Ubuntu/WSL focused)
+  - chezmoi IS the repo root
+  - Convenience install script: single command bootstrap
+  - Minimum mode for container/non-Ubuntu environments
+  - Strong Codespaces/Gitpod/devcontainer support
+
+  ### twpayne/dotfiles (chezmoi author's own)
+  - Uses .chezmoiroot to point chezmoi source at a subdirectory (home/)
+  - This enables having non-chezmoi files (README, install.sh) at repo root
+    while keeping chezmoi source clean in a subdirectory
+  - 1Password for personal secrets
+
+  - - -
+
+  ## Gap Analysis vs. mde Project
+
+  The mde project currently:
+  - Uses .chezmoisource/ as a subdirectory of a Python package repo
+  - Only manages: mise config, oh-my-zsh custom files, tmux.conf, Brewfile, zprofile.d
+  - Does NOT manage: .zshrc, .gitconfig, .ssh/config, .editorconfig, .gitignore_global
+  - No .chezmoiignore file
+  - No run_once scripts (uses run_onchange instead)
+  - No .chezmoiexternals/ for tools (only for mise.toml for project-local context)
+  - Secrets via Doppler+fnox (already advanced)
+
+  - - -
+
+  ## TOP 5 GAPS vs. Community Best Practices
+
+  ### GAP 1 (CRITICAL): Missing Core Dotfiles — gitconfig, ssh/config, gitignore_global
+  Every community repo manages .gitconfig.tmpl and .ssh/config.tmpl as templated files.
+  These are the highest-value dotfiles for developer productivity and they use templates
+  for machine-specific values (email, name, host-specific SSH rules, OS-specific pinentry).
+  The mde project manages NONE of these. On a new machine install, these must be set up
+  manually — defeating chezmoi's purpose.
+  Implication: Add dot_gitconfig.tmpl, private_dot_ssh/config.tmpl, dot_gitignore_global.
+
+  ### GAP 2 (HIGH): No Shell RC Management (.zshrc or equivalent)
+  All community repos manage their primary shell config. The mde project only manages
+  oh-my-zsh custom files (loaded BY .zshrc) and zprofile.d snippets — it does not manage
+  .zshrc itself. This means the entry point of the shell environment is not reproducible.
+  The bramswenson pattern of a top-level dot_bramrc that sources dot_bramrc.d/* is a
+  clean approach: one managed file sources a directory of modular snippets.
+  Implication: Add dot_zshrc.tmpl or at minimum a dot_zshenv that sources the existing
+  zprofile.d snippets consistently across machines.
+
+  ### GAP 3 (HIGH): No .chezmoiignore for Mixed-Repo Safety
+  The mde repo is mixed-purpose (Python package + chezmoi source). Without a .chezmoiignore,
+  chezmoi could misinterpret Python package files if sourceDir ever points at repo root
+  instead of .chezmoisource/. Community repos that are pure dotfiles repos don't need this,
+  but the mde mixed-repo pattern urgently needs it.
+  Additionally, no OS-specific ignores exist (e.g., skip macOS-only files on Linux).
+  Implication: Add .chezmoisource/.chezmoiignore with OS guards and Python-package exclusions.
+
+  ### GAP 4 (MEDIUM): No Executable Scripts Deployed via chezmoi (dot_local/bin/)
+  bramswenson deploys bootstrap scripts, session helpers, and install scripts as
+  executable_* files under dot_local/bin/. These become ~/.local/bin/ commands available
+  on PATH. The mde project has mde-py as the automation entry point, but helper scripts
+  (bootstrap-macos, etc.) are not deployed by chezmoi — they live in chezmoiscripts as
+  run_onchange scripts. This means helper utilities are not available as interactive commands.
+  Implication: Consider deploying key scripts as dot_local/bin/executable_* so they're
+  available as persistent CLI tools, not just one-time setup scripts.
+
+  ### GAP 5 (MEDIUM): Missing Environment Detection Template Variables
+  rio and bramswenson both have rich .chezmoi.toml.tmpl that detects remote/container/cloud
+  environments and populates template data (remote=true, minimal=true, etc.). The mde
+  .chezmoi.toml.tmpl already has remote detection but lacks:
+  - hostname-based context (work vs personal machine)
+  - architecture detection (arm64 vs x86_64) beyond what OS provides
+  - Feature flags (e.g., yubikey_available, has_gui) for conditional file deployment
+  This limits template expressiveness — e.g., can't conditionally skip GUI app configs
+  on headless servers.
+  Implication: Extend .chezmoi.toml.tmpl with machine-class variables and wire them into
+  existing .tmpl files.
+
+  - - -
+
+  ## Notable Techniques to Adopt
+
+  - **private_dot_ prefix**: automatically applies 0700/0600 to sensitive directories
+    (.ssh/, .gnupg/) — the mde project does not use this for SSH config
+  - **Modular shell RC pattern**: top-level .zshrc/dot_bramrc sources a .d/ directory;
+    already partially done with dot_zprofile.d but not for .zshrc itself
+  - **run_once vs run_onchange**: community repos use run_once_ for one-time installs
+    (more correct for idempotent tool installs). mde uses run_onchange_ (re-runs when
+    file changes, which can cause spurious re-installs if the template changes for
+    unrelated reasons). Both have valid use cases.
+  - **cm alias**: chezmoi wrapper functions (cm ap, cm ed, cm cd) make daily chezmoi
+    use ergonomic — worth adding to mde aliases.zsh
+  - **.chezmoiroot file**: twpayne's technique to keep repo root clean while placing
+    chezmoi source in a subdirectory. The mde project already does this with
+    .chezmoisource/ but uses sourceDir in config rather than the .chezmoiroot file.
+    Using .chezmoiroot is the official chezmoi mechanism and more portable.
+  - **Dynamic credentials**: bramswenson pattern of `export GITHUB_TOKEN="$(gh auth token)"`
+    avoids static secret storage — complements mde's Doppler approach for cases where
+    Doppler is unavailable
+  - **SOPS + GPG as backup secret store**: for secrets without CLI auth flows when
+    Doppler is unavailable (complementary to, not replacing, the Doppler-first approach)
+
+  gaps: |
+    - Did not inspect actual file contents of dot_gitconfig.tmpl or dot_ssh/config.tmpl
+      from community repos (only README/structure visible)
+    - Could not verify if twpayne's dotfiles use specific chezmoi features not visible in README
+    - bramswenson's actual mise config.toml content not inspected
+    - No data on community patterns for chezmoi + Doppler integration (mde's unique setup)
+  evidence: |
+    - bramswenson README: "chezmoi source directory... hk.pkl, mise.toml, dot_gitconfig.tmpl,
+      private_dot_ssh/config.tmpl, private_dot_gnupg/"
+    - rio README: "dot_* - Dotfiles (bashrc, gitconfig, tmux, wezterm, zshrc, etc.)"
+    - twpayne: uses .chezmoiroot pointing to home/ subdirectory
+    - martinemde: "mise for reproducible tool management... 50-80% faster shell startup"
+    - mde .chezmoisource: only Brewfile.tmpl, dot_config/mise/, dot_oh-my-zsh/, dot_tmux.conf, dot_zprofile.d
+  implication: |
+    The mde project should prioritize:
+    1. Adding dot_gitconfig.tmpl + private_dot_ssh/config.tmpl + dot_gitignore_global (GAP 1)
+    2. Adding dot_zshrc.tmpl or equivalent to manage the shell entry point (GAP 2)
+    3. Adding .chezmoiignore to protect the mixed-repo layout (GAP 3)
+    These three gaps mean chezmoi apply on a fresh machine leaves a non-functional
+    developer environment (no git identity, no SSH config, no shell entry point managed).
+  tags:
+    - chezmoi
+    - dotfiles
+    - community-patterns
+    - gitconfig
+    - ssh-config
+    - zshrc
+    - mise
+    - hk
+    - gap-analysis
+    - best-practices
+    - bramswenson
+    - mixed-repo
+    - chezmoiignore
+    - private_dot
+    - executable_scripts
+status: discovered
