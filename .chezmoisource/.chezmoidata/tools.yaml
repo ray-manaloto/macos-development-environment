@@ -1,0 +1,279 @@
+# Mise tool definitions — data-driven template source
+# Structure: mise.tools.<category> list, each entry has name + version
+# Complex entries use 'config' map for extra settings (symlink_bins, extras)
+# Platform-specific categories use *_darwin suffix — gated by template conditionals
+# Backend prefixes (aqua:, github:, npm:, pipx:) are part of the name
+
+mise:
+  tools:
+    core_runtimes:
+      - name: bun
+        version: latest
+      - name: node
+        version: latest
+      - name: "core:python"
+        version: latest
+      - name: go
+        version: latest
+      - name: rust
+        version: latest
+      - name: pixi
+        version: latest
+      - name: uv
+        version: latest
+      - name: chezmoi
+        version: latest
+      - name: usage
+        version: latest
+      - name: pkl
+        version: latest
+
+    modern_utilities:
+      - name: starship
+        version: latest
+      - name: ripgrep
+        version: latest
+      - name: fd
+        version: latest
+      - name: zoxide
+        version: latest
+      - name: bat
+        version: latest
+      - name: eza
+        version: latest
+      - name: fzf
+        version: latest
+      - name: delta
+        version: latest
+      - name: lsd
+        version: latest
+      - name: hyperfine
+        version: latest
+      - name: glow
+        version: latest
+      - name: atuin
+        version: latest
+      - name: "github:ast-grep/ast-grep"
+        version: latest
+
+    security:
+      - name: "aqua:FiloSottile/age"
+        version: latest
+      - name: "aqua:getsops/sops"
+        version: latest
+      - name: doppler
+        version: latest
+
+    data_processing:
+      - name: jq
+        version: latest
+      - name: yq
+        version: latest
+
+    code_quality:
+      - name: shellcheck
+        version: latest
+      - name: hadolint
+        version: latest
+      - name: pre-commit
+        version: latest
+      - name: "pipx:mgrep"
+        version: latest
+      - name: "aqua:crate-ci/typos"
+        version: latest
+      - name: "pipx:yamllint"
+        version: latest
+
+    infrastructure:
+      - name: "github:jdx/fnox"
+        version: latest
+      - name: "aqua:loft-sh/devpod"
+        version: latest
+      - name: github-cli
+        version: latest
+
+    infrastructure_darwin:
+      - name: 1password-cli
+        version: latest
+      - name: awscli
+        version: latest
+        config:
+          symlink_bins: "true"
+      - name: azure-cli
+        version: latest
+      - name: pitchfork
+        version: latest
+
+    # clang/LLVM: managed by brew (brew install llvm lld), not mise.
+    # conda backend was noisy and missing clang-format/clang-tidy/lldb/lld.
+    infrastructure_darwin_cloud:
+      - name: "aqua:aws/session-manager-plugin"
+        version: latest
+
+
+    system_utilities:
+      - name: cloudflared
+        version: latest
+      - name: pandoc
+        version: latest
+      - name: tmux
+        version: latest
+
+    container_tools:
+      - name: lefthook
+        version: latest
+      - name: devcontainer
+        version: latest
+
+    container_tools_darwin:
+      - name: docker-cli
+        version: latest
+
+      - name: docker-compose
+        version: latest
+
+      - name: "aqua:moby/buildkit"
+        version: latest
+
+      - name: "github:docker/docker-agent"
+        version: latest
+
+      - name: xcodegen
+        version: latest
+
+
+    test_tools:
+      - name: bats
+        version: latest
+      - name: "github:charmbracelet/gum"
+        version: latest
+
+    ai_agents:
+      - name: gemini-cli
+        version: latest
+      - name: "npm:@ralph-orchestrator/ralph-cli"
+        version: latest
+      - name: codex
+        version: latest
+      - name: opencode
+        version: latest
+      - name: "npm:@modelcontextprotocol/inspector"
+        version: latest
+      - name: "npm:@mermaid-js/mermaid-cli"
+        version: latest
+      - name: "npm:jscpd"
+        version: latest
+      - name: "npm:@fission-ai/openspec"
+        version: latest
+      - name: biome
+        version: latest
+      - name: rtk
+        version: latest
+      - name: "pipx:notebooklm-py"
+        version: latest
+        config:
+          extras: browser
+      - name: "pipx:mcp2cli"
+        version: latest
+      - name: "pipx:srclight"
+        version: "0.8.1"
+      - name: "npm:@googleworkspace/cli"
+        version: latest
+      - name: "npm:@claude-flow/cli"
+        version: latest
+      - name: "npm:ctx7"
+        version: latest
+
+    migrated_globals:
+      - name: "npm:@augmentcode/auggie"
+        version: latest
+      - name: "npm:@tauri-apps/cli"
+        version: latest
+      - name: "npm:awesome-ai"
+        version: 0.1.0-beta.7
+      - name: "npm:@playwright/cli"
+        version: latest
+      - name: "npm:yaml-cli"
+        version: latest
+
+    vercel_labs:
+      - name: "npm:skills"
+        version: latest
+      - name: "npm:agent-browser"
+        version: latest
+      - name: "npm:just-bash"
+        version: latest
+      - name: "npm:dev3000"
+        version: latest
+      - name: "npm:portless"
+        version: latest
+      - name: "npm:opensrc"
+        version: latest
+
+    langchain:
+      - name: "pipx:langchain-cli"
+        version: latest
+      - name: "pipx:langgraph-cli"
+        version: latest
+      - name: "pipx:deepagents-cli"
+        version: latest
+      - name: "pipx:langchain-model-profiles"
+        version: latest
+      - name: "pipx:langgraph-gen"
+        version: latest
+      - name: "pipx:langsmith-fetch"
+        version: latest
+      - name: "pipx:langsmith-mcp-server"
+        version: latest
+      - name: "pipx:mcpdoc"
+        version: latest
+      - name: "npm:create-agent-chat-app"
+        version: latest
+      - name: "npm:create-langchain-integration"
+        version: latest
+      - name: "npm:create-langgraph"
+        version: latest
+      - name: "npm:@langchain/langgraph-checkpoint-validation"
+        version: latest
+      - name: "npm:@langchain/langgraph-cli"
+        version: latest
+      - name: "npm:@langchain/langgraph-ui"
+        version: latest
+      - name: "npm:openwork"
+        version: latest
+
+    agent_stack:
+      - name: "npm:@teng-lin/agent-fetch"
+        version: latest
+      - name: "pipx:aider-chat"
+        version: latest
+      - name: "pipx:skypilot"
+        version: latest
+        config:
+          extras: aws
+      - name: "pipx:skillport"
+        version: latest
+      - name: "pipx:specify-cli"
+        version: latest
+
+    typescript_lsp:
+      - name: "npm:pyright"
+        version: latest
+      - name: "npm:typescript"
+        version: latest
+      - name: "npm:typescript-language-server"
+        version: latest
+
+    kubernetes:
+      - name: kubectl
+        version: latest
+      - name: helm
+        version: latest
+      - name: eksctl
+        version: latest
+      - name: k9s
+        version: latest
+      - name: kubectx
+        version: latest
+      - name: stern
+        version: latest

@@ -42,156 +42,81 @@ PKG_CONFIG_PATH = "{{ $llvmPrefix }}/lib/pkgconfig"
 {{ end -}}
 
 [tools]
+{{- define "toml-key" }}{{ if or (regexMatch "[:/@ ]" .) (regexMatch "^[0-9]" .) }}{{ . | quote }}{{ else }}{{ . }}{{ end }}{{ end -}}
+{{- define "render-tools" }}
+{{-   range . }}
+{{-     if hasKey . "config" }}
+{{-       $cfg := .config }}
+{{-       if hasKey $cfg "symlink_bins" }}
+{{ template "toml-key" .name }} = { version = {{ .version | quote }}, symlink_bins = {{ get $cfg "symlink_bins" | quote }} }
+{{-       else if hasKey $cfg "extras" }}
+{{ template "toml-key" .name }} = { version = {{ .version | quote }}, extras = {{ get $cfg "extras" | quote }} }
+{{-       else }}
+{{ template "toml-key" .name }} = {{ .version | quote }}
+{{-       end }}
+{{-     else }}
+{{ template "toml-key" .name }} = {{ .version | quote }}
+{{-     end }}
+{{-   end }}
+{{- end }}
 # ── Core Runtimes ──
-bun = "latest"
-node = "latest"
-"core:python" = "latest"
-go = "latest"
-rust = "latest"
-pixi = "latest"
-uv = "latest"
-chezmoi = "latest"
-usage = "latest"
-pkl = "latest"
+{{- template "render-tools" .mise.tools.core_runtimes }}
 
 # ── Modern Rust-Based Utilities ──
-starship = "latest"
-ripgrep = "latest"
-fd = "latest"
-zoxide = "latest"
-bat = "latest"
-eza = "latest"
-fzf = "latest"
-delta = "latest"
-lsd = "latest"
-hyperfine = "latest"
-glow = "latest"
-atuin = "latest"
-"github:ast-grep/ast-grep" = "latest"
+{{- template "render-tools" .mise.tools.modern_utilities }}
 
 # ── Security & Encryption ──
-"aqua:FiloSottile/age" = "latest"
-"aqua:getsops/sops" = "latest"
-doppler = "latest"
+{{- template "render-tools" .mise.tools.security }}
 
 # ── Data Processing ──
-jq = "latest"
-yq = "latest"
+{{- template "render-tools" .mise.tools.data_processing }}
 
 # ── Code Quality ──
-shellcheck = "latest"
-hadolint = "latest"
-pre-commit = "latest"
-"pipx:mgrep" = "latest"
-"aqua:crate-ci/typos" = "latest"
-"pipx:yamllint" = "latest"
+{{- template "render-tools" .mise.tools.code_quality }}
 
 # ── Infrastructure ──
-{{ if eq .chezmoi.os "darwin" -}}
-"1password-cli" = "latest"
-awscli = { version = "latest", symlink_bins = "true" }
-azure-cli = "latest"
-pitchfork = "latest"
+{{- if eq .chezmoi.os "darwin" }}
+{{-   template "render-tools" .mise.tools.infrastructure_darwin }}
 # clang/LLVM: managed by brew (brew install llvm lld), not mise.
 # conda backend was noisy and missing clang-format/clang-tidy/lldb/lld.
-"aqua:aws/session-manager-plugin" = "latest"
-{{ end -}}
-"github:jdx/fnox" = "latest"
-"aqua:loft-sh/devpod" = "latest"
-github-cli = "latest"
+{{-   template "render-tools" .mise.tools.infrastructure_darwin_cloud }}
+{{- end }}
+{{- template "render-tools" .mise.tools.infrastructure }}
 
 # ── System Utilities (migrated from brew) ──
-cloudflared = "latest"
-pandoc = "latest"
-tmux = "latest"
+{{- template "render-tools" .mise.tools.system_utilities }}
 
 # ── Container & Dev Tools ──
-lefthook = "latest"
-devcontainer = "latest"
-{{ if eq .chezmoi.os "darwin" -}}
-docker-cli = "latest"
-docker-compose = "latest"
-"aqua:moby/buildkit" = "latest"
-"github:docker/docker-agent" = "latest"
-xcodegen = "latest"
-{{ end -}}
-
+{{- template "render-tools" .mise.tools.container_tools }}
+{{- if eq .chezmoi.os "darwin" }}
+{{-   template "render-tools" .mise.tools.container_tools_darwin }}
+{{- end }}
 # ── Test Tools ──
-bats = "latest"
-"github:charmbracelet/gum" = "latest"
+{{- template "render-tools" .mise.tools.test_tools }}
 
 # ── AI Agents & CLI Tools ──
 # Claude Code CLI — managed by its native installer (`claude update`),
 # NOT by mise. Installed at ~/.local/bin/claude → ~/.local/share/claude/versions/<ver>.
 # See Issue #52 for migration rationale.
-gemini-cli = "latest"
-"npm:@ralph-orchestrator/ralph-cli" = "latest"
-codex = "latest"
-opencode = "latest"
-"npm:@modelcontextprotocol/inspector" = "latest"
-"npm:@mermaid-js/mermaid-cli" = "latest"
-"npm:jscpd" = "latest"
-"npm:@fission-ai/openspec" = "latest"
-biome = "latest"
-rtk = "latest"
-"pipx:notebooklm-py" = { version = "latest", extras = "browser" }
-"pipx:mcp2cli" = "latest"
-"pipx:srclight" = "0.8.1"
-"npm:@googleworkspace/cli" = "latest"
-"npm:@claude-flow/cli" = "latest"
-"npm:ctx7" = "latest"
+{{- template "render-tools" .mise.tools.ai_agents }}
 
 # ── Migrated from bun/uv globals ──
-"npm:@augmentcode/auggie" = "latest"
-"npm:@tauri-apps/cli" = "latest"
-"npm:awesome-ai" = "0.1.0-beta.7"
-"npm:@playwright/cli" = "latest"
-"npm:yaml-cli" = "latest"
+{{- template "render-tools" .mise.tools.migrated_globals }}
 
 # ── Vercel Labs ──
-"npm:skills" = "latest"
-"npm:agent-browser" = "latest"
-"npm:just-bash" = "latest"
-"npm:dev3000" = "latest"
-"npm:portless" = "latest"
-"npm:opensrc" = "latest"
+{{- template "render-tools" .mise.tools.vercel_labs }}
 
 # ── LangChain Ecosystem (migrated from install-langchain-cli-tools.sh) ──
-"pipx:langchain-cli" = "latest"
-"pipx:langgraph-cli" = "latest"
-"pipx:deepagents-cli" = "latest"
-"pipx:langchain-model-profiles" = "latest"
-"pipx:langgraph-gen" = "latest"
-"pipx:langsmith-fetch" = "latest"
-"pipx:langsmith-mcp-server" = "latest"
-"pipx:mcpdoc" = "latest"
-"npm:create-agent-chat-app" = "latest"
-"npm:create-langchain-integration" = "latest"
-"npm:create-langgraph" = "latest"
-"npm:@langchain/langgraph-checkpoint-validation" = "latest"
-"npm:@langchain/langgraph-cli" = "latest"
-"npm:@langchain/langgraph-ui" = "latest"
-"npm:openwork" = "latest"
+{{- template "render-tools" .mise.tools.langchain }}
 
 # ── Agent Stack (migrated from install-agent-stack.sh) ──
-"npm:@teng-lin/agent-fetch" = "latest"
-"pipx:aider-chat" = "latest"
-"pipx:skypilot" = { version = "latest", extras = "aws" }
-"pipx:skillport" = "latest"
-"pipx:specify-cli" = "latest"
+{{- template "render-tools" .mise.tools.agent_stack }}
 
 # ── TypeScript/LSP Tooling ──
-"npm:pyright" = "latest"
-"npm:typescript" = "latest"
-"npm:typescript-language-server" = "latest"
+{{- template "render-tools" .mise.tools.typescript_lsp }}
 
 # ── Kubernetes ──
-kubectl = "latest"
-helm = "latest"
-eksctl = "latest"
-k9s = "latest"
-kubectx = "latest"
-stern = "latest"
+{{- template "render-tools" .mise.tools.kubernetes }}
 
 [tool_alias]
 devcontainer = "npm:@devcontainers/cli"
