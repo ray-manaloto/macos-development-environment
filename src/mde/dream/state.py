@@ -10,17 +10,24 @@ import json
 from pathlib import Path
 
 from mde.dream.models import DreamState
+from mde.lib.paths import generated_dir
 
-_STATE_DIR = Path(".generated/dream")
-_STATE_PATH = _STATE_DIR / "state.json"
+
+def _state_dir() -> Path:
+    return generated_dir() / "dream"
+
+
+def _state_path() -> Path:
+    return _state_dir() / "state.json"
 
 
 def load_state() -> DreamState:
     """Load dream state from disk, or return fresh state."""
-    if not _STATE_PATH.exists():
+    path = _state_path()
+    if not path.exists():
         return DreamState()
     try:
-        data = json.loads(_STATE_PATH.read_text())
+        data = json.loads(path.read_text())
         return DreamState.model_validate(data)
     except (OSError, json.JSONDecodeError, ValueError):
         return DreamState()
@@ -28,5 +35,6 @@ def load_state() -> DreamState:
 
 def save_state(state: DreamState) -> None:
     """Persist dream state to disk."""
-    _STATE_DIR.mkdir(parents=True, exist_ok=True)
-    _STATE_PATH.write_text(state.model_dump_json(indent=2) + "\n")
+    sdir = _state_dir()
+    sdir.mkdir(parents=True, exist_ok=True)
+    (sdir / "state.json").write_text(state.model_dump_json(indent=2) + "\n")

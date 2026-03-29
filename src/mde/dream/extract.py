@@ -14,6 +14,7 @@ from pathlib import Path
 
 from mde.dream.models import DreamState, Pattern, PatternSource
 from mde.dream.state import load_state, save_state
+from mde.lib.paths import generated_dir, repo_root
 
 
 def extract_patterns() -> DreamState:
@@ -82,7 +83,7 @@ def _scan_auto_memory() -> list[str]:
 
 def _scan_remember() -> list[str]:
     """Extract pattern keys from remember plugin files."""
-    remember_dir = Path(".generated/remember")
+    remember_dir = generated_dir() / "remember"
     patterns: list[str] = []
 
     for name in ("now.md", "recent.md", "archive.md"):
@@ -114,7 +115,7 @@ def _scan_remember() -> list[str]:
 
 def _scan_retros() -> list[str]:
     """Extract pattern keys from retro snapshots."""
-    retro_dir = Path(".claude-octopus/retros")
+    retro_dir = repo_root() / ".claude-octopus" / "retros"
     patterns: list[str] = []
 
     if not retro_dir.exists():
@@ -145,7 +146,7 @@ def _scan_retros() -> list[str]:
 
 def _scan_hook_feedback() -> list[str]:
     """Extract pattern keys from hook block events in context snapshot."""
-    snapshot_path = Path(".generated/context-snapshot.json")
+    snapshot_path = generated_dir() / "context-snapshot.json"
     patterns: list[str] = []
 
     if not snapshot_path.exists():
