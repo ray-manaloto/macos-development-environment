@@ -110,6 +110,15 @@
             "command": "uv run mde-py hooks session-start"
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks context-snapshot"
+          }
+        ]
       }
     ],
     "Stop": [

@@ -1,0 +1,159 @@
+title: Self-Improvement Ecosystem Survey
+date: 2026-03-29
+purpose: Comprehensive survey of tools, frameworks, and patterns for building self-improving Claude Code environments
+
+existing_tools:
+  - name: "Anthropic Auto-Dream (official)"
+    source: https://code.claude.com/docs/en/memory
+    status: "Rolling out March 2026, behind feature flag"
+    what_it_does: "4-phase memory consolidation (orient, gather, consolidate, prune) over MEMORY.md every 24h after 5+ sessions"
+    relevance: HIGH
+    gap: "Only consolidates memory — doesn't update rules, agents, skills, or docs"
+
+  - name: "dream-skill (grandamenium)"
+    source: https://github.com/grandamenium/dream-skill
+    status: "Available now, replicates unreleased Auto-Dream"
+    what_it_does: "Same 4-phase consolidation with Stop hook auto-trigger"
+    relevance: HIGH
+    gap: "Same as Auto-Dream — memory only, no config updates"
+
+  - name: "Engram/SNARC (dp-web4)"
+    source: https://github.com/dp-web4/snarc
+    status: "Available"
+    what_it_does: "Salience-gated memory: scores tool uses on 5 dimensions (Surprise, Novelty, Arousal, Reward, Conflict), deep dream sends observations to Claude for pattern extraction"
+    relevance: HIGH
+    key_innovation: "Salience scoring prevents noise accumulation; reconsolidation updates hit_rate when recalled context leads to success/failure"
+    gap: "Memory-focused, no config update pipeline"
+
+  - name: "A-MEM"
+    source: https://news.ycombinator.com/item?id=46636707
+    status: "Available"
+    what_it_does: "Zettelkasten-style linked notes in ChromaDB that self-evolve — new discoveries link to existing memories and trigger evolution"
+    relevance: MEDIUM
+    gap: "Research-grade, heavy infrastructure (ChromaDB)"
+
+  - name: "claude-mem (thedotmack)"
+    source: https://github.com/thedotmack/claude-mem
+    status: "Installed in our project (v10.6.2)"
+    what_it_does: "Auto-captures observations via PostToolUse, search/timeline MCP API, 564+ observations"
+    relevance: HIGH (already integrated)
+    gap: "Passive — no learning loop, no consolidation, no config updates"
+
+  - name: "Compound Engineering (Every.to)"
+    source: https://github.com/EveryInc/compound-engineering-plugin
+    status: "Available as plugin"
+    what_it_does: "12-subagent parallel review; 4th step after plan/work/review turns bugs into permanent lessons"
+    relevance: HIGH
+    key_innovation: "Memos → knowledge base, linear → exponential. Each session makes the system better."
+    gap: "Review-focused, doesn't extract patterns from memory or retros"
+
+  - name: "Hermes Agent (Nous Research)"
+    source: https://github.com/NousResearch/hermes-agent
+    status: "v0.5.0 available"
+    what_it_does: "Built-in learning loop: creates skills from experience, FTS5 cross-session search, periodic persistence nudges"
+    relevance: HIGH
+    key_innovation: "Only agent with first-class learning loop — skills self-improve during use"
+    gap: "Standalone agent, not a Claude Code plugin"
+
+  - name: "OpenSpace (HKUDS)"
+    source: https://github.com/HKUDS/OpenSpace
+    status: "Research/available"
+    what_it_does: "Multi-layer monitoring detects skill degradation, auto-repairs; economic scoring (cost+quality)"
+    relevance: MEDIUM
+    key_innovation: "Economic reward signal for skill evaluation; 46% token savings Phase 2 vs Phase 1"
+    gap: "Cloud-native, not Claude Code specific"
+
+  - name: "Memento Skills"
+    source: https://github.com/Memento-Teams/Memento-Skills
+    status: "Available"
+    what_it_does: "Deployment-time learning with frozen parameters; semantic skill clustering and reflection loop"
+    relevance: MEDIUM
+    gap: "Academic architecture, would need adaptation"
+
+  - name: "HyperAgents (Facebook Research)"
+    source: https://github.com/facebookresearch/HyperAgents
+    status: "Research"
+    what_it_does: "Meta-agent optimizes task agents self-referentially"
+    relevance: LOW (requires API keys, heavy infra)
+
+community_patterns:
+  - pattern: "Session-end reflection"
+    description: "Hindsight agent reviews session, proposes specific improvements"
+    seen_in: ["Compound Engineering", "Hermes nudges", "dream-skill Stop hook"]
+    applicable: true
+
+  - pattern: "Salience scoring"
+    description: "Not all observations are equal — score by surprise/novelty/reward/conflict"
+    seen_in: ["Engram/SNARC"]
+    applicable: true
+
+  - pattern: "Dream consolidation"
+    description: "Periodic background process: orient → gather → consolidate → prune"
+    seen_in: ["Auto-Dream", "dream-skill", "Engram deep dream"]
+    applicable: true
+
+  - pattern: "Compound step"
+    description: "After each feature: document what went wrong as permanent system knowledge"
+    seen_in: ["Compound Engineering", "Karpathy Loop"]
+    applicable: true
+
+  - pattern: "Self-evolving skills"
+    description: "Skills track their own success rate and auto-regenerate when underperforming"
+    seen_in: ["OpenSpace", "Memento", "Hermes"]
+    applicable: "Future phase — needs skill execution telemetry first"
+
+  - pattern: "Tiered autonomy"
+    description: "Auto-apply low-risk (memory, docs), require approval for high-risk (rules, hooks)"
+    seen_in: ["Gemini debate response", "community consensus"]
+    applicable: true
+
+official_anthropic:
+  - feature: "Auto-Dream"
+    status: "Rolling out (feature flag)"
+    docs: https://code.claude.com/docs/en/memory
+    hooks_used: ["SessionEnd", "PreCompact"]
+
+  - feature: "Auto Memory"
+    status: "Shipped"
+    docs: https://code.claude.com/docs/en/memory
+    notes: "Writes to MEMORY.md automatically based on user corrections"
+
+  - feature: "Hooks system"
+    status: "Shipped"
+    docs: https://code.claude.com/docs/en/hooks
+    events: "22 events including SessionStart, SessionEnd, PreCompact, PostToolUse, Stop"
+
+  - feature: "Sub-agents"
+    status: "Shipped"
+    docs: https://platform.claude.com/docs/en/agent-sdk
+    notes: "Custom system prompts, tools, separate context"
+
+key_insight: |
+  The ecosystem has mature MEMORY tools (Auto-Dream, Engram, claude-mem, A-MEM)
+  and mature REVIEW tools (Compound Engineering, Hermes learning loop).
+
+  What's MISSING across ALL tools: the bridge from memory/review findings
+  to automatic config updates (rules, agents, skills, hooks, docs).
+
+  Every tool stops at "store the learning" — none go to "apply the learning
+  to project configuration." This is the gap we can fill.
+
+sources_cataloged:
+  - https://code.claude.com/docs/en/memory
+  - https://code.claude.com/docs/en/hooks
+  - https://github.com/grandamenium/dream-skill
+  - https://github.com/dp-web4/snarc
+  - https://github.com/EveryInc/compound-engineering-plugin
+  - https://github.com/NousResearch/hermes-agent
+  - https://github.com/HKUDS/OpenSpace
+  - https://github.com/Memento-Teams/Memento-Skills
+  - https://github.com/facebookresearch/HyperAgents
+  - https://github.com/thedotmack/claude-mem
+  - https://github.com/Piebald-AI/claude-code-system-prompts
+  - https://github.com/hesreallyhim/awesome-claude-code
+  - https://github.com/rohitg00/awesome-claude-code-toolkit
+  - https://every.to/chain-of-thought/compound-engineering-how-every-codes-with-agents
+  - https://www.productcompass.pm/p/self-improving-claude-system
+  - https://fortune.com/2026/03/17/andrej-karpathy-loop-autonomous-ai-agents-future/
+  - https://news.ycombinator.com/item?id=47422611
+  - https://news.ycombinator.com/item?id=46636707

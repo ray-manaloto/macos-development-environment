@@ -274,6 +274,16 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
         hooks_sub.add_parser(cmd_name, help=entry[2])
     _SUBPARSERS["hooks"] = hooks_p
 
+    # dream
+    dream_p = sub.add_parser(
+        "dream", help="Self-improvement pipeline (extract/propose/apply/status)"
+    )
+    dream_p.add_argument(
+        "action", choices=["extract", "propose", "apply", "status"], help="Dream action"
+    )
+    dream_p.add_argument("--force", action="store_true", help="Apply approve-tier proposals")
+    dream_p.add_argument("--reject", metavar="ID", help="Reject a proposal by ID")
+
     # research
     from mde.research.cli import add_subparsers as _add_research_subparsers
 
@@ -696,6 +706,20 @@ def _cmd_docker(args: argparse.Namespace) -> int:
         return result
 
 
+def _cmd_dream(args: argparse.Namespace) -> int:
+    with _traced_command("dream", action=args.action) as ctx:
+        from mde.dream.cli import run_dream
+
+        result = run_dream(
+            args.action,
+            force=getattr(args, "force", False),
+            reject=getattr(args, "reject", None),
+        )
+        ctx["span"].set_attribute("dream.action", args.action)
+        ctx["result"] = result
+        return result
+
+
 _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "validate": _cmd_validate,
     "update": _cmd_update,
@@ -721,4 +745,5 @@ _DISPATCH_TABLE: dict[str, Callable[[argparse.Namespace], int]] = {
     "observability": _cmd_observability,
     "memory": _cmd_memory,
     "docker": _cmd_docker,
+    "dream": _cmd_dream,
 }
