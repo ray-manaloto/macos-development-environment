@@ -22,7 +22,7 @@
 	directory = {{ .chezmoi.homeDir }}/dev/tmp
 [credential]
 	helper =
-	helper = /usr/local/share/gcm-core/git-credential-manager
+	helper = {{ if eq .chezmoi.arch "amd64" }}/usr/local{{ else }}/opt/homebrew{{ end }}/share/gcm-core/git-credential-manager
 [credential "https://github.com"]
 	helper =
 	helper = !{{ .chezmoi.homeDir }}/.local/share/mise/shims/gh auth git-credential

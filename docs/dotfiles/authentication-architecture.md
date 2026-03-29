@@ -109,6 +109,12 @@ One SSH key per machine, stored in `~/.ssh/id_ed25519`.
 
 ```
 ~/.ssh/config (managed by chezmoi):
+  # OrbStack SSH host override (must precede all Host blocks)
+  Include ~/.orbstack/ssh/config
+
+  # SkyPilot cluster SSH configs
+  Include ~/.sky/generated/ssh/*
+
   Host github.com
     AddKeysToAgent yes
     UseKeychain yes
