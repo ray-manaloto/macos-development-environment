@@ -1,0 +1,126 @@
+title: Self-Improvement Signal Audit
+date: 2026-03-29
+purpose: Map all signal sources and improvement targets for closing the feedback loop
+
+signal_sources:
+  - name: retro_snapshots
+    path: .claude-octopus/retros/*.json
+    format: >-
+      JSON with keys [date, window, total_commits, lines_added, lines_removed,
+      prs_merged, contributors, ai_assisted_commits, test_ratio, top_hotspots,
+      sessions, avg_session_minutes, commit_types]
+    count: 6 snapshots
+    update_trigger: manual (/octo:retro)
+    consumed_by: human review only
+    gap: not consumed by any automated system
+
+  - name: remember_plugin
+    path: .generated/remember/{now,recent,archive,today-*.md}
+    format: markdown with timestamped entries
+    update_trigger: /remember command, session hooks
+    consumed_by: SessionStart hook loads into context
+    gap: entries are free-text, no structured extraction of learnings
+
+  - name: auto_memory
+    path: ~/.claude/projects/*/memory/MEMORY.md + individual .md files
+    format: markdown index (MEMORY.md) + frontmatter files (type, name, description)
+    count: 70 lines in index, ~50 memory files
+    update_trigger: manual during sessions
+    consumed_by: loaded every session start
+    gap: grows monotonically, no pruning or auto-update of stale entries
+
+  - name: claude_mem_observations
+    path: MCP server (mcp__plugin_claude-mem_mcp-search__)
+    format: structured observations with IDs, timestamps, types
+    count: 564+ observations
+    update_trigger: automatic during sessions
+    consumed_by: search/get_observations on demand
+    gap: no automated extraction of recurring patterns
+
+  - name: research_trail
+    path: docs/research/trail/findings/*.yaml
+    format: YAML provenance records
+    count: 146 finding files
+    update_trigger: research agents write findings
+    consumed_by: manual review, research pipeline scoring
+    gap: findings not auto-applied to project config
+
+  - name: code_review_findings
+    path: docs/research/trail/deep-reviews/*.md
+    format: markdown review transcripts
+    update_trigger: /octo:deliver agents write transcripts
+    consumed_by: human review, manual fixes
+    gap: no extraction of recurring findings into rules
+
+  - name: quality_gate_output
+    path: stdout from `uv run mde-py quality`
+    format: text with pass/fail counts and warning messages
+    update_trigger: every commit (pre-commit hook), manual
+    consumed_by: immediate human/agent action
+    gap: historical warning patterns not tracked
+
+  - name: hook_feedback
+    path: stderr from guard-install, guard-dotfile-edit, validate-plugins
+    format: text BLOCKED messages
+    update_trigger: every tool call (PostToolUse/PreToolUse)
+    consumed_by: immediate session (agent adjusts behavior)
+    gap: recurring blocks not extracted into rules or agent training
+
+  - name: github_issues
+    path: GitHub API (label auto:agent-discovered)
+    format: GitHub issue objects
+    update_trigger: agents create issues for unrelated errors
+    consumed_by: manual triage
+    gap: closed issues don't feed back into rules/docs
+
+improvement_targets:
+  - name: claude_md
+    path: CLAUDE.md
+    format: markdown
+    change_frequency: ~5 touches/week
+    current_process: manual edits during sessions
+    auto_update_potential: HIGH — retro hotspots could trigger rule additions
+
+  - name: rules
+    path: .claude/rules/*.md
+    format: markdown policy files (22 files)
+    change_frequency: ~2-3 new rules/week
+    current_process: manual creation after discovering patterns
+    auto_update_potential: HIGH — recurring review findings → new rules
+
+  - name: agents
+    path: .claude/agents/*.md
+    format: markdown with YAML frontmatter (10 agents)
+    change_frequency: ~1-2 updates/week
+    current_process: manual updates
+    auto_update_potential: MEDIUM — retro patterns could update agent instructions
+
+  - name: hooks
+    path: src/mde/hooks/*.py
+    format: Python modules with __hook_meta__ (17 hooks)
+    change_frequency: ~1 new hook/week
+    current_process: manual coding
+    auto_update_potential: LOW — needs code generation, higher risk
+
+  - name: skills
+    path: .agents/skills/*/SKILL.md + rsm-subagents/plugins/*/skills/*/SKILL.md
+    format: markdown (56 + 33 = 89 skills)
+    change_frequency: ~2-3 updates/week
+    current_process: manual creation/edit
+    auto_update_potential: MEDIUM — stale references could be auto-detected
+
+  - name: settings
+    path: .claude/settings.json
+    format: JSON
+    change_frequency: highest churn file (19 touches this week)
+    current_process: manual edits
+    auto_update_potential: LOW — schema-constrained, high breakage risk
+
+feedback_loop_gaps:
+  - "No system reads retro snapshots and proposes config changes"
+  - "Remember plugin data is free-text — no structured pattern extraction"
+  - "Code review findings are written once, never aggregated across sessions"
+  - "Hook blocks are transient — recurring blocks don't become rules"
+  - "Closed GitHub issues don't feed back into documentation or rules"
+  - "Auto memory grows but is never pruned or validated against current code"
+  - "Quality gate warning history is not tracked over time"

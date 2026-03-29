@@ -210,8 +210,33 @@ def _check_chezmoi_config_consistency(result: ValidationResult) -> None:
     source_dir, working_tree = paths
     result.files_checked += 1
 
+    _check_sourcedir_not_default(result, source_dir)
     _check_git_awareness(result, source_dir, working_tree)
     _check_chezmoiroot_consistency(result, source_dir, working_tree)
+
+
+def _check_sourcedir_not_default(result: ValidationResult, source_dir: Path) -> None:
+    """Detect when sourceDir has reverted to the chezmoi default.
+
+    If sourceDir is ~/.local/share/chezmoi, the chezmoi.toml was likely
+    regenerated without sourceDir (the template bug that caused repeated
+    breakage). This is always an error in this project because we use
+    a non-default source directory.
+    """
+    default_source = Path.home() / ".local" / "share" / "chezmoi"
+    if source_dir == default_source or source_dir == default_source / "home":
+        result.add(
+            path=str(source_dir),
+            message=(
+                f"sourceDir is the chezmoi default ({default_source}), not "
+                "this project's repo. The chezmoi.toml was likely regenerated "
+                "without sourceDir. Fix: run 'chezmoi init --force' from the "
+                "correct source, or manually set sourceDir in "
+                "~/.config/chezmoi/chezmoi.toml"
+            ),
+            severity=Severity.ERROR,
+            rule="chezmoi.sourcedir-default",
+        )
 
 
 def _check_git_awareness(result: ValidationResult, source_dir: Path, working_tree: Path) -> None:

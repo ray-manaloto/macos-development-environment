@@ -167,6 +167,8 @@ mise:
         version: latest
       - name: biome
         version: latest
+      - name: yt-dlp
+        version: latest
       - name: rtk
         version: latest
       - name: "pipx:notebooklm-py"

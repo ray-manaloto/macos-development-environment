@@ -689,3 +689,29 @@ Research into fixing the chezmoi doctor "[suspicious-entries]" warning when the 
 
 **Key Finding**: No built-in config option for ignoring specific doctor checks exists as of v2.69.4. Users with chezmoi source inside git repos will see "suspicious-entries" warnings but no suppression mechanism is available.
 
+---
+
+## Self-Improving Agent Frameworks (2026-03-29)
+
+Research into production self-improving agent systems with measurable token efficiency and skill evolution patterns.
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | OpenSpace GitHub | https://github.com/HKUDS/OpenSpace | Self-evolving skills framework with 46% token savings on Phase 2 vs Phase 1 (GDPVal 50 professional tasks). 4.2× higher earnings vs ClawWork baseline. Multi-layer monitoring auto-fixes degraded skills. Shared evolution across agents. CLI and dashboard. Works with Claude Code, Codex, OpenClaw, nanobot. | PRODUCTION |
+| [x] | OpenSpace GDPVal Benchmark | internal to OpenSpace GitHub | Measures real economic value (compliance, engineering, legal documents) with identical backbone LLM (Qwen 3.5-Plus). Baseline improvement score methodology applies to mde adversarial review baseline 0.450. | BENCHMARK |
+| [x] | Hermes Agent GitHub | https://github.com/NousResearch/hermes-agent | Built-in learning loop: creates skills from experience, improves during use, periodic nudges to persist knowledge. FTS5 session search + LLM summarization for cross-session recall. Honcho-based user modeling (learns who you are). agentskills.io standard for skill portability. Available on $5 VPS, serverless Modal/Daytona, or local. | PRODUCTION |
+| [x] | Hermes Skills Hub | https://agentskills.io | Open standard for reusable agent skills; Hermes-native integration; enables skill sharing across agents and frameworks. | STANDARD |
+| [x] | HyperAgents GitHub | https://github.com/facebookresearch/HyperAgents | Facebook Research (arXiv 2603.19461): Meta-agent optimizes task agents iteratively. Self-referential improvement (agents can improve optimization strategies). Requires code execution in Docker. Complex but powerful for benchmarks and research. | RESEARCH |
+| [x] | Memento-Skills GitHub | https://github.com/Memento-Teams/Memento-Skills | Deployment-time learning without fine-tuning: frozen model parameters, learns in external skill memory M. Read→Execute→Reflect→Write loop. Indexed skill routing (retrieval as core problem). Progressive improvement on HLE and GAIA benchmarks. GUI desktop app. Feishu IM bridge. Compatible with open-source (Kimi, MiniMax, GLM) and proprietary (OpenAI, Anthropic) LLMs. | PRODUCTION |
+| [x] | Memento vs OpenClaw comparison | internal to Memento GitHub | OpenClaw: deployment and integration focus. Memento: deployment-time learning focus. Shared DNA but different centers. OpenClaw: assistant running. Memento: agent learning. | ANALYSIS |
+| [x] | Dream Memory Consolidation Prompt | https://github.com/Piebald-AI/claude-code-system-prompts/blob/main/system-prompts/agent-prompt-dream-memory-consolidation.md | Four-phase consolidation pattern (orient→gather→consolidate→prune) for session memory management. Applicable to findings catalog (docs/research/trail/). Index size management (<200 lines, ~25KB), narrow grep on transcripts, converts relative→absolute dates, deletes contradicted facts. | PATTERN |
+
+**Key Findings**:
+1. Token efficiency 46-56% when skills pre-warmed (Phase 2) vs Phase 1.
+2. Three skill evolution architectures: deployment-time (Memento), performance monitoring (OpenSpace), user modeling (Hermes).
+3. Closed-loop pattern universal: task → fail detection → reflect → rewrite → update library.
+4. Dream consolidation applicable to research findings catalog for automated dedup/prune.
+5. agentskills.io standard enables portability (not locked to one framework).
+
+See finding-self-improvement-frameworks-2026-03-29.yaml for detailed pattern analysis and applicability to mde's adversarial review system.
+

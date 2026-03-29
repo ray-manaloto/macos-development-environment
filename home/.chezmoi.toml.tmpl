@@ -1,7 +1,14 @@
 {{- $remote := or (env "CODESPACES" | not | not) (env "SSH_CONNECTION" | not | not) (env "KUBERNETES_SERVICE_HOST" | not | not) (env "container" | not | not) (env "REMOTE_CONTAINERS" | not | not) (stat "/.dockerenv" | not | not) -}}
+{{- $gitName := promptStringOnce . "git.name" "Git author name" -}}
+{{- $gitEmail := promptStringOnce . "git.email" "Git author email" -}}
+sourceDir = {{ .chezmoi.sourceDir | dir | quote }}
 
 [data]
   remote = {{ $remote }}
+
+[data.git]
+  name = {{ $gitName | quote }}
+  email = {{ $gitEmail | quote }}
 
 [doppler]
   project = "dotfiles"

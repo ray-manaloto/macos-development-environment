@@ -1,0 +1,876 @@
+title: Community Plugin Self-Learning Scan
+date: 2026-03-29
+researcher: claude-sonnet-4-6
+total_plugins_scanned: 500
+relevant_plugins_found: 275
+top_candidates_deep_reviewed: 15
+methodology: >
+  Fetched marketplace manifest from anthropics/claude-plugins-community.
+  Scored all 500 plugins against 20 self-learning keywords (memory, learn, evolve,
+  consolidate, reflect, calibrate, optimize, session, pattern, extract, wisdom,
+  evolution, feedback, loop, auto-update, self-improv, observe, track, monitor,
+  knowledge). Deep-read READMEs for top 15 by score. Focused on extractable
+  techniques, not just install/no-install decisions.
+
+---
+plugins:
+
+  - name: evolve-loop
+    repo: https://github.com/mickeyyaya/evolve-loop
+    category: learning
+    relevance: HIGH
+    techniques:
+      - "6-phase autonomous improvement cycle: DISCOVER → BUILD → AUDIT → SHIP → LEARN → next cycle"
+      - "4 specialized agents: Scout (scans codebase + past learnings for task selection), Builder (isolated worktree), Auditor (quality gate blocks MEDIUM+ severity), Operator (monitors health)"
+      - "After every cycle, extracts 'instincts' — reusable patterns about what worked/failed — fed into next cycle as task candidates"
+      - "Every 5 cycles, a meta-cycle evaluates the pipeline itself: adjusts agent prompts, token budgets, and strategies based on measured performance"
+      - "Strategy presets: innovate (new features), harden (stability), repair (fix-only); selectable per run"
+      - "Unsolicited insight surfacing: while building, agents flag latent bugs/opportunities beyond the stated goal"
+      - "Quality gate: Auditor blocks any change rated MEDIUM severity or higher — bad code doesn't ship"
+      - "Pure markdown instructions, no external deps: works anywhere git works"
+    applicable_pattern: >
+      The LEARN phase pattern (extract instincts → feed next cycle) maps directly to our
+      research pipeline. After each research cycle, a meta-agent could score the cycle
+      quality and propose changes to agent prompts, source selection weights, and scoring
+      rubrics. The meta-cycle (every N cycles) that evaluates the pipeline itself is the
+      most transferable technique — we could implement this as a scheduled review of our
+      baseline improvement score vs. expected vs. actual.
+    install_recommended: false
+    rationale: >
+      Our research pipeline already has a scoring baseline (0.450). The techniques are more
+      valuable as patterns to extract than as a plugin to install (different use case: code
+      improvement, not research improvement). Extract the LEARN phase and meta-cycle patterns.
+
+  - name: pskoett-ai-skills
+    repo: https://github.com/pskoett/pskoett-ai-skills
+    category: learning
+    relevance: HIGH
+    techniques:
+      - "Self-improvement skill: hook-based activation triggers on correction events (user says 'No, that's wrong...', 'Actually...')"
+      - "Structured learning log files: .learnings/LEARNINGS.md, ERRORS.md, FEATURE_REQUESTS.md — each file has distinct job"
+      - "Learning promotion ladder: session log → project CLAUDE.md → AGENTS.md → global instructions"
+      - "Pattern-Key field tracks recurring patterns: harden.input_validation, simplify.dead_code"
+      - "Recurrence-Count + First-Seen + Last-Seen fields enable frequency-based promotion decisions"
+      - "Context-surfing skill: monitors context window quality during multi-step execution; exits with handoff file on drift"
+      - "Intent-framed-agent: captures intent contract at execution start, monitors scope drift"
+      - "Simplify-and-harden: post-completion self-review with 3 passes (simplify, harden, document)"
+      - "Full pipeline lifecycle: plan-interview → intent-framed-agent + context-surfing (concurrent) → simplify-and-harden → self-improvement"
+    applicable_pattern: >
+      The structured learning log format (LEARNINGS.md / ERRORS.md with Pattern-Key and
+      Recurrence-Count) is immediately applicable to our session-learning workflow. We
+      could add Pattern-Key and Recurrence-Count to our auto memory entries to drive
+      promotion decisions: when a pattern appears 3+ times it gets promoted to CLAUDE.md
+      or a policy rule. The correction-event trigger (UserPromptSubmit hook detecting
+      correction language) is a specific, implementable hook we're missing.
+    install_recommended: true
+    rationale: >
+      The self-improvement skill is a direct match for our agent note-taking protocol.
+      The hook-based correction capture and structured LEARNINGS.md format could replace
+      our current ad-hoc auto-memory approach with a more structured, promotable system.
+
+  - name: auto-memory
+    repo: https://github.com/severity1/claude-code-auto-memory
+    category: auto-update
+    relevance: HIGH
+    techniques:
+      - "PostToolUse hook tracks Edit/Write/Bash operations; Stop hook triggers isolated agent update"
+      - "Isolated agent runs in separate context window — doesn't consume main session tokens"
+      - "Marker-based updates: only modifies AUTO-MANAGED sections, preserves manual CLAUDE.md content"
+      - "Monorepo support: hierarchical CLAUDE.md with subtree tracking"
+      - "/auto-memory:sync command for git-diff-based sync when files changed outside Claude Code"
+      - "/auto-memory:calibrate for full recalibration of all CLAUDE.md files"
+      - "Zero-config after init: automatic tracking without user intervention"
+      - "Token-minimal design: PostToolUse hook has no output, minimizing context overhead"
+    applicable_pattern: >
+      The marker-based update pattern (AUTO-MANAGED sections in CLAUDE.md) is directly
+      applicable to our project. We could add AUTO-MANAGED markers to our CLAUDE.md
+      sections that should update automatically (e.g., tool list, subcommand list, test
+      counts), while preserving manually curated policy sections. The isolated-agent
+      pattern (running memory updates in a separate context) is key to avoiding context
+      bloat in the main session.
+    install_recommended: true
+    rationale: >
+      Our CLAUDE.md is under 100-line budget pressure. Auto-maintaining the factual sections
+      (tool counts, subcommands, etc.) while keeping policy sections manual is exactly what
+      we need. The isolated-agent approach avoids context bloat.
+
+  - name: remember
+    repo: https://github.com/Digital-Process-Tools/claude-remember
+    category: memory
+    relevance: HIGH
+    techniques:
+      - "Hierarchical compression: raw tool use → now.md → today-YYYY-MM-DD.md → recent.md → archive.md"
+      - "Haiku-based compression: Claude Haiku summarizes each layer, cost < $0.01/session"
+      - "NDC (now-day-consolidation) compression runs hourly on raw session buffer"
+      - "SessionStart hook auto-injects identity.md + remember.md + now.md + today-*.md + recent.md + archive.md"
+      - "Stop hook monitors save cadence, blocks exit until save completes when threshold reached"
+      - "identity.md: persistent agent persona file that loads every session"
+      - "remember.md: handoff note written at session end, read at session start"
+    applicable_pattern: >
+      Already installed. The hierarchical compression technique (raw → compressed → weekly → archive)
+      is the key pattern. We could apply the same to our research pipeline: raw findings → scored
+      summary → weekly synthesis → archival. The identity.md pattern (persistent persona) is
+      something our agent definitions could use.
+    install_recommended: false
+    rationale: Already installed. This is the baseline memory system for this project.
+
+  - name: pmm
+    repo: https://github.com/NominexHQ/pmm-plugin
+    category: memory
+    relevance: HIGH
+    techniques:
+      - "16 specialized memory files, each with a distinct job: decisions, lessons, preferences, timeline, graph, vectors, taxonomies, assets"
+      - "2-tier loading: Tier 1 (12 essential files) auto-loaded via SessionStart hook; Tier 2 (graph, vectors) load on demand"
+      - "Git-backed memory: every save is a git commit with rationale; git log is the memory audit trail"
+      - "/pmm:hydrate --all: bootstraps memory from current session context (for projects mid-stream)"
+      - "/pmm:recall: synthesizes a focused briefing across all memory files before context switching"
+      - "Decisions tracked with rationale (not just what, but why) — prevents context rot"
+      - "Configurable sliding window size, model selection (Haiku default), verbosity"
+      - "Auto-save via Stop hook with configurable threshold"
+    applicable_pattern: >
+      The 2-tier loading strategy (always-on essentials vs. on-demand detail) is directly
+      applicable to our 3-layer memory architecture. The 16-file structure with distinct
+      jobs (decisions.md vs. lessons.md vs. preferences.md) is more granular than our current
+      auto-memory MEMORY.md index approach — could improve signal-to-noise in session startup.
+      The git-backed audit trail for memory changes is something we should add to our workflow.
+    install_recommended: false
+    rationale: >
+      Overlaps heavily with our existing remember plugin. The technique of 16 specialized
+      files is worth extracting as a pattern for restructuring our MEMORY.md index, but we
+      shouldn't add another memory layer on top of the existing one.
+
+  - name: engram
+    repo: https://engram.fyi
+    category: memory
+    relevance: HIGH
+    techniques:
+      - "Automatic consolidation: memory is periodically reorganized and deduplicated without user intervention"
+      - "Knowledge graphs: relationships between entities tracked as graph edges, not just flat notes"
+      - "Semantic recall: vector search retrieves relevant context based on current task, not recency"
+      - "Cross-session persistence: memory survives between sessions natively"
+      - "Description: 'semantic recall, automatic consolidation, knowledge graphs'"
+    applicable_pattern: >
+      The knowledge-graph approach (tracking relationships between findings, not just facts)
+      is more powerful than flat markdown files for research consolidation. Our YAML findings
+      files don't capture inter-finding relationships. A graph layer over the findings could
+      enable queries like "what findings relate to the remember plugin?" across the full catalog.
+    install_recommended: false
+    rationale: >
+      Hosted service (engram.fyi) — would require an API key and external data dependency.
+      Extract the graph relationship pattern for our NotebookLM integration instead.
+
+  - name: harnesskit
+    repo: https://github.com/ice-ice-bear/harnesskit
+    category: observation
+    relevance: HIGH
+    techniques:
+      - "4-stage adaptive cycle: Detect → Configure → Observe → Improve"
+      - "Zero-token shell hooks: detection and observation via bash+jq, no LLM calls = no context cost"
+      - "3 guardrail presets: beginner/intermediate/advanced — controlled by repo detection output"
+      - "Session observation: tracks errors, tool usage, plugin effectiveness per session via hooks"
+      - "/harnesskit:insights analyzes accumulated session data; /harnesskit:apply executes proposed changes"
+      - "Auto-applies skill/agent/hook/rule improvements based on session analysis"
+      - "Error pattern detection: repeated errors trigger guardrail upgrades"
+    applicable_pattern: >
+      The zero-token shell hook for observation is the key transferable technique. Our current
+      PostToolUse hooks use LLM calls for analysis — moving the observation/aggregation layer
+      to bash+jq would dramatically reduce context overhead. The Detect→Configure→Observe→Improve
+      cycle maps to our research pipeline phases. The error-pattern-to-guardrail promotion is
+      a specific mechanism we could implement: recurring errors from ERRORS.md trigger new rules.
+    install_recommended: false
+    rationale: >
+      The core loop (detect→observe→improve) is more valuable as a pattern than the plugin
+      itself. The zero-token observation hook technique is directly applicable to our existing
+      hook infrastructure.
+
+  - name: superpowers-optimized
+    repo: https://github.com/REPOZY/superpowers-optimized
+    category: reflection
+    relevance: HIGH
+    techniques:
+      - "Cross-session 4-file memory stack: project-map.md (structure cache) + session-log.md (decision history) + state.md (task snapshot) + known-issues.md (error map)"
+      - "context-snapshot.json: written every session start via git diff HEAD~1..HEAD to capture blast radius of recent changes"
+      - "Automatic 3-tier workflow routing: micro (bypass all gates) / lightweight (single checkpoint) / full (complete pipeline)"
+      - "Self-consistency verification: multi-path reasoning at critical decision points"
+      - "Adversarial red team agent + auto-fix pipeline: finds bugs checklists miss, converts findings to failing tests"
+      - "Known-issues.md: project-specific error map prevents rediscovering the same bug"
+      - "5 research-backed principles: less is more, fresh context beats accumulated context, compliance != competence, verify your own reasoning, accountability drives accuracy"
+      - "9 proactive hooks: dangerous-command blocker, secrets protector, subagent guard, edit tracker, session stats, stop reminders, skill activator, session start, context engine"
+    applicable_pattern: >
+      The known-issues.md pattern (project-specific error map) is directly applicable as
+      an extension to our ERRORS.md. The context-snapshot.json (git diff at session start)
+      is a lightweight zero-cost way to know what changed since last session — something
+      our remember plugin doesn't do. The 3-tier routing (micro/lightweight/full) could
+      apply to our research pipeline: trivial source adds skip scoring, new domains get full
+      multi-source synthesis.
+    install_recommended: false
+    rationale: >
+      Heavy overlap with our existing superpowers/ultrapowers workflow. Extract the
+      context-snapshot.json technique (git diff at session start) and known-issues.md pattern.
+
+  - name: agent-recall
+    repo: https://github.com/d-wwei/agent-recall
+    category: memory
+    relevance: HIGH
+    techniques:
+      - "Cross-platform memory: same SQLite database shared across Claude Code, Cursor, Codex CLI, Gemini CLI, OpenCode"
+      - "3 self-awareness layers: agent persona (name, personality, environment), user profile (bootstrapped via 3-round interview), active task recovery"
+      - "Bootstrap interview: 3-round structured interview to learn user context at setup time"
+      - "SQLite + FTS5 + Chroma: structured relational data + full-text search + vector embeddings"
+      - "Observation compression: tool executions captured → compressed via AI → injected at next session start"
+      - "Promotion and archival: memory entries promoted (episodic → semantic → principle) based on recurrence"
+      - "Background HTTP worker (localhost:37777): platform-agnostic 18-endpoint API"
+      - "70-80% platform-agnostic code: thin adapter (~80 lines) per platform"
+    applicable_pattern: >
+      The user-profile bootstrap interview is a specific pattern we lack: a structured onboarding
+      that captures user preferences, project context, and working style before any session begins.
+      The promotion ladder (episodic → semantic → principle) directly maps to our memory tiers
+      (session → project warm → knowledge cold). The cross-platform SQLite backend is overkill
+      for our single-tool setup, but the platform-agnostic API pattern is worth noting.
+    install_recommended: false
+    rationale: >
+      Our remember plugin covers the core memory need. The bootstrap interview and promotion
+      ladder patterns are worth extracting but don't justify adding another memory layer.
+
+  - name: mine
+    repo: https://github.com/anipotts/claude-code-tips
+    category: observation
+    relevance: MEDIUM
+    techniques:
+      - "Mines every Claude Code session into a local SQLite database via JSONL parsing"
+      - "18+ natural language query intents: /mine mistakes (error patterns), /mine hotspots (most-edited files), /mine loops (repeated patterns), /mine search (full-text)"
+      - "Cost tracking: per-project, per-session token and cost accounting"
+      - "Error memory: captures and re-surfaces errors Claude keeps repeating across sessions"
+      - "/mine loops: detects repeated behavior patterns across sessions — signals for automation opportunities"
+      - "context-save hook: preserves state before compaction"
+    applicable_pattern: >
+      The 'mine loops' command (detecting repeated cross-session patterns) is the most novel
+      technique here. If we could detect that Claude is repeatedly doing the same manual step
+      (e.g., always running ruff before commits), that's a signal to automate it. The error
+      memory (re-surfacing repeated errors) could augment our ERRORS.md approach with automatic
+      recurrence detection from session logs.
+    install_recommended: false
+    rationale: >
+      Interesting observability approach but adds another SQLite database alongside our existing
+      stack. The loop detection pattern is extractable without installing the plugin.
+
+  - name: lesson-skill-loop
+    repo: https://github.com/aliksir/lesson-skill-loop
+    category: skill-evolution
+    relevance: MEDIUM
+    techniques:
+      - "Analyzes development session tag patterns to identify skill creation opportunities"
+      - "Proposes new skill creation based on recurring task patterns in session history"
+      - "Syncs improvements between related skills to prevent drift"
+      - "Checks for skill health degradation over time"
+      - "Bridges from ad-hoc session patterns to formalized, installable skills"
+    applicable_pattern: >
+      The session-pattern-to-skill pipeline is a direct implementation of the feedback loop
+      we want: things done repeatedly in sessions become proposed skills. This is the
+      automation of our Library-First policy — instead of waiting for humans to notice
+      repetitive work, the loop proposes formalizing it.
+    install_recommended: false
+    rationale: >
+      The description is thin (README 404'd). The concept is sound and maps to our skill
+      evolution goals, but the implementation is unknown.
+
+  - name: coding-wisdom
+    repo: https://github.com/ErinYu/coding-wisdom
+    category: knowledge
+    relevance: MEDIUM
+    techniques:
+      - "4 structured wisdom categories: Development Principles, Debug Principles, Trivial User Features, Non-Consensus Tips"
+      - "Capture mode: rich interactive prompts after sessions (title, context, principle, why-it-works, tags)"
+      - "Browse mode: explore accumulated wisdom by category"
+      - "Search mode: find relevant wisdom before starting new tasks (inject before context is needed)"
+      - "Tag-based retrieval for cross-reference"
+    applicable_pattern: >
+      The pre-task search (find relevant wisdom before starting, not just injecting all of it)
+      is a key pattern we're missing. Our MEMORY.md injects everything; wisdom search would
+      let agents query for relevant patterns by task type. The 4-category structure (Development
+      Principles, Debug Principles, Trivial User Features, Non-Consensus Tips) maps cleanly to
+      our feedback memory entries.
+    install_recommended: false
+    rationale: >
+      The capture format is simpler than our LEARNINGS.md approach. The pre-task search
+      pattern is extractable without the plugin.
+
+  - name: bake-claude-md-files
+    repo: https://github.com/publicala/bake-claude-md-files
+    category: auto-update
+    relevance: MEDIUM
+    techniques:
+      - "Converts CLAUDE.md rules into automated checks (eslint, phpstan, CI, git hooks) to free up agent context"
+      - "Inventories existing tooling before proposing new checks — never duplicates existing automation"
+      - "Presents proposed changes for approval before implementing"
+      - "Removes automated rules from CLAUDE.md after checks pass — rule is now enforced by tooling, not context"
+      - "Preserves human-judgment rules that can't be automated"
+    applicable_pattern: >
+      The 'bake' pattern (CLAUDE.md rule → automated check → remove from context) is a
+      direct technique for reducing our context budget. Policy rules that could be enforced
+      by ruff rules, mise hooks, or pytest fixtures should be 'baked' out of CLAUDE.md.
+      This is the inverse of auto-memory: instead of keeping CLAUDE.md up-to-date, it
+      removes rules that are better expressed as tooling.
+    install_recommended: true
+    rationale: >
+      Addresses our CLAUDE.md context budget problem directly. The bake pattern (policy → tooling → remove)
+      is complementary to auto-memory (auto-update factual sections). Together they keep CLAUDE.md
+      minimal: factual sections auto-update, policy sections get baked into tools when possible.
+
+  - name: skill-doctor
+    repo: https://github.com/amaljithkuttamath/skill-doctor
+    category: reflection
+    relevance: MEDIUM
+    techniques:
+      - "Diagnoses skill health: missing tool restrictions, wasted tokens from inline file reads, vague descriptions that never auto-trigger"
+      - "Uses claude-code-guide agent to evaluate each skill against current best practices"
+      - "Saves findings to ~/.skill-doctor/diagnosis.json for structured review"
+      - "3-command workflow: diagnose → treat → rollback"
+      - "Rollback capability: can revert skill changes if treatment degrades performance"
+    applicable_pattern: >
+      The skill-health diagnostic pattern (measure trigger effectiveness, token efficiency,
+      best-practice compliance) applies to our rsm-subagents plugins. A periodic skill audit
+      that measures whether skills are auto-triggering correctly, whether descriptions are
+      precise enough, and whether tool restrictions are minimal could catch drift. The rollback
+      pattern is also directly applicable to our skill evolution workflow.
+    install_recommended: false
+    rationale: >
+      Our existing `uv run mde-py validate --plugins` covers structural validation. skill-doctor
+      adds semantic/quality analysis. Worth running manually before major plugin releases, not
+      as a permanent installation.
+
+  - name: vynn
+    repo: https://github.com/beee003/vynn-mcp
+    category: learning
+    relevance: MEDIUM
+    techniques:
+      - "optimize_prompt: AI-powered prompt optimization for individual workflow steps"
+      - "apply_prompt_optimization: applies optimized prompts to running workflows"
+      - "get_model_recommendation: recommends model swaps per step (e.g., use Haiku for step 3, Sonnet for step 7)"
+      - "backtest: runs backtests on workflow strategies with natural language or structured configs"
+      - "batch_backtest: parameter sweep across strategy variations to find optimal configs"
+      - "get_analytics: workflow performance analytics over time"
+      - "Cron scheduling for recurring workflow execution"
+    applicable_pattern: >
+      The backtest + parameter sweep pattern is the closest thing to true self-improvement
+      we've seen: run the same research workflow with different agent prompts, model choices,
+      and source weights, then compare outcomes against a baseline metric. This is what our
+      research pipeline's improvement score (0.450 baseline) is designed for — but we don't
+      have the backtesting infrastructure to actually optimize against it.
+    install_recommended: false
+    rationale: >
+      Hosted service (the-vynn.com) requiring API key. The backtesting pattern is worth
+      implementing natively in our research pipeline rather than depending on an external service.
+
+---
+additional_patterns_noted:
+
+  - pattern: "Zero-token shell hooks for observation"
+    source_plugins: [harnesskit, mine, superpowers-optimized]
+    description: >
+      Use bash+jq in PostToolUse/SessionEnd hooks for metrics collection (error counts,
+      tool usage, edit frequency) without LLM calls. Reserve LLM calls for analysis,
+      not data collection.
+    applicable_to: our existing hook infrastructure
+
+  - pattern: "Git-backed memory audit trail"
+    source_plugins: [pmm]
+    description: >
+      Every memory save is a git commit. Memory changes are traceable to specific sessions.
+      Combined with our existing git workflow, this provides full provenance for agent learning.
+    applicable_to: docs/research/trail/ provenance records
+
+  - pattern: "context-snapshot.json at session start"
+    source_plugins: [superpowers-optimized]
+    description: >
+      Run 'git diff HEAD~1..HEAD' at SessionStart, write result to context-snapshot.json
+      (in .generated/). Zero LLM cost, instant answer to 'what changed since last session'.
+    applicable_to: our remember plugin / SessionStart hook
+
+  - pattern: "Correction-event trigger hook"
+    source_plugins: [pskoett-ai-skills]
+    description: >
+      UserPromptSubmit hook detects correction language ('No, that's wrong', 'Actually...',
+      'Don't do that') and automatically triggers the self-improvement skill to log the
+      correction. Zero manual discipline required.
+    applicable_to: src/mde/hooks/ auto-discovered hook
+
+  - pattern: "Promotion ladder with recurrence tracking"
+    source_plugins: [pskoett-ai-skills, agent-recall]
+    description: >
+      Track Pattern-Key, Recurrence-Count, First-Seen, Last-Seen on every learning entry.
+      When Recurrence-Count crosses threshold (3?), auto-promote to CLAUDE.md or policy rule.
+      Prevents wisdom from staying in session logs and never becoming institutional knowledge.
+    applicable_to: .claude/projects/*/memory/ MEMORY.md index files
+
+  - pattern: "Bake policy into tooling"
+    source_plugins: [bake-claude-md-files]
+    description: >
+      Audit CLAUDE.md rules: if a rule can be expressed as a ruff rule, mise hook, or pytest
+      fixture, implement it in tooling and remove from CLAUDE.md. Reduces context budget without
+      losing enforcement. Our no-shell-scripts and mise-first policies are partially bakeable.
+    applicable_to: CLAUDE.md, .claude/rules/, pyproject.toml
+
+  - pattern: "Pre-task wisdom search"
+    source_plugins: [coding-wisdom]
+    description: >
+      Before starting a task, query the wisdom/learnings store for relevant patterns by task
+      type. Don't inject all memory — inject only what's relevant to the current task. This
+      is the retrieval half of a RAG system applied to agent self-knowledge.
+    applicable_to: research pipeline, SessionStart hook
+
+  - pattern: "Meta-cycle pipeline self-evaluation"
+    source_plugins: [evolve-loop]
+    description: >
+      Every N research cycles, run a meta-agent that evaluates the pipeline itself: which
+      sources produced findings that increased the improvement score? Which agent prompts
+      caused low-quality findings? Which scoring rubrics are biased? Adjust weights accordingly.
+    applicable_to: src/mde/research/ pipeline, improvement score tracking
+
+  - pattern: "Isolated agent for memory updates"
+    source_plugins: [auto-memory]
+    description: >
+      Run CLAUDE.md and MEMORY.md updates in a separate isolated agent (clean context window)
+      triggered by PostToolUse/Stop hooks. Main session context stays focused on the task.
+      Memory maintenance never pollutes the working context.
+    applicable_to: our remember plugin + auto-memory integration
+
+---
+summary:
+  highest_priority_for_extraction:
+    - "Correction-event trigger hook (pskoett-ai-skills) — implement as a new hook in src/mde/hooks/"
+    - "context-snapshot.json at SessionStart (superpowers-optimized) — add to SessionStart hook"
+    - "Promotion ladder with Pattern-Key + Recurrence-Count (pskoett-ai-skills) — add fields to MEMORY.md entries"
+    - "Bake-policy-into-tooling audit (bake-claude-md-files) — run against current CLAUDE.md to reduce context budget"
+    - "Meta-cycle pipeline evaluation (evolve-loop) — schedule periodic review of research baseline score"
+
+  install_candidates:
+    - name: pskoett-ai-skills
+      priority: HIGH
+      reason: "Self-improvement skill with structured LEARNINGS.md + correction-event hook is directly usable"
+    - name: auto-memory
+      priority: HIGH
+      reason: "Marker-based CLAUDE.md auto-update with isolated agent solves our context budget problem"
+    - name: bake-claude-md-files
+      priority: MEDIUM
+      reason: "Complementary to auto-memory; reduces context by baking rules into tooling"
+
+  reject_list:
+    - name: engram
+      reason: Hosted service, external data dependency
+    - name: vynn
+      reason: Hosted service, API key required; backtest pattern is worth implementing natively
+    - name: agent-recall
+      reason: Redundant with remember plugin; cross-platform SQLite backend is overkill
+    - name: mine
+      reason: Another SQLite database; loop detection pattern is extractable without installation
+    - name: superpowers-optimized
+      reason: Heavy overlap with existing superpowers/ultrapowers workflow
+    - name: pmm
+      reason: Redundant with remember plugin; multi-file structure is an extractable pattern
+
+# --- Reflection & Self-Learning Skills (batch 2) ---
+
+batch_2_skills:
+
+  - name: claude-reflect
+    source: https://github.com/BayramAnnakov/claude-reflect
+    category: self-learning
+    relevance: HIGH
+    what_it_does: >
+      A Claude Code plugin (v2.6.0, 160 tests) that automatically captures user corrections
+      and workflow patterns, then syncs them into CLAUDE.md and AGENTS.md as permanent memory.
+      Also discovers repeating task patterns from session history and generates reusable /commands.
+    techniques:
+      - "Hybrid detection: fast regex pattern matching during session (real-time) + semantic AI validation on /reflect (batch)"
+      - "Two-stage pipeline: Stage 1 auto-capture via hooks (session_start, every prompt, pre-compaction, post-commit); Stage 2 manual /reflect with human review before writing"
+      - "Confidence scoring (0.60-0.95): higher of regex vs semantic confidence score per captured learning"
+      - "Multi-language correction detection: Spanish 'no, usa Python' correctly identified even without English patterns"
+      - "Multi-target sync: approved learnings pushed to global ~/.claude/CLAUDE.md, project CLAUDE.md, and auto-discovered subdirectory CLAUDE.md files"
+      - "Skill discovery (/reflect-skills): scans past sessions for repeating task patterns and generates /command files (e.g., if 'review my productivity' detected 12x, suggests /daily-review)"
+      - "Human review step: table of candidates with confidence scores; options to apply, edit-before-applying, or skip"
+      - "--dedupe flag: finds and consolidates similar entries in CLAUDE.md to prevent bloat"
+      - "Queue decay tracking: learnings in queue can be reviewed for staleness before applying"
+    applicable_pattern: >
+      The hybrid detection approach (fast regex + semantic validation) directly maps to our
+      correction capture gap. The /reflect-skills pattern discovery (count repeating tasks across
+      sessions, suggest automation) is a high-value addition to our research pipeline: we could
+      scan agent transcripts for repeated research queries and auto-generate source-discovery skills.
+      The multi-target sync model (global + project + subdir) matches our three-tier memory architecture.
+    install_recommended: true
+    rationale: >
+      Direct match for our self-improvement pipeline. The hook-based capture + human review cycle
+      is exactly the pattern we need. Most relevant plugin in this batch. Has 160 tests and active
+      maintenance (v2.6.0). Already integrates with CLAUDE.md/AGENTS.md which are our target files.
+
+  - name: reflection (davidkiss/smart-ai-skills)
+    source: https://skills.sh/davidkiss/smart-ai-skills/reflection
+    category: self-learning
+    relevance: HIGH
+    what_it_does: >
+      Analyzes conversation patterns and tool failures to propose targeted skill improvements or
+      user preference additions. Reviews history for gaps in skill definitions and recurring
+      corrections, then proposes one change at a time (as a diff) for user confirmation.
+    techniques:
+      - "One-change-per-invocation: only proposes a single skill update or preference addition per run to maintain focus"
+      - "Diff-based proposals: shows skill changes as unified diffs, not free-form text"
+      - "Failure-first analysis: tool failures and user corrections are primary signals, not secondary"
+      - "Confirm-before-apply: presents proposal and waits for explicit user confirmation before touching any file"
+      - "Generalization heuristic: extract lessons generic enough to apply to other use cases but specific enough to address the root cause"
+      - "Conflict detection: if proposed change conflicts with existing skill content, proposes resolution"
+    applicable_pattern: >
+      The one-change-per-invocation discipline prevents overwhelming the user and keeps each
+      learning reviewable. The diff-based presentation is more auditable than free-text memory
+      updates. The failure-first signal prioritization matches our 'never dismiss errors' policy.
+    install_recommended: false
+    rationale: >
+      Techniques are extractable into our existing workflow. The diff-based proposal pattern and
+      confirm-before-apply discipline are worth adopting as conventions in our /reflect workflow.
+      No need to install separately — patterns integrate into claude-reflect.
+
+  - name: self-reflection (hopyky/self-reflection)
+    source: https://skills.sh/hopyky/self-reflection/self-reflection
+    category: self-learning
+    relevance: MEDIUM
+    what_it_does: >
+      A heartbeat-driven skill for continuous self-improvement. The agent checks in every 60 minutes
+      via HEARTBEAT.md; if reflection is due (ALERT), reads past lessons then logs new insights using
+      a structured tag/miss/fix log format.
+    techniques:
+      - "Heartbeat integration: runs self-reflection check at every 60m heartbeat tick, not ad-hoc"
+      - "Structured log format: log <tag> <miss> <fix> — three-field entries for searchable recall (e.g., 'error-handling' 'Forgot timeout on API call' 'Always add timeout=30')"
+      - "OK/ALERT state machine: check command returns binary state; ALERT triggers read then log cycle"
+      - "Configurable thresholds: threshold_minutes, max_entries_context (how many past entries to load)"
+      - "State file separate from memory file: ~/.openclaw/self-review-state.json tracks last-run timestamp"
+    applicable_pattern: >
+      The heartbeat-triggered reflection (time-based check, not just event-based) complements
+      our event-driven correction capture. Adding a periodic check (e.g., every session or every
+      N hours) ensures reflection happens even when no explicit corrections occur. The tag/miss/fix
+      log format is more queryable than free-text memory entries.
+    install_recommended: false
+    rationale: >
+      OpenClaw-specific heartbeat integration doesn't map to Claude Code's hook system without
+      adaptation. The log format and check/ALERT state machine are worth extracting as patterns.
+      Lower priority than claude-reflect which covers the same ground with more functionality.
+
+  - name: self-review (lingzhi227/agent-research-skills)
+    source: https://skills.sh/lingzhi227/agent-research-skills/self-review
+    category: reflection
+    relevance: MEDIUM
+    what_it_does: >
+      Academic paper review skill using three independent reviewer personas (harsh-but-fair,
+      harsh-and-critical, open-minded), with a reflection refinement loop (up to 3 rounds per
+      reviewer) before aggregating into a weighted meta-review.
+    techniques:
+      - "Multi-persona review: three independent reviews before aggregation — divergence between personas highlights real gaps"
+      - "Reflection refinement loop: after each review, a 'reflection prompt' asks the reviewer to re-evaluate accuracy and soundness; stops when 'I am done' (max 3 rounds)"
+      - "Weighted score aggregation: Overall (1.0), Contribution (0.4), Presentation (0.2), others (0.1); not all dimensions equal"
+      - "Consensus meta-review: synthesizes where all three personas agree — consensus weakness = real weakness"
+      - "Missing section check: explicit verification that all required sections (Abstract, Introduction, Methods, etc.) are present before scoring"
+    applicable_pattern: >
+      The multi-persona + reflection refinement loop pattern applies to our adversarial review
+      architecture. Our existing debate/invoke.py could add a reflection round: after each
+      model generates its initial critique, a second pass asks it to re-evaluate its own critique
+      for accuracy. The weighted consensus aggregation is more rigorous than averaging raw scores.
+    install_recommended: false
+    rationale: >
+      Domain-specific to academic paper review. The multi-persona and reflection-refinement
+      loop techniques are valuable but already partially covered by our debate architecture.
+      Extractable pattern, not an installable plugin match.
+
+  - name: self-improving (modelscope.cn)
+    source: https://skills.sh/site/modelscope.cn/self-improving
+    category: self-learning
+    relevance: HIGH
+    what_it_does: >
+      Tiered memory system with automatic learning signal detection, heartbeat-based maintenance,
+      and workspace integration. Captures corrections and preferences, promotes patterns after 3x
+      confirmation, and decays cold patterns into archive.
+    techniques:
+      - "Tiered memory: HOT (memory.md, ≤100 lines, always loaded) → WARM (projects/, domains/) → COLD (archive/)"
+      - "Promotion rule: pattern confirmed 3+ times → promote to HOT; confirmed once → WARM; unused → decay to COLD"
+      - "Learning signal taxonomy: Corrections, Preference signals, Pattern candidates (3x threshold), Ignore list (one-time instructions, hypotheticals)"
+      - "Self-reflection log format: CONTEXT/REFLECTION/LESSON entries with same 3x promotion rule"
+      - "Heartbeat integration: maintenance routed through heartbeat-rules.md; periodic tier rebalancing"
+      - "Corrections.md: last 50 corrections log — rolling window, not unbounded"
+      - "Setup guide: HEARTBEAT.md seed for workspace, memory-template.md, boundaries.md for security"
+      - "Proactivity skill: optional companion that triggers suggestions without user prompt"
+    applicable_pattern: >
+      The tiered memory with explicit promotion rules (3x threshold) is the most rigorous
+      implementation of the pattern we need. The HOT/WARM/COLD taxonomy maps directly to our
+      session/project/archive memory layers. The rolling corrections.md (last 50) prevents
+      unbounded growth. The IGNORE list (one-time instructions, hypotheticals) prevents
+      noise from polluting the memory store.
+    install_recommended: true
+    rationale: >
+      Best-in-class tiered memory implementation in this batch. The promotion rules, tier
+      taxonomy, and ignore list are all directly applicable to our memory architecture.
+      Install alongside claude-reflect for complementary coverage: claude-reflect handles
+      capture/sync, self-improving handles tier management and decay.
+
+  - name: journal-prompter (eddiebe147/claude-settings)
+    source: https://skills.sh/eddiebe147/claude-settings/journal-prompter
+    category: reflection
+    relevance: LOW
+    what_it_does: >
+      Generates structured journaling prompts for self-awareness and personal growth, drawing
+      from CBT, positive psychology, Stoic philosophy, and executive coaching. Provides daily
+      morning/evening workflows and weekly deep dives.
+    techniques:
+      - "CBT-based evening reflection: Highlight Capture → Learning Extraction → Challenge Review → Progress Recognition → Tomorrow Preview"
+      - "Stoic morning template: obstacle anticipation + virtue intention-setting"
+      - "Weekly pattern recognition: identify themes and trends across the week (useful for retrospective reporting)"
+      - "Five-Minute Journal format: gratitude + what-would-make-today-great + evening improvement reflection"
+      - "Multi-framework synthesis: CBT, positive psychology, Stoic, executive coaching in single tool"
+    applicable_pattern: >
+      The Learning Extraction + Pattern Recognition steps from the weekly deep-dive framework
+      could inform our session-end reflection prompts. The structured 'what did I learn this
+      week' prompt is adaptable to agent retrospectives. Otherwise, this is personal journaling
+      for humans, not agents.
+    install_recommended: false
+    rationale: >
+      Designed for human journaling practice, not agent self-improvement pipelines. The
+      weekly pattern recognition framework is the only extractable technique for our use case.
+
+  - name: reviews-retros-reflection (lyndonkl/claude)
+    source: https://skills.sh/lyndonkl/claude/reviews-retros-reflection
+    category: reflection
+    relevance: MEDIUM
+    what_it_does: >
+      Structured retrospective framework for teams and individuals covering sprint retros,
+      post-mortems, and after-action reviews. Implements 5-step process: Set Stage → Gather Data
+      → Generate Insights → Decide Actions → Close and Follow Up.
+    techniques:
+      - >-
+        5-step retro workflow: Set Stage (Prime Directive) → Gather Data
+        (metrics, events, sentiment) → Generate Insights (patterns, root
+        causes) → Decide Actions → Close/Follow-Up
+      - "Start/Stop/Continue format: explicit categorization prevents vague 'do better' outcomes"
+      - "Prime Directive framing: psychological safety before data collection — applies to agent retros too"
+      - "Previous action item review at stage setup — tracks whether last retro's actions were completed"
+      - "Multiple retro formats: Start/Stop/Continue, 4Ls (Liked/Learned/Lacked/Longed For), Mad/Sad/Glad, timeline review"
+    applicable_pattern: >
+      The 5-step workflow and Start/Stop/Continue format apply directly to our post-cycle
+      research retrospectives. The 'previous action item review' step is what we're missing
+      in our current retro practice — we don't systematically check whether last retro's
+      actions were implemented. The Prime Directive framing (non-judgmental data collection)
+      is useful for agent self-assessment.
+    install_recommended: false
+    rationale: >
+      Focused on team retrospectives, not agent self-improvement. The 5-step framework and
+      Start/Stop/Continue format are extractable as retro templates. Already covered by our
+      existing /retro skill in gstack.
+
+  - name: self-learning-feedback (proftrader/openclaw-self-learning-skill)
+    source: https://skills.sh/proftrader/openclaw-self-learning-skill/self-learning-feedback
+    category: self-learning
+    relevance: HIGH
+    what_it_does: >
+      Recursive learning loop triggered after each task completion. Collects binary good/needs-improvement
+      feedback, then uses multi-choice questions to classify and resolve improvement intent across three
+      dimensions (why, how, what context). Tracks consecutive good-approval counts per task type.
+    techniques:
+      - "Good-approval counter per task context: GOOD_APPROVAL_TARGET=10; consecutive 'good' signals accumulate before pattern is considered learned"
+      - "Counter reset on failure: any 'needs improvement' resets the counter to 0 for that task type — ensures no premature pattern promotion"
+      - "Severity-based iteration cap: SLIGHT (5 iterations), MEDIUM (10), SEVERE (20) — adapts effort to problem magnitude"
+      - "Three-dimension improvement collection: Why (incorrect/wrong format/wrong tone/missing context) + How (examples, specific changes) + What context/styling"
+      - "Non-intrusive prompt: 1-3 line feedback request after each completion — avoids disrupting flow"
+      - "Reduced frequency after learning: once GOOD_APPROVAL_TARGET reached, only prompts on task type change, quality drop, or periodic recalibration"
+      - "Multiple-choice first, free-text refinement second: structured collection reduces user effort for common cases"
+    applicable_pattern: >
+      The good-approval counter with reset-on-failure is the most novel technique in this batch.
+      Our current pattern promotion (after 3x) doesn't account for false positives — a pattern
+      that fails once should restart its count. The severity-based iteration cap maps to our
+      quality gate severity levels (ERROR/WARNING/INFO). The non-intrusive 1-3 line prompt
+      pattern is applicable to our post-task agent workflow.
+    install_recommended: false
+    rationale: >
+      OpenClaw-specific integration, but the good-approval counter and reset-on-failure
+      mechanics are the most rigorous learning validation approach in this scan. Extract
+      the counter mechanics as a pattern for our memory promotion logic.
+
+  - name: agent-chronicle (sundial-org/awesome-openclaw-skills)
+    source: https://skills.sh/sundial-org/awesome-openclaw-skills/agent-chronicle
+    category: reflection
+    relevance: LOW
+    what_it_does: >
+      Enables AI agents to maintain a personal journal from their own subjective perspective —
+      documenting what happened, how it felt, what was learned, and what patterns emerge. Generates
+      daily entries from session history with wins, frustrations, and learnings sections.
+    techniques:
+      - "Subjective perspective logging: captures agent experience (frustrations, wins, curiosity) not just task outcomes"
+      - "Daily entry structure: Summary → Projects Worked On → Wins → Frustrations → Learnings → Patterns"
+      - "Quote Hall of Fame + Curiosity Backlog: optional sections for memorable moments and open questions"
+      - "Session-to-diary pipeline: generate.py --today processes day's sessions into structured diary entry"
+      - "Export pipeline: PDF/HTML export of diary entries for human review"
+      - "Privacy levels: private/shareable/public configuration"
+    applicable_pattern: >
+      The Frustrations + Learnings sections as a structured daily output format could feed
+      our research pipeline's YAML provenance records. The 'patterns over time' tracking is
+      relevant, but the subjective/emotional framing is less useful for technical pipelines.
+    install_recommended: false
+    rationale: >
+      Interesting conceptually (agent subjective experience logging) but designed for OpenClaw
+      and focused on personal narrative, not improvement pipeline. The daily entry structure
+      is extractable as a template but duplicates our existing YAML provenance format.
+
+  - name: claude-reflection (vamseeachanta/workspace-hub)
+    source: https://skills.sh/vamseeachanta/workspace-hub/claude-reflection
+    category: self-learning
+    relevance: HIGH
+    what_it_does: >
+      Meta-skill implementing the REFLECT → ABSTRACT → GENERALIZE → STORE loop for continuous
+      learning from user interactions. Auto-detects six trigger patterns and persists learnings
+      to YAML files with scope tagging (global/domain/project/session).
+    techniques:
+      - "REFLECT → ABSTRACT → GENERALIZE → STORE loop: four-phase cognitive model for learning extraction"
+      - "Six auto-detection triggers: Direct Correction, Preference Statement, Explicit Memory Request, Positive Reinforcement, Repeated Patterns (3x), Error-Then-Success"
+      - "Scope taxonomy: global (applies everywhere), domain (coding/writing/etc), project, session (ephemeral)"
+      - "YAML-structured memory: learnings stored as ~/.claude/memory/learnings.yaml — queryable, not flat text"
+      - "Export flag: /claude-reflection --export for human review of accumulated learnings"
+      - "Topic-scoped reflection: /claude-reflection --topic 'code formatting' for focused analysis"
+      - "Sync flag: /claude-reflection --sync for cross-session consistency"
+    applicable_pattern: >
+      The REFLECT/ABSTRACT/GENERALIZE/STORE loop is the clearest cognitive model for our
+      learning pipeline. The scope taxonomy (global/domain/project/session) maps exactly to
+      our three-tier memory architecture. The YAML structured storage (queryable) is superior
+      to flat markdown for programmatic access. The Error-Then-Success trigger (correction
+      followed by success → capture the correction) is a precise signal we're not currently detecting.
+    install_recommended: true
+    rationale: >
+      The scope taxonomy, YAML storage format, and REFLECT/ABSTRACT/GENERALIZE/STORE model
+      are all directly applicable to our memory architecture. The Error-Then-Success trigger
+      is a gap in our current correction detection. Strong candidate for pattern extraction.
+
+  - name: reflection (lauraflorentin/skills-marketplace)
+    source: https://skills.sh/lauraflorentin/skills-marketplace/reflection
+    category: reflection
+    relevance: MEDIUM
+    what_it_does: >
+      Implements the classic LLM self-reflection pattern: Draft → Critique → Refine. The
+      agent acts as its own critic, identifying flaws in its first draft and generating an
+      improved version. Includes a code implementation template.
+    techniques:
+      - "Three-step reflection workflow: Draft (initial attempt) → Critique (explicit flaws list) → Refine (rewrite addressing specific critique)"
+      - "Critique prompt engineering: explicitly asks to 'find problems, not just rewrite' — separates critique from refinement"
+      - "Context passing: Refine step receives both original draft and specific critique, not just draft"
+      - "Use case taxonomy: Code Repair, Writing Polish, Safety Check, Hallucination Check, Compliance"
+      - "Quality Control trigger: invoke when high accuracy required (legal text, code generation)"
+    applicable_pattern: >
+      The Draft/Critique/Refine pattern with explicit separation of critique from refinement
+      is directly applicable to our research scoring pipeline. Our current debate architecture
+      (codex vs gemini) is a multi-model variant of this pattern. The 'critique prompt that
+      asks for flaws, not rewrites' is a specific prompt engineering technique to adopt.
+    install_recommended: false
+    rationale: >
+      Classic self-reflection pattern — well-documented and already partially implemented
+      in our debate architecture. The code template is useful reference. No installation
+      needed; extract the critique prompt phrasing as a pattern.
+
+  - name: elicitation (tasteray/skills)
+    source: https://skills.sh/tasteray/skills/elicitation
+    category: reflection
+    relevance: LOW
+    what_it_does: >
+      Psychological profiling through natural conversation, synthesizing autobiographical
+      memory research, narrative identity theory, and motivational interviewing. Designed
+      to elicit authentic self-disclosure through patient conversational framing rather
+      than direct questioning.
+    techniques:
+      - "2:1 reflection-to-question ratio: reflections outperform questions for authentic disclosure (Miller & Rollnick)"
+      - "Self-defining memory elicitation: five criteria (vivid, emotionally intense, frequently rehearsed, thematically linked, connected to enduring concerns)"
+      - "Narrative theme analysis: redemption vs contamination arcs predict wellbeing beyond raw events"
+      - "Conversational frames over direct questions: 'keeps coming back' frame, 'explains who I am' frame"
+      - "10/10 scoring: evaluate all work against elicitation principles; iterate until reaching 10/10"
+    applicable_pattern: >
+      The 2:1 reflection-to-question ratio and conversational framing techniques could improve
+      our researcher agent prompts when gathering information from users. Otherwise, this is
+      primarily a human-interaction skill, not an agent self-improvement pipeline tool.
+    install_recommended: false
+    rationale: >
+      Human psychology elicitation, not agent self-improvement. Very low relevance to our
+      research pipeline. Interesting academic synthesis but not actionable for our use case.
+
+  - name: meta-dialogue (gongebb/meta-dialogue)
+    source: https://skills.sh/gongebb/meta-dialogue/meta-dialogue
+    category: reflection
+    relevance: LOW
+    what_it_does: >
+      Korean-language meta-dialogue skill for structured self-understanding through accumulating
+      session profiles. Builds a meta-profile across sessions (hypotheses, patterns, blind spots)
+      and deepens self-knowledge through hypothesis-first questioning. Designed for personal insight
+      and article ideation.
+    techniques:
+      - "Meta-profile accumulation: {path}/meta-profile.md stores accumulated hypotheses, patterns, blind spots across sessions"
+      - "Hypothesis-first questioning: proposes a hypothesis before asking confirmatory questions ('틀려도 된다' — it's OK to be wrong)"
+      - "Pattern-as-hypothesis discipline: confirmed patterns (4+ times) actively seek counter-evidence, not just confirmation"
+      - "Safety guards: detects self-negation framing, confirmation bias loops, directional errors across 3 sessions"
+      - "Session protocol: raw dialogue + structured memo (2-layer) saved per session; meta-profile updated with user confirmation"
+      - "Lightweight mode: single-session no-storage for ad-hoc use"
+    applicable_pattern: >
+      The meta-profile (accumulated hypotheses + patterns + blind spots, updated with user
+      confirmation) is a more sophisticated version of our auto memory MEMORY.md. The
+      hypothesis-first discipline (propose before confirming) is a useful epistemic practice
+      for research agents. The pattern-seeking counter-evidence (4+ confirmed patterns should
+      be challenged) prevents overfitting to past patterns.
+    install_recommended: false
+    rationale: >
+      Korean-language, human self-understanding focus. The meta-profile accumulation pattern
+      is interesting but the overall skill is for personal insight dialogues, not technical
+      agent improvement pipelines. Low relevance to our use case.
+
+  - name: reflective-reviewer (anton-abyzov/specweave)
+    source: https://skills.sh/anton-abyzov/specweave/reflective-reviewer
+    category: reflection
+    relevance: MEDIUM
+    what_it_does: >
+      Code review skill with structured self-reflection output format. Analyzes completed work
+      for security vulnerabilities, code quality, and test coverage using progressive loading
+      (phase files loaded as needed). Produces a scored self-reflection report.
+    techniques:
+      - "Progressive phase loading: security/quality/testing/performance phases loaded on demand (< 500 tokens each)"
+      - "One-category-per-response: prevents analysis paralysis and keeps each review chunk actionable"
+      - "Structured self-reflection output: Accomplished → Quality Assessment (Strengths + Issues) → Recommended Follow-Up → Lessons Learned → Metrics (X/10)"
+      - "Token budget enforcement: NEVER exceed 2000 tokens per response — chunked analysis pattern"
+      - "Lessons Learned section: 'what went well' + 'what could improve' as explicit output fields"
+      - "Severity taxonomy: CRITICAL/HIGH/MEDIUM/LOW with impact + recommendation + location for each finding"
+    applicable_pattern: >
+      The 'Lessons Learned' section as a mandatory output field in every code review is
+      directly applicable to our review pipeline. Our current reviewer agent doesn't extract
+      generalizable lessons from individual reviews. The token budget enforcement (2000 tokens
+      max per response) and one-category-per-response discipline reduce context bloat.
+    install_recommended: false
+    rationale: >
+      Code review focused, overlaps with our existing review skill. The Lessons Learned
+      output field and progressive phase loading are extractable patterns. The self-reflection
+      output format (Quality Assessment + Metrics) is worth adopting in our reviewer agent.
+
+  - name: self-enhance (benbennitt/skills)
+    source: https://skills.sh/benbennitt/skills/self-enhance
+    category: self-learning
+    relevance: HIGH
+    what_it_does: >
+      Reviews recent work (git log + memory files) and makes specific file edits to improve
+      agent performance — not reports, not reflections, only actual changes. Targets SOUL.md,
+      AGENTS.md, HEARTBEAT.md, project CLAUDE.md, and skills files.
+    techniques:
+      - "Edits-only output: no reports, no reflections — only actual file changes (add rule to SOUL.md, add step to AGENTS.md, etc.)"
+      - "Evidence-traced changes: every edit must trace back to a specific incident or pattern — no generic advice"
+      - "Consolidation rule: if adding a rule makes a file bloated, consolidate existing rules first"
+      - "Remove outdated rules: actively prune rules that no longer apply — prevents rule debt accumulation"
+      - "Seven signal types: repeated mistakes, corrections with same root cause, task failures, process gaps (skipped steps), incorrect tool usage, missing project context, workflow inefficiencies"
+      - "Four-source evidence: memory/YYYY-MM-DD.md files + git log --since='7 days ago' + SOUL/AGENTS/HEARTBEAT.md + project CLAUDE.md"
+      - "Sprint/weekly/mistake-triggered cadences: end of sprint, weekly schedule, or after session with multiple corrections"
+    applicable_pattern: >
+      The 'edits-only, no reports' discipline is the most important technique here. Our
+      current reflection workflow produces YAML findings and markdown summaries but rarely
+      makes direct edits to CLAUDE.md or policy files. Self-enhance's model (act on the
+      finding immediately, don't document it for later) is a fundamentally different philosophy
+      that reduces the gap between insight and implementation. The seven signal taxonomy and
+      evidence-tracing requirement are also directly applicable to our quality gate enforcement.
+    install_recommended: true
+    rationale: >
+      The edits-only approach and seven-signal taxonomy complement claude-reflect's capture
+      mechanism. Where claude-reflect captures and queues learnings for human review,
+      self-enhance executes improvements directly from evidence. Together they cover the full
+      capture → apply loop. Install as companion to claude-reflect.
