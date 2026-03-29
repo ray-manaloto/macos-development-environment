@@ -13,26 +13,13 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
+from mde.hooks._common import _GIT_ENV, repo_root
 from mde.log import logger
-
-
-def _repo_root() -> Path:
-    """Return the git repository root, falling back to cwd."""
-    with contextlib.suppress(subprocess.TimeoutExpired, OSError):
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return Path(result.stdout.strip())
-    return Path.cwd()
 
 
 def remember_dir() -> Path:
     """Return the remember data directory (.generated/remember/)."""
-    return _repo_root() / ".generated" / "remember"
+    return repo_root() / ".generated" / "remember"
 
 
 def append_now_entry(event: str, message: str) -> bool:
@@ -68,6 +55,7 @@ def recent_git_summary(n: int = 5) -> str:
             capture_output=True,
             text=True,
             timeout=5,
+            env=_GIT_ENV,
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()

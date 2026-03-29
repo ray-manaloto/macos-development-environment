@@ -15,35 +15,19 @@ __hook_meta__ = {
 }
 
 import json
-import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from mde.hooks._common import repo_root
 from mde.log import get_tracer, logger
 
 _tracer = get_tracer(__name__)
 
 
-def _repo_root() -> Path:
-    """Return the git repository root, falling back to cwd on failure."""
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return Path(result.stdout.strip())
-    except (subprocess.TimeoutExpired, OSError) as exc:
-        logger.bind(error=str(exc)).debug("repo_root_fallback")
-    return Path.cwd()
-
-
 def _compact_log() -> Path:
     """Return the compact event log path (computed lazily to avoid git at import time)."""
-    return _repo_root() / ".artifacts" / "compact-events.jsonl"
+    return repo_root() / ".generated" / "compact-events.jsonl"
 
 
 def post_compact() -> int:

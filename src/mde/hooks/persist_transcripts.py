@@ -17,10 +17,10 @@ __hook_meta__ = {
 }
 
 import json
-import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
+from mde.hooks._common import repo_root
 from mde.log import get_tracer, logger
 
 _tracer = get_tracer(__name__)
@@ -28,22 +28,6 @@ _tracer = get_tracer(__name__)
 _TMP_BASE = Path("/private/tmp/claude-501")
 _MIN_AGENT_ID_LEN = 10
 _MIN_TEXT_LEN = 100
-
-
-def _repo_root() -> Path:
-    """Return the git repository root, falling back to cwd."""
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return Path(result.stdout.strip())
-    except (subprocess.TimeoutExpired, OSError) as exc:
-        logger.bind(error=str(exc)).debug("repo_root_fallback")
-    return Path.cwd()
 
 
 def _find_task_dirs() -> list[Path]:
@@ -95,7 +79,7 @@ def persist_transcripts() -> int:
     with _tracer.start_as_current_span("mde.hook.persist_transcripts") as span:
         span.set_attribute("hook.event", "persist_transcripts")
 
-        repo = _repo_root()
+        repo = repo_root()
         dest_dir = repo / "docs" / "research" / "trail" / "deep-reviews" / "agent-transcripts"
         dest_dir.mkdir(parents=True, exist_ok=True)
 

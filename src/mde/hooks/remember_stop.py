@@ -33,8 +33,10 @@ def remember_stop() -> int:
 
         git_summary = recent_git_summary()
         message = f"Session stopped. Recent commits:\n{git_summary}"
-        append_now_entry("stop", message)
 
-        logger.bind(hook="remember_stop").info("checkpoint_saved")
+        if append_now_entry("stop", message):
+            logger.bind(hook="remember_stop").info("checkpoint_saved")
+        else:
+            logger.bind(hook="remember_stop").warning("checkpoint_failed")
 
         return 0
