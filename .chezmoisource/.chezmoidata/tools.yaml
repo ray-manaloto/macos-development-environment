@@ -175,8 +175,10 @@ mise:
           extras: browser
       - name: "pipx:mcp2cli"
         version: latest
-      - name: "pipx:srclight"
-        version: "0.8.1"
+      - name: "pipx:srclight/srclight"
+        version: "v0.19.0"
+        config:
+          uvx_args: "--excludes /Users/rmanaloto/.config/mise/srclight-excludes.txt"
       - name: "npm:@googleworkspace/cli"
         version: latest
       - name: "npm:@claude-flow/cli"

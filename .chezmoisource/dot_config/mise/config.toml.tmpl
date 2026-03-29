@@ -51,6 +51,8 @@ PKG_CONFIG_PATH = "{{ $llvmPrefix }}/lib/pkgconfig"
 {{ template "toml-key" .name }} = { version = {{ .version | quote }}, symlink_bins = {{ get $cfg "symlink_bins" }} }
 {{-       else if hasKey $cfg "extras" }}
 {{ template "toml-key" .name }} = { version = {{ .version | quote }}, extras = {{ get $cfg "extras" | quote }} }
+{{-       else if hasKey $cfg "uvx_args" }}
+{{ template "toml-key" .name }} = { version = {{ .version | quote }}, uvx_args = {{ get $cfg "uvx_args" | quote }} }
 {{-       else }}
 {{ template "toml-key" .name }} = {{ .version | quote }}
 {{-       end }}

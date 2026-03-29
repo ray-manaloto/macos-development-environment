@@ -120,6 +120,11 @@
             "type": "command",
             "command": "uv run mde-py hooks persist-transcripts",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks remember-stop",
+            "timeout": 10
           }
         ]
       }
@@ -132,6 +137,11 @@
             "type": "command",
             "command": "uv run mde-py hooks persist-transcripts",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks remember-precompact",
+            "timeout": 10
           }
         ]
       }
