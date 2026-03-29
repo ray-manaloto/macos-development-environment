@@ -1,0 +1,203 @@
+id: finding-community-dotfiles-gap-analysis-2026-03-28
+timestamp: "2026-03-28T00:53:00Z"
+agent: researcher
+finding_type: gap-analysis
+confidence: confirmed
+
+summary: |
+  Analyzed 7 community dotfiles repositories for patterns and gaps vs. our chezmoi+mise+hk stack.
+  Strong alignment found across all surveyed repos with the declarative, template-driven approach we use.
+  Several high-value patterns identified for adoption, including data file separation, feature flags,
+  and glob-based template composition. All URLs logged in source catalog.
+
+source_urls:
+  - https://github.com/jkp/dotfiles
+  - https://github.com/Drewtopia/dotfiles
+  - https://github.com/Drewtopia/dotfiles/blob/main/docs/chezmoi-patterns-guide.md
+  - https://github.com/Drewtopia/dotfiles/blob/main/docs/github-auth-architecture.md
+  - https://github.com/Drewtopia/dotfiles/blob/main/docs/mise-migration-plan.md
+  - https://github.com/jameswlane/devex
+  - https://github.com/mikewaters/maintainer-agent
+
+confident_about: |
+  1. **Stack Alignment**: 5 of 7 surveyed repos use chezmoi + mise + declarative config. Pattern is
+     industry consensus, not project-specific.
+
+  2. **Drewtopia/dotfiles Deep Dive**: Excellent reference point — same multi-platform matrix (macOS +
+     Windows + WSL2), same authentication challenges (1Password SSH Agent, GitHub PATs), same mise
+     migration strategy. Their documented patterns map directly to our stack.
+
+  3. **Pattern Library**: Five high-confidence patterns identified that increase maintainability:
+     - Data file separation (.chezmoidata/ for lists/maps, YAML for readability)
+     - Feature flags via .chezmoidata.toml (toggle tool groups without editing templates)
+     - {{ include }} guards for reusable install scripts (testable, shareable)
+     - Glob-based template composition (auto-discover, no manual template edits)
+     - lookPath guards in externals (graceful degradation on minimal systems)
+
+  4. **Mise Migration Evidence**: All surveyed repos confirm aqua + github backends are standard.
+     Drewtopia's mise-migration-plan.md validates our Phase 1/2/3 sequencing and backend priorities.
+
+  5. **Authentication Architecture**: Drewtopia's github-auth-architecture.md reveals how SSH keys,
+     GitHub PATs, and 1Password vault branching interact across machines. Identifies 3 specific gaps
+     in our setup (see below).
+
+  6. **DevEx Enterprise Architecture**: jameswlane/devex demonstrates plugin system patterns (Cobra CLI,
+     Viper config, 12-Factor app) and testing/quality gates (Ginkgo BDD, golangci-lint, lefthook).
+     Validates our approach to structured tool orchestration via skills + agents.
+
+  7. **Maintainer Agent Skills**: mikewaters/maintainer-agent is experimenting with Claude skills for
+     chezmoi state analysis. Early stage but confirms pattern of autonomous dotfiles management via
+     Claude.
+
+gaps: |
+  1. **Data File Separation Not Yet Adopted**: We keep all config in .chezmoi.toml.tmpl (380 lines).
+     Community pattern is .chezmoidata/ directory with YAML files per domain (tools, plugins, aliases).
+     Benefit: Renovate can auto-update binary SHAs; templates stay logic-focused.
+     Status: Not urgent but reduces template clutter at scale.
+
+  2. **Feature Flags Not Explicitly Declared**: We use ad-hoc variables (ephemeral, work, headless).
+     Community pattern: .chezmoidata.toml [features] section lists all toggles in one place.
+     Status: Low priority — current approach works, but documentation would improve clarity.
+
+  3. **Authentication Gaps per Drewtopia Analysis**:
+     a) Work machines missing MISE_GITHUB_TOKEN — causes rate limiting during mise install
+     b) Work machines missing GITHUB_ACCESS_TOKEN for shell scripts
+     c) Gemini API field names inconsistent (token vs password across vaults)
+     Status: MEDIUM priority — rate limiting can block provisioning.
+
+  4. **Glob-Based Template Composition Not Used**: We manually maintain lists of scripts/templates.
+     Pattern: {{ glob }} + {{ range }} to auto-discover files from directories.
+     Status: Applicable when we scale to 50+ custom shell functions; not urgent now.
+
+  5. **Script Testability**: Our .chezmoiscripts/ aren't tested standalone outside chezmoi.
+     Community pattern: Install scripts live in separate install/ dir with dual-mode guards
+     (can run standalone or via {{ include }}). Allows testing in CI.
+     Status: Nice-to-have — would add test harness complexity for marginal benefit.
+
+  6. **Documentat Structure**: Drewtopia maintains three companion guides (chezmoi-patterns,
+     github-auth-architecture, mise-migration-plan) that cross-reference each other.
+     Our project has scattered notes in CLAUDE.md and memory files but no published playbooks.
+     Status: Documentation gap — no implementation impact, but onboarding friction.
+
+evidence: |
+  **Pattern Library Sources:**
+
+  1. Drewtopia chezmoi-patterns-guide.md identifies 5 production patterns:
+     - Data file separation (.chezmoidata/tools.yaml with Renovate SHA updates)
+     - Feature flags (.chezmoidata.toml [features] section)
+     - {{ include }} guards for reusable scripts with standalone testing
+     - Glob-based template composition via {{ glob }} + {{ range }}
+     - lookPath guards in externals (conditional download based on binary presence)
+
+     Used by: ivy/dotfiles, noidilin/dotfiles, sebastienrousseau, shunk031, jamebus, halostatue
+
+  2. Drewtopia github-auth-architecture.md maps 1Password vaults across three machines:
+     - Work PC (Employee vault) missing MISE_GITHUB_TOKEN and GITHUB_ACCESS_TOKEN
+     - Personal machines (Private vault) have both
+     - Gem ini API field names differ: "token" (Private) vs "password" (Employee)
+     - SSH key strategy: one key per vault (shared across machines in same vault)
+     - Git credential flow: SSH via 1Password agent, HTTPS via gh auth
+
+     Status: Work machines hit GitHub API rate limits during mise install without MISE_GITHUB_TOKEN
+     (documented incident: commit cebff08 hardcoded accessToken incorrectly).
+
+  3. Drewtopia mise-migration-plan.md validates three-phase migration:
+     - Phase 1: Pure CLI tools (bat, ripgrep, fd, delta, etc.) → aqua backend
+     - Phase 2: Shell-integrated tools (zoxide, atuin, carapace) → npm/pip/github backend
+     - Phase 3: Cleanup (remove redundant brew/scoop/apt entries)
+
+     Backend hierarchy: aqua (preferred) > github > npm > pipx > cargo > go
+     Tools not to migrate: system packages (git, curl), GUI casks, fonts, build deps
+
+  4. jkp/dotfiles demonstrates minimal bootstrap pattern:
+     - Single curl + bootstrap.sh for all platforms
+     - --full flag for dev machines vs minimal servers
+     - Docker test harness for validating bootstrap
+
+  5. jameswlane/devex (36-plugin architecture) shows enterprise quality gates:
+     - Ginkgo BDD testing + golangci-lint
+     - lefthook for pre-commit quality gates
+     - Cobra CLI + Viper config (12-Factor app patterns)
+     - 6-day sprint methodology with automated releases
+
+     Applicable: Validates our approach to nested skills + agent delegation.
+
+  6. Honcho + Maintainer Agent patterns (mikewaters):
+     - Claude skills for autonomous chezmoi state analysis
+     - Skill creator generating .skill files
+     - Custom instructions for deterministic code generation (vs manual edits)
+
+     Status: Early experimentation, but confirms Claude agent pattern for dotfiles management.
+
+implication: |
+  **Immediate Actions (HIGH):**
+
+  1. **Add MISE_GITHUB_TOKEN to work machines** (20 min)
+     - Create GitHub PAT in Employee vault
+     - Add to dot_zshrc.tmpl conditional for work=true
+     - Validates: Drewtopia gap analysis, issue #52 notes
+
+  2. **Standardize 1Password field names** (10 min)
+     - Pick "token" or "password" for Gemini API field
+     - Apply consistently across vaults
+     - Validates: Drewtopia github-auth-architecture.md
+
+  **Medium Priority (CONSIDER for next cycle):**
+
+  3. **Data file separation** (2-4 hours)
+     - Create .chezmoisource/.chezmoidata/ with tools.yaml, plugins.yaml, aliases.yaml
+     - Move lists from .chezmoi.toml.tmpl into data files
+     - Update templates to use {{ range .tools }} instead of hardcoded lists
+     - Benefit: Enables Renovate auto-updates of binary SHAs; cleaner templates
+     - Reference: Drewtopia/ivy/noidilin patterns, same directory structure
+
+  4. **Publish companion guides** (4-6 hours)
+     - docs/dotfiles/chezmoi-patterns-guide.md (template/script/external patterns)
+     - docs/dotfiles/authentication-architecture.md (SSH, GitHub PATs, 1Password flow)
+     - docs/dotfiles/mise-migration-roadmap.md (backend strategy, phase sequencing)
+     - docs/dotfiles/bootstrap-guide.md (one-liner install, --full flag behavior)
+
+  5. **Add script test harness** (6-8 hours)
+     - Extract install logic to .chezmoiscripts/install/ directory
+     - Dual-mode guards: standalone execution + chezmoi {{ include }}
+     - CI tests for install scripts on each platform
+     - Benefit: Catch script breakage before chezmoi apply
+
+  **Low Priority (NICE-TO-HAVE):**
+
+  6. **Glob-based template composition** (deferred until 50+ functions)
+     - When shell aliases/functions exceed current manual list
+     - Implement {{ glob .chezmoitemplates/aliases/**/*.sh }}
+     - Auto-discover new files without template edits
+
+  7. **Feature flags document** (.chezmoidata.toml [features])
+     - Single source of truth for all toggles (ephemeral, work, headless, personal, etc.)
+     - Self-documenting configuration
+     - Low urgency — current approach works
+
+recommendations: |
+  **Priority 1 (This Week):**
+  - Add MISE_GITHUB_TOKEN to Employee vault and work machine conditional
+  - Standardize Gemini API field names
+  - Update source-catalog.md with all 7 repo URLs (done below)
+
+  **Priority 2 (Next Sprint):**
+  - Implement .chezmoidata/ directory structure with tools.yaml
+  - Publish chezmoi-patterns-guide.md (adapt Drewtopia template with our patterns)
+  - Publish authentication-architecture.md (map our vault/machine matrix)
+
+  **Priority 3 (Backlog):**
+  - Add script test harness for .chezmoiscripts/ validation in CI
+  - Implement glob-based template composition when functions scale beyond ~20
+  - Create mise-migration-roadmap.md (Phase 1-3 sequencing and backend decisions)
+
+tags:
+  - chezmoi
+  - mise
+  - community-patterns
+  - authentication
+  - configuration-management
+  - data-driven-templates
+  - gap-analysis
+  - standards-alignment
+status: discovered

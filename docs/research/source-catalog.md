@@ -101,6 +101,20 @@
 
 ---
 
+## Community Dotfiles — Gap Analysis (2026-03-28)
+
+| Status | Source | URL | Finding | Classification |
+|--------|--------|-----|---------|-----------------|
+| [x] | jkp/dotfiles README | https://github.com/jkp/dotfiles | Minimal bootstrap pattern: single curl + bootstrap.sh for all platforms; --full flag for dev vs minimal; Docker test harness for validation | BASELINE |
+| [x] | Drewtopia/dotfiles README | https://github.com/Drewtopia/dotfiles | Comprehensive multi-platform (macOS + Windows + WSL2); 292 commits; extensive documentation guides | BASELINE |
+| [x] | Drewtopia chezmoi-patterns-guide | https://github.com/Drewtopia/dotfiles/blob/main/docs/chezmoi-patterns-guide.md | Five production patterns: data file separation (.chezmoidata/), feature flags ([features] section), {{ include }} guards for reusable scripts, glob-based template composition, lookPath guards in externals. Source repos: ivy, noidilin, sebastienrousseau, shunk031, jamebus, halostatue | HIGH |
+| [x] | Drewtopia github-auth-architecture | https://github.com/Drewtopia/dotfiles/blob/main/docs/github-auth-architecture.md | Three-machine authentication matrix: SSH keys via 1Password Agent, GitHub PATs per vault, gh auth git-credential flow. Identifies 3 gaps: work machines missing MISE_GITHUB_TOKEN and GITHUB_ACCESS_TOKEN (rate limiting); Gemini API field inconsistency (token vs password). | HIGH |
+| [x] | Drewtopia mise-migration-plan | https://github.com/Drewtopia/dotfiles/blob/main/docs/mise-migration-plan.md | Three-phase migration strategy (Phase 1: pure CLI via aqua, Phase 2: shell-integrated, Phase 3: cleanup). Validates backend hierarchy (aqua > github > npm > pipx > cargo > go). List of 30+ tools with migration status. Session notes on script redundancy analysis. | HIGH |
+| [x] | jameswlane/devex README | https://github.com/jameswlane/devex | Enterprise CLI tool (Go, 36-plugin architecture); monorepo with CLI/web/docs/plugins; quality gates (Ginkgo BDD, golangci-lint, lefthook); 12-Factor app patterns. Validates structured tool orchestration and plugin system patterns. | MEDIUM |
+| [x] | mikewaters/maintainer-agent README | https://github.com/mikewaters/maintainer-agent | Claude skills for autonomous chezmoi management; Chezmoi Drift skill for analyzing current state; skill-creator for self-improving iteration. Early stage but confirms pattern of Claude-driven dotfiles management. | MEDIUM |
+
+---
+
 ## Honcho Pricing & Managed SaaS
 
 | Status | Source | URL | Verdict | Finding ID |

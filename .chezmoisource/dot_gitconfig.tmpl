@@ -1,0 +1,33 @@
+{{- /* .git.name and .git.email are defined in ~/.config/chezmoi/chezmoi.toml [data.git].
+       This is the user's local bootstrap config — not tracked in this repo.
+       To set up on a new machine: chezmoi init, then edit ~/.config/chezmoi/chezmoi.toml */ -}}
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+[user]
+	name = {{ .git.name }}
+	email = {{ .git.email }}
+[core]
+	excludesFile = {{ .chezmoi.homeDir }}/.gitignore_global
+[safe]
+	directory = {{ .chezmoi.homeDir }}
+	directory = {{ .chezmoi.homeDir }}/dev/github/ray-manaloto/macos-development-environment
+	directory = {{ .chezmoi.homeDir }}/dev/github/ray-manaloto/guilde-lite
+	directory = {{ .chezmoi.homeDir }}/dev/github/ray-manaloto/guilde-lite-tdd-sprint
+	directory = {{ .chezmoi.homeDir }}/dev/github/ray-manaloto/guilde-lite-tdd-sprint/backend
+	directory = {{ .chezmoi.homeDir }}/dev/github/ray-manaloto/gemini-ai-macos-development-environment
+	directory = {{ .chezmoi.homeDir }}/dev/github/sortakool/guilde-lite-conductor
+	directory = {{ .chezmoi.homeDir }}/dev/tmp
+[credential]
+	helper =
+	helper = /usr/local/share/gcm-core/git-credential-manager
+[credential "https://github.com"]
+	helper =
+	helper = !{{ .chezmoi.homeDir }}/.local/share/mise/shims/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !{{ .chezmoi.homeDir }}/.local/share/mise/shims/gh auth git-credential
+[credential "https://dev.azure.com"]
+	useHttpPath = true

@@ -1,0 +1,13 @@
+# .chezmoiignore — patterns within .chezmoisource/ (the source dir via .chezmoiroot).
+# Repo root files are already invisible to chezmoi; these catch accidental additions.
+
+# Documentation and metadata that shouldn't deploy as dotfiles
+README.md
+LICENSE
+CLAUDE.md
+
+# Never deploy secret keys (chezmoi add --encrypt for secrets instead)
+**/*.pem
+**/*.key
+**/id_*
+!**/*.pub

@@ -46,6 +46,21 @@ Source of truth: `.chezmoisource/` in this repo, applied by `chezmoi apply`.
 
 See `mise-first.md` for the canonical backend priority order and policies.
 
+## chezmoi bootstrap (new machine setup)
+
+The chezmoi config at `~/.config/chezmoi/chezmoi.toml` is a local bootstrap file — not tracked in this repo.
+Templates like `dot_gitconfig.tmpl` reference `{{ .git.name }}` and `{{ .git.email }}` from `[data.git]` in this config.
+
+To set up on a new machine:
+```bash
+chezmoi init ray-manaloto/macos-development-environment
+# Then edit ~/.config/chezmoi/chezmoi.toml to add:
+# [data.git]
+#   name = "Your Name"
+#   email = "your@email.com"
+chezmoi apply
+```
+
 ## What is NOT managed here
 
 - Claude Code plugins: installed via `/plugin install` (stored in `~/.claude/plugins/`)
