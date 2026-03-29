@@ -1,10 +1,12 @@
-"""Mise-specific validation: mise fmt --check, mise doctor."""
+"""Mise-specific validation: mise fmt --check, mise doctor, mise outdated."""
 
 from __future__ import annotations
 
+import json as _json
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from mde.models.result import Severity, ValidationResult
 
@@ -33,6 +35,7 @@ def validate_mise(root: Path | None = None) -> ValidationResult:
     _check_mise_fmt(root, result)
     _check_mise_lockfile_platforms(root, result)
     _check_mise_doctor(result)
+    _check_mise_outdated_findings(result)
 
     return result
 
@@ -230,3 +233,57 @@ def _check_mise_doctor(result: ValidationResult) -> None:
         )
     except FileNotFoundError:
         pass  # Already caught by fmt check
+
+
+# ---------------------------------------------------------------------------
+# Outdated tools check — reusable by both validate and update
+# ---------------------------------------------------------------------------
+
+
+def check_mise_outdated() -> list[dict[str, Any]]:
+    """Return list of outdated tools from ``mise outdated --bump --json``.
+
+    Each entry has keys: name, requested, current, bump, latest, source.
+    Returns empty list if mise is missing or the command fails.
+
+    This is the shared implementation used by both ``validate_mise`` (surfacing
+    findings) and ``update.py`` (deciding whether to bump).
+    """
+    if not shutil.which("mise"):
+        return []
+    try:
+        proc = subprocess.run(
+            ["mise", "outdated", "--bump", "--json"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return []
+    if proc.returncode != 0 or not proc.stdout.strip():
+        return []
+    try:
+        data = _json.loads(proc.stdout)
+    except _json.JSONDecodeError:
+        return []
+    return list(data.values())
+
+
+def _check_mise_outdated_findings(result: ValidationResult) -> None:
+    """Surface outdated tools as WARNING findings."""
+    outdated = check_mise_outdated()
+    if not outdated:
+        return
+    result.files_checked += 1
+    for tool in outdated:
+        name = tool.get("name", "unknown")
+        current = tool.get("current", "?")
+        latest = tool.get("latest", "?")
+        source = tool.get("source", {}).get("path", "?")
+        result.add(
+            path=source,
+            message=(f"{name} is outdated: {current} -> {latest}. Run: mise upgrade --bump {name}"),
+            severity=Severity.WARNING,
+            rule="mise.outdated",
+            fixable=True,
+        )

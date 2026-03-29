@@ -1,12 +1,17 @@
-"""Tests for chezmoi validation (script drift hash check, doctor zero-suppression)."""
+"""Tests for chezmoi validation (script drift, doctor, config consistency)."""
 
 from __future__ import annotations
 
+import json
 from typing import Any
 from unittest.mock import patch
 
 from mde.models.result import Severity, ValidationResult
-from mde.validate.chezmoi import _check_chezmoi_doctor, _check_chezmoi_script_drift
+from mde.validate.chezmoi import (
+    _check_chezmoi_config_consistency,
+    _check_chezmoi_doctor,
+    _check_chezmoi_script_drift,
+)
 
 
 def _mock_proc(*, returncode: int = 0, stdout: str = "", stderr: str = "") -> Any:
@@ -194,3 +199,94 @@ class TestChezmoiDoctorZeroSuppression:
         findings = [f for f in result.findings if f.rule == "chezmoi.doctor"]
         assert len(findings) == 3
         assert all(f.severity == Severity.WARNING for f in findings)
+
+
+class TestChezmoiConfigConsistency:
+    """Validate sourceDir and .chezmoiroot are consistent."""
+
+    def _config_json(
+        self, source_dir: str = "/repo/.chezmoisource", working_tree: str = "/repo"
+    ) -> str:
+        return json.dumps({"sourceDir": source_dir, "workingTree": working_tree})
+
+    def test_sourcedir_chezmoiroot_conflict_detected(self, tmp_path: Any) -> None:
+        """SourceDir pointing to .chezmoiroot target should be an ERROR."""
+        repo = tmp_path / "repo"
+        source = repo / ".chezmoisource"
+        source.mkdir(parents=True)
+        (repo / ".chezmoiroot").write_text(".chezmoisource\n")
+        (repo / ".git").mkdir()
+
+        config_json = json.dumps({"sourceDir": str(source), "workingTree": str(repo)})
+
+        result = ValidationResult()
+        with patch(
+            "mde.validate.chezmoi.subprocess.run",
+            return_value=_mock_proc(stdout=config_json),
+        ):
+            _check_chezmoi_config_consistency(result)
+
+        findings = [
+            f for f in result.findings if f.rule == "chezmoi.sourcedir-chezmoiroot-conflict"
+        ]
+        assert len(findings) == 1
+        assert findings[0].severity == Severity.WARNING
+        assert "dead code" in findings[0].message
+
+    def test_correct_config_no_findings(self, tmp_path: Any) -> None:
+        """SourceDir at repo root with .chezmoiroot inside it — no error."""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        source = repo / ".chezmoisource"
+        source.mkdir()
+        (repo / ".chezmoiroot").write_text(".chezmoisource\n")
+        (repo / ".git").mkdir()
+
+        config_json = json.dumps({"sourceDir": str(repo), "workingTree": str(repo)})
+
+        result = ValidationResult()
+        with patch(
+            "mde.validate.chezmoi.subprocess.run",
+            return_value=_mock_proc(stdout=config_json),
+        ):
+            _check_chezmoi_config_consistency(result)
+
+        assert len(result.findings) == 0
+
+    def test_chezmoiroot_target_missing_is_error(self, tmp_path: Any) -> None:
+        """If .chezmoiroot references a nonexistent dir, that's an ERROR."""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / ".chezmoiroot").write_text("nonexistent\n")
+        (repo / ".git").mkdir()
+
+        config_json = json.dumps({"sourceDir": str(repo), "workingTree": str(repo)})
+
+        result = ValidationResult()
+        with patch(
+            "mde.validate.chezmoi.subprocess.run",
+            return_value=_mock_proc(stdout=config_json),
+        ):
+            _check_chezmoi_config_consistency(result)
+
+        errors = [f for f in result.findings if f.rule == "chezmoi.chezmoiroot-target-missing"]
+        assert len(errors) == 1
+        assert errors[0].severity == Severity.ERROR
+
+    def test_sourcedir_without_git_is_error(self, tmp_path: Any) -> None:
+        """SourceDir with no .git anywhere should be an ERROR."""
+        source = tmp_path / "no-git-dir"
+        source.mkdir()
+
+        config_json = json.dumps({"sourceDir": str(source), "workingTree": str(source)})
+
+        result = ValidationResult()
+        with patch(
+            "mde.validate.chezmoi.subprocess.run",
+            return_value=_mock_proc(stdout=config_json),
+        ):
+            _check_chezmoi_config_consistency(result)
+
+        errors = [f for f in result.findings if f.rule == "chezmoi.sourcedir-no-git"]
+        assert len(errors) == 1
+        assert errors[0].severity == Severity.ERROR

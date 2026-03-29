@@ -1,0 +1,45 @@
+id: finding-chezmoi-working-tree-warning
+timestamp: "2026-03-29T03:52:00Z"
+source: "https://github.com/twpayne/chezmoi/blob/master/internal/cmd/doctorcmd.go"
+agent: researcher
+finding_type: correction
+confidence: confirmed
+confident_about: |
+  - The `[working-tree]` warning in `chezmoi doctor` is emitted when the chezmoi source directory
+    (~/.local/share/chezmoi or similar) is a dirty git working tree
+  - The warning is hardcoded in the doctor command with NO configuration option to suppress it
+  - Chezmoi does not have a [doctor] section in chezmoi.toml or any config to ignore this check
+  - The dirty working tree check is part of gitStatusCheck which runs git status --porcelain=v2
+    and returns checkResultWarning when output is non-empty
+gaps: |
+  - No upstream feature request exists for configurable doctor checks or per-check suppression
+  - No documented workaround to suppress specific doctor warnings via chezmoi.toml
+  - Unclear if there are any plans to add [doctor.ignore] or similar configuration
+evidence: |
+  Source: doctorcmd.go (github.com/twpayne/chezmoi):
+  - gitStatusCheck implementation runs: git -C $sourceDir status --porcelain=v2
+  - When output is non-empty, sets gitStatus = gitStatusDirty
+  - Returns: checkResultWarning, fmt.Sprintf("%s is a git working tree (dirty)", c.dirname)
+  - The check name is "working-tree" and is NOT optional in the checks list
+  - No configuration parsing for [doctor] or [doctor.ignore] sections found in doctorcmd.go
+
+  GitHub discussion #4282 (Feb 14, 2025):
+  - User reported chezmoi.toml being marked as "suspicious-entries"
+  - Maintainer twpayne confirmed: suspicious-entries check is correct behavior,
+    recommends using config file template instead
+  - No mention of suppressing checks via config
+implication: |
+  1. The [working-tree] warning CANNOT be suppressed via chezmoi configuration
+  2. This is intentional design - chezmoi doesn't provide per-check suppression
+  3. Root cause must be fixed at source (clean the git working tree) rather than configured away
+  4. Workaround: Avoid uncommitted changes in ~/.local/share/chezmoi source directory
+  5. For CI/automation: Ensure chezmoi source dir is committed before running chezmoi doctor
+tags:
+  - chezmoi
+  - doctor
+  - working-tree
+  - configuration
+  - git
+  - warnings
+  - unsuppressible
+status: discovered

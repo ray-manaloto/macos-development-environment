@@ -29,10 +29,6 @@ _TEST_CHECKS: list[tuple[str, list[str], str]] = [
     ("pytest", ["uv", "run", "pytest", "tests/", "-x", "-q"], "Test suite"),
 ]
 
-_VALIDATE_CHECKS: list[tuple[str, list[str], str]] = [
-    ("mde-validate", ["uv", "run", "mde-py", "validate"], "Config validation"),
-]
-
 
 def _run_check(name: str, cmd: list[str], description: str) -> bool:
     """Run a single check, return True if passed."""
@@ -54,6 +50,25 @@ def _run_check(name: str, cmd: list[str], description: str) -> bool:
     return False
 
 
+def _run_validate() -> tuple[bool, int]:
+    """Run validation in-process, return (passed, warning_count).
+
+    Calls ``run_validators`` directly so we get the full ValidationResult
+    with warning counts — no log parsing needed.
+    """
+    from mde.validate import _print_findings, run_validators
+
+    print("  [mde-validate] Config validation...", flush=True)
+    result = run_validators()
+    _print_findings(result)
+
+    if not result.passed:
+        print(f"  [mde-validate] FAILED ({result.error_count} errors)")
+    else:
+        print("  [mde-validate] OK")
+    return result.passed, result.warning_count
+
+
 def run_quality_gate(
     *,
     lint: bool = True,
@@ -66,18 +81,19 @@ def run_quality_gate(
         checks.extend(_LINT_CHECKS)
     if test:
         checks.extend(_TEST_CHECKS)
-    if validate:
-        checks.extend(_VALIDATE_CHECKS)
 
-    if not checks:
+    if not checks and not validate:
         print("No checks selected.", file=sys.stderr)
         return 1
 
     passed = 0
     failed = 0
+    total_warnings = 0
     failures: list[str] = []
 
-    print(f"Running {len(checks)} quality checks...\n")
+    total_checks = len(checks) + (1 if validate else 0)
+    print(f"Running {total_checks} quality checks...\n")
+
     for name, cmd, description in checks:
         if _run_check(name, cmd, description):
             passed += 1
@@ -85,8 +101,22 @@ def run_quality_gate(
             failed += 1
             failures.append(name)
 
+    # Run validation in-process to get warning counts
+    if validate:
+        validate_passed, warning_count = _run_validate()
+        total_warnings += warning_count
+        if validate_passed:
+            passed += 1
+        else:
+            failed += 1
+            failures.append("mde-validate")
+
     print(f"\n{'=' * 40}")
-    print(f"Quality gate: {passed} passed, {failed} failed")
+    print(f"Quality gate: {passed} passed, {failed} failed", end="")
+    if total_warnings > 0:
+        print(f" ({total_warnings} warnings)")
+    else:
+        print()
     if failures:
         print(f"Failed: {', '.join(failures)}")
         return 1

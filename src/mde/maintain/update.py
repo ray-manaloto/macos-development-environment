@@ -58,6 +58,10 @@ def run_update() -> int:
         print("  FAIL: mise doctor reported issues after update cycle")
         failures += 1
 
+    # Post-cycle freshness check: flag tools still outdated after upgrade
+    print("==> mise outdated --bump (freshness check)")
+    _run_mise_freshness_check()
+
     # Final verification
     print("==> verify (validate_all)")
     from mde.validate import validate_all
@@ -100,7 +104,7 @@ def _run_mise_self_update() -> int:
 def _run_mise_upgrade() -> int:
     if not shutil.which("mise"):
         return 1
-    proc = subprocess.run(["mise", "upgrade", "--yes"], timeout=600)
+    proc = subprocess.run(["mise", "upgrade", "--bump", "--yes"], timeout=600)
     return proc.returncode
 
 
@@ -190,6 +194,26 @@ def _run_mise_doctor() -> int:
         return 1
     proc = subprocess.run(["mise", "doctor"], timeout=60)
     return proc.returncode
+
+
+def _run_mise_freshness_check() -> None:
+    """Report tools still outdated after the upgrade cycle.
+
+    Reuses ``check_mise_outdated`` from the validator so the same logic
+    drives both ``mde validate`` warnings and ``mde update`` reports.
+    Non-fatal: only prints, never increments failures.
+    """
+    from mde.validate.mise import check_mise_outdated
+
+    outdated = check_mise_outdated()
+    if not outdated:
+        print("  All tools are at latest versions")
+        return
+    for tool in outdated:
+        name = tool.get("name", "unknown")
+        current = tool.get("current", "?")
+        latest = tool.get("latest", "?")
+        print(f"  WARN: {name} still outdated: {current} -> {latest}")
 
 
 def _run_chezmoi_apply() -> int:

@@ -24,33 +24,22 @@ from mde.validate.toml import validate_toml_files
 from mde.validate.yaml_validator import validate_yaml_files
 
 
-def validate_all(
+def run_validators(
     *,
     fix: bool = False,
     configs_only: bool = False,
-    json_output: bool = False,
     brew_only: bool = False,
     docker_only: bool = False,
     package_managers_only: bool = False,
     skills_only: bool = False,
     plugins_only: bool = False,
     plugins_health_only: bool = False,
-) -> int:
-    """Run validators and return exit code.
+) -> ValidationResult:
+    """Run validators and return the result object.
 
-    Args:
-        fix: Auto-fix known issues.
-        configs_only: Only validate config files, skip scripts.
-        json_output: Output findings as JSON.
-        brew_only: Only run brew validation.
-        docker_only: Only run docker validation.
-        package_managers_only: Only run package manager dedup validation.
-        skills_only: Only run skill frontmatter validation.
-        plugins_only: Only run rsm-subagents plugin validation.
-        plugins_health_only: Only run plugin installation health checks.
-
-    Returns:
-        0 if all checks pass, 1 otherwise.
+    This is the core function — callers get the full ValidationResult
+    with error/warning counts, not just an exit code. Used by both
+    ``validate_all`` (CLI) and ``quality.py`` (in-process).
     """
     result = ValidationResult()
 
@@ -90,6 +79,36 @@ def validate_all(
         result.merge(validate_hk())
 
         result.merge(validate_structural())
+
+    return result
+
+
+def validate_all(
+    *,
+    fix: bool = False,
+    configs_only: bool = False,
+    json_output: bool = False,
+    brew_only: bool = False,
+    docker_only: bool = False,
+    package_managers_only: bool = False,
+    skills_only: bool = False,
+    plugins_only: bool = False,
+    plugins_health_only: bool = False,
+) -> int:
+    """Run validators, print findings, and return exit code.
+
+    Thin CLI wrapper around ``run_validators``.
+    """
+    result = run_validators(
+        fix=fix,
+        configs_only=configs_only,
+        brew_only=brew_only,
+        docker_only=docker_only,
+        package_managers_only=package_managers_only,
+        skills_only=skills_only,
+        plugins_only=plugins_only,
+        plugins_health_only=plugins_health_only,
+    )
 
     if json_output:
         print(json.dumps(result.model_dump(), indent=2))

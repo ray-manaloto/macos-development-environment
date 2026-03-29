@@ -1,0 +1,309 @@
+id: finding-chezmoi-definitive-docs-review
+timestamp: "2026-03-28T04:25:00Z"
+sources:
+  - https://www.chezmoi.io/reference/special-files/chezmoiroot/
+  - https://www.chezmoi.io/reference/commands/doctor/
+  - https://www.chezmoi.io/user-guide/advanced/customize-your-source-directory/
+  - https://www.chezmoi.io/reference/configuration-file/
+  - https://raw.githubusercontent.com/twpayne/chezmoi/master/internal/cmd/doctorcmd.go
+  - https://raw.githubusercontent.com/twpayne/chezmoi/master/internal/chezmoi/chezmoi.go
+agent: researcher
+finding_type: technique
+confidence: confirmed
+tags:
+  [
+    chezmoi,
+    chezmoiroot,
+    doctor,
+    sourceDir,
+    monorepo,
+    working-tree,
+    suspicious-entries,
+    configuration,
+  ]
+status: discovered
+
+notes: |
+
+  ## Q1: What does .chezmoiroot do? Does sourceDir in chezmoi.toml override it?
+
+  ### From https://www.chezmoi.io/reference/special-files/chezmoiroot/ (EXACT QUOTE):
+
+  > "If a file called `.chezmoiroot` exists in the root of the source directory then
+  > the source state is read from the directory specified in `.chezmoiroot` interpreted
+  > as a relative path to the source directory. `.chezmoiroot` is read before all other
+  > files in the source directory."
+
+  > Warning: "If you use this approach, you must move all other 'source root' files such
+  > as `.chezmoi.$FORMAT.tmpl` into your new root."
+
+  ### From https://www.chezmoi.io/user-guide/advanced/customize-your-source-directory/ (EXACT QUOTE):
+
+  > "By default, chezmoi uses the root of your dotfiles repo as the root of the source
+  > state. If your source state contains many entries in its root, then your target
+  > directory (usually your home directory) will in turn be filled with many entries in
+  > its root as well. You can reduce the number of entries by keeping `.chezmoiignore`
+  > up to date, but this can become tiresome."
+
+  > "Instead, you can specify that chezmoi should read the source state from a
+  > subdirectory of the source directory instead by creating a file called `.chezmoiroot`
+  > containing the relative path to this subdirectory."
+
+  > Example: `~/.local/share/chezmoi/.chezmoiroot` containing `home`
+  >
+  > "Then chezmoi will read the source state from the `home` subdirectory of your source
+  > directory, for example the desired state of `~/.gitconfig` will be read from
+  > `~/.local/share/chezmoi/home/dot_gitconfig` (instead of
+  > `~/.local/share/chezmoi/dot_gitconfig`)."
+
+  ### From https://www.chezmoi.io/reference/configuration-file/ (EXACT QUOTE):
+
+  The `sourceDir` configuration variable sets **where chezmoi looks for its source directory**
+  (i.e., the root of the cloned repo). Example from docs:
+
+  ```toml
+  sourceDir = "/home/user/.dotfiles"
+  ```
+
+  **Key distinction**: `sourceDir` in `chezmoi.toml` sets the **repo root** (equivalent to
+  `~/.local/share/chezmoi` by default). `.chezmoiroot` then redirects the **source state
+  root** to a subdirectory *within* that sourceDir. They operate at different levels:
+
+  - `sourceDir` → where chezmoi finds the repo clone
+  - `.chezmoiroot` → which subdirectory of the repo is the dotfiles root
+
+  **Does sourceDir override .chezmoiroot?** No. They are complementary, not competing.
+  `sourceDir` locates the repo; `.chezmoiroot` within that repo specifies the state root.
+  Setting `sourceDir` to a subdirectory (e.g., `~/.dotfiles/home`) achieves a similar
+  effect but bypasses the git working tree detection for the parent repo. `.chezmoiroot`
+  is the officially recommended mechanism for monorepo layouts.
+
+
+  ## Q2: What triggers [suspicious-entries] in doctor?
+
+  ### From internal/cmd/doctorcmd.go (lines 717-742):
+
+  ```go
+  // A suspiciousEntriesCheck checks that a source directory does not contain any
+  // suspicious files.
+  type suspiciousEntriesCheck struct {
+      dirname           chezmoi.AbsPath
+      encryptedSuffixes []string
+  }
+
+  func (c *suspiciousEntriesCheck) Run(config *Config) (checkResult, string) {
+      // FIXME check that config file templates are in root
+      var suspiciousEntries []string
+      walkFunc := func(absPath chezmoi.AbsPath, fileInfo fs.FileInfo, err error) error {
+          if err != nil {
+              return err
+          }
+          if chezmoi.IsSuspiciousSourceDirEntry(absPath.Base(), fileInfo, c.encryptedSuffixes) {
+              suspiciousEntries = append(suspiciousEntries, absPath.String())
+          }
+          return nil
+      }
+      switch err := chezmoi.WalkSourceDir(config.baseSystem, c.dirname, walkFunc); {
+      case errors.Is(err, fs.ErrNotExist):
+          return checkResultOK, fmt.Sprintf("%s: no such file or directory", c.dirname)
+      case err != nil:
+          return checkResultError, err.Error()
+      }
+      if len(suspiciousEntries) > 0 {
+          return checkResultWarning, englishList(suspiciousEntries)
+      }
+      return checkResultOK, "no suspicious entries"
+  }
+  ```
+
+  ### From internal/chezmoi/chezmoi.go (lines 208-231) — IsSuspiciousSourceDirEntry:
+
+  ```go
+  // IsSuspiciousSourceDirEntry returns true if base is a suspicious dir entry.
+  func IsSuspiciousSourceDirEntry(base string, fileInfo fs.FileInfo, encryptedSuffixes []string) bool {
+      switch fileInfo.Mode().Type() {
+      case 0: // regular file
+          if strings.HasPrefix(base, Prefix) && !knownPrefixedFiles.Contains(base) {
+              return true
+          }
+          for _, encryptedSuffix := range encryptedSuffixes {
+              fileAttr, err := parseFileAttr(fileInfo.Name(), encryptedSuffix)
+              if err != nil {
+                  return true
+              }
+              if knownTargetFiles.Contains(fileAttr.TargetName) {
+                  return true
+              }
+          }
+          return false
+      case fs.ModeDir:
+          return strings.HasPrefix(base, Prefix) && !knownPrefixedDirs.Contains(base)
+      case fs.ModeSymlink:
+          return strings.HasPrefix(base, Prefix)
+      default:
+          return true
+      }
+  }
+  ```
+
+  Where `Prefix = ".chezmoi"` (line 62 of chezmoi.go).
+
+  ### knownPrefixedFiles (lines 85-105 of chezmoi.go):
+  Known safe `.chezmoi*` files: `.chezmoi.json.tmpl`, `.chezmoi.toml.tmpl`, `.chezmoi.yaml.tmpl`,
+  `.chezmoiroot`, `.chezmoiversion`, `.chezmoidata.json/.toml/.yaml`,
+  `.chezmoiexternal.json/.toml/.yaml` (with/without `.tmpl`), `.chezmoiignore` (with/without `.tmpl`),
+  `.chezmoiremove` (with/without `.tmpl`).
+
+  ### knownPrefixedDirs (lines 107-112 of chezmoi.go):
+  Known safe `.chezmoi*` dirs: `.chezmoitemplates`, `.chezmoidata`, `.chezmoiexternals`,
+  `.chezmoiscripts`.
+
+  ### Summary — suspicious-entries triggers when:
+  1. A regular file starts with `.chezmoi` but is NOT in the known files list
+  2. A symlink starts with `.chezmoi`
+  3. A directory starts with `.chezmoi` but is NOT in the known dirs list
+  4. Any file with a non-regular/non-dir/non-symlink mode type (devices, pipes, etc.)
+  5. An encrypted file whose parsed target name matches a known chezmoi config file
+     (chezmoi.json, chezmoi.toml, chezmoi.yaml, chezmoistate.boltdb)
+
+  **CRITICAL IMPLICATION for this repo**: The repo has a `docs/` directory at chezmoi
+  source root. The chezmoi source is in `.chezmoisource/` sub-path. If sourceDir points
+  to `.chezmoisource/`, then `src/`, `docs/`, `tests/` etc. would NOT trigger
+  suspicious-entries (they don't start with `.chezmoi`). Only unexpected `.chezmoi*`-prefixed
+  files/dirs would warn.
+
+
+  ## Q3: What triggers [working-tree] in doctor?
+
+  ### From internal/cmd/doctorcmd.go — dirCheck.Run (lines 561-607):
+
+  The `working-tree` check is a `dirCheck` with `dirname: c.WorkingTreeAbsPath`.
+
+  ```go
+  func (c *dirCheck) Run(config *Config) (checkResult, string) {
+      dirEntries, err := config.baseSystem.ReadDir(c.dirname)
+      if err != nil {
+          return checkResultError, err.Error()
+      }
+
+      gitStatus := gitStatusNotAWorkingCopy
+      for _, dirEntry := range dirEntries {
+          if dirEntry.Name() != ".git" {
+              continue
+          }
+          cmd := exec.Command("git", "-C", c.dirname.String(), "status", "--porcelain=v2")
+          cmd.Stderr = os.Stderr
+          output, err := cmd.Output()
+          if err != nil {
+              gitStatus = gitStatusError
+              break
+          }
+          switch status, err := chezmoigit.ParseStatusPorcelainV2(output); {
+          case err != nil:
+              gitStatus = gitStatusError
+          case status.IsEmpty():
+              gitStatus = gitStatusClean
+          default:
+              gitStatus = gitStatusDirty
+          }
+          break
+      }
+      switch gitStatus {
+      case gitStatusNotAWorkingCopy:
+          return checkResultOK, fmt.Sprintf("%s is a directory", c.dirname)
+      case gitStatusClean:
+          return checkResultOK, fmt.Sprintf("%s is a git working tree (clean)", c.dirname)
+      case gitStatusDirty:
+          return checkResultWarning, fmt.Sprintf("%s is a git working tree (dirty)", c.dirname)
+      case gitStatusError:
+          return checkResultError, fmt.Sprintf("%s is a git working tree (error)", c.dirname)
+      default:
+          panic(fmt.Sprintf("%s: unknown git status", gitStatus))
+      }
+  }
+  ```
+
+  ### Summary — working-tree triggers when:
+  - `checkResultWarning` ("dirty"): the working tree directory exists, contains `.git`, and
+    `git status --porcelain=v2` returns non-empty output (uncommitted changes)
+  - `checkResultError` ("error"): the working tree directory exists, contains `.git`, and
+    git command fails OR status parsing fails
+  - `checkResultOK` ("clean"): working tree is clean
+  - `checkResultOK` ("is a directory"): no `.git` subdirectory found (not a git working copy)
+
+  **Note**: `WorkingTreeAbsPath` is distinct from `SourceDirAbsPath`. `SourceDirAbsPath` points
+  to the subdirectory specified by `.chezmoiroot` (if present). `WorkingTreeAbsPath` points to
+  the actual git repository root (parent of the `.git` directory). The [working-tree] warning
+  fires when you have uncommitted changes in your dotfiles repo.
+
+
+  ## Q4: Monorepo recommendation — .chezmoiroot vs sourceDir vs both?
+
+  ### From https://www.chezmoi.io/user-guide/advanced/customize-your-source-directory/ (EXACT QUOTE):
+
+  > "Instead, you can specify that chezmoi should read the source state from a subdirectory
+  > of the source directory instead by creating a file called `.chezmoiroot` containing the
+  > relative path to this subdirectory."
+
+  ### From https://www.chezmoi.io/reference/special-files/chezmoiroot/ (EXACT QUOTE):
+
+  > "If a file called `.chezmoiroot` exists in the root of the source directory then the
+  > source state is read from the directory specified in `.chezmoiroot` interpreted as a
+  > relative path to the source directory."
+
+  ### Answer:
+
+  For a monorepo where chezmoi source lives in a subdirectory (e.g., `.chezmoisource/`
+  within a repo that also has `src/`, `docs/`, `tests/`):
+
+  **Use `.chezmoiroot` (preferred approach)**:
+  - Place `.chezmoiroot` at the repo root with content being the subdirectory path
+  - Leave `sourceDir` as the default (`~/.local/share/chezmoi`) pointing to the repo root
+  - chezmoi reads state from the subdirectory while `WorkingTreeAbsPath` still points
+    to the git repo root — giving correct [working-tree] doctor checks
+
+  **Using `sourceDir` alone** (pointing to the subdirectory directly) would:
+  - Work for applying dotfiles
+  - BUT lose git working-tree awareness (the `.git` dir lives in the parent, not the subdirectory)
+  - Potentially break [working-tree] doctor check or show "is a directory" instead of git status
+
+  **Using both** is redundant but not harmful: if `sourceDir` points to the repo root AND
+  `.chezmoiroot` redirects within it, chezmoi follows `.chezmoiroot` relative to `sourceDir`.
+
+  **Official recommendation**: `.chezmoiroot` is the designed mechanism for monorepo layouts.
+  The docs present it as the solution to the exact problem of "dotfiles repo has non-dotfile
+  files in the root".
+
+
+  confident_about: >
+    All four answers are derived from exact source code and official documentation.
+    The IsSuspiciousSourceDirEntry logic is read directly from the Go source.
+    The dirCheck.Run working-tree logic is read directly from the Go source.
+    The .chezmoiroot behavior is quoted verbatim from the official reference page.
+
+  gaps: >
+    1. Whether 'sourceDir' in chezmoi.toml can point to a subdirectory AND work alongside
+       .chezmoiroot simultaneously (likely redundant but not tested).
+    2. The exact value of WorkingTreeAbsPath when .chezmoiroot is used — needs reading
+       config initialization code to confirm it always points to git repo root.
+    3. Whether 'chezmoisource' (the actual dir name in this repo) is in knownPrefixedDirs —
+       it is NOT (knownPrefixedDirs only has: chezmoitemplates, chezmoidata, chezmoiexternals,
+       chezmoiscripts). HOWEVER, the suspicious-entries check runs on SourceDirAbsPath
+       (the subdirectory after .chezmoiroot redirect), not the repo root, so repo-root
+       directories like 'src/', 'docs/', 'tests/' would never be scanned.
+
+  evidence: >
+    - chezmoi.io/reference/special-files/chezmoiroot/ : exact text of .chezmoiroot behavior
+    - chezmoi.io/user-guide/advanced/customize-your-source-directory/ : monorepo use case guidance
+    - chezmoi.io/reference/configuration-file/ : sourceDir config variable with examples
+    - github.com/twpayne/chezmoi doctorcmd.go lines 131-134, 207-222, 561-607, 717-742
+    - github.com/twpayne/chezmoi chezmoi.go lines 62, 84-120, 208-231
+
+  implication: >
+    This repo uses '.chezmoisource/' as the chezmoi subdirectory in a monorepo layout.
+    The correct approach is to place '.chezmoiroot' at the repo root containing
+    '.chezmoisource' (or whatever subdirectory name is used). Do NOT set sourceDir to
+    the subdirectory — this breaks git working-tree awareness. The [working-tree] doctor
+    warning means the dotfiles repo has uncommitted changes, not a configuration error.
+    The [suspicious-entries] warning would only fire if unknown .chezmoi*-prefixed files
+    appear inside the source state root (after .chezmoiroot redirect), not at repo root.

@@ -19,11 +19,20 @@
 - User corrections from memory → feedback memories in auto memory system
 - Recurring errors from memory → GitHub Issues with `auto:agent-discovered` label
 
-## Known Plugin Bug
-- `save-session.sh` derives PROJECT_DIR from `dirname "$0"/../../..` — broken for marketplace plugin installations
-- The fix: add `PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PROJECT_DIR}"` after the derivation line
-- Check `.generated/remember/logs/autonomous/` for error logs indicating the bug is active
-- If unfixed: saves silently fail, no memory accumulates
+## Local Patch: Marketplace Path Resolution (applied 2026-03-28)
+A local patch is applied to `save-session.sh` and `run-consolidation.sh` in both
+plugin cache copies (`0.1.0/` and `779ab61d8d41/`). The patch separates PLUGIN_ROOT
+(pipeline code) from PROJECT_DIR (user data) so marketplace installs resolve correctly.
+
+- Upstream issue: https://github.com/Digital-Process-Tools/claude-remember/issues/5
+- Upstream fix commit: https://github.com/Digital-Process-Tools/claude-remember/commit/225c361
+- Marketplace still pins pre-fix SHA `779ab61d` — `claude plugin update` won't help
+- Patched files: `~/.claude/plugins/cache/claude-plugins-official/remember/*/scripts/{save-session,run-consolidation}.sh`
+- Each patch has inline comments with links — search for "LOCAL PATCH" in the files
+- If plugin cache is cleared/reinstalled, the patch must be re-applied
+- **Removal condition:** when `claude plugin update` pulls commit `225c361` or later
+- Check `.generated/remember/logs/autonomous/` for error logs — if the path bug recurs,
+  logs will contain `No such file or directory` for `.claude/remember`
 
 ## Hook Configuration
 The remember plugin requires these hooks in `.claude/settings.json`:

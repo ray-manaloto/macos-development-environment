@@ -1,9 +1,10 @@
-"""Chezmoi validation: verify, doctor, diff."""
+"""Chezmoi validation: verify, doctor, diff, config consistency."""
 
 from __future__ import annotations
 
 import shutil
 import subprocess
+from pathlib import Path
 
 from mde.models.result import Severity, ValidationResult
 
@@ -27,6 +28,7 @@ def validate_chezmoi() -> ValidationResult:
 
     _check_chezmoi_verify_files(result)
     _check_chezmoi_script_drift(result)
+    _check_chezmoi_config_consistency(result)
     _check_chezmoi_doctor(result)
 
     return result
@@ -169,6 +171,134 @@ def _check_chezmoi_script_drift(result: ValidationResult) -> None:
         )
     except FileNotFoundError:
         pass  # Already caught by verify check
+
+
+def _get_chezmoi_config() -> tuple[Path, Path] | None:
+    """Get sourceDir and workingTree from chezmoi dump-config.
+
+    Returns (source_dir, working_tree) or None if unavailable.
+    """
+    import json
+
+    try:
+        proc = subprocess.run(
+            ["chezmoi", "dump-config", "--format=json"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return None
+    if proc.returncode != 0:
+        return None
+    try:
+        config = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return None
+    source_dir = Path(config.get("sourceDir", ""))
+    working_tree = Path(config.get("workingTree", ""))
+    if not source_dir or not source_dir.exists():
+        return None
+    return source_dir, working_tree
+
+
+def _check_chezmoi_config_consistency(result: ValidationResult) -> None:
+    """Validate chezmoi sourceDir and .chezmoiroot are consistent."""
+    paths = _get_chezmoi_config()
+    if paths is None:
+        return
+    source_dir, working_tree = paths
+    result.files_checked += 1
+
+    _check_git_awareness(result, source_dir, working_tree)
+    _check_chezmoiroot_consistency(result, source_dir, working_tree)
+
+
+def _check_git_awareness(result: ValidationResult, source_dir: Path, working_tree: Path) -> None:
+    """SourceDir or workingTree must contain .git for working-tree awareness."""
+    git_dir = (working_tree / ".git") if working_tree.exists() else (source_dir / ".git")
+    if not git_dir.exists() and not (source_dir / ".git").exists():
+        result.add(
+            path=str(source_dir),
+            message=(
+                "sourceDir does not contain .git — chezmoi working-tree "
+                "doctor check will not function correctly"
+            ),
+            severity=Severity.ERROR,
+            rule="chezmoi.sourcedir-no-git",
+        )
+
+
+def _check_chezmoiroot_consistency(
+    result: ValidationResult, source_dir: Path, working_tree: Path
+) -> None:
+    """Validate .chezmoiroot is not bypassed by sourceDir."""
+    chezmoiroot_in_source = source_dir / ".chezmoiroot"
+    chezmoiroot_in_worktree = working_tree / ".chezmoiroot" if working_tree.exists() else None
+
+    # Case A: .chezmoiroot at repo root but NOT in sourceDir — sourceDir
+    # bypasses it, making .chezmoiroot dead code.
+    if (
+        chezmoiroot_in_worktree
+        and chezmoiroot_in_worktree.exists()
+        and not chezmoiroot_in_source.exists()
+        and source_dir != working_tree
+    ):
+        _check_bypassed_chezmoiroot(result, chezmoiroot_in_worktree, source_dir, working_tree)
+        return
+
+    # Case B: .chezmoiroot in sourceDir — validate target exists
+    if chezmoiroot_in_source.exists():
+        _check_chezmoiroot_target(result, chezmoiroot_in_source, source_dir)
+
+
+def _check_bypassed_chezmoiroot(
+    result: ValidationResult,
+    chezmoiroot: Path,
+    source_dir: Path,
+    working_tree: Path,
+) -> None:
+    """Warn when sourceDir points to the subdirectory that .chezmoiroot specifies."""
+    try:
+        root_target = chezmoiroot.read_text().strip()
+    except OSError:
+        return
+    if root_target and source_dir.name == root_target:
+        # WARNING: the fix requires renaming the directory to remove
+        # the .chezmoi prefix. Tracked as issue #64.
+        result.add(
+            path=str(chezmoiroot),
+            message=(
+                f"sourceDir is '{source_dir}' which is the subdirectory "
+                f"that .chezmoiroot specifies ('{root_target}'). "
+                f"This makes .chezmoiroot dead code. Fix: rename "
+                f"'{root_target}' to 'home/' (no .chezmoi prefix), "
+                f"then set sourceDir to '{working_tree}'"
+            ),
+            severity=Severity.WARNING,
+            rule="chezmoi.sourcedir-chezmoiroot-conflict",
+        )
+
+
+def _check_chezmoiroot_target(
+    result: ValidationResult, chezmoiroot: Path, source_dir: Path
+) -> None:
+    """Validate .chezmoiroot references an existing directory."""
+    try:
+        root_target = chezmoiroot.read_text().strip()
+    except OSError:
+        return
+    if root_target:
+        target_dir = source_dir / root_target
+        if not target_dir.exists():
+            result.add(
+                path=str(chezmoiroot),
+                message=(
+                    f".chezmoiroot references '{root_target}' but {target_dir} does not exist"
+                ),
+                severity=Severity.ERROR,
+                rule="chezmoi.chezmoiroot-target-missing",
+            )
 
 
 # Chezmoi doctor output format: "severity  check-name  message"
