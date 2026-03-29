@@ -103,13 +103,18 @@ def _scan_remember() -> list[str]:
             if count >= min_recurrence:
                 patterns.append(f"remember.recurring.{_slugify(header)}")
 
-        # Look for error/fix patterns
-        patterns.extend(
-            f"remember.error.{_slugify(match.group(1)[:30])}"
-            for match in re.finditer(
-                r"(?:fix|bug|error|broke|failed)[\s:]+(.{10,60})", text, re.IGNORECASE
-            )
-        )
+        # Look for error/fix patterns (skip git commit message lines)
+        for match in re.finditer(
+            r"(?:fix|bug|error|broke|failed)[\s:]+(.{10,60})", text, re.IGNORECASE
+        ):
+            line = match.group(0)
+            # Skip commit messages embedded in Stop hook entries
+            if re.match(r"^[0-9a-f]{7,}\s+(?:fix|feat|docs|refactor)", line):
+                continue
+            # Skip lines that are clearly commit log format
+            if "Recent commits:" in text[max(0, match.start() - 80) : match.start()]:
+                continue
+            patterns.append(f"remember.error.{_slugify(match.group(1)[:30])}")
 
     return patterns
 
