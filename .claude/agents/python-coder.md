@@ -21,7 +21,7 @@ You are the Python Specialist. You have deep knowledge of the mde package archit
 2. Follow existing patterns: Pydantic models for structured data, structlog for logging
 3. Add `__all__` exports to public modules
 4. Add return type annotations to all functions
-5. Run `uv run ruff check --fix` and `uv run ty check` after changes
+5. Run `uv run mde-py quality --strict` after changes (warnings are errors)
 6. Write/update tests in `tests/mde/` mirroring the source structure
 7. Use `uv run <tool>` -- never `uv run python -m <module>`
 

@@ -28,7 +28,7 @@ When adding a new tool, choose the backend in this priority order:
 
 1. Check registry: `mise registry | grep <tool>`
 2. Choose optimal backend (see above)
-3. Add to `.chezmoisource/dot_config/mise/config.toml.tmpl` under `[tools]`
+3. Add to `home/dot_config/mise/config.toml.tmpl` under `[tools]`
 4. Run `chezmoi apply` to deploy config
 5. Run `mise install --yes && mise lock && mise reshim`
 

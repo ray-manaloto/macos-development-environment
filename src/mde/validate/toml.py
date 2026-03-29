@@ -34,7 +34,7 @@ def validate_toml_files(
         root / ".mise.toml",
         *root.glob("configs/**/*.toml"),
     ]
-    chezmoi_src = root / ".chezmoisource"
+    chezmoi_src = root / "home"
     if chezmoi_src.exists():
         toml_files.extend(chezmoi_src.rglob("*.toml"))
 

@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Devcontainer uses a minimal pinned tool set. The full tool catalog is in
-# .chezmoisource/dot_config/mise/config.toml.tmpl (deployed via chezmoi apply).
+# home/dot_config/mise/config.toml.tmpl (deployed via chezmoi apply).
 DEVCONTAINER_MISE_CONFIG="$REPO_ROOT/.devcontainer/mise.toml"
 DEVCONTAINER_MISE_LOCK="$REPO_ROOT/.devcontainer/mise.lock"
 
@@ -75,10 +75,10 @@ bootstrap_manifest_hash() {
       printf '%s  %s\n' "$(hash_file "$file")" "${file#$REPO_ROOT/}"
     done
 
-    if [[ -d "$REPO_ROOT/.chezmoisource" ]]; then
+    if [[ -d "$REPO_ROOT/home" ]]; then
       while IFS= read -r file; do
         printf '%s  %s\n' "$(hash_file "$file")" "${file#$REPO_ROOT/}"
-      done < <(find "$REPO_ROOT/.chezmoisource" -type f | LC_ALL=C sort)
+      done < <(find "$REPO_ROOT/home" -type f | LC_ALL=C sort)
     fi
   } | $cmd | awk '{print $1}'
 }

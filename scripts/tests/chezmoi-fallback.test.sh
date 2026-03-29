@@ -36,7 +36,7 @@ pre_output="$(
   HOME="$tmp_home" \
   PATH="$tmp_bin:$PATH" \
   MDE_USE_CHEZMOI=1 \
-  MDE_CHEZMOI_SOURCE="$ROOT_DIR/.chezmoisource" \
+  MDE_CHEZMOI_SOURCE="$ROOT_DIR/home" \
   "$ENSURE" --check 2>&1
 )"
 pre_status=$?
@@ -54,7 +54,7 @@ output="$(
   HOME="$tmp_home" \
   PATH="$tmp_bin:$PATH" \
   MDE_USE_CHEZMOI=1 \
-  MDE_CHEZMOI_SOURCE="$ROOT_DIR/.chezmoisource" \
+  MDE_CHEZMOI_SOURCE="$ROOT_DIR/home" \
   "$ENSURE" 2>&1
 )"
 status=$?
@@ -83,7 +83,7 @@ post_output="$(
   HOME="$tmp_home" \
   PATH="$tmp_bin:$PATH" \
   MDE_USE_CHEZMOI=1 \
-  MDE_CHEZMOI_SOURCE="$ROOT_DIR/.chezmoisource" \
+  MDE_CHEZMOI_SOURCE="$ROOT_DIR/home" \
   "$ENSURE" --check 2>&1
 )"
 post_status=$?

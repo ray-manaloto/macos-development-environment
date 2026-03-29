@@ -176,6 +176,11 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     quality_p.add_argument("--lint", action="store_true", help="Lint only (ruff + ty + pyright)")
     quality_p.add_argument("--test", action="store_true", help="Test only (pytest)")
     quality_p.add_argument("--validate", action="store_true", help="Validate only")
+    quality_p.add_argument(
+        "--strict",
+        action="store_true",
+        help="Treat mde-validate warnings as errors (for CI/agents)",
+    )
 
     # status
     sub.add_parser("status", help="Show dashboard")
@@ -623,6 +628,8 @@ def _cmd_quality(args: argparse.Namespace) -> int:
             cli_args.append("--test")
         if getattr(args, "validate", False):
             cli_args.append("--validate")
+        if getattr(args, "strict", False):
+            cli_args.append("--strict")
         result = cli_main(cli_args)
         ctx["result"] = result
         return result

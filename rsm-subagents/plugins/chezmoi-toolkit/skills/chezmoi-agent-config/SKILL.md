@@ -153,7 +153,7 @@ These can be configured in Claude Code's settings.json hooks or in the chezmoi-t
 **Pattern:** One canonical skills directory, chezmoi distributes to each tool.
 
 ```
-.chezmoisource/
+home/
 ├── dot_agents/skills/          # Canonical skills (source of truth)
 │   ├── my-skill/SKILL.md
 │   └── another-skill/SKILL.md

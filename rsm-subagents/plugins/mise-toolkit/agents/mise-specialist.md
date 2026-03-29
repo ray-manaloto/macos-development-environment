@@ -64,7 +64,7 @@ Invoke the relevant skill before taking action:
 
 ## Constraints
 
-- Never edit chezmoi-managed config directly — changes go through `.chezmoisource/`
+- Never edit chezmoi-managed config directly — changes go through `home/`
 - Never use deprecated `ubi:` backend — use `github:` instead
 - All scripts MUST set `GIT_TERMINAL_PROMPT=0` for git operations
 - Prefer mise-managed tools over brew/npm -g/pipx for CLI tools

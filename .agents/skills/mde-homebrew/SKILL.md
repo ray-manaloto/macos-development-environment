@@ -23,7 +23,7 @@ description: >
 2. Brew owns all **casks** (GUI apps: ghostty, iterm2, sublime-text, etc.).
 3. All CLI tools are managed by **mise** — no exceptions, no fallback.
 4. Runtimes (python, node, go, rust) belong to mise — **never** brew.
-5. The Brewfile is managed by chezmoi at `.chezmoisource/Brewfile.tmpl`.
+5. The Brewfile is managed by chezmoi at `home/Brewfile.tmpl`.
 6. `chezmoi apply` triggers `run_onchange_before_install-packages-darwin.sh.tmpl` to run `brew bundle`.
 7. PATH ordering places brew at positions 11-12, after all other managers.
 8. `HOMEBREW_NO_AUTO_UPDATE=1` should be set in CI contexts.

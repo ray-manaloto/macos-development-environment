@@ -69,13 +69,39 @@ def _run_validate() -> tuple[bool, int]:
     return result.passed, result.warning_count
 
 
+def _print_summary(
+    passed: int,
+    failed: int,
+    total_warnings: int,
+    failures: list[str],
+    *,
+    strict: bool,
+) -> int:
+    """Print gate summary and return exit code."""
+    print(f"\n{'=' * 40}")
+    warning_suffix = f" ({total_warnings} warnings)" if total_warnings > 0 else ""
+    print(f"Quality gate: {passed} passed, {failed} failed{warning_suffix}")
+    if failures:
+        print(f"Failed: {', '.join(failures)}")
+        return 1
+    if strict and total_warnings > 0:
+        print(f"STRICT: {total_warnings} warning(s) treated as errors")
+        return 1
+    print("All checks passed.")
+    return 0
+
+
 def run_quality_gate(
     *,
     lint: bool = True,
     test: bool = True,
     validate: bool = True,
+    strict: bool = False,
 ) -> int:
-    """Run the quality gate. Returns 0 on success, 1 on any failure."""
+    """Run the quality gate. Returns 0 on success, 1 on any failure.
+
+    When *strict* is True, warnings also cause a non-zero exit (for CI/agents).
+    """
     checks: list[tuple[str, list[str], str]] = []
     if lint:
         checks.extend(_LINT_CHECKS)
@@ -111,17 +137,7 @@ def run_quality_gate(
             failed += 1
             failures.append("mde-validate")
 
-    print(f"\n{'=' * 40}")
-    print(f"Quality gate: {passed} passed, {failed} failed", end="")
-    if total_warnings > 0:
-        print(f" ({total_warnings} warnings)")
-    else:
-        print()
-    if failures:
-        print(f"Failed: {', '.join(failures)}")
-        return 1
-    print("All checks passed.")
-    return 0
+    return _print_summary(passed, failed, total_warnings, failures, strict=strict)
 
 
 def cli_main(args: list[str] | None = None) -> int:
@@ -132,6 +148,11 @@ def cli_main(args: list[str] | None = None) -> int:
     parser.add_argument("--lint", action="store_true", help="Run lint checks only")
     parser.add_argument("--test", action="store_true", help="Run test checks only")
     parser.add_argument("--validate", action="store_true", help="Run validation only")
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Treat mde-validate warnings as errors (exit 1 if any warnings)",
+    )
 
     parsed = parser.parse_args(args)
 
@@ -142,4 +163,5 @@ def cli_main(args: list[str] | None = None) -> int:
         lint=run_all or parsed.lint,
         test=run_all or parsed.test,
         validate=run_all or parsed.validate,
+        strict=parsed.strict,
     )

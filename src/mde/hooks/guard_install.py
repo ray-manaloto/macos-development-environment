@@ -44,7 +44,7 @@ _ALLOW_PATTERNS: list[re.Pattern[str]] = [
 _DENY_REASON = (
     "BLOCKED: Direct global install detected. "
     "This project uses mise as the tool authority. "
-    "Add the tool to .chezmoisource/dot_config/mise/config.toml.tmpl instead. "
+    "Add the tool to home/dot_config/mise/config.toml.tmpl instead. "
     "See .agents/skills/mise-tool-management/SKILL.md for backend selection."
 )
 

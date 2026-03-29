@@ -1,4 +1,4 @@
-# .chezmoiignore — patterns within .chezmoisource/ (the source dir via .chezmoiroot).
+# .chezmoiignore — patterns within home/ (the source dir via .chezmoiroot).
 # Repo root files are already invisible to chezmoi; these catch accidental additions.
 
 # Documentation and metadata that shouldn't deploy as dotfiles

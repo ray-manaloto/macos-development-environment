@@ -104,7 +104,13 @@ def _run_mise_self_update() -> int:
 def _run_mise_upgrade() -> int:
     if not shutil.which("mise"):
         return 1
-    proc = subprocess.run(["mise", "upgrade", "--bump", "--yes"], timeout=600)
+    # Exclude git-sourced tools that lack PyPI version resolution.
+    # pipx:srclight/srclight is installed from GitHub (not PyPI) so mise
+    # can't resolve "latest" and emits a noisy WARN on every upgrade run.
+    proc = subprocess.run(
+        ["mise", "upgrade", "--bump", "--yes", "--exclude", "pipx:srclight/srclight"],
+        timeout=600,
+    )
     return proc.returncode
 
 

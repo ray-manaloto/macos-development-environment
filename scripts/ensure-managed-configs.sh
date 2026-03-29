@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TEMPLATE_DIR="$REPO_ROOT/templates"
-CHEZMOI_SOURCE="${MDE_CHEZMOI_SOURCE:-$REPO_ROOT/.chezmoisource}"
+CHEZMOI_SOURCE="${MDE_CHEZMOI_SOURCE:-$REPO_ROOT/home}"
 MANAGED_MARKER="Managed by macos-development-environment"
 MODE="apply"
 USE_CHEZMOI="${MDE_USE_CHEZMOI:-1}"

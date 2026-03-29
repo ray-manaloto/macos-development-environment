@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REMEDIATE_SCRIPT="$ROOT_DIR/scripts/mde-remediate.sh"
 ALIASES_TEMPLATE="$ROOT_DIR/templates/oh-my-zsh/20-mde-aliases.zsh"
-ALIASES_CHEZMOI="$ROOT_DIR/.chezmoisource/dot_oh-my-zsh/custom/20-mde-aliases.zsh"
+ALIASES_CHEZMOI="$ROOT_DIR/home/dot_oh-my-zsh/custom/20-mde-aliases.zsh"
 
 PASS=0
 FAIL=0

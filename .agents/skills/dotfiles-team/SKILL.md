@@ -23,7 +23,7 @@ agent: mise-specialist
 1. **Analyze** the change: Does it need mise config, chezmoi templates, or both?
 2. **Spawn mise-specialist** and **chezmoi-specialist** in parallel:
    - Mise: tool version changes, backend selection, task runner updates
-   - Chezmoi: template edits under `.chezmoisource/`, OS-conditional logic
+   - Chezmoi: template edits under `home/`, OS-conditional logic
 3. **Spawn validator** after both complete:
    - `uv run mde-py validate --all`
    - `mise doctor`
@@ -34,8 +34,8 @@ agent: mise-specialist
 
 | Owner | Owns | Cannot Touch |
 |-------|------|-------------|
-| Mise Specialist | `.mise.toml`, `mise.toml`, `mise.lock` | `.chezmoisource/` |
-| Chezmoi Specialist | `.chezmoisource/**/*` | `.mise.toml` |
+| Mise Specialist | `.mise.toml`, `mise.toml`, `mise.lock` | `home/` |
+| Chezmoi Specialist | `home/**/*` | `.mise.toml` |
 | Validator | Nothing (read + run) | Config files |
 | Lead | `Brewfile`, `pyproject.toml` | Delegates config |
 
@@ -51,5 +51,5 @@ Does this change need...
 
 ## Key Rules
 - mise config at `~/.config/mise/config.toml` is chezmoi-managed
-- Changes MUST go through `.chezmoisource/dot_config/mise/config.toml.tmpl`
+- Changes MUST go through `home/dot_config/mise/config.toml.tmpl`
 - Full lifecycle: edit template -> `chezmoi apply` -> `mise install` -> `mise lock` -> `mise reshim`

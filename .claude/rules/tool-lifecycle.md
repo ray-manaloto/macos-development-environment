@@ -12,19 +12,19 @@ chezmoi apply
   4. zsh custom files      → shell env      (PATH, aliases, completions)
 ```
 
-Source of truth: `.chezmoisource/` in this repo, applied by `chezmoi apply`.
+Source of truth: `home/` in this repo, applied by `chezmoi apply`.
 
 ## Where to declare tools
 
 | Tool type | Where to add | Example |
 |-----------|-------------|---------|
-| CLI binary (rust, go, node, python) | `.chezmoisource/dot_config/mise/config.toml.tmpl` `[tools]` | `rtk = "latest"` |
+| CLI binary (rust, go, node, python) | `home/dot_config/mise/config.toml.tmpl` `[tools]` | `rtk = "latest"` |
 | npm global CLI | Same file, npm backend | `"npm:@openai/codex" = "latest"` |
 | pipx global CLI | Same file, pipx backend | `"pipx:srclight" = "0.8.1"` |
-| macOS GUI app / cask | `.chezmoisource/Brewfile.tmpl` | `cask "docker"` |
-| Brew-only formula (no mise backend) | `.chezmoisource/Brewfile.tmpl` | `brew "llvm"` |
+| macOS GUI app / cask | `home/Brewfile.tmpl` | `cask "docker"` |
+| Brew-only formula (no mise backend) | `home/Brewfile.tmpl` | `brew "llvm"` |
 | Project-local tool | `.mise.toml` in repo root `[tools]` | `hk = "latest"` |
-| Tool needing post-install init | `.chezmoisource/.chezmoiscripts/run_onchange_after_install_mise.sh.tmpl` | `rtk init -g` |
+| Tool needing post-install init | `home/.chezmoiscripts/run_onchange_after_install_mise.sh.tmpl` | `rtk init -g` |
 
 ## Adding a new tool (checklist)
 

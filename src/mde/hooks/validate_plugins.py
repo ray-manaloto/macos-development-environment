@@ -15,7 +15,6 @@ __hook_meta__ = {
 }
 
 import json
-import subprocess
 import sys
 
 from mde.hooks._common import hook_span, parse_hook_stdin
@@ -25,7 +24,11 @@ _RSM_SUBAGENTS_PATH = "rsm-subagents/"
 
 
 def validate_plugins_hook() -> int:
-    """Entry point: run plugin validation if an rsm-subagents file was modified."""
+    """Entry point: run plugin validation if an rsm-subagents file was modified.
+
+    Calls ``run_validators`` in-process to get both error and warning counts
+    without shelling out to a subprocess.
+    """
     try:
         data = parse_hook_stdin()
     except (json.JSONDecodeError, ValueError) as exc:
@@ -50,26 +53,31 @@ def validate_plugins_hook() -> int:
             file_path=file_path,
         ).info("rsm_subagents_modified_running_validation")
 
-        try:
-            proc = subprocess.run(
-                ["uv", "run", "mde-py", "validate", "--plugins"],
-                capture_output=True,
-                text=True,
-                timeout=120,
-            )
-        except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
-            logger.bind(hook="validate_plugins", error=str(exc)).warning(
-                "validation_command_failed"
-            )
-            return 0
+        from mde.validate import _print_findings, run_validators
 
-        if proc.returncode != 0:
-            sys.stderr.write(proc.stderr)
+        result = run_validators(plugins_only=True)
+        _print_findings(result)
+
+        span.set_attribute("hook.error_count", result.error_count)
+        span.set_attribute("hook.warning_count", result.warning_count)
+
+        if not result.passed:
             logger.bind(
                 hook="validate_plugins",
-                exit_code=proc.returncode,
+                error_count=result.error_count,
             ).warning("plugin_validation_failed")
             return 1
+
+        if result.warning_count > 0:
+            sys.stderr.write(
+                f"⚠ Plugin validation: {result.warning_count} warning(s) — fix before commit\n"
+            )
+            logger.bind(
+                hook="validate_plugins",
+                warning_count=result.warning_count,
+            ).warning("plugin_validation_warnings")
+            # Return 0: surface warnings but don't block the tool call.
+            # Per no-warning-suppression.md: "WARNING → visible → gate passes → human decides"
 
         logger.bind(hook="validate_plugins").info("plugin_validation_passed")
         return 0

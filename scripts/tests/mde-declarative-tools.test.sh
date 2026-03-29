@@ -65,7 +65,7 @@ fi
 
 # 7. chezmoi mise config template exists
 check "chezmoi mise config template exists" \
-  test -f "$REPO_ROOT/.chezmoisource/dot_config/mise/config.toml.tmpl"
+  test -f "$REPO_ROOT/home/dot_config/mise/config.toml.tmpl"
 
 # 8. No MDE_UPDATE_AGENT_TOOLS in maintenance script
 check_not "no MDE_UPDATE_AGENT_TOOLS var in maintenance" \
