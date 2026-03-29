@@ -66,6 +66,11 @@
           {
             "type": "command",
             "command": "uv run mde-py hooks validate-plugins"
+          },
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks check-knowledge",
+            "timeout": 10
           }
         ]
       },
