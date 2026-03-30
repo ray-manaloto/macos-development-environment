@@ -44,9 +44,21 @@ All three CLIs are configured to send OTEL data to the collector:
 
 ## Enforcement
 
-- The `check-observability` SessionStart hook verifies the OTEL collector is reachable
-- If the collector is down, the hook emits a warning with startup instructions
-- The `guard-debate` PreToolUse hook should also verify before debate invocations
+### SessionStart hook (`check-observability`)
+The hook validates three layers on every session start:
+1. **Infrastructure**: OTEL collector, Grafana, Loki, Tempo health endpoints
+2. **Data arrival**: queries Loki for `service_name` labels — expects: `claude-code`, `codex-app-server`, `codex_exec`, `gemini-cli`, `mde`
+3. If any layer fails, emits advisory warning with remediation commands
+
+### Full validation (`telemetry verify`)
+`uv run mde-py telemetry verify` checks everything the hook does plus:
+- Source config validation (Claude Code settings.json, Codex config.toml, Gemini settings.json)
+- Tempo trace data arrival
+- OTEL env var compliance against official docs
+- Plugin conflicts and hooks dispatch
+
+### Other enforcement
+- The `guard-debate` PreToolUse hook should verify collector before debate invocations
 - When debugging CLI failures, ALWAYS check telemetry first: `docker compose -f docker/observability/compose.yaml ps`
 
 ## What went wrong (2026-03-30)

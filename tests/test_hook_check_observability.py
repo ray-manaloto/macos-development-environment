@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from mde.hooks.check_observability import _check_endpoint, check_services
+from mde.hooks.check_observability import (
+    _check_endpoint,
+    _check_loki_data_arrival,
+    check_services,
+)
 
 
 class TestCheckEndpoint:
@@ -87,3 +91,50 @@ class TestCheckServices:
         # Rest use post=False
         for call in calls[1:]:
             assert call.kwargs.get("post") is False
+
+
+class TestCheckLokiDataArrival:
+    """Test Loki data arrival checks in the SessionStart hook."""
+
+    @patch("mde.hooks.check_observability.urllib.request.urlopen")
+    def test_all_services_present(self, mock_urlopen: MagicMock) -> None:
+        """No missing services when all expected labels exist in Loki."""
+        import json
+
+        resp = MagicMock()
+        resp.read.return_value = json.dumps(
+            {"data": ["claude-code", "codex-app-server", "codex_exec", "gemini-cli", "mde"]}
+        ).encode()
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = resp
+
+        missing = _check_loki_data_arrival()
+        assert missing == []
+
+    @patch("mde.hooks.check_observability.urllib.request.urlopen")
+    def test_some_services_missing(self, mock_urlopen: MagicMock) -> None:
+        """Returns names of services not found in Loki labels."""
+        import json
+
+        resp = MagicMock()
+        resp.read.return_value = json.dumps({"data": ["claude-code", "mde"]}).encode()
+        resp.__enter__ = lambda s: s
+        resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = resp
+
+        missing = _check_loki_data_arrival()
+        assert "codex-app-server" in missing
+        assert "codex_exec" in missing
+        assert "gemini-cli" in missing
+        assert "claude-code" not in missing
+
+    @patch(
+        "mde.hooks.check_observability.urllib.request.urlopen",
+        side_effect=ConnectionRefusedError("refused"),
+    )
+    def test_loki_unreachable_returns_empty(self, mock_urlopen: MagicMock) -> None:
+        """Returns empty list when Loki is unreachable (infra check covers it)."""
+        _ = mock_urlopen
+        missing = _check_loki_data_arrival()
+        assert missing == []
