@@ -1,0 +1,43 @@
+id: finding-agent-council-2026-03-29
+timestamp: "2026-03-29T00:02:00Z"
+source: https://github.com/team-attention/agent-council
+agent: researcher
+finding_type: tool
+confidence: confirmed
+confident_about: >
+  Agent Council uses a 3-stage council pattern: parallel dispatch to all members, file-based
+  output collection, then Chairman synthesis in the host agent context. The prompt is passed
+  as a raw positional CLI argument (appended to the command arg array) via Node spawn() —
+  no shell interpolation, no stdin, no temp file per call. Workers are detached processes
+  polling via filesystem status.json. No retry logic. Timeout via SIGTERM. Node.js required.
+gaps: >
+  - How mde debate currently passes prompts (for direct comparison)
+  - Whether agent-council handles ANSI codes or other noise in raw CLI output
+  - Whether system_prompt injection (issue #6) is planned for implementation
+  - How the tool handles very long prompts (arg length limits)
+evidence: >
+  Source code: council-job.js (cmdStart spawns workers with prompt appended as last argv element),
+  council-job-worker.js (worker reads prompt.txt, passes as final positional arg to spawn()),
+  council.sh (TTY detection for host-agent context, wait loop pattern),
+  GitHub issues #1 (bash->node migration rationale), #2 (unimplemented settings),
+  #13 (ranking gap proposal), README (3-stage description, CLI invocation examples)
+implication: >
+  The file-based polling pattern avoids the need for IPC or streaming. The positional-arg
+  prompt delivery is simple but has a known gap: prompts starting with "--" could be
+  misinterpreted as flags by the target CLI. mde debate should use "--" separator or
+  an explicit flag (e.g. --message) to pass prompt text. The no-retry design is intentional
+  (fail fast, let chairman note gaps). The Node.js dependency is unavoidable for YAML parsing
+  robustness (awk-based parsing was abandoned in issue #1).
+tags:
+  - multi-model
+  - debate
+  - council
+  - cli-orchestration
+  - codex
+  - gemini
+  - claude-code
+  - subprocess
+  - file-based-ipc
+  - parallel-dispatch
+  - chairman-synthesis
+status: discovered

@@ -1,0 +1,52 @@
+id: finding-claude-review-loop-2026-03-29
+timestamp: "2026-03-29T00:00:00Z"
+source: https://github.com/hamelsmu/claude-review-loop
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: |
+  Complete source-level understanding of how the plugin orchestrates Claude + Codex:
+  stop hook writes files and blocks, Claude runs Codex via Bash, Codex writes review
+  to a deterministic file path, stop hook verifies file existence on next exit attempt.
+  CLI flag is `codex --dangerously-bypass-approvals-and-sandbox exec "<prompt>"`.
+  Prompt is written to a file and read at runtime via $(cat) to avoid shell escaping.
+  Multi-agent inside Codex is enabled via ~/.codex/config.toml [features] multi_agent = true.
+  Plugin version 1.8.0 at 2026-03-29. 625 stars, 37 forks, 0 open issues/PRs.
+gaps: |
+  Closed issues not accessible (requires GitHub auth) so no bug history available.
+  No PR history means design evolution is not visible.
+  agent-browser dependency for UX review not fully investigated.
+  Actual codex multi-agent behavior (how sub-agent spawning works) not verified independently.
+evidence: |
+  Source: plugins/review-loop/hooks/stop-hook.sh - full stop hook logic including
+  phase state machine, runner script generation, retry ceiling of 2, ERR trap, fail-open defaults.
+  Source: plugins/review-loop/scripts/setup-review-loop.sh - argument parsing, state file creation.
+  Source: plugins/review-loop/hooks/hooks.json - Stop hook, 30s timeout, ${CLAUDE_PLUGIN_ROOT} path.
+  Source: plugins/review-loop/.claude-plugin/plugin.json - v1.8.0, MIT license, Hamel Husain.
+  Key code: `codex ${CODEX_FLAGS} exec "$(cat ".claude/review-loop-codex-prompt.txt")"` in runner script.
+  Key code: phase transition uses awk not sed; verified after write.
+  Key design comment: "Instead of running Codex inside this hook (which blocks Claude and hides
+  all output), we write the prompt and a runner script, then tell Claude to execute it via Bash
+  so Codex output streams to the user."
+implication: |
+  For mde debate pipeline:
+  1. Write prompts to temp files, never pass as CLI args (avoids shell escaping entirely).
+  2. Stop hook must NOT run secondary model directly — write runner script + block exit.
+  3. Secondary model writes output to a deterministic file path; Claude reads it afterward.
+  4. `codex exec` is the correct non-interactive flag (not -p or --prompt).
+  5. Retry ceiling (2 attempts) prevents infinite loop when Codex fails to produce output.
+  6. Fail-open everywhere: any error should approve exit, never trap user in broken loop.
+  7. Two-state YAML frontmatter file is sufficient for a task→review state machine.
+tags:
+  - codex
+  - claude-code
+  - stop-hook
+  - debate-loop
+  - multi-agent
+  - code-review
+  - orchestration
+  - file-based-output
+  - prompt-delivery
+  - shell-escaping
+  - state-machine
+status: discovered

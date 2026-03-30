@@ -1,0 +1,45 @@
+id: finding-gstack-conductor-2026-03-29
+timestamp: "2026-03-29T00:15:00Z"
+source: https://github.com/garrytan/gstack
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: >
+  gstack is a collection of 29 SKILL.md-format slash commands for Claude Code. Conductor
+  (conductor.build, external product) manages parallel Claude Code sessions in isolated
+  workspaces. Isolation is enforced at the process level: separate Chromium instances,
+  random port selection, per-workspace .gstack/ state directory, independent git worktrees.
+  Prompt chaining between skills uses shared file artifacts (design docs, test plans) — no
+  runtime message bus. SKILL.md standard enables multi-host compatibility (Claude Code,
+  Codex, Gemini, Factory Droid). The /browse binary is a ~58MB Chromium executable
+  compiled locally via Bun. Skills are real committed files, not git submodules.
+gaps: >
+  Conductor internal architecture (conductor.build) not fetched. SKILL.md format spec not
+  fully documented in gstack sources. Codex skill generation transformation from SKILL.md
+  is undocumented. Factory Droid disable-model-invocation flag mechanism unknown.
+  Inter-session artifact polling or event mechanism (if any) undocumented.
+evidence: >
+  gstacks.org/gstack-setup-install-guide.html: install steps, component breakdown table,
+  skill discovery via symlinks in ~/.claude/skills/. github.com/garrytan/gstack README:
+  full skill catalog, 29 skills, parallel sprint model, cognitive mode specialization.
+  gstacks.org/gstack-parallel-ai-coding.html: Conductor workspace isolation, .gstack/
+  directory structure, ELI16 mode, random port selection (10000-60000, 5 retries).
+implication: >
+  When building parallel multi-agent systems, adopt the conductor pattern: isolate each
+  agent in its own worktree+browser process rather than sharing state. Use file-based
+  artifact handoffs (design docs, test plans) for inter-agent communication rather than
+  a message bus. Assign exactly one cognitive mode per agent (build/review/qa/plan) for
+  best results. The SKILL.md standard is worth adopting for skills that should run on
+  multiple agent hosts.
+tags:
+  - gstack
+  - conductor
+  - parallel-agents
+  - claude-code-skills
+  - SKILL.md
+  - browser-automation
+  - workspace-isolation
+  - multi-agent-orchestration
+  - cognitive-modes
+  - worktree
+status: discovered

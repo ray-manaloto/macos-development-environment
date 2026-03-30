@@ -1,0 +1,54 @@
+id: finding-awesome-claude-workflows-2026-03-29
+timestamp: "2026-03-29T23:41:00Z"
+source: https://github.com/ithiria894/awesome-claude-code-workflows
+agent: researcher
+finding_type: playbook
+confidence: confirmed
+confident_about: >
+  The curated list covers 14 workflow categories with ~50 individual recipes.
+  Five patterns appear across multiple independent projects:
+  (1) debate-before-build, (2) machine-readable exit conditions for autonomous loops,
+  (3) worktree isolation per agent, (4) receipt-based phase gating,
+  (5) context pollution prevention via MCP execution.
+  Cross-LLM collaboration (Claude + Codex + Gemini) is validated by 4 independent projects.
+  Everything Claude Code (17K stars) is the most complete single framework with 28 agents,
+  59 commands, 116 skills, 26 hook entries across 7 event groups.
+gaps: >
+  No star counts for gstack, Superpowers, or Solopreneur Plugin — likely proprietary or unlisted.
+  Awesome list does NOT include implementation details — each entry requires separate deep review.
+  No benchmark data comparing framework outcomes (quality, speed, token cost).
+  "Codex-verified counts" annotation appears on several entries — verification methodology unknown.
+evidence: >
+  Full README text fetched via agent-fetch on 2026-03-29.
+  14 sections, ~50 entries, ~15 related awesome lists linked.
+  ruflo: 22,810 stars. claude-mem: 39,615 stars. Everything Claude Code: 17K stars.
+  Autoresearch codebase is intentionally minimal: 10 files, 114-line program.md.
+  cc-context-stats uses MRCR benchmark calibration for MI score — not a made-up heuristic.
+implication: >
+  The mde stack already implements debate-before-build (mde debate library), worktree isolation,
+  and pattern extraction (dream pipeline). The three most actionable gaps are:
+  (1) goal-met exit conditions for autonomous loops (vs. fixed iteration),
+  (2) MI score tracking for context degradation warnings,
+  (3) receipt artifacts from quality gate phases to prevent silent skips.
+  The Command→Agent→Skill composition pattern (shanraisshan) should be documented formally
+  as the canonical abstraction in agent definitions.
+tags:
+  - claude-code
+  - multi-agent
+  - workflows
+  - orchestration
+  - sdlc
+  - tdd
+  - autonomous-loops
+  - context-management
+  - cross-llm
+  - hooks
+  - skills
+  - review-pipeline
+  - deploy
+  - canary
+  - worktrees
+  - debate
+  - receipt-gating
+  - mde
+status: discovered

@@ -1,0 +1,50 @@
+id: finding-codex-orchestrator-tmux-patterns
+timestamp: "2026-03-29T00:15:00Z"
+source: https://github.com/kingbootoshi/codex-orchestrator
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: >
+  codex-orchestrator uses tmux new-session -d to spawn detached sessions, wraps
+  the codex process in `script` for full output logging, and passes prompts via
+  tmux send-keys. For prompts <5000 chars: shell-escaped send-keys + Enter. For
+  prompts >=5000 chars: writes to a .prompt file, then `tmux load-buffer` +
+  `tmux paste-buffer`. Mid-task messages also go via send-keys. Output is read
+  from `tmux capture-pane -p` (live) or the .log file (after session ends).
+  Structured job metadata (tokens, files modified, summary) is parsed from
+  Codex's own JSONL session files in ~/.codex/sessions/.
+gaps: >
+  Issues and PRs lists require GitHub authentication so issue-level bug reports
+  (e.g., argument escaping failures, ANSI stripping gaps) could not be read.
+  The output-cleaner.ts implementation details (ANSI regex patterns) were not
+  retrieved. The notify-hook.ts turn-detection mechanism was not retrieved.
+evidence: >
+  src/tmux.ts createSession(): writes prompt to .prompt file, builds codex CLI
+  args as -c model=... -c reasoning=... -a never -s sandbox, wraps in
+  `script -q <logfile> codex <args>` (macOS) or `script -q -c "codex <args>"
+  <logfile>` (Linux), runs via `tmux new-session -d -s <name> -c <cwd>`.
+  Short prompts: `tmux send-keys -t <session> '<escaped_prompt>'` then Enter.
+  Long prompts: `tmux load-buffer <promptFile>` + `tmux paste-buffer -t <session>`.
+  sendMessage(): same send-keys pattern with 0.3s sleep before Enter.
+  capturePane(): `tmux capture-pane -t <session> -p [-S <start>]`.
+  captureFullHistory(): `tmux capture-pane -p -S -` with 50MB buffer.
+  getJobsJson(): reads ~/.codex/sessions/<id>.jsonl via session-parser.ts.
+implication: >
+  When building mde debate output capture: (1) file-based prompt passing is
+  safer than shell args for complex/long prompts, (2) `script` command is
+  the right tool for capturing TUI output that goes to a terminal, (3) a 0.3s
+  sleep between typing and Enter is needed for TUI acceptance, (4) update
+  prompt skip (send "3" + Enter) must happen before the actual task prompt,
+  (5) --strip-ansi flag is essential for machine-readable output from codex TUI.
+tags:
+  - tmux
+  - codex-cli
+  - prompt-passing
+  - output-capture
+  - script-command
+  - orchestration
+  - file-based-prompts
+  - ansi-stripping
+  - session-management
+  - codex-orchestrator
+status: discovered

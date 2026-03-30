@@ -1,0 +1,46 @@
+id: finding-wshobson-workflow-plugins-2026-03-29
+timestamp: "2026-03-29T23:41:00Z"
+source: https://github.com/wshobson/agents/tree/main/plugins
+agent: researcher
+finding_type: tool
+confidence: confirmed
+confident_about: >
+  agent-teams plugin (v1.0.2) provides 4 agent types (team-lead, team-reviewer,
+  team-debugger, team-implementer), 7 slash commands, and 6 skills for parallel
+  SDLC workflows using Claude Code's experimental Agent Teams API.
+  agent-orchestration plugin (v1.2.1) provides a context-manager agent and 2
+  commands (/improve-agent, /multi-agent-optimize) focused on agent performance
+  improvement and prompt engineering.
+gaps: >
+  Skills content (SKILL.md files for team-communication-protocols,
+  parallel-feature-development, etc.) were not fetched — only directory listings
+  confirmed. agent-orchestration has no README so overall plugin intent is
+  inferred from command files only. No changelog or commit history reviewed.
+evidence: >
+  README.md confirmed 7 commands, 4 agents, 6 skills, 7 preset team configurations.
+  All 4 agent .md files fetched and read in full. All 6 command .md files fetched.
+  Both plugin.json files fetched confirming versions and author.
+  context-manager.md and both orchestration command files fetched in full.
+implication: >
+  agent-teams is a direct match for the rsm-subagents agent workflow use case.
+  Preset compositions (review, debug, feature, security, migration) can be adopted
+  as-is or adapted. The shutdown_request JSON protocol, file ownership rules, and
+  one-file-one-owner invariant are patterns worth extracting into local agent
+  definitions. The /improve-agent command from agent-orchestration provides a
+  structured agent improvement loop that could feed the dream pipeline.
+tags:
+  - agent-teams
+  - multi-agent
+  - claude-code
+  - orchestration
+  - parallel-execution
+  - code-review
+  - debugging
+  - feature-development
+  - wshobson
+  - plugin
+  - sdlc
+  - file-ownership
+  - shutdown-protocol
+  - prompt-engineering
+status: discovered

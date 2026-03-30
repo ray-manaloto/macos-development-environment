@@ -1,0 +1,147 @@
+id: finding-self-improvement-frameworks-2026-03-29
+timestamp: "2026-03-29T08:12:00Z"
+source: "https://github.com/HKUDS/OpenSpace,https://github.com/NousResearch/hermes-agent,https://github.com/facebookresearch/HyperAgents,https://github.com/Memento-Teams/Memento-Skills,https://github.com/Piebald-AI/claude-code-system-prompts"
+agent: researcher
+finding_type: pattern
+confidence: confirmed
+confident_about: |
+  Five production self-improving agent frameworks exist with measurable economic impact.
+  All share a closed-loop pattern: task execution → failure detection → skill reflection → skill rewriting → library update.
+  Token savings 46-56% over baseline in Phase 2 when skills are pre-warmed.
+  Three distinct skill evolution architectures: deployment-time (Memento), performance monitoring (OpenSpace), user modeling (Hermes).
+gaps: |
+  How these systems handle skill versioning conflicts (when old+new skills both valid).
+  Optimal skill indexing/retrieval thresholds for libraries >1000 skills.
+  Whether dream consolidation works for skill memory (not just session memory).
+  Integration with agent team architectures (multi-agent skill sharing).
+  How to measure skill quality across heterogeneous tasks.
+evidence: |
+  OpenSpace: "46% fewer tokens" on GDPVal (50 professional tasks), 4.2× higher earnings vs ClawWork baseline.
+  Memento: HLE/GAIA benchmarks show progressive improvement over learning rounds; skill library grows with learned skills, not just tool accumulation.
+  Hermes: "only agent with a built-in learning loop"; creates skills from experience, improves during use, periodically nudges persistence.
+  HyperAgents: Meta-agent optimizes task agents with self-referential improvements; requires code execution risk tolerance.
+  Dream consolidation prompt: Four-phase consolidation (orient → gather → consolidate → prune) for session memory management.
+implication: |
+  For mde's autonomous review system (in Phase 0d re-run): implement a minimal read-write reflection loop for debate/review skills.
+  Skills should be indexed by semantic similarity (not just string matching) to avoid retrieval failures in large libraries.
+  Session memory (Claude Code) can use dream consolidation; skill memory needs separate versioning strategy.
+  Monitor skill utility after each task execution; rewrite skills with <0.6 utility or >2 consecutive failures.
+  Reward signal should be economic (cost/quality ratio) not just quality, matching OpenSpace and Hermes patterns.
+tags:
+  - self-improving-agents
+  - skill-evolution
+  - deployment-time-learning
+  - token-efficiency
+  - adversarial-review
+  - autonomous-systems
+status: discovered
+frameworks:
+  - id: openspace
+    name: "OpenSpace: Self-Evolving Skills at Scale"
+    source: https://github.com/HKUDS/OpenSpace
+    relevance: HIGH
+    key_patterns:
+      - Multi-layer monitoring detects skill degradation and auto-triggers repairs
+      - Skills improve themselves; successful patterns become reusable shared skills
+      - Token efficiency 46% Phase 2 vs Phase 1 on real professional tasks
+      - Economic value measured: 4.2× earnings vs ClawWork baseline on GDPVal benchmark
+      - Shared evolution: one agent's improvement becomes every agent's upgrade
+    applicable_to: |
+      mde adversarial review: implement auto-fix for debate skills when confidence drops.
+      Plugin marketplace: score plugins by execution cost+quality, not just downloads.
+      Autonomous system development: use OpenSpace's GDPVal methodology to benchmark review accuracy.
+    notes: |
+      Works with any agent framework (Claude Code, Codex, OpenClaw, nanobot).
+      Cloud skill community enables distributed skill sharing.
+      MCP integration point: openspace-mcp server plugs into existing config.
+      Baseline improvement score is their key metric (0.450 for this project).
+  - id: hermes-agent
+    name: "Hermes Agent: Learning Loop as First-Class Citizen"
+    source: https://github.com/NousResearch/hermes-agent
+    relevance: HIGH
+    key_patterns:
+      - Built-in learning loop: creates skills from experience, improves during use
+      - FTS5 session search + LLM summarization for cross-session recall
+      - Periodic nudges to persist knowledge (agent-curated memory)
+      - Skills self-improve during use (not just post-execution)
+      - Compatible with agentskills.io open standard for skill portability
+      - User modeling via Honcho dialectic (learns who you are over sessions)
+      - Scheduled automations via cron with cross-platform delivery
+    applicable_to: |
+      mde research pipeline: implement FTS5 indexing of findings catalog for cross-session discovery.
+      Project memory system: adopt Hermes's nudging strategy for memory consolidation.
+      Autonomous agents in docfiles or team mode: use Honcho for persistent user modeling.
+    notes: |
+      Available on $5 VPS or serverless (Modal/Daytona) with hibernation.
+      Runs on any model: OpenRouter (200+), Nous Portal, self-hosted endpoints.
+      Agents spawn subagents in parallel; Python RPC for tool integration.
+      Skills follow agentskills.io standard (reusable across agents).
+      No lock-in: `hermes model` switches LLM without code changes.
+  - id: hyperagents
+    name: "HyperAgents: Self-Referential Optimization Loop"
+    source: https://github.com/facebookresearch/HyperAgents
+    relevance: MEDIUM
+    key_patterns:
+      - Meta-agent optimizes task agents iteratively
+      - Self-referential improvement: agents can improve their own optimization strategies
+      - Requires code execution (Docker sandboxing recommended)
+      - Measures improvement via domain-specific metrics (not just token count)
+      - Works with diverse domains (not just coding)
+    applicable_to: |
+      Adversarial review system: meta-agent could optimize debate prompt strategies.
+      Plugin evaluation: self-referential screening could improve verdicts over time.
+    notes: |
+      Higher complexity and compute cost than OpenSpace/Hermes.
+      Safety consideration: executes untrusted model-generated code.
+      Best for research/benchmark exploration, not production stability.
+  - id: memento-skills
+    name: "Memento-Skills: Deployment-Time Learning Without Retraining"
+    source: https://github.com/Memento-Teams/Memento-Skills
+    relevance: HIGH
+    key_patterns:
+      - Keeps model parameters frozen; learns in external skill memory M
+      - Read → Execute → Reflect → Write loop
+      - Skills indexed and routed (retrieval as core problem, not afterthought)
+      - When skill fails, reflects and regenerates the skill
+      - Works with open-source LLMs (Kimi, MiniMax, GLM) and proprietary (OpenAI, Anthropic)
+      - Progressive improvement on HLE and GAIA benchmarks
+      - Skill library grows and organizes into semantic clusters
+    applicable_to: |
+      mde Python library: adopt Memento's skill routing for hooks/commands (currently flat discovery).
+      Validation hardening: implement reflect-on-failure pattern when validators produce warnings.
+      Research pipeline: use skill clustering to organize 60+ discovery URLs by semantic topic.
+    notes: |
+      Desktop GUI available (no terminal needed).
+      Feishu bridge for IM integration.
+      Local sandbox execution (isolated skill environment).
+      Fully self-developed framework (not thin wrapper over existing tool).
+      Benchmark: measurable learning on GAIA and HLE without fine-tuning.
+  - id: dream-consolidation
+    name: "Dream: Memory Consolidation Pattern for Self-Reflection"
+    source: https://github.com/Piebald-AI/claude-code-system-prompts/blob/main/system-prompts/agent-prompt-dream-memory-consolidation.md
+    relevance: HIGH
+    key_patterns:
+      - Four-phase consolidation: orient (read existing) → gather (find new signal) → consolidate (write updates) → prune (update index)
+      - Session transcripts searched via narrow grep (not exhaustive reads)
+      - Converts relative dates to absolute for persistence
+      - Index size management: stay under 200 lines, ~25KB
+      - Deletes contradicted facts instead of accumulating conflict
+      - Emphasis on merging updates into existing files vs creating duplicates
+    applicable_to: |
+      Auto-memory consolidation hooks: SessionEnd (before /clear) could trigger dream phase.
+      NotebookLM ingestion: treat research findings as "session transcripts" to narrow-search before synthesis.
+      docs/research/trail/: apply dream logic to findings catalog (dedupe, update index, prune stale entries).
+      .generated/remember/: daily consolidation via cron before session end.
+    notes: |
+      Designed for agent-driven memory management (not human-only editing).
+      Index is an index (not a dump); each entry <150 chars.
+      Narrow grep on transcripts prevents context bloat.
+      Four phases can be parallelized or run asynchronously.
+      Works best when session logs are structured (JSONL format).
+recommendations: |
+  1. **Adopt OpenSpace's economic reward signal** for skill evaluation: measure tokens saved + quality gains, not just accuracy.
+  2. **Implement Hermes-style nudging** for memory consolidation: periodic prompts to persist knowledge, not continuous saving.
+  3. **Apply dream consolidation** to research findings catalog (docs/research/trail/): weekly dedup + prune pass.
+  4. **Experiment with Memento's reflection loop** for validation hardening: when validator warns, analyze root cause and generate fix skill.
+  5. **Build skill versioning** on top of agentskills.io standard for portability (don't lock to one agent framework).
+  6. **For adversarial review Phase 0d**: seed debate skills with performance metrics from prior reviews; auto-retire low-utility skills.

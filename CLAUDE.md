@@ -1,77 +1,25 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+@AGENTS.md
 
-## Project
+## Claude Code
 
-Typed Python package (`src/mde/`) managing macOS developer tooling. Entry point: `uv run mde-py <subcommand>`.
-
-## Commands
-
-```bash
-uv run mde-py quality          # Full quality gate (ruff check + format + ty + pytest) — run before every commit
-uv run mde-py validate --all   # All validators (configs, brew, docker, plugins, skills)
-uv run mde-py validate --plugins  # Plugin validation only (zero warnings tolerance)
-uv run pytest tests/ -v        # Tests only
-uv run ruff check src/mde/     # Lint only
-uv run ruff format src/mde/    # Format only
-uv run ty check src/mde/       # Type check only
-mise fmt --check               # mise config formatting
-```
-
-## Architecture
-
-- `src/mde/` — All automation lives here as Python modules. **No shell scripts.**
-- `src/mde/cli.py` — CLI dispatcher with lazy imports for startup speed (keep minimal, delegate to modules)
-- `src/mde/hooks/` — Claude Code hook handlers (auto-discovered via `__hook_meta__`, never edit cli.py to add hooks)
-- `src/mde/validate/` — Validators for configs, plugins, brew, docker
-- `src/mde/dream/` — Self-improvement pipeline; CLI: `auto-dream` (extract/propose/apply/status) with promotion ladder and tiered autonomy
-- `src/mde/research/` — Research pipeline CLI and clients
-- `src/mde/domain/` — Pydantic domain models (some codegen'd — don't hand-edit `*_models.py`)
-- `src/mde/codegen/` — Codegen postprocessors (run via `mise run mde:codegen:all`)
-- `docs/schemas/` — JSON Schema sources for codegen (including official `claude-code-settings.schema.json`)
-- `tests/` — pytest tests; `@pytest.mark.integration` for tests needing external tools
-- `.claude/rules/` — Policy files loaded automatically (mise-first, no-shell-scripts, etc.)
-- `.generated/` — Runtime artifacts, reports, logs, remember data (gitignored, never committed)
-- `.remember` — Symlink to `.generated/remember/` (remember plugin compatibility)
-- `rsm-subagents/` — Local plugin marketplace for Claude Code plugins
-
-## Conventions
-
-- **Commits**: conventional commits (`feat:`, `fix:`, `docs:`, `research:`)
-- **Branches**: `feat/` prefix, worktree-based PR workflow — never merge to main for verification
-- **Dependencies**: declare in `pyproject.toml` `[dependency-groups]` for dev, `[project.dependencies]` for runtime
-- **Config**: all tool config in `pyproject.toml` — never standalone `.cfg`, `.ini`, or `.yaml`
-- **Git hooks**: `hk.pkl` (managed by mise) — ruff fixers + quality gate on pre-commit
-- **Imports**: use `from __future__ import annotations` and lazy imports in CLI paths
-
-## Enforcement (zero tolerance)
-
-- All warnings from `uv run mde-py quality` must be fixed — never skip or dismiss
-- All tools must be in mise config — never install via brew/npm/pip if mise can manage it
-- All automation must be Python in `src/mde/` — never create `.sh` files
-- Never use `uv run python` — use `uv run <entry-point>` or `uv run <tool>`
-- Plugin validation (`uv run mde-py validate --plugins`) must produce 0 errors AND 0 warnings
-- Unrelated errors encountered during work must be cataloged as GitHub Issues via `gh issue create`
-- Before building any new tool/plugin/agent: search community plugins (`claude-community` marketplace), existing skills, and PyPI/npm first — build new is LAST RESORT
-- Every candidate plugin/tool MUST be evaluated — never skip without explicit user approval. Write a verdict (INSTALL/EXTRACT/REJECT) with rationale for EACH candidate. Missing verdicts = incomplete work.
-- ALWAYS invoke `/remember` before compaction, `/clear`, or session end — memory loss is permanent
-- All runtime/transient data goes under `.generated/` — never create new artifact dirs at repo root
-
-## Subagents
+### Subagents
 
 Defined in `.claude/agents/`. Use matching specialist types. Core: researcher (Sonnet), coder, tester (pytest/ruff/ty), reviewer (Sonnet, read-only). Specialists: python-coder, mise-specialist, chezmoi-specialist, brew-specialist, security-auditor, claude-code-specialist, remember-specialist. Agents write discoveries to `.generated/learnings/` for dream pipeline consumption.
 
-## Secrets
+### Hooks
 
-All secrets: **Doppler (source of truth) -> sync -> fnox (Keychain cache) -> mise (env) -> tools**. New secrets: `doppler secrets set KEY=VAL --project dotfiles --config dev`, then `uv run mde-py secrets sync`. Validate: `uv run mde-py secrets validate`. See `.claude/rules/secrets-management.md` for full guide.
+Auto-discovered in `src/mde/hooks/` via `__hook_meta__`. Never edit `cli.py` to add hooks. Policy files in `.claude/rules/` are loaded automatically. See `hooks-auto-discovery.md` for the convention. Key advisory hooks (all exit 0): `check-knowledge` (PostToolUse — detects stale hook/test/subcommand counts in auto-memory and agent defs), `guard-debate` (PreToolUse — warns when raw codex/gemini CLI used instead of `mde debate`), `check-observability` (SessionStart — verifies OTEL collector health), `dream-extract` (Stop — extracts patterns into dream pipeline), `remember-stop` (Stop — writes session context to `now.md`).
 
-## MCP Access
+### Plugins
 
-Use CLI wrappers, never MCP tool schemas in context:
-- `mcp2cli @github <tool> [args]` for GitHub
-- `mcp2cli @docker <tool> [args]` for Docker
-- `mcp2cli @exa <tool> [args]` for web search (Exa)
-- `npx agent-fetch "<url>" --json` for URL content (never WebFetch for research)
+Local marketplace at `rsm-subagents/` (7 plugins: mise-toolkit, chezmoi-toolkit, hk-toolkit, marketplace-evaluator, research-review-toolkit, devcontainer-toolkit, workflow-toolkit). Plugin validation (`uv run mde-py validate --plugins`) must produce 0 errors AND 0 warnings.
 
-Subdirectory CLAUDE.md files can be added for module-specific instructions (e.g., `rsm-subagents/CLAUDE.md`).
+### Remember
+
+`.remember` symlinks to `.generated/remember/`. ALWAYS invoke `/remember` before compaction, `/clear`, or session end — memory loss is permanent.
+
+### Plugin/Tool Evaluation
+
+Before building any new tool/plugin/agent: search community plugins (`claude-community` marketplace), existing skills, and PyPI/npm first — build new is LAST RESORT. Every candidate MUST be evaluated — never skip without explicit user approval.

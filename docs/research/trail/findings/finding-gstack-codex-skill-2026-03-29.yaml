@@ -1,0 +1,43 @@
+id: finding-gstack-codex-skill-2026-03-29
+timestamp: "2026-03-29T00:00:00Z"
+source: https://github.com/garrytan/gstack
+agent: researcher
+finding_type: technique
+confidence: confirmed
+confident_about: >
+  Exact CLI flags used by gstack /codex skill: codex review --base <branch>
+  -c 'model_reasoning_effort="xhigh"' --enable web_search_cached for review mode;
+  codex exec "<prompt>" -s read-only --json for challenge/consult modes.
+  Inline Python JSONL parser extracts item.completed events (reasoning, agent_message,
+  command_execution) and turn.completed for token counts.
+  Session continuity via thread.started -> SESSION_ID -> .context/codex-session-id.
+  Gate verdict from [P1] markers (P1=FAIL, P2/none=PASS).
+  Cross-model comparison is in-context only (not written to files).
+  Review results persisted to JSONL log via gstack-review-log binary.
+gaps: >
+  No direct visibility into how gstack handles prompt escaping for user-supplied
+  challenge focus text (potential shell injection risk). Issues page not fully accessible
+  without auth for closed issues. Output of codex review (non-JSONL) format details
+  not verified against actual codex CLI docs.
+evidence: >
+  ~/.claude/skills/gstack/codex/SKILL.md.tmpl lines 77-188 (review, challenge, consult
+  mode implementations). Issue #619 (multi-CLI backend proposal) and #463 (CODEX_NOT_AVAILABLE
+  inconsistency). README "Second Opinion" section: three modes documented.
+implication: >
+  Our mde debate implementation should adopt the inline JSONL streaming parser pattern
+  for challenge/consult modes. The [P1]/[P2] gate convention is worth adopting as a
+  structured output convention. Session continuity via thread.started event is a
+  capability gap in our current implementation. The multi-CLI backend problem (issue #619)
+  is exactly the abstraction we need for supporting codex vs gemini interchangeably.
+tags:
+  - codex
+  - multi-model
+  - second-opinion
+  - debate
+  - jsonl
+  - streaming
+  - cross-model-comparison
+  - gstack
+  - code-review
+  - gate-verdict
+status: discovered

@@ -715,3 +715,84 @@ Research into production self-improving agent systems with measurable token effi
 
 See finding-self-improvement-frameworks-2026-03-29.yaml for detailed pattern analysis and applicability to mde's adversarial review system.
 
+---
+
+## Claude Code Workflow Recipes — 2026-03-29
+
+**Source**: https://github.com/ithiria894/awesome-claude-code-workflows
+**Priority**: HIGH
+**Status**: AUDITED
+
+| Status | Name | URL | Category | Notes |
+|---|---|---|---|---|
+| [x] | awesome-claude-code-workflows README | https://github.com/ithiria894/awesome-claude-code-workflows | Curated list | PRIMARY SOURCE — 14 workflow categories, ~50 recipes |
+| [ ] | ruflo multi-agent swarms | https://github.com/ruflo/ruflo | Multi-agent orchestration | 22,810 stars; RAG integration; native Claude Code + Codex |
+| [ ] | Everything Claude Code | https://github.com/Affaan-Mustafa/claude-code | Comprehensive framework | 17K stars; 28 agents, 59 commands, 116 skills, 26 hook entries |
+| [ ] | claude-hud dashboard | https://github.com/claude-hud | Monitoring | 11,537 stars; real-time context/agent/todo overlay |
+| [ ] | claude-mem | https://github.com/claude-mem | Context management | 39,615 stars; auto-capture + AI compress + session inject |
+| [ ] | Autoresearch experiment loop | https://github.com/Autoresearch | Research/autonomous | Karpathy loop; 10 files, 114-line program.md |
+| [ ] | agent-council | https://github.com/agent-council | Cross-LLM | Claude + Codex + Gemini debate; 118 stars |
+| [ ] | claude-review-loop | https://github.com/claude-review-loop | Cross-LLM | Claude codes + Codex reviews until approved; 603 stars |
+| [ ] | cc-context-stats | https://github.com/cc-context-stats | Monitoring | MI score from MRCR benchmark; 5 color-coded degradation zones |
+| [ ] | ccproxy | https://github.com/ccproxy | Monitoring | LangFuse tracing proxy; 189 stars |
+| [ ] | multi-agent-shogun | https://github.com/multi-agent-shogun | Orchestration | tmux hierarchy; 1,096 stars |
+| [ ] | Spec-Flow | https://github.com/Spec-Flow | Plan-build-review | Spec-driven dev; token budgets; 73 stars |
+| [ ] | claude-code-skill-factory | https://github.com/claude-code-skill-factory | Scope management | 7 hook event types; safety validation |
+| [ ] | agent-skill-manager (asm) | https://github.com/agent-skill-manager | Scope management | 17 providers; 2,800+ skills; security scan |
+
+**Key Findings**:
+1. Five cross-cutting patterns validated by multiple independent projects: debate-before-build, machine-readable exit conditions, worktree isolation, receipt-based phase gating, context pollution prevention via MCP.
+2. Command→Agent→Skill is the canonical composition unit (shanraisshan, trending Mar 2026).
+3. MI score tracking (cc-context-stats, MRCR-calibrated) is more rigorous than heuristic context budgets.
+4. Goal-met exit conditions (not fixed iteration counts) are the community standard for autonomous loops.
+5. gstack freeze enforcement only works in Claude Code — hooks are no-ops in Codex/non-Claude runners.
+
+See finding-awesome-claude-workflows-2026-03-29.yaml and docs/research/trail/deep-reviews/debates/workflow-toolkit-2026-03-29/research-awesome-workflows.md for full analysis.
+
+---
+
+## wshobson/agents Workflow Plugins (2026-03-29)
+
+| Status | Title | URL | Source Type | Notes |
+|---|---|---|---|---|
+| [x] | wshobson/agents agent-teams plugin | https://github.com/wshobson/agents/tree/main/plugins/agent-teams | GitHub Plugin | AUDITED — v1.0.2; 4 agents (team-lead/implementer/reviewer/debugger), 7 commands, 6 skills; presets: review/debug/feature/fullstack/research/security/migration; requires CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1. See finding-wshobson-workflow-plugins-2026-03-29.yaml |
+| [x] | wshobson/agents agent-orchestration plugin | https://github.com/wshobson/agents/tree/main/plugins/agent-orchestration | GitHub Plugin | AUDITED — v1.2.1; 1 agent (context-manager), 2 commands (/improve-agent, /multi-agent-optimize); agent improvement lifecycle with A/B testing and staged rollout. See finding-wshobson-workflow-plugins-2026-03-29.yaml |
+| [x] | agent-teams README | https://raw.githubusercontent.com/wshobson/agents/main/plugins/agent-teams/README.md | GitHub Raw | AUDITED — full plugin documentation including setup, commands table, agents table, skills table, quick start examples |
+| [x] | team-lead agent definition | https://raw.githubusercontent.com/wshobson/agents/main/plugins/agent-teams/agents/team-lead.md | GitHub Raw | AUDITED — full agent spec: task decomposition, file ownership rules, dependency management, lifecycle protocol |
+| [x] | team-implementer agent definition | https://raw.githubusercontent.com/wshobson/agents/main/plugins/agent-teams/agents/team-implementer.md | GitHub Raw | AUDITED — 5-phase workflow, strict ownership rules, integration contract protocol |
+| [x] | team-reviewer agent definition | https://raw.githubusercontent.com/wshobson/agents/main/plugins/agent-teams/agents/team-reviewer.md | GitHub Raw | AUDITED — 5 review dimensions, structured finding format with file:line citations and severity |
+| [x] | team-debugger agent definition | https://raw.githubusercontent.com/wshobson/agents/main/plugins/agent-teams/agents/team-debugger.md | GitHub Raw | AUDITED — 7-step investigation protocol, confidence ratings, requires contradicting evidence reporting |
+| [x] | context-manager agent definition | https://raw.githubusercontent.com/wshobson/agents/main/plugins/agent-orchestration/agents/context-manager.md | GitHub Raw | AUDITED — context engineering specialist; vector DB, knowledge graphs, RAG, multi-agent handoffs; model:inherit |
+| [x] | /improve-agent command | https://raw.githubusercontent.com/wshobson/agents/main/plugins/agent-orchestration/commands/improve-agent.md | GitHub Raw | AUDITED — 4-phase agent improvement: metrics baseline, prompt engineering, A/B testing, staged rollout |
+| [x] | /multi-agent-optimize command | https://raw.githubusercontent.com/wshobson/agents/main/plugins/agent-orchestration/commands/multi-agent-optimize.md | GitHub Raw | AUDITED — profiling agents, context compression, coordination efficiency, cost optimization reference |
+
+---
+
+## gstack Multi-Model Workflow Research (2026-03-29)
+
+| Status | Source | URL | Finding |
+|--------|--------|-----|---------|
+| [x] | garrytan/gstack README | https://github.com/garrytan/gstack | AUDITED — 20+ Claude Code skills; /codex is "second opinion" wrapper for OpenAI Codex CLI |
+| [x] | gstack /codex skill (local) | ~/.claude/skills/gstack/codex/SKILL.md.tmpl | AUDITED — Full implementation: 3 modes, JSONL parser, gate verdict, cross-model comparison |
+| [x] | gstack issue #619 | https://github.com/garrytan/gstack/issues/619 | AUDITED — 12+ skills hardcode codex CLI; proposes outside_voice.backend abstraction for Gemini |
+| [x] | gstack issue #463 | https://github.com/garrytan/gstack/issues/463 | AUDITED — CODEX_NOT_AVAILABLE inconsistency: office-hours silently skips; plan-eng-review falls back to Agent tool |
+| [x] | hamelsmu/claude-review-loop README | https://github.com/hamelsmu/claude-review-loop | AUDITED — Stop hook + Codex multi-agent review loop; v1.8.0, 625 stars. See finding-claude-review-loop-2026-03-29.yaml |
+| [x] | claude-review-loop stop-hook.sh | https://raw.githubusercontent.com/hamelsmu/claude-review-loop/main/plugins/review-loop/hooks/stop-hook.sh | AUDITED — Full phase state machine; prompt written to file, codex exec reads it; retry ceiling 2; fail-open everywhere |
+| [x] | claude-review-loop setup-review-loop.sh | https://raw.githubusercontent.com/hamelsmu/claude-review-loop/main/plugins/review-loop/scripts/setup-review-loop.sh | AUDITED — Argument parsing; YAML frontmatter state file creation; jq/codex dep checks |
+| [x] | Codex multi-agent docs | https://developers.openai.com/codex/multi-agent/ | REFERENCED — Required feature for parallel review agents; enabled via ~/.codex/config.toml |
+| [x] | agent-browser tool | https://agent-browser.dev/ | REFERENCED — UX review dependency in claude-review-loop; not investigated further |
+| [x] | agent-council (team-attention) | https://github.com/team-attention/agent-council | HIGH — Multi-CLI council orchestration. Prompt passed as positional argv via Node spawn(). File-based polling. No retry. Chairman synthesis in host-agent context. See finding-agent-council-2026-03-29.yaml |
+| [x] | agent-council council-job.js | https://github.com/team-attention/agent-council/blob/main/skills/agent-council/scripts/council-job.js | HIGH — Job orchestration: spawns detached worker per member, writes prompt.txt, atomic status.json updates |
+| [x] | agent-council council-job-worker.js | https://github.com/team-attention/agent-council/blob/main/skills/agent-council/scripts/council-job-worker.js | HIGH — CLI invocation: reads prompt.txt, appends as final positional arg to spawn(), captures stdout/stderr to files |
+| [x] | agent-council council.sh | https://github.com/team-attention/agent-council/blob/main/skills/agent-council/scripts/council.sh | HIGH — Entry point: TTY detection for host-agent context, wait loop in terminal mode |
+| [ ] | Karpathy LLM Council | https://github.com/karpathy/llm-council | MEDIUM — Inspiration for agent-council; uses direct LLM API calls (not CLI-based) |
+| [x] | superset-sh/superset README | https://github.com/superset-sh/superset | LOW for debate pipeline — macOS Electron GUI for parallel PTY-based agent sessions; NOT programmatic CLI orchestration. Supports claude/codex/gemini/cursor/copilot. ELv2 license. |
+| [x] | superset-sh/superset issues | https://github.com/superset-sh/superset/issues | LOW — Issues confirm PTY-based architecture; git ENOENT (#2983), terminal socket backpressure (#2961), keyboard protocol interception (#2970) |
+| [x] | superset-sh/superset pulls | https://github.com/superset-sh/superset/pulls | LOW — PRs confirm hook injection pattern for lifecycle state: codex hooks.json merge (#2998), agent manifest refactor (#2994) |
+| [x] | gstack setup install guide | https://gstacks.org/gstack-setup-install-guide.html | HIGH — Install steps, component breakdown, skill discovery via symlinks, team rollout patterns. See finding-gstack-conductor-2026-03-29.yaml |
+| [x] | gstack GitHub repo | https://github.com/garrytan/gstack | HIGH — Primary repo: 29 SKILL.md skills, Conductor parallel pattern, cognitive mode specialization, CLAUDE.md integration, multi-host support (Codex/Gemini/Factory). See finding-gstack-conductor-2026-03-29.yaml |
+| [x] | gstack parallel AI coding | https://gstacks.org/gstack-parallel-ai-coding.html | HIGH — Conductor architecture: workspace isolation, .gstack/ directory structure, random port selection, ELI16 mode, three-agent sprint pattern. See finding-gstack-conductor-2026-03-29.yaml |
+| [ ] | conductor.build | https://conductor.build | HIGH (unfetched) — External workspace orchestrator that manages parallel Claude Code sessions. Required for gstack parallel workflows. |
+| [x] | superset PR #2998 codex loading state | https://github.com/superset-sh/superset/pull/2998 | HIGH signal — Codex internal session-log format changed without notice; Superset switched to public UserPromptSubmit hook. Confirms codex CLI internal APIs are unstable. |
+| [x] | superset PR #2994 agent registry | https://github.com/superset-sh/superset/pull/2994 | MEDIUM — Agent manifest pattern: labels, commands, promptCommands, capabilities in one shared file (builtin-terminal-agents.ts). Reference for mde debate agent registry design. |
+

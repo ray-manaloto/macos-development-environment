@@ -1,0 +1,50 @@
+id: finding-superset-cli-orchestration-2026-03-29
+timestamp: "2026-03-29T00:15:00Z"
+source: https://github.com/superset-sh/superset
+agent: researcher
+finding_type: insight
+confidence: confirmed
+confident_about: >
+  Superset is a macOS desktop GUI (Electron/React/Bun) that orchestrates CLI agents
+  via PTY sessions, not programmatic stdout capture. It does NOT inject prompts via
+  CLI flags — prompts go through PTY keystroke simulation. Output capture is lifecycle-
+  state only (is-agent-working?), not content capture (what-did-agent-say?). Agent
+  metadata lives in a shared manifest (builtin-terminal-agents.ts) as of PR #2994.
+  Superset injects hooks into ~/.codex/hooks.json, ~/.claude/settings.json etc at
+  setup time to receive lifecycle events (SessionStart, UserPromptSubmit, Stop).
+  License is ELv2 (source-available, not open source).
+gaps: >
+  Did not inspect actual source files (agent-wrappers.ts, builtin-terminal-agents.ts,
+  desktop-agent-capabilities.ts) — only PR descriptions and README available.
+  Unknown how Superset handles agent crashes vs. clean exits. Unknown whether
+  Superset exposes any programmable API beyond the MCP tools described in the UI.
+evidence: >
+  PR #2994 summary: "move built-in terminal agent metadata into a shared manifest
+  so command building, catalog entries, and default preset seeding derive from one
+  source of truth". PR #2998: "Restore Codex loading-state updates by using Codex's
+  native UserPromptSubmit hook as the supported start signal. Superset was deriving
+  Codex 'working' state from internal TUI session-log events. Upstream openai/codex
+  changed that integration surface again." README: "Works with any CLI agent that
+  runs in a terminal."
+implication: >
+  The debate pipeline (mde debate) should NOT attempt to reuse Superset internals.
+  Superset's hook injection into ~/.codex/hooks.json would conflict with any debate
+  pipeline running on the same machine. Use public CLI flags only (codex -p, gemini -p,
+  claude -p). Codex internal APIs are confirmed unstable — never parse session logs.
+  The agent manifest pattern in builtin-terminal-agents.ts is worth referencing for
+  the mde debate agent registry design.
+tags:
+  [
+    superset,
+    multi-agent-orchestration,
+    pty,
+    cli-agents,
+    codex,
+    claude-code,
+    gemini-cli,
+    hooks-injection,
+    output-capture,
+    debate-pipeline,
+    not-suitable-for-programmatic-use,
+  ]
+status: discovered
