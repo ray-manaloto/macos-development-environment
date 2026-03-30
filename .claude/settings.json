@@ -39,6 +39,10 @@
           },
           {
             "type": "command",
+            "command": "uv run mde-py hooks guard-main-commit"
+          },
+          {
+            "type": "command",
             "command": "$HOME/.claude/hooks/rtk-rewrite.sh"
           }
         ]
