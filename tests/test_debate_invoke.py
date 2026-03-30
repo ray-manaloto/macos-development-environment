@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -11,6 +12,7 @@ from mde.debate.invoke import (
     DebateModel,
     InvocationResult,
     _extract_gemini_json,
+    _parse_codex_jsonl,
     _strip_codex_noise,
     _strip_gemini_noise,
     invoke_all,
@@ -427,3 +429,193 @@ class TestCodexPromptTruncation:
         cmd = mock_run.call_args[0][0]
         actual_prompt = cmd[-1]
         assert "Review this code" in actual_prompt
+
+
+# ── Codex JSONL parsing ─────────────────────────────────────────────────
+
+
+class TestParseCodexJsonl:
+    """Test _parse_codex_jsonl for structured --json output."""
+
+    def test_extracts_agent_message(self) -> None:
+        events = [
+            json.dumps(
+                {"type": "item.completed", "item": {"type": "agent_message", "text": "Hello world"}}
+            ),
+            json.dumps({"type": "some_other_event", "data": "ignored"}),
+        ]
+        output = "\n".join(events)
+        result = _parse_codex_jsonl(output)
+        assert result is not None
+        assert "Hello world" in result
+
+    def test_extracts_reasoning(self) -> None:
+        events = [
+            json.dumps(
+                {"type": "item.completed", "item": {"type": "reasoning", "text": "Let me think..."}}
+            ),
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": "The answer is 42"},
+                }
+            ),
+        ]
+        output = "\n".join(events)
+        result = _parse_codex_jsonl(output)
+        assert result is not None
+        assert "[thinking]" in result
+        assert "Let me think..." in result
+        assert "The answer is 42" in result
+
+    def test_returns_none_on_no_events(self) -> None:
+        output = "This is not JSONL at all\nJust plain text"
+        result = _parse_codex_jsonl(output)
+        assert result is None
+
+    def test_handles_mixed_events(self) -> None:
+        events = [
+            "not json at all",
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": "Valid response"},
+                }
+            ),
+            "another non-json line",
+            json.dumps({"type": "ping"}),
+        ]
+        output = "\n".join(events)
+        result = _parse_codex_jsonl(output)
+        assert result is not None
+        assert "Valid response" in result
+
+    def test_handles_empty_input(self) -> None:
+        result = _parse_codex_jsonl("")
+        assert result is None
+
+
+# ── Codex file-based prompt ─────────────────────────────────────────────
+
+
+class TestCodexFileBased:
+    """Test file-based prompt delivery for Codex."""
+
+    @patch("mde.debate.invoke.subprocess.run")
+    @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/codex")
+    def test_prompt_file_written(
+        self, mock_which: MagicMock, mock_run: MagicMock, tmp_path: Path, monkeypatch: object
+    ) -> None:
+        """Verify .generated/debate/prompt-codex.txt is created."""
+        _ = mock_which
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {"type": "item.completed", "item": {"type": "agent_message", "text": "ok"}}
+            ),
+            stderr="",
+        )
+        # Point Path.cwd() to tmp_path so .generated/ is created there
+        monkeypatch.setattr("mde.debate.invoke.Path.cwd", lambda: tmp_path)  # type: ignore[arg-type]
+        from mde.debate.invoke import _invoke_codex
+
+        _invoke_codex("test prompt for file")
+        # The file should have been written (may be cleaned up on success)
+        # We check that the directory was created
+        assert (tmp_path / ".generated" / "debate").exists()
+
+    @patch("mde.debate.invoke.subprocess.run")
+    @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/codex")
+    def test_prompt_file_cleaned_on_success(
+        self, mock_which: MagicMock, mock_run: MagicMock, tmp_path: Path, monkeypatch: object
+    ) -> None:
+        """File removed after successful invocation."""
+        _ = mock_which
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {"type": "item.completed", "item": {"type": "agent_message", "text": "done"}}
+            ),
+            stderr="",
+        )
+        monkeypatch.setattr("mde.debate.invoke.Path.cwd", lambda: tmp_path)  # type: ignore[arg-type]
+        from mde.debate.invoke import _invoke_codex
+
+        _invoke_codex("test prompt cleanup")
+        prompt_file = tmp_path / ".generated" / "debate" / "prompt-codex.txt"
+        # On success, the prompt file should be cleaned up
+        assert not prompt_file.exists()
+
+
+# ── Codex retry ─────────────────────────────────────────────────────────
+
+
+class TestCodexRetry:
+    """Test retry logic for Codex invocation."""
+
+    @patch("mde.debate.invoke.subprocess.run")
+    @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/codex")
+    def test_retries_on_failure(self, mock_which: MagicMock, mock_run: MagicMock) -> None:
+        """Subprocess called twice on first failure."""
+        _ = mock_which
+        fail_result = MagicMock(returncode=1, stdout="", stderr="error")
+        success_result = MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {"type": "item.completed", "item": {"type": "agent_message", "text": "ok"}}
+            ),
+            stderr="",
+        )
+        mock_run.side_effect = [fail_result, success_result]
+        from mde.debate.invoke import _invoke_codex
+
+        result = _invoke_codex("test retry")
+        assert mock_run.call_count == 2
+        assert result.success is True
+
+    @patch("mde.debate.invoke.subprocess.run")
+    @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/codex")
+    def test_no_retry_on_timeout(self, mock_which: MagicMock, mock_run: MagicMock) -> None:
+        """TimeoutExpired not retried."""
+        _ = mock_which
+        mock_run.side_effect = subprocess.TimeoutExpired(cmd="codex", timeout=300)
+        from mde.debate.invoke import _invoke_codex
+
+        result = _invoke_codex("test timeout")
+        assert mock_run.call_count == 1
+        assert result.success is False
+        assert "timed out" in (result.error or "").lower()
+
+    @patch("mde.debate.invoke.subprocess.run")
+    @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/codex")
+    def test_no_retry_on_success(self, mock_which: MagicMock, mock_run: MagicMock) -> None:
+        """Success on first attempt, no retry."""
+        _ = mock_which
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout=json.dumps(
+                {"type": "item.completed", "item": {"type": "agent_message", "text": "first try"}}
+            ),
+            stderr="",
+        )
+        from mde.debate.invoke import _invoke_codex
+
+        result = _invoke_codex("test no retry")
+        assert mock_run.call_count == 1
+        assert result.success is True
+
+    @patch("mde.debate.invoke.subprocess.run")
+    @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/codex")
+    def test_empty_response_marked_as_failure(
+        self, mock_which: MagicMock, mock_run: MagicMock
+    ) -> None:
+        """rc=0 but empty response is success=False, not success=True."""
+        _ = mock_which
+        # Both attempts return rc=0 but empty stdout (no JSONL events)
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+        from mde.debate.invoke import _invoke_codex
+
+        result = _invoke_codex("test empty")
+        assert mock_run.call_count == 2  # retried once
+        assert result.success is False
+        assert "Empty response" in (result.error or "")

@@ -61,6 +61,15 @@
       "category": "devtools",
       "tags": ["marketplace", "plugin-evaluation", "self-improving", "meta-learning", "multi-model", "adversarial-review"],
       "repository": "https://github.com/ray-manaloto/rsm-subagents"
+    },
+    {
+      "name": "workflow-toolkit",
+      "source": "./plugins/workflow-toolkit",
+      "description": "Workflow orchestration for octo:embrace Double Diamond phase transitions, structured handoffs, debate enforcement, and session continuity",
+      "version": "0.1.0",
+      "category": "workflow",
+      "tags": ["workflow", "octo", "embrace", "handoff", "session", "debate", "quality-gate"],
+      "repository": "https://github.com/ray-manaloto/rsm-subagents"
     }
   ]
 }

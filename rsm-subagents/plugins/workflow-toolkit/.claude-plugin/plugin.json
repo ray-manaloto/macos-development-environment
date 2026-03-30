@@ -1,0 +1,12 @@
+{
+  "name": "workflow-toolkit",
+  "version": "0.1.0",
+  "description": "Workflow orchestration for octo:embrace Double Diamond phase transitions, structured handoffs, debate enforcement, and session continuity",
+  "author": {
+    "name": "ray-manaloto",
+    "url": "https://github.com/ray-manaloto"
+  },
+  "repository": "https://github.com/ray-manaloto/rsm-subagents",
+  "license": "MIT",
+  "keywords": ["workflow", "octo", "embrace", "handoff", "session", "debate"]
+}

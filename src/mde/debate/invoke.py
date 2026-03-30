@@ -71,9 +71,10 @@ CODEX_MAX_PROMPT_CHARS = 4000
 def _invoke_codex(prompt: str, timeout: int = 300) -> InvocationResult:
     """Invoke Codex CLI in non-interactive headless mode.
 
-    Exact syntax: codex exec --full-auto "preamble + prompt"
+    Exact syntax: codex exec --full-auto --json "preamble + prompt"
     - MUST use exec subcommand (bare codex launches interactive TUI)
     - MUST use --full-auto (not -q, --quiet, or -y — those DO NOT EXIST)
+    - --json produces JSONL event stream parsed by _parse_codex_jsonl()
     """
     codex_path = shutil.which("codex")
     if not codex_path:
@@ -93,10 +94,20 @@ def _invoke_codex(prompt: str, timeout: int = 300) -> InvocationResult:
             max_len=CODEX_MAX_PROMPT_CHARS,
         ).warning("codex_prompt_truncated")
         full_prompt = full_prompt[:CODEX_MAX_PROMPT_CHARS]
+
+    # Write prompt to file for auditability/debugging.
+    # The file content is NOT read back by codex — the prompt is still passed
+    # as the last CLI argument. The file exists so operators can inspect
+    # exactly what was sent on failure (left on disk) or success (cleaned up).
+    prompt_file = Path.cwd() / ".generated" / "debate" / f"prompt-codex-{time.monotonic_ns()}.txt"
+    prompt_file.parent.mkdir(parents=True, exist_ok=True)
+    prompt_file.write_text(full_prompt)
+
     cmd = [
         codex_path,
         "exec",
         "--full-auto",
+        "--json",
         # Disable MCP servers and heavy features for fast headless invocation
         "-c",
         "skills.bundled.enabled=false",
@@ -111,46 +122,87 @@ def _invoke_codex(prompt: str, timeout: int = 300) -> InvocationResult:
         full_prompt,
     ]
 
+    max_attempts = 2
     start = time.monotonic()
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            env=_clean_env(),
-        )
-        duration = time.monotonic() - start
+    last_result: InvocationResult | None = None
 
-        # Codex outputs the response to stdout, with boot noise mixed in
-        response = _strip_codex_noise(result.stdout)
+    for attempt in range(max_attempts):
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                env=_clean_env(),
+            )
+        except subprocess.TimeoutExpired:
+            # Do NOT retry timeouts — they are expensive
+            return InvocationResult(
+                model="codex",
+                prompt=prompt,
+                response="",
+                success=False,
+                duration_seconds=timeout,
+                error=f"Codex timed out after {timeout}s",
+            )
+        except Exception as exc:  # noqa: BLE001
+            last_result = InvocationResult(
+                model="codex",
+                prompt=prompt,
+                response="",
+                success=False,
+                duration_seconds=time.monotonic() - start,
+                error=str(exc),
+            )
+            if attempt < max_attempts - 1:
+                logger.bind(attempt=attempt + 1, error=str(exc)).warning("codex_retry")
+                continue
+            return last_result
+        else:
+            duration = time.monotonic() - start
 
-        return InvocationResult(
-            model="codex",
-            prompt=prompt,
-            response=response,
-            success=result.returncode == 0,
-            duration_seconds=round(duration, 2),
-            error=result.stderr.strip()[:500] if result.returncode != 0 else None,
-        )
-    except subprocess.TimeoutExpired:
-        return InvocationResult(
-            model="codex",
-            prompt=prompt,
-            response="",
-            success=False,
-            duration_seconds=timeout,
-            error=f"Codex timed out after {timeout}s",
-        )
-    except Exception as exc:  # noqa: BLE001
-        return InvocationResult(
-            model="codex",
-            prompt=prompt,
-            response="",
-            success=False,
-            duration_seconds=time.monotonic() - start,
-            error=str(exc),
-        )
+            # Try structured JSONL parsing first, fall back to noise stripping
+            response = _parse_codex_jsonl(result.stdout) or _strip_codex_noise(result.stdout)
+
+            # Mark as failed if returncode != 0 OR response is empty
+            # (empty response with rc=0 is a functional failure for debate)
+            is_success = result.returncode == 0 and bool(response)
+            last_result = InvocationResult(
+                model="codex",
+                prompt=prompt,
+                response=response,
+                success=is_success,
+                duration_seconds=round(duration, 2),
+                error=result.stderr.strip()[:500]
+                if result.returncode != 0
+                else ("Empty response from codex" if not response else None),
+            )
+
+            # Success with content — no retry needed
+            if result.returncode == 0 and response:
+                # Clean up prompt file on success
+                prompt_file.unlink(missing_ok=True)
+                return last_result
+
+            # Non-zero or empty response — retry if attempts remain
+            if attempt < max_attempts - 1:
+                logger.bind(attempt=attempt + 1, returncode=result.returncode).warning(
+                    "codex_retry"
+                )
+                continue
+
+            # Final attempt exhausted — return last result (fail-open)
+            return last_result
+
+    # Should not reach here, but satisfy type checker
+    return last_result or InvocationResult(
+        model="codex",
+        prompt=prompt,
+        response="",
+        success=False,
+        duration_seconds=time.monotonic() - start,
+        error="Unexpected: no result after retry loop",
+    )
 
 
 def _invoke_gemini(prompt: str, timeout: int = 300) -> InvocationResult:
@@ -400,6 +452,52 @@ async def invoke_all_parallel(
 
     results = await asyncio.gather(*[_invoke_one(m) for m in models])
     return list(results)
+
+
+# ── Codex JSONL parsing ──────────────────────────────────────────────────
+
+
+def _parse_codex_jsonl(output: str) -> str | None:
+    """Parse JSONL event stream from codex --json output.
+
+    Looks for ``item.completed`` events with ``item.type == "agent_message"``
+    to extract the response text.  Reasoning events (``item.type == "reasoning"``)
+    are included as ``[thinking]`` prefixed blocks for context.
+
+    Returns the concatenated text, or ``None`` if no agent_message events
+    were found (caller should fall back to ``_strip_codex_noise``).
+    """
+    if not output.strip():
+        return None
+
+    parts: list[str] = []
+    for raw_line in output.splitlines():
+        part = _extract_codex_event_text(raw_line)
+        if part is not None:
+            parts.append(part)
+
+    return "\n\n".join(parts) if parts else None
+
+
+def _extract_codex_event_text(raw_line: str) -> str | None:
+    """Extract text from a single JSONL event line, or return None."""
+    line = raw_line.strip()
+    if not line:
+        return None
+    try:
+        event = json.loads(line)
+    except (json.JSONDecodeError, ValueError):
+        return None
+    if not isinstance(event, dict) or event.get("type") != "item.completed":
+        return None
+    item = event.get("item")
+    if not isinstance(item, dict):
+        return None
+    text = item.get("text", "")
+    item_type = item.get("type", "")
+    if not text or item_type not in ("reasoning", "agent_message"):
+        return None
+    return f"[thinking] {text}" if item_type == "reasoning" else text
 
 
 # ── Noise stripping ───────────────────────────────────────────────────────

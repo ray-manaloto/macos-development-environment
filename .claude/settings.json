@@ -35,6 +35,10 @@
           },
           {
             "type": "command",
+            "command": "uv run mde-py hooks guard-debate"
+          },
+          {
+            "type": "command",
             "command": "$HOME/.claude/hooks/rtk-rewrite.sh"
           }
         ]
@@ -122,6 +126,16 @@
           {
             "type": "command",
             "command": "uv run mde-py hooks context-snapshot"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks check-observability",
+            "timeout": 5
           }
         ]
       }
@@ -289,7 +303,7 @@
     "hk-toolkit@rsm-subagents": true,
     "honcho-dev@honcho": false,
     "honcho@honcho": false,
-    "hookify@claude-plugins-official": false,
+    "hookify@claude-plugins-official": true,
     "human-resources@knowledge-work-plugins": false,
     "incident-response@claude-code-workflows": false,
     "intercom@knowledge-work-plugins": false,
@@ -372,6 +386,7 @@
     "vtsls@claude-code-lsps": false,
     "vue-volar@claude-code-lsps": false,
     "web-scripting@claude-code-workflows": true,
+    "workflow-toolkit@rsm-subagents": true,
     "zapier@knowledge-work-plugins": false,
     "zoominfo@knowledge-work-plugins": false,
     "mcp2cli@claude-community": true,

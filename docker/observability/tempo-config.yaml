@@ -21,6 +21,7 @@ storage:
     wal:
       path: /var/tempo/wal
 
-compactor:
-  compaction:
-    block_retention: 72h
+overrides:
+  defaults:
+    compaction:
+      block_retention: 72h
