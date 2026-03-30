@@ -1,8 +1,12 @@
-"""SessionStart hook: verify the mde-observability Docker stack is running.
+"""SessionStart hook: verify the full observability pipeline is healthy.
 
-Checks Grafana, Loki, and Tempo health endpoints in the grafana/otel-lgtm
-all-in-one container. Reports which services are down. This is advisory —
-the session proceeds regardless.
+Checks three layers:
+1. Infrastructure: OTEL collector, Grafana, Loki, Tempo health endpoints
+2. Source configs: Claude Code, Codex, Gemini OTLP configuration
+3. Data arrival: recent telemetry from all expected services in Loki
+
+This is advisory — the session proceeds regardless, but warnings surface
+gaps that would otherwise cause silent telemetry loss.
 """
 
 from __future__ import annotations
@@ -63,23 +67,55 @@ def check_services() -> dict[str, bool]:
     return {name: _check_endpoint(url, post=post) for name, url, post in _SERVICES}
 
 
+_EXPECTED_SERVICES = ["claude-code", "codex-app-server", "codex_exec", "gemini-cli", "mde"]
+
+_LOKI_LABELS_URL = "http://localhost:3100/loki/api/v1/label/service_name/values"
+
+
+def _check_loki_data_arrival() -> list[str]:
+    """Query Loki for service_name labels and return missing expected services."""
+    try:
+        with urllib.request.urlopen(_LOKI_LABELS_URL, timeout=_TIMEOUT_SECONDS) as resp:  # noqa: S310
+            data = json.loads(resp.read().decode())
+        found = set(data.get("data", []) or [])
+        return [svc for svc in _EXPECTED_SERVICES if svc not in found]
+    except Exception:  # noqa: BLE001
+        return []  # Loki unreachable — infrastructure check already covers this
+
+
 def check_observability() -> int:
-    """Entry point: check all observability services and warn about any that are down."""
+    """Entry point: check infrastructure health and telemetry data arrival."""
+    warnings: list[str] = []
+
+    # Layer 1: Infrastructure health
     results = check_services()
     down = [name for name, healthy in results.items() if not healthy]
-
     if down:
         down_list = ", ".join(down)
-        warning = (
-            f"WARNING: mde-observability services DOWN: {down_list}. "
-            "Telemetry from Claude Code, Codex, and Gemini will be silently lost.\n"
-            f"Start the stack with: {_STARTUP_CMD}"
+        warnings.append(
+            f"Services DOWN: {down_list}. "
+            "Telemetry will be silently lost.\n"
+            f"Start the stack: {_STARTUP_CMD}"
         )
-        json.dump({"systemMessage": warning}, sys.stdout)
+
+    # Layer 2: Data arrival (only if Loki is up)
+    if results.get("loki", False):
+        missing = _check_loki_data_arrival()
+        if missing:
+            warnings.append(
+                f"No recent Loki data from: {', '.join(missing)}. "
+                "These sources may not be sending telemetry. "
+                "Run: uv run mde-py telemetry verify"
+            )
+
+    if warnings:
+        full_warning = "WARNING: " + " | ".join(warnings)
+        json.dump({"systemMessage": full_warning}, sys.stdout)
 
     logger.bind(
         hook="check_observability",
         services={name: str(healthy) for name, healthy in results.items()},
         all_healthy=str(len(down) == 0),
+        missing_data_sources=",".join(_check_loki_data_arrival()) if results.get("loki") else "",
     ).info("hook_completed")
     return 0
