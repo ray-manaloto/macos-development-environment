@@ -433,8 +433,10 @@ def _extract_codex_endpoint(otel_section: dict[str, object]) -> str:
         exp = otel_section.get(key, {})
         if isinstance(exp, dict):
             for backend in exp.values():
-                if isinstance(backend, dict) and "endpoint" in backend:
-                    return str(backend["endpoint"])
+                if isinstance(backend, dict):
+                    inner: dict[str, object] = backend  # type: ignore[assignment]
+                    if "endpoint" in inner:
+                        return str(inner["endpoint"])
     return ""
 
 

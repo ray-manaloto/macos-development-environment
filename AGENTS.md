@@ -24,7 +24,7 @@ mise fmt --check               # mise config formatting
 
 - `src/mde/` — All automation lives here as Python modules. **No shell scripts.**
 - `src/mde/cli.py` — CLI dispatcher with lazy imports for startup speed (keep minimal, delegate to modules)
-- `src/mde/hooks/` — Claude Code hook handlers (auto-discovered via `__hook_meta__`, never edit cli.py to add hooks); includes advisory `check-knowledge` (PostToolUse staleness detector), `dream-extract`/`remember-stop` (Stop hooks), and `guard-debate` (debate integrity guard)
+- `src/mde/hooks/` — Claude Code hook handlers (auto-discovered via `__hook_meta__`, never edit cli.py to add hooks); includes advisory `check-knowledge` (PostToolUse staleness detector), `check-observability` (SessionStart OTEL stack health check), `dream-extract`/`remember-stop` (Stop hooks), and `guard-debate` (PreToolUse debate integrity guard)
 - `src/mde/debate/` — Multi-model debate library; wraps codex/gemini CLIs with output validation; use `mde debate` commands, never invoke codex/gemini directly
 - `src/mde/validate/` — Validators for configs, plugins, brew, docker
 - `src/mde/dream/` — Self-improvement pipeline; CLI: `auto-dream` (extract/propose/apply/status) with promotion ladder and tiered autonomy; extract scans 5 signal sources: auto_memory, remember, retro, hook_feedback, learnings

@@ -57,7 +57,7 @@ def _check_endpoint(url: str, *, post: bool = False) -> bool:
         else:
             req = urllib.request.Request(url, method="GET")  # noqa: S310
         with urllib.request.urlopen(req, timeout=_TIMEOUT_SECONDS) as resp:  # noqa: S310
-            return resp.status == _HTTP_OK  # type: ignore[no-any-return]
+            return resp.status == _HTTP_OK
     except Exception:  # noqa: BLE001
         return False
 

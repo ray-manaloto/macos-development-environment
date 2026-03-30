@@ -79,8 +79,10 @@ class TestSearchSkillsSh:
     """Tests for skills.sh subprocess search."""
 
     @patch("mde.research.skill_discover.subprocess.run")
+    @patch("mde.research.skill_discover.shutil.which", return_value="/usr/bin/skills")
     def test_nonzero_returncode_logs_warning(
         self,
+        _mock_which: MagicMock,  # noqa: PT019 — positional arg from @patch, not fixture
         mock_run: MagicMock,
         caplog: pytest.LogCaptureFixture,
     ) -> None:

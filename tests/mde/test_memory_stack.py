@@ -93,14 +93,20 @@ class TestStackVerify:
     """Test stack_verify checks service health."""
 
     def test_verify_all_healthy(self) -> None:
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("subprocess.run") as mock_run,
+            patch("mde.domain.honcho.test_connection", return_value=(True, "ok")),
+        ):
             mock_run.return_value.returncode = 0
             mock_run.return_value.stdout = "healthy"
             result = stack_verify()
             assert result == 0
 
     def test_verify_reports_unhealthy(self) -> None:
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("subprocess.run") as mock_run,
+            patch("mde.domain.honcho.test_connection", return_value=(False, "refused")),
+        ):
             mock_run.return_value.returncode = 1
             mock_run.return_value.stdout = ""
             result = stack_verify()
@@ -108,7 +114,10 @@ class TestStackVerify:
 
     def test_unhealthy_includes_stderr(self, capsys: pytest.CaptureFixture[str]) -> None:
         """When a health check fails, stderr from the check should be printed."""
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("subprocess.run") as mock_run,
+            patch("mde.domain.honcho.test_connection", return_value=(False, "refused")),
+        ):
             mock_run.return_value.returncode = 1
             mock_run.return_value.stderr = "pg_isready: could not connect"
             mock_run.return_value.stdout = ""
@@ -117,7 +126,10 @@ class TestStackVerify:
             assert "pg_isready: could not connect" in captured.err
 
     def test_verify_timeout_returns_nonzero(self) -> None:
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("subprocess.run") as mock_run,
+            patch("mde.domain.honcho.test_connection", return_value=(False, "refused")),
+        ):
             mock_run.side_effect = subprocess.TimeoutExpired(cmd=[], timeout=15)
             result = stack_verify()
             assert result != 0

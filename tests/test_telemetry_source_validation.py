@@ -52,8 +52,13 @@ def _make_path_factory(file_map: dict[str, str | bool] | None = None) -> MagicMo
 class TestCheckSourceConfigs:
     """Test source configuration verification for all telemetry sources."""
 
+    @patch("mde.telemetry_verify._check_mde_observability", return_value=("mde", "OK", "mocked"))
     @patch("mde.telemetry_verify.Path")
-    def test_all_configs_present(self, mock_path_cls: MagicMock) -> None:
+    def test_all_configs_present(
+        self,
+        mock_path_cls: MagicMock,
+        _mock_mde: MagicMock,  # noqa: PT019
+    ) -> None:
         """Codex and mde configs found and valid (uses path factory)."""
         codex_toml = (
             "[otel]\n"

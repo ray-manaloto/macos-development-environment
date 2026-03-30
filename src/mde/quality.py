@@ -26,7 +26,11 @@ _LINT_CHECKS: list[tuple[str, list[str], str]] = [
 ]
 
 _TEST_CHECKS: list[tuple[str, list[str], str]] = [
-    ("pytest", ["uv", "run", "pytest", "tests/", "-x", "-q"], "Test suite"),
+    (
+        "pytest",
+        ["uv", "run", "pytest", "tests/", "-x", "-q", "-m", "not integration"],
+        "Test suite",
+    ),
 ]
 
 

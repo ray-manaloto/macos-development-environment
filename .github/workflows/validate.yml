@@ -16,5 +16,5 @@ jobs:
       - run: uv run ruff check src/mde/ tests/mde/
       - run: uv run ruff format --check src/mde/ tests/mde/
       - run: uv run ty check src/mde/
-      - run: uv run pytest tests/ -v
+      - run: uv run pytest tests/ -v -m "not integration"
       - run: mise fmt --check
