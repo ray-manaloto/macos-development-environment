@@ -438,6 +438,53 @@ def _extract_codex_endpoint(otel_section: dict[str, object]) -> str:
     return ""
 
 
+def _check_gemini_config(home: Path) -> tuple[str, str, str]:
+    """Check Gemini CLI OTLP configuration in ~/.gemini/settings.json.
+
+    Gemini CLI supports OTLP via settings.json telemetry block or env vars:
+    - telemetry.enabled (GEMINI_TELEMETRY_ENABLED) — default false
+    - telemetry.otlpEndpoint (GEMINI_TELEMETRY_OTLP_ENDPOINT) — default localhost:4317
+    - telemetry.otlpProtocol (GEMINI_TELEMETRY_OTLP_PROTOCOL) — default grpc
+
+    See: https://geminicli.com/docs/cli/telemetry/
+    """
+    gemini_settings_path = home / ".gemini" / "settings.json"
+    if not gemini_settings_path.is_file():
+        return ("gemini", "WARNING", "~/.gemini/settings.json not found")
+    try:
+        data = json.loads(gemini_settings_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        return ("gemini", "WARNING", f"cannot read settings: {exc}")
+
+    telemetry = data.get("telemetry", {})
+    if not isinstance(telemetry, dict):
+        telemetry = {}
+
+    # Check enabled — can also be set via GEMINI_TELEMETRY_ENABLED env var
+    enabled = telemetry.get("enabled", False)
+    env_enabled = os.environ.get("GEMINI_TELEMETRY_ENABLED", "").lower()
+    is_enabled = enabled is True or env_enabled == "true"
+
+    endpoint = telemetry.get(
+        "otlpEndpoint",
+        os.environ.get("GEMINI_TELEMETRY_OTLP_ENDPOINT", ""),
+    )
+
+    if is_enabled and endpoint:
+        host = endpoint.replace("http://", "").replace("https://", "").split(":")[0].split("/")[0]
+        if host in _LOOPBACK_HOSTS:
+            return ("gemini", "OK", f"telemetry enabled, endpoint={endpoint}")
+        return ("gemini", "WARNING", f"endpoint points to non-localhost: {endpoint}")
+    if is_enabled:
+        return ("gemini", "OK", "telemetry enabled (default endpoint localhost:4317)")
+    return (
+        "gemini",
+        "WARNING",
+        "telemetry not enabled — set telemetry.enabled=true in "
+        "~/.gemini/settings.json or GEMINI_TELEMETRY_ENABLED=true",
+    )
+
+
 def _check_source_configs() -> list[tuple[str, str, str]]:
     """Verify each telemetry source has OTLP endpoints configured.
 
@@ -450,12 +497,7 @@ def _check_source_configs() -> list[tuple[str, str, str]]:
     results: list[tuple[str, str, str]] = [
         _check_claude_code_config(home),
         _check_codex_config(home),
-        (
-            "gemini",
-            "WARNING",
-            "Gemini CLI does not expose OTLP configuration; "
-            "telemetry arrives via internal mechanisms",
-        ),
+        _check_gemini_config(home),
     ]
 
     # mde library: check observability.py exists

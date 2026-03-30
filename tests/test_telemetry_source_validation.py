@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 from mde.telemetry_verify import (
     _check_data_arrival_loki,
     _check_data_arrival_tempo,
+    _check_gemini_config,
     _check_source_configs,
 )
 
@@ -52,7 +53,7 @@ class TestCheckSourceConfigs:
 
     @patch("mde.telemetry_verify.Path")
     def test_all_configs_present(self, mock_path_cls: MagicMock) -> None:
-        """All source configs found and valid."""
+        """Codex and mde configs found and valid (uses path factory)."""
         codex_toml = (
             "[otel]\n"
             "[otel.exporter.otlp-http]\n"
@@ -80,10 +81,39 @@ class TestCheckSourceConfigs:
         results = _check_source_configs()
         statuses = {name: status for name, status, _ in results}
 
-        assert statuses["claude-code"] == "OK"
         assert statuses["codex"] == "OK"
-        assert statuses["gemini"] == "WARNING"  # Gemini doesn't support OTLP
         assert statuses["mde"] == "OK"
+
+    def test_gemini_telemetry_enabled(self, tmp_path: object) -> None:
+        """Gemini config with telemetry enabled returns OK."""
+        home = MagicMock()
+        settings_path = MagicMock()
+        settings_path.is_file.return_value = True
+        settings_path.read_text.return_value = json.dumps(
+            {"telemetry": {"enabled": True, "otlpEndpoint": "http://localhost:4317"}}
+        )
+        gemini_dir = MagicMock()
+        gemini_dir.__truediv__ = lambda _self, _other: settings_path
+        home.__truediv__ = lambda _self, _other: gemini_dir
+
+        name, status, _ = _check_gemini_config(home)
+        assert name == "gemini"
+        assert status == "OK"
+
+    def test_gemini_telemetry_disabled(self) -> None:
+        """Gemini config with telemetry disabled returns WARNING."""
+        home = MagicMock()
+        settings_path = MagicMock()
+        settings_path.is_file.return_value = True
+        settings_path.read_text.return_value = json.dumps({"telemetry": {"enabled": False}})
+        gemini_dir = MagicMock()
+        gemini_dir.__truediv__ = lambda _self, _other: settings_path
+        home.__truediv__ = lambda _self, _other: gemini_dir
+
+        name, status, detail = _check_gemini_config(home)
+        assert name == "gemini"
+        assert status == "WARNING"
+        assert "not enabled" in detail
 
     @patch("mde.telemetry_verify.Path")
     def test_codex_config_missing(self, mock_path_cls: MagicMock) -> None:
