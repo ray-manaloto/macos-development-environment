@@ -39,7 +39,7 @@ collector is running.
 All three CLIs are configured to send OTEL data to the collector:
 
 - **Codex** (`.codex/config.toml`): `otlp-http` exporter → `http://127.0.0.1:4318`
-- **Gemini** (`.gemini/settings.json`): `telemetry.otlpEndpoint` → `http://127.0.0.1:4318`
+- **Gemini** (`.gemini/settings.json`): No user-configurable OTLP setting; telemetry arrives via internal CLI mechanisms
 - **Claude Code** (`.claude/settings.json`): `OTEL_EXPORTER_OTLP_ENDPOINT` → `http://localhost:4317`
 
 ## Enforcement

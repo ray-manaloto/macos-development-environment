@@ -5,8 +5,10 @@ from __future__ import annotations
 import json
 import os
 import sys
+import tomllib
 from collections.abc import Mapping
 from pathlib import Path
+from urllib.request import urlopen
 
 _REQUIRED_ENV = {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
@@ -350,6 +352,191 @@ def _check_collector_pipelines(config_path: Path) -> list[tuple[str, str, str]]:
     return results
 
 
+_EXPECTED_SERVICES = [
+    "claude-code",
+    "codex-app-server",
+    "codex_exec",
+    "gemini-cli",
+    "mde",
+]
+
+_LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}  # noqa: S104
+
+
+def _check_claude_code_config(home: Path) -> tuple[str, str, str]:
+    """Check Claude Code telemetry configuration.
+
+    Checks both global (~/.claude/settings.json) and project-level (.claude/settings.json)
+    since OTEL env vars may be in either location. Project settings override global.
+    """
+    paths = [
+        home / ".claude" / "settings.json",
+        Path(".claude") / "settings.json",
+    ]
+    merged_env: dict[str, str] = {}
+    found_any = False
+    for p in paths:
+        if p.is_file():
+            found_any = True
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                env = data.get("env", {})
+                if isinstance(env, dict):
+                    merged_env.update(env)
+            except (json.JSONDecodeError, OSError):
+                pass  # skip unreadable files, check remaining
+    if not found_any:
+        return ("claude-code", "WARNING", "no settings.json found (global or project)")
+    has_telemetry = merged_env.get("CLAUDE_CODE_ENABLE_TELEMETRY") == "1"
+    has_endpoint = bool(merged_env.get("OTEL_EXPORTER_OTLP_ENDPOINT"))
+    if has_telemetry and has_endpoint:
+        return ("claude-code", "OK", "telemetry enabled with OTLP endpoint")
+    missing = []
+    if not has_telemetry:
+        missing.append("CLAUDE_CODE_ENABLE_TELEMETRY")
+    if not has_endpoint:
+        missing.append("OTEL_EXPORTER_OTLP_ENDPOINT")
+    return ("claude-code", "WARNING", f"missing env vars: {', '.join(missing)}")
+
+
+def _check_codex_config(home: Path) -> tuple[str, str, str]:
+    """Check Codex OTLP configuration in ~/.codex/config.toml.
+
+    The Codex config uses nested TOML tables:
+        [otel]
+        exporter = { otlp-http = { endpoint = "http://127.0.0.1:4318/v1/logs" } }
+        trace_exporter = { otlp-http = { endpoint = "http://127.0.0.1:4318/v1/traces" } }
+    """
+    codex_config_path = home / ".codex" / "config.toml"
+    if not codex_config_path.is_file():
+        return ("codex", "WARNING", "~/.codex/config.toml not found")
+    try:
+        codex_data = tomllib.loads(codex_config_path.read_text(encoding="utf-8"))
+    except (ValueError, OSError) as exc:
+        return ("codex", "WARNING", f"cannot parse config.toml: {exc}")
+    otel_section = codex_data.get("otel")
+    if not otel_section or not isinstance(otel_section, dict):
+        return ("codex", "WARNING", "[otel] section missing from config.toml")
+
+    endpoint = _extract_codex_endpoint(otel_section)
+    if not endpoint:
+        return ("codex", "WARNING", "[otel] section exists but no endpoint found in exporters")
+    host = endpoint.replace("http://", "").replace("https://", "").split(":")[0].split("/")[0]
+    if host in _LOOPBACK_HOSTS:
+        return ("codex", "OK", f"[otel] configured, endpoint={endpoint}")
+    return ("codex", "WARNING", f"[otel] endpoint points to non-localhost: {endpoint}")
+
+
+def _extract_codex_endpoint(otel_section: dict[str, object]) -> str:
+    """Extract the first OTLP endpoint from a Codex [otel] section."""
+    for key in ("exporter", "trace_exporter"):
+        exp = otel_section.get(key, {})
+        if isinstance(exp, dict):
+            for backend in exp.values():
+                if isinstance(backend, dict) and "endpoint" in backend:
+                    return str(backend["endpoint"])
+    return ""
+
+
+def _check_source_configs() -> list[tuple[str, str, str]]:
+    """Verify each telemetry source has OTLP endpoints configured.
+
+    Checks Claude Code, Codex, Gemini, and mde library configurations.
+
+    Returns:
+        List of (source_name, status, detail) tuples.
+    """
+    home = Path.home()
+    results: list[tuple[str, str, str]] = [
+        _check_claude_code_config(home),
+        _check_codex_config(home),
+        (
+            "gemini",
+            "WARNING",
+            "Gemini CLI does not expose OTLP configuration; "
+            "telemetry arrives via internal mechanisms",
+        ),
+    ]
+
+    # mde library: check observability.py exists
+    mde_obs_path = Path(__file__).resolve().parent / "observability.py"
+    if mde_obs_path.is_file():
+        results.append(("mde", "OK", "observability.py found — handles OTEL setup internally"))
+    else:
+        results.append(("mde", "WARNING", "observability.py not found in src/mde/"))
+
+    return results
+
+
+def _check_data_arrival_loki() -> list[tuple[str, str, str]]:
+    """Query Loki for service_name labels to verify data arrival.
+
+    Returns:
+        List of (check_name, status, detail) tuples.
+    """
+    results: list[tuple[str, str, str]] = []
+    loki_url = "http://localhost:3100/loki/api/v1/label/service_name/values"
+
+    try:
+        resp = urlopen(loki_url, timeout=3)  # noqa: S310
+        data = json.loads(resp.read().decode())
+        service_names = set(data.get("data", []) or [])
+
+        for svc in _EXPECTED_SERVICES:
+            if svc in service_names:
+                results.append((f"loki:{svc}", "OK", "sending logs to Loki"))
+            else:
+                results.append((f"loki:{svc}", "WARNING", "no logs found in Loki"))
+    except Exception as exc:  # noqa: BLE001
+        # Stack may be down — WARNING, not FAIL
+        results.append(("loki", "WARNING", f"Loki unreachable: {exc}"))
+
+    return results
+
+
+def _check_data_arrival_tempo() -> list[tuple[str, str, str]]:
+    """Query Tempo for recent traces to verify data arrival.
+
+    Returns:
+        List of (check_name, status, detail) tuples.
+    """
+    results: list[tuple[str, str, str]] = []
+    tempo_url = "http://localhost:3200/api/search?limit=10"
+
+    try:
+        resp = urlopen(tempo_url, timeout=3)  # noqa: S310
+        data = json.loads(resp.read().decode())
+        traces = data.get("traces") or []
+
+        if traces:
+            results.append(
+                (
+                    "tempo:traces",
+                    "OK",
+                    f"{len(traces)} traces found in Tempo",
+                )
+            )
+            # List unique service names from traces
+            svc_names = sorted(
+                {t.get("rootServiceName", "unknown") for t in traces if t.get("rootServiceName")}
+            )
+            if svc_names:
+                results.append(
+                    (
+                        "tempo:services",
+                        "OK",
+                        f"services: {', '.join(svc_names)}",
+                    )
+                )
+        else:
+            results.append(("tempo:traces", "WARNING", "no recent traces found in Tempo"))
+    except Exception as exc:  # noqa: BLE001
+        # Stack may be down — WARNING, not FAIL
+        results.append(("tempo", "WARNING", f"Tempo unreachable: {exc}"))
+
+    return results
+
+
 def verify_telemetry() -> int:
     """Run all telemetry checks, print results, return 0/1."""
     settings, settings_env = _load_settings()
@@ -370,6 +557,9 @@ def verify_telemetry() -> int:
                 / "collector-config.yaml"
             ),
         ),
+        ("Source Configurations", _check_source_configs()),
+        ("Data Arrival (Loki)", _check_data_arrival_loki()),
+        ("Data Arrival (Tempo)", _check_data_arrival_tempo()),
     ]
 
     for section_name, results in sections:
