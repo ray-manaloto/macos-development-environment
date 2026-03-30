@@ -25,10 +25,12 @@ _TIMEOUT_SECONDS = 2
 
 # All services in the mde-observability LGTM stack with their health endpoints.
 # Uses grafana/otel-lgtm all-in-one image — all services share one container.
-_SERVICES: list[tuple[str, str]] = [
-    ("grafana", "http://localhost:3000/api/health"),
-    ("loki", "http://localhost:3100/ready"),
-    ("tempo", "http://localhost:3200/ready"),
+# Tuple: (name, url, requires_post). The OTLP endpoint needs POST with empty JSON.
+_SERVICES: list[tuple[str, str, bool]] = [
+    ("otlp-http", "http://localhost:4318/v1/traces", True),
+    ("grafana", "http://localhost:3000/api/health", False),
+    ("loki", "http://localhost:3100/ready", False),
+    ("tempo", "http://localhost:3200/ready", False),
 ]
 
 _STARTUP_CMD = (
@@ -37,10 +39,19 @@ _STARTUP_CMD = (
 )
 
 
-def _check_endpoint(url: str) -> bool:
+def _check_endpoint(url: str, *, post: bool = False) -> bool:
     """Return True if the health endpoint responds with HTTP 200."""
     try:
-        req = urllib.request.Request(url, method="GET")  # noqa: S310
+        if post:
+            data = b"{}"
+            req = urllib.request.Request(  # noqa: S310
+                url,
+                data=data,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+        else:
+            req = urllib.request.Request(url, method="GET")  # noqa: S310
         with urllib.request.urlopen(req, timeout=_TIMEOUT_SECONDS) as resp:  # noqa: S310
             return resp.status == _HTTP_OK  # type: ignore[no-any-return]
     except Exception:  # noqa: BLE001
@@ -49,7 +60,7 @@ def _check_endpoint(url: str) -> bool:
 
 def check_services() -> dict[str, bool]:
     """Check all observability services and return a name→healthy mapping."""
-    return {name: _check_endpoint(url) for name, url in _SERVICES}
+    return {name: _check_endpoint(url, post=post) for name, url, post in _SERVICES}
 
 
 def check_observability() -> int:
