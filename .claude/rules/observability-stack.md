@@ -24,11 +24,15 @@ GRAFANA_PASSWORD=$(fnox get GRAFANA_PASSWORD) docker compose -f docker/observabi
 ## Verifying health
 
 ```bash
-curl -sf http://localhost:13133  # OTEL Collector health
+curl -sf http://localhost:4318/v1/traces -X POST -d '{}' -H "Content-Type: application/json"  # OTLP HTTP endpoint
 curl -sf http://localhost:3100/ready  # Loki
 curl -sf http://localhost:3200/ready  # Tempo
 curl -sf http://localhost:3000/api/health  # Grafana
 ```
+
+Note: Port 13133 (OTEL Collector health check) is NOT exposed by the grafana/otel-lgtm
+all-in-one image. Use the OTLP HTTP endpoint (4318) with an empty POST to verify the
+collector is running.
 
 ## CLI telemetry configuration
 

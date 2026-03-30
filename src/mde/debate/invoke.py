@@ -254,13 +254,18 @@ def _invoke_gemini(prompt: str, timeout: int = 300) -> InvocationResult:
 
         response = _extract_gemini_json(result.stdout)
 
+        # Mark as failed if returncode != 0 OR response is empty
+        # (empty response with rc=0 is a functional failure for debate)
+        is_success = result.returncode == 0 and bool(response)
         return InvocationResult(
             model="gemini",
             prompt=prompt,
             response=response,
-            success=result.returncode == 0,
+            success=is_success,
             duration_seconds=round(duration, 2),
-            error=result.stderr.strip()[:500] if result.returncode != 0 else None,
+            error=result.stderr.strip()[:500]
+            if result.returncode != 0
+            else ("Empty response from gemini" if not response else None),
         )
     except subprocess.TimeoutExpired:
         return InvocationResult(
