@@ -1,0 +1,4 @@
+# Files to copy into new worktrees (gitignore syntax)
+# These are gitignored files that subagents may need
+.env
+.env.local
