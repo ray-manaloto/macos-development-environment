@@ -485,6 +485,36 @@ def _check_gemini_config(home: Path) -> tuple[str, str, str]:
     )
 
 
+def _check_mde_observability() -> tuple[str, str, str]:
+    """Verify the mde observability module is importable and correctly configured.
+
+    Checks:
+    1. Module can be imported
+    2. init_observability and _probe_collector exist
+    3. OTEL endpoint env var is set
+    4. Collector is reachable (live probe)
+    """
+    try:
+        from mde import observability
+
+        if not hasattr(observability, "init_observability"):
+            return ("mde", "WARNING", "observability module missing init_observability")
+    except ImportError as exc:
+        return ("mde", "MISSING", f"cannot import mde.observability: {exc}")
+
+    endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+    if not endpoint:
+        return ("mde", "WARNING", "OTEL_EXPORTER_OTLP_ENDPOINT not set — mde telemetry disabled")
+
+    if observability._probe_collector():  # noqa: SLF001  # same-package internal access
+        return ("mde", "OK", f"collector reachable at {endpoint}, OTEL pipeline active")
+    return (
+        "mde",
+        "WARNING",
+        f"collector unreachable at {endpoint} — mde telemetry will be disabled",
+    )
+
+
 def _check_source_configs() -> list[tuple[str, str, str]]:
     """Verify each telemetry source has OTLP endpoints configured.
 
@@ -500,12 +530,8 @@ def _check_source_configs() -> list[tuple[str, str, str]]:
         _check_gemini_config(home),
     ]
 
-    # mde library: check observability.py exists
-    mde_obs_path = Path(__file__).resolve().parent / "observability.py"
-    if mde_obs_path.is_file():
-        results.append(("mde", "OK", "observability.py found — handles OTEL setup internally"))
-    else:
-        results.append(("mde", "WARNING", "observability.py not found in src/mde/"))
+    # mde library: verify observability module is importable and functional
+    results.append(_check_mde_observability())
 
     return results
 

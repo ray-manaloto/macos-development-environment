@@ -9,6 +9,7 @@ from mde.telemetry_verify import (
     _check_data_arrival_loki,
     _check_data_arrival_tempo,
     _check_gemini_config,
+    _check_mde_observability,
     _check_source_configs,
 )
 
@@ -145,16 +146,33 @@ class TestCheckSourceConfigs:
         assert codex_results[0][1] == "WARNING"
         assert "otel" in codex_results[0][2].lower()
 
-    @patch("mde.telemetry_verify.Path")
-    def test_mde_observability_missing(self, mock_path_cls: MagicMock) -> None:
-        """Observability.py not found emits WARNING for mde source."""
-        make_path = _make_path_factory()  # all files missing
-        mock_path_cls.home.return_value = make_path("/home")
-        mock_path_cls.side_effect = make_path
+    @patch.dict("os.environ", {"OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"})
+    @patch("mde.observability._probe_collector", return_value=True)
+    def test_mde_collector_reachable(self, mock_probe: MagicMock) -> None:
+        """MDE check returns OK when collector is reachable."""
+        _ = mock_probe
+        name, status, detail = _check_mde_observability()
+        assert name == "mde"
+        assert status == "OK"
+        assert "collector reachable" in detail
 
-        results = _check_source_configs()
-        mde_results = [(n, s, d) for n, s, d in results if n == "mde"]
-        assert mde_results[0][1] == "WARNING"
+    @patch.dict("os.environ", {"OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"})
+    @patch("mde.observability._probe_collector", return_value=False)
+    def test_mde_collector_unreachable(self, mock_probe: MagicMock) -> None:
+        """MDE check returns WARNING when collector is unreachable."""
+        _ = mock_probe
+        name, status, detail = _check_mde_observability()
+        assert name == "mde"
+        assert status == "WARNING"
+        assert "unreachable" in detail
+
+    @patch.dict("os.environ", {}, clear=True)
+    def test_mde_no_endpoint(self) -> None:
+        """MDE check returns WARNING when OTEL endpoint not set."""
+        name, status, detail = _check_mde_observability()
+        assert name == "mde"
+        assert status == "WARNING"
+        assert "not set" in detail
 
     @patch("mde.telemetry_verify.Path")
     def test_codex_wrong_endpoint(self, mock_path_cls: MagicMock) -> None:
