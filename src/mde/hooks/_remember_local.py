@@ -11,15 +11,10 @@ from __future__ import annotations
 import contextlib
 import subprocess
 from datetime import UTC, datetime
-from pathlib import Path
 
-from mde.hooks._common import _GIT_ENV, repo_root
+from mde.hooks._common import _GIT_ENV
+from mde.lib.paths import get_paths
 from mde.log import logger
-
-
-def remember_dir() -> Path:
-    """Return the remember data directory (.generated/remember/)."""
-    return repo_root() / ".generated" / "remember"
 
 
 def append_now_entry(event: str, message: str) -> bool:
@@ -27,7 +22,8 @@ def append_now_entry(event: str, message: str) -> bool:
 
     Returns True if the write succeeded, False otherwise.
     """
-    rdir = remember_dir()
+    rdir = get_paths().dir_remember
+    assert rdir is not None  # noqa: S101 — always set by MdePaths.model_post_init
     try:
         rdir.mkdir(parents=True, exist_ok=True)
     except OSError as exc:

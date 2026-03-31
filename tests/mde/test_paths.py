@@ -10,10 +10,17 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _clear_paths_cache() -> Generator[None, None, None]:
-    """Clear get_paths() lru_cache before and after each test."""
+def _clear_paths_cache(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    """Clear get_paths() lru_cache and MDE_* env vars before/after each test.
+
+    Without this, MDE_* env vars set by mise (after chezmoi apply) leak into
+    tests and override the cascading defaults we're verifying.
+    """
     from mde.lib.paths import get_paths
 
+    for key in list(os.environ):
+        if key.startswith("MDE_"):
+            monkeypatch.delenv(key, raising=False)
     get_paths.cache_clear()
     yield
     get_paths.cache_clear()
