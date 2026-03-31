@@ -193,8 +193,8 @@ markers = [
 [tool.vulture]
 min_confidence = 80
 paths = ["src/mde/"]
-ignore_names = ["__hook_meta__", "test_*"]
-ignore_decorators = ["@click.*", "@pytest.*"]
+ignore_names = ["__hook_meta__", "test_*", "cls", "RateLimitType"]
+ignore_decorators = ["@click.*", "@pytest.*", "@classmethod"]
 
 # ── import-linter: architectural boundary enforcement ──
 [tool.importlinter]
