@@ -1,0 +1,21 @@
+{
+  "name": "rsm-remember",
+  "owner": {
+    "name": "ray-manaloto",
+    "url": "https://github.com/ray-manaloto"
+  },
+  "metadata": {
+    "description": "Local marketplace for claude-remember pinned to latest upstream commit"
+  },
+  "plugins": [
+    {
+      "name": "remember",
+      "description": "Continuous memory for Claude Code. Extracts, summarizes, and compresses conversations into tiered daily logs. Claude remembers what you did yesterday.",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/Digital-Process-Tools/claude-remember.git"
+      },
+      "homepage": "https://github.com/Digital-Process-Tools/claude-remember"
+    }
+  ]
+}

@@ -26,20 +26,16 @@
 - User corrections from memory → feedback memories in auto memory system
 - Recurring errors from memory → GitHub Issues with `auto:agent-discovered` label
 
-## Local Patch: Marketplace Path Resolution (applied 2026-03-28)
-A local patch is applied to `save-session.sh` and `run-consolidation.sh` in both
-plugin cache copies (`0.1.0/` and `779ab61d8d41/`). The patch separates PLUGIN_ROOT
-(pipeline code) from PROJECT_DIR (user data) so marketplace installs resolve correctly.
+## Marketplace: rsm-remember (updated 2026-03-30)
+The remember plugin is installed from `rsm-remember` local marketplace (not `claude-plugins-official`)
+to get the upstream path resolution fix. This pulls the latest commit from the upstream repo.
 
-- Upstream issue: https://github.com/Digital-Process-Tools/claude-remember/issues/5
-- Upstream fix commit: https://github.com/Digital-Process-Tools/claude-remember/commit/225c361
-- Marketplace still pins pre-fix SHA `779ab61d` — `claude plugin update` won't help
-- Patched files: `~/.claude/plugins/cache/claude-plugins-official/remember/*/scripts/{save-session,run-consolidation}.sh`
-- Each patch has inline comments with links — search for "LOCAL PATCH" in the files
-- If plugin cache is cleared/reinstalled, the patch must be re-applied
-- **Removal condition:** when `claude plugin update` pulls commit `225c361` or later
-- Check `.generated/remember/logs/autonomous/` for error logs — if the path bug recurs,
-  logs will contain `No such file or directory` for `.claude/remember`
+- Upstream fix: https://github.com/Digital-Process-Tools/claude-remember/commit/225c361
+- Installed version: v0.2.0 at commit `618fc72` (includes the fix)
+- Marketplace config: `rsm-remember/.claude-plugin/marketplace.json`
+- To update: `claude plugin update remember@rsm-remember --scope project`
+- The old `remember@claude-plugins-official` and its local patches are removed
+- Config at `.claude/remember/config.json` sets `data_dir` to `.generated/remember`
 
 ## Hook Configuration
 The remember plugin requires these hooks in `.claude/settings.json`:
