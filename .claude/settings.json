@@ -360,7 +360,6 @@
     "python-development@claude-code-workflows": true,
     "python-remote-debug-skill@claude-community": false,
     "quantitative-trading@claude-code-workflows": false,
-    "remember@claude-plugins-official": true,
     "research-review-toolkit@rsm-subagents": true,
     "reverse-engineering@claude-code-workflows": true,
     "ruby-lsp@claude-code-lsps": false,
@@ -404,7 +403,8 @@
     "zapier@knowledge-work-plugins": false,
     "zoominfo@knowledge-work-plugins": false,
     "mcp2cli@claude-community": true,
-    "srclight@claude-community": true
+    "srclight@claude-community": true,
+    "remember@rsm-remember": true
   },
   "extraKnownMarketplaces": {
     "anthropic-agent-skills": {
