@@ -10,9 +10,10 @@ Typed Python package (`src/mde/`) managing macOS developer tooling. Entry point:
 ## Commands
 
 ```bash
-uv run mde-py quality          # Full quality gate (ruff check + format + ty + pytest) — run before every commit
-uv run mde-py validate --all   # All validators (configs, brew, docker, plugins, skills)
+uv run mde-py quality          # Full quality gate (ruff + ty + pyright + vulture + import-linter + pytest) — run before every commit
+uv run mde-py validate --all   # All validators (configs, brew, docker, plugins, skills, paths)
 uv run mde-py validate --plugins  # Plugin validation only (zero warnings tolerance)
+uv run mde-py validate --paths    # Path centralization checks (9 checks)
 uv run pytest tests/ -v -m "not integration"  # Tests only (integration tests need external tools)
 uv run ruff check src/mde/     # Lint only
 uv run ruff format src/mde/    # Format only
@@ -33,7 +34,7 @@ mise fmt --check               # mise config formatting
 - `src/mde/codegen/` — Codegen postprocessors (run via `mise run mde:codegen:all`)
 - `docs/schemas/` — JSON Schema sources for codegen (including official `claude-code-settings.schema.json`)
 - `tests/` — pytest tests; `@pytest.mark.integration` for tests needing external tools
-- `.generated/` — Runtime artifacts, reports, logs, remember data (gitignored, never committed)
+- `.generated/` — Runtime artifacts managed via `MDE_*` env vars (see `.claude/rules/generated-paths.md`); use `from mde.lib.paths import get_paths` in Python
 
 ## Conventions
 
