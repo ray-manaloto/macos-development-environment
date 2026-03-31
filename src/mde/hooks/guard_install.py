@@ -41,6 +41,19 @@ _ALLOW_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"\buv\s+add\b"),
 ]
 
+
+_QUOTED_STRING = re.compile(r"""(?:"[^"]*"|'[^']*')""")
+
+
+def _strip_quoted_content(command: str) -> str:
+    """Remove content inside quoted strings to avoid false positives.
+
+    Prevents matching install keywords that appear inside argument values,
+    e.g. ``gh issue create --body "use brew install"`` → no match.
+    """
+    return _QUOTED_STRING.sub('""', command)
+
+
 _DENY_REASON = (
     "BLOCKED: Direct global install detected. "
     "This project uses mise as the tool authority. "
@@ -51,13 +64,17 @@ _DENY_REASON = (
 
 def check_install_command(command: str) -> dict[str, Any] | None:
     """Return a deny decision dict if *command* is a blocked install, else None."""
+    # Strip quoted content so install keywords inside argument values
+    # (e.g. --body "brew install foo") don't trigger false positives.
+    stripped = _strip_quoted_content(command)
+
     # Allow-list takes precedence
     for pattern in _ALLOW_PATTERNS:
-        if pattern.search(command):
+        if pattern.search(stripped):
             return None
 
     for pattern in _BLOCK_PATTERNS:
-        if pattern.search(command):
+        if pattern.search(stripped):
             return {
                 "hookSpecificOutput": {
                     "hookEventName": "PreToolUse",

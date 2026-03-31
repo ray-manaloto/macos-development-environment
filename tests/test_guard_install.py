@@ -79,3 +79,20 @@ class TestAllowedCommands:
 
     def test_allows_npx_skills_add(self) -> None:
         assert check_install_command("npx skills add teng-lin/agent-fetch") is None
+
+    def test_allows_gh_issue_create_with_install_in_body(self) -> None:
+        """Regression: Issue #59 — install keywords inside quoted args must not trigger."""
+        cmd = 'gh issue create --title "test" --body "use brew install to set up"'
+        assert check_install_command(cmd) is None
+
+    def test_allows_gh_issue_create_with_pip_in_body(self) -> None:
+        cmd = 'gh issue create --body "pip install requests"'
+        assert check_install_command(cmd) is None
+
+    def test_allows_echo_with_install_in_single_quotes(self) -> None:
+        cmd = "echo 'cargo install ripgrep'"
+        assert check_install_command(cmd) is None
+
+    def test_allows_install_keyword_in_double_quotes(self) -> None:
+        cmd = 'git commit -m "feat: go install support"'
+        assert check_install_command(cmd) is None

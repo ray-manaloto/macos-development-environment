@@ -1,4 +1,4 @@
-"""Tests for Doppler CLI wrapper module."""
+"""Tests for secrets modules (Doppler, sync, validate, keychain, smoke, sops)."""
 
 from __future__ import annotations
 
@@ -335,4 +335,107 @@ class TestSyncDopplerToFnox:
             from mde.secrets.sync import sync_doppler_to_fnox
 
             result = sync_doppler_to_fnox()
+        assert result == 1
+
+    def test_handles_fnox_timeout(self) -> None:
+        """Returns 1 when fnox set times out."""
+        import subprocess as _subprocess
+
+        with (
+            patch("mde.secrets.sync.is_doppler_available", return_value=True),
+            patch("mde.secrets.sync.doppler_list_secrets") as mock_list,
+            patch("mde.secrets.sync.subprocess.run") as mock_run,
+        ):
+            mock_list.return_value = {"KEY1": "val1"}
+            mock_run.side_effect = _subprocess.TimeoutExpired(cmd="fnox", timeout=15)
+            from mde.secrets.sync import sync_doppler_to_fnox
+
+            result = sync_doppler_to_fnox()
+        assert result == 1
+
+
+class TestKeychain:
+    """Tests for keychain.import_to_keychain."""
+
+    def test_runs_import_script_on_macos(self) -> None:
+        """Calls the import script and returns its exit code."""
+        with (
+            patch("mde.secrets.keychain.sys") as mock_sys,
+            patch("mde.secrets.keychain.subprocess.run") as mock_run,
+        ):
+            mock_sys.platform = "darwin"
+            mock_run.return_value = MagicMock(returncode=0)
+            from mde.secrets.keychain import import_to_keychain
+
+            result = import_to_keychain()
+        assert result == 0
+
+    def test_skips_on_non_macos(self) -> None:
+        """Returns 0 without running script on non-macOS."""
+        with (
+            patch("mde.secrets.keychain.sys") as mock_sys,
+            patch("mde.secrets.keychain.subprocess.run") as mock_run,
+        ):
+            mock_sys.platform = "linux"
+            from mde.secrets.keychain import import_to_keychain
+
+            result = import_to_keychain()
+        assert result == 0
+        mock_run.assert_not_called()
+
+
+class TestSmoke:
+    """Tests for smoke.run_smoke_test."""
+
+    def test_returns_zero_on_success(self) -> None:
+        """Returns 0 when smoke test script passes."""
+        with patch("mde.secrets.smoke.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            from mde.secrets.smoke import run_smoke_test
+
+            result = run_smoke_test()
+        assert result == 0
+
+    def test_returns_nonzero_on_failure(self) -> None:
+        """Returns non-zero when smoke test script fails."""
+        with patch("mde.secrets.smoke.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=1)
+            from mde.secrets.smoke import run_smoke_test
+
+            result = run_smoke_test()
+        assert result == 1
+
+
+class TestSops:
+    """Tests for sops.refresh_secrets."""
+
+    def test_returns_zero_on_success(self) -> None:
+        """Returns 0 when sops refresh script passes."""
+        with (
+            patch("mde.secrets.sops.shutil.which", return_value="/usr/local/bin"),
+            patch("mde.secrets.sops.subprocess.run") as mock_run,
+        ):
+            mock_run.return_value = MagicMock(returncode=0)
+            from mde.secrets.sops import refresh_secrets
+
+            result = refresh_secrets()
+        assert result == 0
+
+    def test_returns_one_when_sops_missing(self) -> None:
+        """Returns 1 when sops is not installed."""
+        with patch("mde.secrets.sops.shutil.which", return_value=None):
+            from mde.secrets.sops import refresh_secrets
+
+            result = refresh_secrets()
+        assert result == 1
+
+    def test_returns_one_when_fnox_missing(self) -> None:
+        """Returns 1 when fnox is not installed."""
+        with patch(
+            "mde.secrets.sops.shutil.which",
+            side_effect=lambda cmd: "/usr/bin/sops" if cmd == "sops" else None,
+        ):
+            from mde.secrets.sops import refresh_secrets
+
+            result = refresh_secrets()
         assert result == 1
