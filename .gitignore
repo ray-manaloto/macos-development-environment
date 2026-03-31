@@ -30,13 +30,18 @@ docker/observability/.env
 
 # Plugin/tool caches and transient state
 .claude-octopus/
-.claude/auto-memory/dirty-files
+.claude/auto-memory/
+.claude/agent-memory/
 .claude/remember/
 .claude/worktrees/
 .claudelint-cache/
+.omc/
 .omg/
 .remember
 .vitals/
+
+# Backup files
+CLAUDE.md.backup
 
 # Backup archives
 *.tar.gz

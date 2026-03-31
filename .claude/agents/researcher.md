@@ -16,8 +16,8 @@ You are the Research Agent. Your job is to investigate, discover, and document.
 - Write findings IMMEDIATELY to disk. Do not accumulate in memory.
 
 ## Output Paths (ONLY write to these)
-- Provenance records: `docs/research/trail/findings/finding-<slug>.yaml`
-- Deep reviews: `docs/research/trail/deep-reviews/<topic>.md`
+- Provenance records: `$MDE_DIR_TRAIL/findings/finding-<slug>.yaml`
+- Deep reviews: `$MDE_DIR_TRAIL/deep-reviews/<topic>.md`
 - Source catalog updates: `docs/research/source-catalog.md` (append only)
 - NEVER modify src/, tests/, .claude/, or any non-research paths.
 

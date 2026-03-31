@@ -67,10 +67,11 @@ def _cmd_catalog() -> int:
 def _cmd_score() -> int:
     import yaml
 
+    # Try to load the most recent scorecard from the trail
+    from mde.lib.paths import get_paths
     from mde.research.score import ScoreCard, calculate_score
 
-    # Try to load the most recent scorecard from the trail
-    scorecards_dir = Path("docs/research/trail/scorecards")
+    scorecards_dir = get_paths().dir_trail / "scorecards"  # type: ignore[operator]
     card = ScoreCard()
     source = "defaults"
 
@@ -126,7 +127,9 @@ def _cmd_skill_discover(args: argparse.Namespace) -> int:
 
 
 def _cmd_status() -> int:
-    trail_dir = Path("docs/research/trail/findings")
+    from mde.lib.paths import get_paths
+
+    trail_dir = get_paths().dir_trail / "findings"  # type: ignore[operator]
     findings = list(trail_dir.glob("*.yaml")) if trail_dir.exists() else []
     print("Research Pipeline Status")
     print(f"  Findings: {len(findings)}")

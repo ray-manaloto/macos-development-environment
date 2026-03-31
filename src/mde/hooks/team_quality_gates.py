@@ -74,7 +74,7 @@ def gate_python_dev() -> list[dict[str, Any]]:
     ]
 
 
-def gate_research(findings_path: str = "docs/research/trail/findings") -> list[dict[str, Any]]:
+def gate_research(findings_path: str = ".generated/trail/findings") -> list[dict[str, Any]]:
     """Verify research output YAML files exist in findings directory."""
     from pathlib import Path
 

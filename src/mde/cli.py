@@ -160,7 +160,7 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     )
     validate_p.add_argument(
         "--eval-file",
-        default="docs/research/trail/findings/community-plugin-evaluations.yaml",
+        default=".generated/trail/findings/community-plugin-evaluations.yaml",
         help="Path to evaluation YAML file",
     )
     validate_p.add_argument(

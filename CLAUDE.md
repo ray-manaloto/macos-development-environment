@@ -53,7 +53,7 @@ mise fmt --check               # mise config formatting
 
 - `src/mde/` — All automation lives here as Python modules (17 subpackages). **No shell scripts.**
 - `src/mde/cli.py` — CLI dispatcher with lazy imports (26 subcommands)
-- `src/mde/hooks/` — Claude Code hooks (21 handlers, auto-discovered via `__hook_meta__`)
+- `src/mde/hooks/` — Claude Code hooks (22 handlers, auto-discovered via `__hook_meta__`)
 - `src/mde/validate/` — Validators for configs, plugins, brew, docker, paths
 - `src/mde/debate/` — Multi-model debate library (codex/gemini CLIs)
 - `src/mde/dream/` — Self-improvement pipeline (extract/propose/apply/status)

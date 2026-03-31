@@ -16,6 +16,7 @@ managed via chezmoi template (`home/dot_config/mise/config.toml.tmpl`).
 | `MDE_DIR_REPORTS` | `$MDE_GENERATED_DIR` | `$MDE_GENERATED_DIR/reports` | Quality reports |
 | `MDE_DIR_CONTEXT` | `$MDE_GENERATED_DIR` | `$MDE_GENERATED_DIR/context` | Context snapshots |
 | `MDE_DIR_DREAM` | `$MDE_GENERATED_DIR` | `$MDE_GENERATED_DIR/dream` | Dream pipeline state |
+| `MDE_DIR_TRAIL` | `$MDE_GENERATED_DIR` | `$MDE_GENERATED_DIR/trail` | Research trail (findings, scorecards) |
 
 ## Python API
 
@@ -23,6 +24,7 @@ managed via chezmoi template (`home/dot_config/mise/config.toml.tmpl`).
 from mde.lib.paths import get_paths
 paths = get_paths()
 paths.dir_remember     # Path to remember data
+paths.dir_trail        # Path to research trail (findings, scorecards)
 paths.generated_dir    # Path to .generated root
 paths.project_dir      # Path to repo root
 ```

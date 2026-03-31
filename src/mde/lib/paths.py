@@ -39,6 +39,7 @@ _CHILD_DEFAULTS: dict[str, str] = {
     "dir_reports": "reports",
     "dir_context": "context",
     "dir_dream": "dream",
+    "dir_trail": "trail",
 }
 
 
@@ -106,6 +107,10 @@ class MdePaths(BaseSettings):
     dir_dream: Path | None = Field(
         default=None,
         validation_alias="MDE_DIR_DREAM",
+    )
+    dir_trail: Path | None = Field(
+        default=None,
+        validation_alias="MDE_DIR_TRAIL",
     )
 
     def model_post_init(self, _context: Any) -> None:
