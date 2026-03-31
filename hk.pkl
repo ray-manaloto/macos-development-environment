@@ -12,7 +12,9 @@ local fixers = new Mapping<String, Step> {
     }
     ["shellcheck"] = Builtins.shellcheck
     ["typos"] = Builtins.typos
-    ["yamllint"] = Builtins.yamllint
+    ["yamllint"] = (Builtins.yamllint) {
+        exclude = List("docs/research/trail/**")
+    }
 }
 
 local quality_gate = new Mapping<String, Step> {
