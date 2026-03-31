@@ -1,0 +1,200 @@
+topic: Claude Code agent teams and worktree integration
+date: "2026-03-30"
+fetched_by: researcher agent
+model: claude-sonnet-4-6
+
+sources:
+  - url: "https://code.claude.com/docs/en/hooks-guide"
+    title: "Automate workflows with hooks - Claude Code Docs"
+    key_points:
+      - "WorktreeCreate hook fires when a worktree is being created via --worktree or isolation: \"worktree\"; it REPLACES default git worktree behavior entirely"
+      - "WorktreeRemove hook fires when a worktree is being removed, either at session exit or when a subagent finishes"
+      - "Both hooks appear in the events table alongside PreCompact, PostCompact, SessionEnd, Elicitation, ElicitationResult"
+      - "Hook types: command (shell), http (POST to URL), prompt (LLM evaluation), agent (agent-based evaluation)"
+      - "WorktreeCreate is the escape hatch for full control over worktree branching (fetch from custom ref, override base branch, etc.)"
+      - "Hooks receive JSON event data; WorktreeCreate can intercept and fully replace Claude Code's default git worktree add logic"
+
+  - url: "https://code.claude.com/docs/en/sub-agents"
+    title: "Sub-agents - Claude Code Docs"
+    key_points:
+      - "Subagents run in their own context window with custom system prompt, specific tool access, and independent permissions"
+      - "Built-in subagents: Explore (Haiku, read-only), Plan (inherits model, read-only), general-purpose (inherits model, all tools), Bash, statusline-setup, Claude Code Guide"
+      - "Subagents work WITHIN a single session; agent teams coordinate ACROSS separate sessions"
+      - "Subagents can ONLY report results back to the main agent (one-way); agent teams allow direct peer-to-peer communication"
+      - "Subagents CANNOT spawn other subagents (nesting is prohibited)"
+      - "isolation frontmatter field: set to 'worktree' to run subagent in a temporary git worktree; worktree auto-cleaned if no changes made"
+      - "Default subagents inherit all tools from main conversation including MCP tools; restrict with tools (allowlist) or disallowedTools (denylist)"
+      - "Model resolution order: CLAUDE_CODE_SUBAGENT_MODEL env var > per-invocation model param > subagent definition frontmatter > main conversation model"
+      - "Subagent files use Markdown with YAML frontmatter; fields include: name, description, model, tools, disallowedTools, isolation, initialPrompt"
+      - "Subagents defined in .claude/agents/ (project-level) or ~/.claude/agents/ (user-level)"
+      - "Plan subagent prevents infinite nesting: subagents cannot spawn other subagents, so Plan subagent handles research for plan mode"
+
+  - url: "https://code.claude.com/docs/en/agent-teams"
+    title: "Agent teams - Claude Code Docs"
+    key_points:
+      - "EXPERIMENTAL: disabled by default; enable via CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS in settings.json or environment"
+      - "Requires Claude Code v2.1.32 or later"
+      - "Agent teams = multiple Claude Code instances working together; one session is team lead, rest are teammates"
+      - "Teammates work independently, each in own context window, communicate DIRECTLY with each other (unlike subagents)"
+      - "Teammates share a task list and can self-coordinate; subagents only report back to main"
+      - "Best use cases: research/review (parallel investigation), new modules/features (independent ownership), debugging competing hypotheses, cross-layer changes (frontend/backend/tests)"
+      - "Avoid for: sequential tasks, same-file edits, work with many dependencies (use single session or subagents instead)"
+      - "Token cost: significantly higher than single session (each teammate is a separate Claude instance with own context)"
+      - "Display modes: in-process (all teammates in main terminal, use Shift+Down to cycle) or split panes (each teammate in own pane, requires tmux or iTerm2)"
+      - "Default teammateMode: 'auto' (split panes if in tmux, else in-process); override with teammateMode in ~/.claude.json"
+      - "Teammates DO NOT inherit lead's conversation history; include task-specific context in spawn prompt"
+      - "Teammates DO load project context automatically: CLAUDE.md, MCP servers, skills"
+      - "Recommended team size: 3-5 teammates; 5-6 tasks per teammate for optimal productivity"
+      - "No nested teams: teammates cannot spawn their own teams or teammates"
+      - "Lead is fixed: the session that creates the team is the lead for its lifetime"
+      - "Permissions set at spawn: all teammates start with lead's permission mode; can change individual teammate modes after spawning"
+      - "No session resumption with in-process teammates: /resume and /rewind do not restore in-process teammates"
+
+  - url: "https://code.claude.com/docs/en/common-workflows"
+    title: "Common workflows - Claude Code Docs"
+    key_points:
+      - "Use --worktree (-w) flag to create isolated worktree and start Claude in it; value becomes both directory name and branch name"
+      - "Worktrees created at <repo>/.claude/worktrees/<name>; branch named worktree-<name>"
+      - "Base branch comes from origin/HEAD (set at clone time); not directly configurable via Claude Code flag"
+      - "Re-sync origin/HEAD: git remote set-head origin -a"
+      - "For full control over worktree base branch, configure a WorktreeCreate hook (replaces all default git worktree logic)"
+      - "Auto-generates worktree name if omitted: claude --worktree (generates e.g. 'bright-running-fox')"
+      - "Cleanup on exit: no changes = auto-removed; changes/commits = Claude prompts to keep or remove"
+      - "Add .claude/worktrees/ to .gitignore to prevent worktree contents appearing as untracked files"
+      - ".worktreeinclude file: .gitignore-syntax list of gitignored files to copy into new worktrees (e.g. .env, .env.local)"
+      - ".worktreeinclude applies to --worktree, subagent isolation:worktree, and parallel sessions in desktop app"
+      - "Subagent worktrees: add isolation: worktree to subagent frontmatter; auto-cleaned if no changes"
+      - "Session naming: claude -n <name> or /rename during session; resume with claude --resume <name>"
+      - "Session picker (/resume): filter by current git branch with 'B' key"
+      - "Sessions are grouped by git repository, including worktrees"
+
+worktree_in_subagents:
+  how_it_works: >
+    Add `isolation: worktree` to a subagent's YAML frontmatter. When Claude invokes that
+    subagent, Claude Code creates a temporary git worktree for it to work in. The subagent
+    gets an isolated copy of the repository with its own branch. When the subagent finishes,
+    the worktree is automatically cleaned up IF the subagent made no changes. If changes
+    were made, the worktree persists until manually cleaned up or the session exits with
+    user confirmation.
+  isolation_parameter: >
+    Field: `isolation` in subagent frontmatter YAML.
+    Value: `"worktree"` (the only documented non-default value).
+    Default: no isolation (subagent runs in the same working directory as the parent session).
+    Behavior: each subagent invocation gets its own worktree; worktrees share the same repo
+    history and remote connections but have separate files and branches. This allows multiple
+    subagents to work in parallel without file conflicts.
+  frontmatter_example: |
+    ---
+    name: safe-researcher
+    description: Research agent with worktree isolation
+    isolation: worktree
+    tools:
+      - Read
+      - Grep
+      - Glob
+      - Bash
+    ---
+    You are a read-only research agent...
+
+worktree_in_teams:
+  coordination: >
+    Agent teams do NOT have a dedicated worktree integration at the team level. Each teammate
+    is a fully independent Claude Code session (not a subagent), so they can each use
+    --worktree independently or have subagents with isolation:worktree. The official docs
+    recommend teams for cross-layer changes where teammates "own a separate piece without
+    stepping on each other" — this is the conceptual equivalent of worktree isolation, but
+    the coordination is achieved via a shared task list and direct peer messaging rather
+    than git worktree mechanics. For manual worktree-based parallel work without automated
+    team coordination, the docs recommend using `claude --worktree` in multiple terminals
+    directly (the "parallel sessions with git worktrees" workflow in common-workflows).
+  best_practices:
+    - "Give teammates enough context in the spawn prompt; they do NOT inherit lead's conversation history"
+    - "Start with 3-5 teammates; 5-6 tasks per teammate keeps everyone productive"
+    - "Use teams for truly independent parallel work; for sequential tasks use single session or subagents"
+    - "Size tasks to be self-contained with a clear deliverable (a function, a test file, a review)"
+    - "Tasks that are too small: coordination overhead exceeds benefit"
+    - "Tasks that are too large: teammates work too long without check-ins, increasing risk of wasted effort"
+    - "3 focused teammates often outperform 5 scattered ones"
+    - "Clean up teams before starting new ones: one team per session is the current limit"
+    - "Teammates read CLAUDE.md files normally; ensure CLAUDE.md has enough context for independent operation"
+    - "Token costs scale linearly: each teammate has its own context window"
+    - "For teammate display: tmux -CC in iTerm2 is the recommended tmux entrypoint"
+
+parallel_sessions:
+  workflow: >
+    Use `claude --worktree <name>` (or `-w <name>`) from the repository root.
+    Claude creates a new git worktree at <repo>/.claude/worktrees/<name> with a new branch
+    named `worktree-<name>` branching from origin/HEAD. You can open multiple terminals
+    and run `claude --worktree feature-auth` in one and `claude --worktree bugfix-123` in
+    another. Each session is fully isolated — changes in one don't affect the other.
+    This is the manual approach; agent teams provide automated coordination on top of this pattern.
+  key_points:
+    - "Flag: --worktree or -w; takes an optional name argument (auto-generates if omitted)"
+    - "Worktree location: <repo>/.claude/worktrees/<name>"
+    - "Branch naming: worktree-<name>"
+    - "Base branch: origin/HEAD (re-sync with: git remote set-head origin -a)"
+    - "Custom base branch requires WorktreeCreate hook (hook replaces all default git worktree logic)"
+    - "Gitignored files can be copied to new worktrees via .worktreeinclude in project root"
+    - "Cleanup: auto-removes worktree if no changes; prompts if changes exist"
+    - "Add .claude/worktrees/ to .gitignore to suppress 'untracked files' noise"
+    - "You can also ask Claude to 'work in a worktree' conversationally during a session"
+    - "Sessions grouped by git repository in the session picker, including worktrees"
+
+hooks_worktree_integration:
+  WorktreeCreate:
+    trigger: "When a worktree is being created via --worktree flag or isolation: \"worktree\" in subagent frontmatter"
+    behavior: "REPLACES Claude Code's default git worktree creation logic entirely"
+    use_case: >
+      Full control over worktree creation: choose a specific base branch per invocation,
+      fetch from a custom remote ref, add custom setup steps, or use a different directory structure.
+      Without this hook, the base is always origin/HEAD which cannot be changed per-invocation.
+  WorktreeRemove:
+    trigger: "When a worktree is being removed, either at session exit or when a subagent finishes"
+    behavior: "Hook can intercept worktree removal (e.g., for custom cleanup, archival, or notification)"
+    use_case: "Custom cleanup logic, archiving worktree contents, notifications, CI/CD integration on worktree completion"
+
+subagents_vs_agent_teams:
+  decision_matrix:
+    use_subagents_when:
+      - "Workers only need to report results back to the caller (one-way communication)"
+      - "Tasks are focused and the only the result matters"
+      - "Lower token cost is important"
+      - "Sequential operations or tasks with many dependencies"
+      - "Same-file edits (avoid both — use single session)"
+      - "Tasks within a single session scope"
+    use_agent_teams_when:
+      - "Workers need to communicate directly with each other (peer-to-peer)"
+      - "Complex work requiring discussion and collaboration between agents"
+      - "Research/review where multiple perspectives must converge"
+      - "New modules where each teammate owns a separate component"
+      - "Debugging with competing hypotheses tested in parallel"
+      - "Cross-layer changes spanning frontend, backend, and tests"
+    use_manual_worktrees_when:
+      - "You want parallel Claude sessions without automated team coordination overhead"
+      - "Simple parallelism: one task per session, you coordinate manually"
+      - "Agent teams experimental features are not yet available or stable"
+  comparison_table:
+    context: "Subagents: own window, results return to caller | Teams: own window, fully independent"
+    communication: "Subagents: report back to main only | Teams: teammates message each other directly"
+    coordination: "Subagents: main agent manages all work | Teams: shared task list with self-coordination"
+    best_for: "Subagents: focused tasks where only result matters | Teams: complex work requiring collaboration"
+    token_cost: "Subagents: lower (results summarized back) | Teams: higher (each teammate is separate Claude instance)"
+
+known_limitations_agent_teams:
+  - "No session resumption with in-process teammates: /resume and /rewind do not restore in-process teammates"
+  - "Task status can lag: teammates sometimes fail to mark tasks complete, blocking dependent tasks"
+  - "Shutdown can be slow: teammates finish current request/tool call before shutting down"
+  - "One team per session: lead can only manage one team at a time"
+  - "No nested teams: teammates cannot spawn their own teams or teammates"
+  - "Lead is fixed: session that creates team is lead for its lifetime; cannot transfer leadership"
+  - "Permissions set at spawn: per-teammate permission modes cannot be set at spawn time; only changeable after"
+  - "Split panes require tmux or iTerm2: not supported in VS Code integrated terminal, Windows Terminal, or Ghostty"
+  - "CLAUDE.md works normally for teammates (positive note: this is documented as working correctly)"
+
+gaps:
+  - "No documentation found on whether agent teams can use worktree isolation internally (per-teammate worktrees)"
+  - "WorktreeCreate hook input/output schema not extracted (need to check /en/hooks reference page)"
+  - "No information on how agent teams handle merge conflicts when teammates edit overlapping files"
+  - "No documentation on maximum number of teammates or hard limits"
+  - "Agent teams are experimental; behavior may change substantially before GA"
+  - "The 'architecture' section of agent-teams page referenced but not fully extracted (task list internals)"

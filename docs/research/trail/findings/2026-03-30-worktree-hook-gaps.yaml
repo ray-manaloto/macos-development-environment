@@ -1,0 +1,164 @@
+id: finding-worktree-hook-gaps
+timestamp: "2026-03-30T23:10:00Z"
+source: https://code.claude.com/docs/en/hooks
+agent: researcher
+finding_type: insight
+confidence: confirmed
+topic: Claude Code WorktreeCreate hook behavior - 5 specific questions
+
+questions:
+
+  1_hook_timeout:
+    question: "What is the timeout for Claude Code command hooks?"
+    answer: |
+      Command hooks default to 600 seconds (10 minutes).
+      Prompt hooks default to 30 seconds.
+      Agent hooks default to 60 seconds.
+      Async command hooks also default to 10 minutes when timeout is unspecified.
+      The timeout field is optional and can be overridden per-hook in the config.
+      A separate env var CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS overrides SessionEnd hooks only.
+    confidence: confirmed
+    evidence: |
+      code.claude.com/docs/en/hooks APIDOC: "timeout (integer) - Optional - Timeout in seconds (default: 600)"
+      ericbuess/claude-code-docs hooks.md: "defaults of 600 for command, 30 for prompt, and 60 for agent"
+      NOTE: anthropics/claude-code plugin-dev SKILL.md states "defaults of 60s for command hooks and 30s
+      for prompt hooks" — this contradicts the official docs and appears to be stale plugin documentation.
+      Trust official docs (600s) over plugin dev skill (60s).
+    implication: |
+      A WorktreeCreate hook running `uv run mde-py hooks worktree-create` (Python startup ~1.1s +
+      uv sync ~5-30s) is well within the 600s default. No explicit timeout override is needed
+      unless the hook could theoretically exceed 10 minutes. Use `uv sync --frozen` to keep
+      sync fast. The debate synthesis finding of "Hook timeout unknown" (CRITICAL) is now resolved:
+      timeout is 600s by default, ample for our use case.
+
+  2_path_validation:
+    question: "Does Claude Code validate the WorktreeCreate return path?"
+    answer: |
+      Claude Code uses the stdout path as-is as the working directory for the isolated session.
+      It does NOT verify the path exists, check it is a git worktree, or perform any structural
+      validation before using it. If the hook fails (non-zero exit) or produces no output, the
+      worktree creation process fails with an error. If the hook succeeds (exit 0) but the printed
+      path does not point to a valid directory, the session startup will fail when Claude Code
+      tries to use the path.
+    confidence: probable
+    evidence: |
+      code.claude.com/docs/en/hooks: "The hook must print the absolute path to the created worktree
+      directory on stdout. Claude Code uses this path as the working directory for the isolated session."
+      ericbuess/claude-code-docs: "If the hook fails to execute successfully or produces no output,
+      the worktree creation process will be considered an error."
+      No documentation mentions any path validation step between receiving stdout and using the path.
+      The design intent (replace git with SVN/Perforce/Mercurial) implies Claude Code cannot check
+      git-specific worktree properties.
+    gaps: |
+      What error message appears if a non-existent path is returned? Whether Claude Code logs the
+      path before attempting to use it is undocumented.
+    implication: |
+      Hook implementation must guarantee the directory exists and is accessible before exiting 0.
+      Add an explicit `os.path.isdir()` guard in the hook and exit non-zero if directory creation
+      failed, rather than relying on Claude Code to catch the error.
+
+  3_parallel_hooks:
+    question: "Can multiple WorktreeCreate hooks fire in parallel?"
+    answer: |
+      Yes, multiple WorktreeCreate events CAN fire concurrently. When an agent team uses
+      `isolation: worktree` and spawns multiple subagents simultaneously, each subagent
+      triggers its own WorktreeCreate hook invocation independently. The `name` field
+      in the hook input is a slug identifier that is either user-specified or auto-generated,
+      but the docs do not guarantee uniqueness across concurrent invocations for the same session.
+      Within a single hook config, multiple matching hooks execute in parallel (confirmed for prompt
+      and agent hooks: "All matching hooks are executed in parallel").
+    confidence: probable
+    evidence: |
+      code.claude.com/docs/en/hooks subagents doc: each subagent with isolation:worktree gets
+      its own WorktreeCreate invocation.
+      ericbuess/claude-code-docs hooks.md: "All matching hooks are executed in parallel" for
+      prompt/agent hooks — same applies to command hooks.
+      debate-synthesis.md (2026-03-30): Gemini (HIGH) found "Branch name collision in parallel teams"
+      — confirmed as a real risk requiring session_id prefix to guarantee uniqueness.
+    gaps: |
+      Whether Claude Code serializes WorktreeCreate invocations or runs them truly in parallel is
+      undocumented. The `name` field auto-generation algorithm is not specified.
+    implication: |
+      Hook implementation MUST append session_id[:8] to branch names to prevent collisions:
+      `worktree-<name>-<session_id[:8]>`. Treat path creation as potentially concurrent —
+      use os.makedirs(exist_ok=True) and check for existing branches before creating.
+
+  4_worktreeinclude_pattern_matching:
+    question: "What does Claude Code's built-in .worktreeinclude use for pattern matching?"
+    answer: |
+      .worktreeinclude uses gitignore syntax (the same as .gitignore). Patterns listed in
+      .worktreeinclude are matched against gitignored files. Only files that (a) match a pattern
+      in .worktreeinclude AND (b) are gitignored get copied — tracked files are never duplicated.
+      CRITICAL: If a WorktreeCreate hook is configured, .worktreeinclude is NOT processed at all
+      by Claude Code. The hook replaces the entire default behavior including .worktreeinclude
+      file copying. The hook must replicate this functionality itself.
+    confidence: confirmed
+    evidence: |
+      llmstxt/code_claude_llms_txt: ".worktreeinclude file lists gitignored files that should be
+      copied into new Git worktrees. Patterns in this file follow .gitignore syntax."
+      llmstxt/code_claude_llms_txt WorktreeCreate docs: "Because the hook replaces the default
+      behavior entirely, .worktreeinclude is not processed. If you need to copy local configuration
+      files like .env into the new worktree, do it inside your hook script."
+    implication: |
+      The WorktreeCreate hook must re-implement .worktreeinclude file copying using gitignore
+      semantics. Using Python's fnmatch (as the current spec proposes) is a lossy approximation.
+      For correctness, shell out to `git check-ignore --stdin` or use the pathspec library.
+      For simple patterns (.env, .env.local), fnmatch is acceptable — document this limitation.
+
+  5_stdout_whitespace:
+    question: "What happens if hook prints extra whitespace/newlines with the path?"
+    answer: |
+      Not explicitly documented whether Claude Code trims the stdout path. The canonical example
+      in all official docs uses `echo "$DIR"` which appends a trailing newline — strongly implying
+      Claude Code trims at least trailing newlines. HTTP hooks return the path via
+      `hookSpecificOutput.worktreePath` JSON field (no whitespace concern). For command hooks,
+      the docs consistently show `echo "$PATH"` as the return mechanism.
+    confidence: probable
+    evidence: |
+      code.claude.com/docs/en/hooks example: "echo \"$DIR\"" — echo always adds a trailing newline,
+      so Claude Code must handle this case (either by trimming or by design).
+      HTTP hook response schema: `{ "hookSpecificOutput": { "worktreePath": "/absolute/path" } }`
+      — no whitespace issue since it's a JSON field.
+      No doc explicitly states trimming behavior for command hook stdout.
+    gaps: |
+      Whether leading whitespace, embedded newlines, or CRLF line endings in stdout cause issues
+      is undocumented. What happens if stdout contains multiple lines (e.g., debug output followed
+      by path) is unknown.
+    implication: |
+      Hook should output ONLY the path to stdout and redirect all other output to stderr.
+      The canonical pattern `svn checkout ... >&2 && echo "$DIR"` (from official docs) follows
+      this: stderr for operational output, stdout for path only. Do not mix stdout channels.
+      Using printf '%s\n' "$DIR" instead of echo is marginally safer for portability.
+
+confident_about: |
+  1. Command hook default timeout is 600s (10 minutes), not 60s
+  2. .worktreeinclude is NOT processed when WorktreeCreate hook is active — hook must replicate it
+  3. .worktreeinclude uses gitignore syntax
+  4. WorktreeCreate does not validate the returned path — hook must ensure directory exists
+  5. Multiple parallel WorktreeCreate invocations are possible with subagent teams
+
+gaps: |
+  - Whether Claude Code serializes or parallelizes concurrent WorktreeCreate hook invocations
+  - Whether stdout path is trimmed (highly probable based on canonical echo example, not confirmed)
+  - Exact error behavior when returned path does not exist
+  - Whether name field guarantees uniqueness across parallel invocations
+
+evidence: |
+  Primary: https://code.claude.com/docs/en/hooks (official docs)
+  Mirror: https://github.com/ericbuess/claude-code-docs/blob/main/docs/hooks.md
+  Mirror: https://github.com/llmstxt/code_claude_llms_txt
+  Internal: docs/research/trail/deep-reviews/debates/worktree-hook-2026-03-30/debate-synthesis.md
+  ctx7 library IDs: /websites/code_claude, /ericbuess/claude-code-docs, /llmstxt/code_claude_llms_txt
+
+implication: |
+  The 5 gap questions from the adversarial review prompt are now answered or significantly
+  narrowed. The CRITICAL "Hook timeout unknown" finding from Gemini is resolved: 600s default
+  is ample for uv sync. The hook implementation must: (1) replicate .worktreeinclude copying
+  using gitignore semantics, (2) guarantee the directory exists before returning, (3) output
+  only the path to stdout, (4) use session_id[:8] in branch names for parallel safety.
+
+tags:
+  [worktree, WorktreeCreate, hook-timeout, gitignore, worktreeinclude, parallel-hooks,
+   stdout-path, claude-code-hooks, subagent-isolation, path-validation]
+
+status: discovered

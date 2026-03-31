@@ -1,0 +1,196 @@
+topic: pydantic-settings BaseSettings patterns
+date: "2026-03-30"
+confidence: HIGH
+sources:
+  - url: "https://context7.com/pydantic/pydantic-settings/llms.txt"
+    what_confirmed: >-
+      env_prefix applies to field names by default; alias and validation_alias
+      override env var lookup name
+  - url: "https://github.com/pydantic/pydantic-settings/blob/main/docs/index.md"
+    what_confirmed: >-
+      env_prefix_target controls whether prefix applies to variable names,
+      aliases, or both; alias vs validation_alias distinction for env var reading
+  - url: "https://github.com/pydantic/pydantic/blob/main/docs/concepts/models.md"
+    what_confirmed: >-
+      model_post_init called after full model initialization; fields are fully
+      populated (from env or defaults) before model_post_init runs; can mutate
+      fields via object.__setattr__ or direct assignment
+  - url: "https://github.com/pydantic/pydantic/blob/main/docs/concepts/fields.md"
+    what_confirmed: >-
+      Path type coercion is native; pydantic coerces string values to
+      pathlib.Path automatically
+
+key_findings:
+  - finding: >-
+      env_prefix='MDE_' + field name 'project_dir' reads env var
+      'MDE_PROJECT_DIR' (uppercased automatically). Confirmed: env_prefix
+      is prepended to the field name, then uppercased for lookup.
+    implication: >-
+      MdePaths with env_prefix='MDE_' will read MDE_PROJECT_DIR,
+      MDE_GENERATED_DIR, etc. from environment without any aliases
+      needed for these fields.
+
+  - finding: >-
+      Field(alias='MDE_DIR_REMEMBER') sets BOTH the validation alias
+      (env var lookup) AND the serialization name. env_prefix is NOT
+      applied to aliases by default (env_prefix_target='variable' is
+      default). So the env var read is exactly 'MDE_DIR_REMEMBER',
+      not 'MDE_MDE_DIR_REMEMBER'.
+    implication: >-
+      For fields where the env var name does NOT follow the
+      prefix+fieldname pattern, use Field(validation_alias='MDE_DIR_REMEMBER').
+      This reads exactly that env var name, bypassing prefix. Use
+      Field(alias=...) if you also want the serialized name to change.
+
+  - finding: >-
+      validation_alias vs alias distinction is critical for BaseSettings:
+      validation_alias controls what env var name is read; alias controls
+      both env var reading AND serialization key name. For env var
+      overrides, prefer validation_alias to avoid changing serialization
+      behavior.
+    implication: >-
+      If we use Field(alias='MDE_DIR_REMEMBER'), the field serializes
+      as 'MDE_DIR_REMEMBER' in model_dump(), which may be undesirable.
+      Use validation_alias='MDE_DIR_REMEMBER' to read that env var but
+      keep Python attribute name (e.g., 'remember_dir') in serialization.
+
+  - finding: >-
+      model_post_init runs AFTER all fields are set from
+      environment/defaults, BEFORE the instance is returned to the
+      caller. Fields with default=None that have no env var set will
+      be None when model_post_init is called. This is the correct
+      hook for cascading defaults.
+    implication: >-
+      The MdePaths pattern is correct: set all fields to None by
+      default, let BaseSettings read MDE_* env vars, then in
+      model_post_init check which fields are still None and fill
+      them with computed defaults (git detection, path derivation, etc.).
+
+  - finding: >-
+      In model_post_init, fields can be mutated via direct assignment
+      (self.field = value) since Pydantic models are mutable by default.
+      For frozen models, use object.__setattr__(self, 'field', value).
+      Since MdePaths won't be frozen, direct assignment works.
+    implication: >-
+      model_post_init can safely do: if self.project_dir is None:
+      self.project_dir = detect_via_git(). No special hacks needed.
+
+  - finding: >-
+      populate_by_name=True in model_config allows field values to be
+      passed by the Python field name even when an alias is set.
+      Without it, aliased fields MUST be provided by alias (e.g.,
+      must pass 'MDE_DIR_REMEMBER' not 'remember_dir' in constructor
+      kwargs). For BaseSettings env var loading, this mainly matters
+      when constructing the model directly in tests.
+    implication: >-
+      Add populate_by_name=True to allow test code to pass
+      MdePaths(remember_dir=Path('/tmp/test')) instead of having to
+      use MdePaths(**{'MDE_DIR_REMEMBER': '/tmp/test'}). Required
+      for testability when validation_alias is set.
+
+  - finding: >-
+      Path type coercion is automatic: if env var
+      MDE_PROJECT_DIR='/home/user/myproject', and the field is typed
+      Path | None, pydantic-settings will coerce the string to
+      pathlib.Path('/home/user/myproject') without any custom
+      validator needed.
+    implication: >-
+      No custom validators needed for Path fields. Just type them
+      as 'Path | None' and pydantic handles the str-to-Path conversion.
+
+  - finding: >-
+      pydantic-settings v2 is current (released alongside pydantic v2).
+      Key breaking change from v1: BaseSettings moved from pydantic
+      package to pydantic-settings package. model_config uses
+      SettingsConfigDict instead of class Config. env_prefix behavior
+      is the same.
+    implication: >-
+      Import from pydantic_settings, not pydantic. Use
+      SettingsConfigDict for model_config. No v1 compatibility
+      concerns for new code.
+
+  - finding: >-
+      AliasChoices allows a field to accept multiple env var names:
+      Field(validation_alias=AliasChoices('MDE_DIR_REMEMBER',
+      'MDE_REMEMBER_DIR')). This is useful for renaming env vars
+      while maintaining backward compatibility.
+    implication: >-
+      If MDE_* env var names need to change in the future,
+      AliasChoices provides migration path without breaking
+      existing setups.
+
+  - finding: >-
+      env_prefix_target controls prefix scope: 'variable' (default)
+      = prefix only added to field names; 'alias' = prefix only added
+      to aliases; 'all' = prefix added to both. With default 'variable'
+      and a validation_alias set, the prefix does NOT apply to the
+      alias — the alias is used as-is.
+    implication: >-
+      If using validation_alias='MDE_DIR_REMEMBER' with
+      env_prefix='MDE_', the env var lookup is just
+      'MDE_DIR_REMEMBER' (alias as-is), NOT 'MDE_MDE_DIR_REMEMBER'.
+      This is correct/desired behavior for our use case.
+
+recommended_approach: |
+  For MdePaths(BaseSettings):
+
+  1. Use env_prefix='MDE_' for standard fields (project_dir -> MDE_PROJECT_DIR, generated_dir -> MDE_GENERATED_DIR)
+  2. For fields with non-standard env var names, use Field(validation_alias='MDE_DIR_REMEMBER') — the prefix does NOT apply to validation_alias
+  3. Add populate_by_name=True in SettingsConfigDict for testability
+  4. Type all fields as Path | None with default=None — pydantic auto-coerces strings to Path
+  5. Use model_post_init for cascading defaults: fields are None only if env var is unset; direct assignment works (no object.__setattr__ needed)
+  6. Do NOT use Field(alias=...) unless you also want the serialization key to change — prefer validation_alias for env-var-only overrides
+
+  Example pattern:
+    class MdePaths(BaseSettings):
+        model_config = SettingsConfigDict(
+            env_prefix="MDE_",
+            populate_by_name=True,
+        )
+        project_dir: Path | None = None          # reads MDE_PROJECT_DIR
+        generated_dir: Path | None = None        # reads MDE_GENERATED_DIR
+        remember_dir: Path | None = Field(
+            default=None,
+            validation_alias="MDE_DIR_REMEMBER"  # reads MDE_DIR_REMEMBER exactly
+        )
+
+        def model_post_init(self, context: Any) -> None:
+            if self.project_dir is None:
+                self.project_dir = _detect_via_git()
+            if self.generated_dir is None and self.project_dir is not None:
+                self.generated_dir = self.project_dir / ".generated"
+            if self.remember_dir is None and self.generated_dir is not None:
+                self.remember_dir = self.generated_dir / "remember"
+
+implementation_notes:
+  - >-
+    env_prefix is applied case-insensitively: 'MDE_' prefix + field
+    'project_dir' = looks up 'MDE_PROJECT_DIR' in env (uppercase
+    lookup by default)
+  - >-
+    validation_alias bypasses env_prefix entirely. If you set
+    validation_alias='MDE_DIR_REMEMBER', BaseSettings reads exactly
+    that env var, not 'MDE_MDE_DIR_REMEMBER'
+  - >-
+    model_post_init signature must be:
+    def model_post_init(self, context: Any) -> None
+    (not __post_init__)
+  - >-
+    Fields are fully validated BEFORE model_post_init runs. If an
+    env var is set to a non-path string, pydantic will coerce it
+    to Path before model_post_init sees it.
+  - >-
+    populate_by_name=True is required when validation_alias is set
+    AND you want to construct the model in tests using the Python
+    field name
+  - >-
+    pydantic-settings v2 is separate package: pip install
+    pydantic-settings (not bundled with pydantic v2)
+  - >-
+    Extra fields from env (env vars with MDE_ prefix that don't
+    match any field) will raise ValidationError by default
+    (extra='forbid'). Set extra='ignore' to allow unknown MDE_* vars.
+  - >-
+    For computed cascade: model_post_init cannot add NEW fields,
+    only modify existing ones. All cascaded paths must be declared
+    as fields (with default=None) even if they are always derived.

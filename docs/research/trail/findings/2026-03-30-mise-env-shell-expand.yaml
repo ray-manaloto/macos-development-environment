@@ -1,0 +1,57 @@
+topic: mise env_shell_expand behavior
+date: "2026-03-30"
+confidence: HIGH
+sources:
+  - url: "mise source: src/env_directive/mod.rs parse_template()"
+    what_confirmed: "Two-step expansion: Tera templates first, then $VAR shell expansion via shellexpand crate"
+  - url: "mise source: Settings::get().env_shell_expand"
+    what_confirmed: "env_shell_expand is Option<bool>: Some(true) enables, Some(false) disables, None warns"
+  - url: "mise debug_assert in parse_template"
+    what_confirmed: "env_shell_expand will become default=true in mise version 2026.7"
+
+key_findings:
+  - finding: "Tera template rendering runs FIRST (Step 1), then $VAR expansion runs SECOND (Step 2)"
+    implication: >
+      Our two-layer composition is confirmed: chezmoi renders {{ .chezmoi.sourceDir | dir }}
+      to an absolute path at chezmoi apply time, then mise expands $MDE_PROJECT_DIR at shell
+      activation. The order is guaranteed by the Rust source code.
+
+  - finding: "Shell expansion uses shellexpand::env_with_context_no_errors against the env context"
+    implication: >
+      $VAR references in [env] values are expanded against OTHER env vars already in the
+      context — meaning MDE_GENERATED_DIR = '$MDE_PROJECT_DIR/.generated' works because
+      MDE_PROJECT_DIR is defined earlier in the [env] section and already in context.
+
+  - finding: "Missing variables are tracked but not treated as errors (env_with_context_no_errors)"
+    implication: >
+      If $MDE_PROJECT_DIR is somehow unset, MDE_GENERATED_DIR would contain the literal
+      string '$MDE_PROJECT_DIR/.generated' — no error, no crash, but wrong value.
+      The validator Check 1 (paths.env-var-missing) catches this case.
+
+  - finding: "env_shell_expand will become default=true in mise 2026.7 (per debug_assert)"
+    implication: >
+      We're future-proofing by setting it explicitly now. When 2026.7 ships, our explicit
+      setting becomes redundant but harmless. No action needed at upgrade time.
+
+  - finding: "Tera template expansion requires trust_check(path) — config file must be trusted"
+    implication: >
+      The global mise config at ~/.config/mise/config.toml is auto-trusted. But if someone
+      clones the repo and runs mise directly on the chezmoi template (.tmpl file), trust
+      would need to be granted. Not an issue in our flow since chezmoi applies first.
+
+  - finding: "env_shell_expand is a global setting in [settings], not per-config"
+    implication: >
+      Setting it in the global config applies to ALL mise configs (global + project).
+      This is what we want — the project .mise.toml can also use $VAR composition.
+
+recommended_approach: >
+  The spec's design is confirmed correct by mise source code. Add env_shell_expand = true
+  to [settings] in the global mise config template. Define MDE_PROJECT_DIR first in [env],
+  then compose all other MDE_* vars using $MDE_PROJECT_DIR or $MDE_GENERATED_DIR.
+
+implementation_notes:
+  - "Order matters: MDE_PROJECT_DIR must be defined BEFORE vars that reference it in [env]"
+  - "Missing var expansion is silent (no error) — validator must catch this"
+  - "env_shell_expand = true will become default in mise 2026.7 — explicit setting is forward-compatible"
+  - "All env values are strings after expansion — Path coercion happens in Python (pydantic-settings)"
+  - "trust_check only applies to Tera templates, not $VAR expansion — our rendered config has no {{ }}"

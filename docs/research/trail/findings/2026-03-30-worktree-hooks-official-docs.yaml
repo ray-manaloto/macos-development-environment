@@ -1,0 +1,148 @@
+topic: Claude Code WorktreeCreate/WorktreeRemove hook specification
+date: "2026-03-30"
+source: "https://code.claude.com/docs/en/hooks"
+
+# -------------------------------------------------------------------------
+# WorktreeCreate
+# -------------------------------------------------------------------------
+worktree_create:
+  description: >
+    Fires when `claude --worktree` is invoked or when a subagent uses
+    `isolation: "worktree"`. If a WorktreeCreate hook is configured, it
+    REPLACES the default `git worktree` behavior entirely — Claude Code
+    no longer runs the built-in git command. This lets you substitute any
+    VCS (SVN, Perforce, Mercurial) for git. Because the hook replaces
+    default behavior, `.worktreeinclude` is NOT processed; if you need
+    to copy files like `.env` into the new worktree, do it inside the
+    hook script.
+
+  replaces_default: true
+
+  input_schema: |
+    {
+      "session_id": "abc123",
+      "transcript_path": "/Users/.../.claude/projects/.../00893aaf-19fa-41d2-8238-13269b9b3ca0.jsonl",
+      "cwd": "/Users/...",
+      "hook_event_name": "WorktreeCreate",
+      "name": "feature-auth"
+    }
+  input_fields:
+    common:
+      - session_id: session identifier string
+      - transcript_path: absolute path to the session JSONL transcript
+      - cwd: current working directory
+      - hook_event_name: always "WorktreeCreate"
+    specific:
+      - name: >
+          Slug identifier for the new worktree. Either specified by the user
+          or auto-generated (e.g. "bold-oak-a3f2"). Use this to derive the
+          directory path.
+
+  output_format: >
+    WorktreeCreate does NOT use the standard allow/block decision model.
+    The hook's success or failure determines the outcome.
+    The hook MUST return the absolute path to the created worktree directory.
+    - Command hooks (type: "command"): print the absolute path on stdout.
+    - HTTP hooks (type: "http"): return JSON body:
+        { "hookSpecificOutput": { "hookEventName": "WorktreeCreate", "worktreePath": "/absolute/path" } }
+    If the hook fails or produces no path, worktree creation fails with an error.
+
+  blocking: true
+
+  examples:
+    - description: SVN checkout — reads `name` field from stdin, checks out trunk, prints path to stdout
+      settings_json: |
+        {
+          "hooks": {
+            "WorktreeCreate": [
+              {
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "bash -c 'NAME=$(jq -r .name); DIR=\"$HOME/.claude/worktrees/$NAME\"; svn checkout https://svn.example.com/repo/trunk \"$DIR\" >&2 && echo \"$DIR\"'"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+
+# -------------------------------------------------------------------------
+# WorktreeRemove
+# -------------------------------------------------------------------------
+worktree_remove:
+  description: >
+    The cleanup counterpart to WorktreeCreate. Fires when a worktree is
+    being removed: either when the user exits a `--worktree` session and
+    chooses to remove it, or when a subagent with `isolation: "worktree"`
+    finishes. For git-based worktrees, Claude Code handles cleanup
+    automatically with `git worktree remove`. WorktreeRemove is primarily
+    needed when you used a non-git VCS in WorktreeCreate — without a
+    matching WorktreeRemove hook, the worktree directory is left on disk.
+    Claude Code passes the path that was returned by WorktreeCreate as
+    `worktree_path` in the hook input. Hook failures are logged in debug
+    mode only (non-fatal).
+
+  blocking: false
+
+  input_schema: |
+    {
+      "session_id": "abc123",
+      "transcript_path": "/Users/.../.claude/projects/.../00893aaf-19fa-41d2-8238-13269b9b3ca0.jsonl",
+      "cwd": "/Users/...",
+      "hook_event_name": "WorktreeRemove",
+      "worktree_path": "/Users/.../my-project/.claude/worktrees/feature-auth"
+    }
+  input_fields:
+    common:
+      - session_id: session identifier string
+      - transcript_path: absolute path to the session JSONL transcript
+      - cwd: current working directory
+      - hook_event_name: always "WorktreeRemove"
+    specific:
+      - worktree_path: >
+          Absolute path to the worktree being removed. This is the exact
+          path that was returned by WorktreeCreate (printed to stdout by
+          the command hook, or via hookSpecificOutput.worktreePath for
+          HTTP hooks).
+
+  decision_control: >
+    WorktreeRemove hooks have no decision control. They cannot block
+    worktree removal but can perform cleanup tasks like removing version
+    control state or archiving changes. Hook failures are logged in
+    debug mode only.
+
+  examples:
+    - description: Remove worktree directory — reads `worktree_path` from stdin and deletes it
+      settings_json: |
+        {
+          "hooks": {
+            "WorktreeRemove": [
+              {
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "bash -c 'jq -r .worktree_path | xargs rm -rf'"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+
+# -------------------------------------------------------------------------
+# Key behavioral notes
+# -------------------------------------------------------------------------
+notes:
+  - WorktreeCreate REPLACES git worktree behavior when configured; it does not run alongside it.
+  - WorktreeRemove fires for both --worktree sessions and subagents with isolation:worktree.
+  - For git-based workflows, WorktreeRemove is NOT needed — Claude Code handles git cleanup automatically.
+  - WorktreeRemove is only required when WorktreeCreate used a non-git VCS.
+  - >-
+    The worktree name slug is available in WorktreeCreate input as
+    "name"; the resolved absolute path is available in WorktreeRemove
+    input as "worktree_path".
+  - If WorktreeCreate fails (non-zero exit or empty stdout), the entire worktree creation fails with an error.
+  - .worktreeinclude is NOT processed when WorktreeCreate hook is configured; copy files inside the hook script.
+  - "Triggered by: 'claude --worktree' CLI flag OR subagent 'isolation: worktree' setting."
+  - HTTP hooks for WorktreeCreate must use the hookSpecificOutput envelope format.

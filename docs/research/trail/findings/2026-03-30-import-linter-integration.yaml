@@ -1,0 +1,134 @@
+topic: import-linter integration for architectural contracts
+date: "2026-03-30"
+confidence: HIGH
+sources:
+  - url: "https://import-linter.readthedocs.io/en/stable/contract_types/forbidden"
+    what_confirmed: "Section name is [tool.importlinter] (no hyphen), forbidden contract syntax"
+  - url: "https://github.com/seddonym/import-linter/blob/master/docs/toml.rst"
+    what_confirmed: "pyproject.toml sections start with tool., contracts use [[tool.importlinter.contracts]]"
+  - url: "https://import-linter.readthedocs.io/en/stable/get_started/run"
+    what_confirmed: "CLI command is lint-imports (not import-linter), uv run lint-imports works"
+  - url: "https://github.com/seddonym/import-linter/blob/master/docs/usage.rst"
+    what_confirmed: "exclude_type_checking_imports option, root_package vs root_packages, exit codes"
+  - url: "empirical-test-lazy-imports"
+    what_confirmed: >
+      Grimp Rust scanner (v3.14) detects ALL import statements including those inside
+      function bodies (lazy imports). Verified with actual test: function-body imports
+      from testpkg.cli detected as testpkg.cli -> testpkg.submod.models (l.6) and
+      testpkg.cli -> testpkg.submod.hooks (l.10). Exit code 1 on broken, 0 on pass.
+  - url: "empirical-test-future-annotations"
+    what_confirmed: >
+      from __future__ import annotations does NOT affect import detection.
+      Regular imports in files with that future statement are still found correctly.
+
+key_findings:
+  - finding: "pyproject.toml section is [tool.importlinter] — no hyphen, no dash"
+    implication: "The spec proposal uses the correct name. Do NOT use [tool.import-linter]."
+
+  - finding: "CLI command is lint-imports, not import-linter"
+    implication: >
+      Spec proposal `uv run lint-imports` is correct. After adding import-linter to
+      [dependency-groups.dev], `uv run lint-imports` works out of the box.
+
+  - finding: "CRITICAL: lazy imports inside function bodies ARE detected by grimp's Rust AST scanner"
+    implication: >
+      cli.py uses lazy imports extensively in _build_parser() (lines ~288-306) and
+      _cmd_* functions (lines ~355-430+). ANY forbidden contract targeting mde.cli as
+      source_module will trigger on these lazy imports. Contracts must NOT have mde.cli
+      as a forbidden_module target or source without accounting for this.
+      The spec contracts target mde.hooks, mde.dream, mde.debate as forbidden_modules
+      for mde.lib, mde.models, mde.validate — this is fine because cli.py is not in scope.
+      However if you add a contract for mde.cli itself, expect 20+ lazy-import hits.
+
+  - finding: "from __future__ import annotations does not affect import detection"
+    implication: >
+      The codebase uses `from __future__ import annotations` everywhere. This is safe —
+      only actual import statements are scanned, not type annotations in string form.
+
+  - finding: "exclude_type_checking_imports option available at [tool.importlinter] level"
+    implication: >
+      If TYPE_CHECKING guards are used for type-only imports, set
+      exclude_type_checking_imports = true to prevent false positives. cli.py uses
+      TYPE_CHECKING at line 13-15 for Callable, Generator, Sequence, Any — these
+      would be excluded from detection when the option is enabled.
+
+  - finding: "Installation: add to [dependency-groups.dev] in pyproject.toml"
+    implication: >
+      No pipx needed. `uv add --group dev import-linter` adds it correctly.
+      Verified: import-linter==2.11 installs cleanly with grimp==3.14.
+      uv run lint-imports --version outputs: import-linter 2.11
+
+  - finding: "Exit codes: 0 on all contracts kept, 1 on any broken contract"
+    implication: >
+      Quality gate subprocess check works directly: non-zero exit = failure.
+      The spec pattern `("import-linter", ["uv", "run", "lint-imports"], "...")` is correct.
+
+  - finding: "Contract types available: forbidden, layers, independence, protected, acyclic_siblings"
+    implication: >
+      Spec uses only 'forbidden' contracts. Layers and independence are available if
+      architectural layering needs to be enforced later (e.g., validate cannot import hooks).
+
+  - finding: "root_package (singular) vs root_packages (plural) — both valid"
+    implication: >
+      The spec proposal uses `root_packages = [\"mde\"]` (plural list form). This is
+      correct for a single package too. Singular `root_package = \"mde\"` also works.
+
+  - finding: "ignore_imports option available per contract for known exceptions"
+    implication: >
+      If a lazy import in cli.py legitimately crosses a boundary, use
+      ignore_imports = [\"mde.cli -> mde.hooks.something\"] to whitelist it.
+      Wildcards supported: \"mde.cli -> mde.hooks.*\"
+
+recommended_approach: >
+  Add import-linter to [dependency-groups.dev]. Use [tool.importlinter] (no hyphen).
+  Run via `uv run lint-imports`. The spec contracts are architecturally correct.
+  Add `exclude_type_checking_imports = true` to avoid false positives from TYPE_CHECKING guards.
+  DO NOT add mde.cli as a source_modules target without auditing its lazy imports first —
+  cli.py has ~20+ lazy imports across _build_parser() and _cmd_* functions that will
+  all be flagged. The three proposed contracts (lib, models, validate) are safe because
+  none of them target cli.py's lazy import patterns.
+
+implementation_notes:
+  - >
+    pyproject.toml snippet (verified correct):
+
+      [tool.importlinter]
+      root_packages = ["mde"]
+      exclude_type_checking_imports = true
+
+      [[tool.importlinter.contracts]]
+      name = "lib must not import hooks"
+      type = "forbidden"
+      source_modules = ["mde.lib"]
+      forbidden_modules = ["mde.hooks", "mde.cli"]
+
+      [[tool.importlinter.contracts]]
+      name = "models must not import hooks or cli"
+      type = "forbidden"
+      source_modules = ["mde.models"]
+      forbidden_modules = ["mde.hooks", "mde.cli", "mde.dream", "mde.debate"]
+
+      [[tool.importlinter.contracts]]
+      name = "validate must not import hooks"
+      type = "forbidden"
+      source_modules = ["mde.validate"]
+      forbidden_modules = ["mde.hooks"]
+
+  - >
+    Quality gate integration (confirmed working pattern):
+      ("import-linter", ["uv", "run", "lint-imports"], "Circular import check")
+
+  - >
+    Grimp version 3.14 uses a compiled Rust scanner for import detection (not Python ast module).
+    It scans ALL import statements at every nesting level (module-level AND function-body).
+    The only exclusion mechanism is exclude_type_checking_imports for TYPE_CHECKING guards
+    and per-contract ignore_imports for specific known exceptions.
+
+  - >
+    mde.lib, mde.models, and mde.validate do not appear to use lazy imports (they are
+    library/domain modules). The contracts will likely pass immediately. Verify with
+    `uv run lint-imports --verbose` on first run to see the import graph.
+
+  - >
+    Cache: import-linter creates .import_linter_cache/ by default. Add to .gitignore.
+    Use --no-cache flag or cache_dir option if cache causes CI issues.

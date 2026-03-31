@@ -1,0 +1,128 @@
+topic: vulture dead code detection integration
+date: "2026-03-30"
+confidence: HIGH
+sources:
+  - url: "https://github.com/jendrikseipp/vulture"
+    what_confirmed: "pyproject.toml config, whitelist format, min-confidence semantics, ignore_decorators"
+  - url: "https://pypi.org/project/vulture/"
+    what_confirmed: "current version (2.16), pip-installable"
+  - empirical: "vulture 2.16 tested directly via `uv run --with vulture` on /tmp and src/mde/"
+    what_confirmed: "exit codes, confidence thresholds, real findings on this codebase"
+
+key_findings:
+  - finding: "pyproject.toml configuration is fully supported via [tool.vulture] section"
+    implication: >-
+      Add min_confidence, ignore_decorators, ignore_names, paths, exclude
+      to pyproject.toml — no separate config file needed
+
+  - finding: "Exit codes: 0 = no dead code found, 3 = dead code found, non-zero on error. NOT 1."
+    implication: >-
+      Quality gate must check for exit code 3 (not just non-zero) as the
+      'findings exist' signal — or treat any non-zero as failure
+
+  - finding: >-
+      "uv run vulture" FAILS unless vulture is added to pyproject.toml
+      [dependency-groups]. The spec's ['uv', 'run', 'vulture', ...]
+      requires vulture in dev deps.
+    implication: >-
+      Must add vulture to [dependency-groups] dev in pyproject.toml.
+      Cannot use as a mise pipx tool and expect "uv run vulture" to work.
+
+  - finding: "vulture is NOT in the mise registry. Must be installed as a uv dev dependency, not via mise."
+    implication: >-
+      Add "vulture>=2.16" to pyproject.toml [dependency-groups] dev.
+      Do NOT add to mise config.
+
+  - finding: >-
+      min-confidence 80 is the recommended default in vulture's own README.
+      Confidence levels: unused imports = 90%, unused functions/variables = 60%,
+      certain unused = 100%.
+    implication: >-
+      80% threshold filters out most false positives from dynamic attribute
+      access (60%) while catching real dead code. The spec's choice of 80
+      is correct.
+
+  - finding: >-
+      At min-confidence 80, vulture found 2 issues in src/mde/ that ruff
+      misses: unused variable 'cls' (100%) in consensus.py:106 and unused
+      import 'RateLimitType' (90%) in statusline/schema.py:15.
+    implication: >-
+      Vulture adds genuine value beyond ruff — these are real dead code
+      items ruff F401/F841 did not catch.
+
+  - finding: >-
+      Vulture DOES detect unused imports (overlap with ruff F401) but at
+      different confidence levels. At 90% confidence, vulture catches what
+      ruff's F401 rule misses (dynamically-used names may fool ruff but
+      not vulture).
+    implication: >-
+      Some overlap exists but not full duplication. Run both — ruff
+      catches syntax/style issues, vulture catches semantic dead code.
+      The spec comment 'Dead code (runtime)' is accurate.
+
+  - finding: >-
+      False positives from framework definitions (pydantic fields, click
+      commands) are handled via: (1) ignore_decorators in pyproject.toml,
+      (2) whitelist.py file, (3) "# noqa: vulture" inline comments.
+    implication: >-
+      For this project: click commands use @click.command/@click.group
+      decorators — add to ignore_decorators. Pydantic BaseModel fields
+      are NOT flagged by vulture (tested — vulture correctly handles them).
+
+  - finding: >-
+      Whitelist files are plain Python files that 'reference' items to
+      mark as used. Generate with
+      "vulture src/mde/ --make-whitelist > vulture_whitelist.py".
+    implication: >-
+      Recommended workflow: after first run, generate whitelist for
+      legitimate false positives (e.g., __hook_meta__ dict fields,
+      plugin entry points), commit to repo.
+
+  - finding: >-
+      ignore_names supports glob patterns:
+      ignore_names = ['visit_*', 'do_*', '__hook_meta__']. This is
+      better than a whitelist for patterns.
+    implication: >-
+      For this project: add
+      ignore_names = ['__hook_meta__', 'test_*'] to handle hook
+      discovery dicts and pytest test functions.
+
+recommended_approach: |
+  Add vulture as a dev dependency in pyproject.toml, configure it in [tool.vulture] with
+  min_confidence=80, ignore_decorators for click/pytest patterns, and ignore_names for
+  __hook_meta__ and test_ prefixes. The quality gate command should be:
+  ["uv", "run", "vulture", "src/mde/"] — paths and min_confidence come from pyproject.toml config.
+  Treat exit code 3 (findings exist) as gate failure. Generate a whitelist file for any
+  remaining legitimate false positives after initial audit.
+
+implementation_notes:
+  - "Add to pyproject.toml [dependency-groups] dev: 'vulture>=2.16'"
+  - >-
+    Add [tool.vulture] section to pyproject.toml with:
+    min_confidence=80, paths=['src/mde/'],
+    ignore_names=['__hook_meta__', 'test_*', 'setup_*']
+  - >-
+    First run will show 2 real issues: consensus.py:106 (unused cls)
+    and statusline/schema.py:15 (unused RateLimitType import) — fix
+    these before enabling gate
+  - "Exit code 3 = findings found; quality gate should treat this as failure"
+  - >-
+    Run "uv run vulture src/mde/ --make-whitelist > vulture_whitelist.py"
+    to audit false positives — commit the whitelist if needed
+  - >-
+    Do NOT use "uv run --with vulture" in the gate (ad-hoc install);
+    use project dep via "uv run vulture"
+  - >-
+    Vulture does NOT check test files by default if you set
+    paths=['src/mde/'] — this is correct for a quality gate
+  - >-
+    The --config flag can specify a custom pyproject.toml path if
+    needed, but default is project root pyproject.toml
+  - >-
+    ignore_decorators supports glob: '@click.*', '@pytest.*',
+    '@property' will suppress false positives from CLI/test decorators
+
+current_project_findings_at_80pct:
+  - "src/mde/consensus.py:106: unused variable 'cls' (100% confidence)"
+  - "src/mde/statusline/schema.py:15: unused import 'RateLimitType' (90% confidence)"
+  - "Both missed by ruff — confirms vulture adds unique value"

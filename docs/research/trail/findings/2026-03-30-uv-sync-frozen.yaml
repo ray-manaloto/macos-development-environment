@@ -1,0 +1,125 @@
+topic: uv sync --frozen behavior for worktree setup
+date: "2026-03-30"
+id: finding-uv-sync-frozen-worktree
+timestamp: "2026-03-30T22:28:00Z"
+agent: researcher
+finding_type: technique
+confidence: HIGH
+tags: [uv, sync, frozen, worktree, venv, VIRTUAL_ENV, performance, worktree-create-hook]
+
+questions:
+  - question: "Does `uv sync --frozen` skip ALL dependency resolution?"
+    answer: >
+      Yes. `--frozen` skips both lockfile update AND lockfile-vs-pyproject.toml staleness check.
+      From `uv help sync`: "Instead of checking if the lockfile is up-to-date, uses the versions
+      in the lockfile as the source of truth. If the lockfile is missing, uv will exit with an
+      error. If the pyproject.toml includes changes to dependencies that have not been included in
+      the lockfile yet, they will not be present in the environment." No resolver is invoked —
+      uv reads the lockfile directly and installs from it. Contrast with `--locked` which checks
+      the lockfile is up-to-date but also does not update it (errors if stale).
+    source: "uv help sync (local), https://github.com/astral-sh/uv/blob/main/docs/concepts/projects/sync.md"
+    confidence: HIGH
+
+  - question: "How fast is `uv sync --frozen` with a warm cache vs cold cache?"
+    answer: >
+      WARM cache + warm .venv (already synced, no packages to install):
+        ~63ms total (observed: 0.063s wall-clock)
+      WARM cache + cold .venv (packages downloaded, venv needs creation + linking):
+        ~280-420ms total (3-run range: 281ms, 417ms, 302ms; with 111 packages + 40 binaries)
+      The warm-cache cold-venv number uses `--no-install-project` (avoids src/ copy build error
+      for editable installs). Full sync with project install would add build time.
+      COLD cache (first machine, packages need download): estimate 10-60s depending on
+      package count and network — not tested directly as this machine has full cache.
+      Key insight: uv uses hardlinks from its global cache (~/.cache/uv) into the .venv,
+      which is why warm-cache cold-venv is so fast (~300ms for 111 packages).
+    source: "Empirical timing tests in this repo (111 packages), uv docs on hardlink link-mode"
+    confidence: HIGH
+
+  - question: "Does `uv sync --frozen` work correctly in a git worktree?"
+    answer: >
+      Yes, with important details:
+      1. uv creates `.venv/` IN THE WORKTREE DIRECTORY (next to pyproject.toml), not in the
+         main repo. This is the desired behavior — each worktree gets its own isolated venv.
+      2. uv discovers the project by searching for pyproject.toml from the current directory
+         upward. In a git worktree, pyproject.toml is present in the worktree root, so
+         discovery works correctly.
+      3. uv.lock is present in the worktree (git-tracked), so `--frozen` can read it.
+      4. The editable install of the local project (`mde @ file://...`) will attempt to
+         build from src/mde/__init__.py. Since the source is in the worktree, this works.
+         The dry-run test showed: "Would create project environment at: .venv" and
+         "Would download 1 package / Would install 111 packages" — correct behavior.
+      5. VIRTUAL_ENV set to the main repo's .venv: uv IGNORES it with a warning
+         (see Q4 below). The worktree gets a fresh .venv regardless.
+    source: "Empirical test: copied pyproject.toml + uv.lock to tmpdir, ran uv sync --frozen --dry-run"
+    confidence: HIGH
+
+  - question: "Does unsetting VIRTUAL_ENV work with `uv sync`? Will uv ignore the parent's .venv?"
+    answer: >
+      uv ALREADY ignores VIRTUAL_ENV by default for project operations (uv sync, uv run).
+      From uv docs: "By default, uv does not read the VIRTUAL_ENV environment variable during
+      project operations. A warning will be displayed if VIRTUAL_ENV is set to a different path
+      than the project's environment. The --active flag can be used to opt-in to respecting
+      VIRTUAL_ENV, while the --no-active flag can be used to silence the warning."
+      The dry-run test confirmed this: with VIRTUAL_ENV=/path/to/main-repo/.venv set,
+      uv printed: "warning: `VIRTUAL_ENV=...` does not match the project environment path `.venv`
+      and will be ignored; use `--active` to target the active environment instead"
+      — then proceeded to create a new .venv in the worktree directory.
+      CONCLUSION: No need to unset VIRTUAL_ENV in the hook. uv handles it correctly.
+      However, to suppress the warning in hook output, either:
+        (a) Use `--no-active` flag (suppresses warning), OR
+        (b) Unset VIRTUAL_ENV in the subprocess env dict before calling uv.
+      Option (b) is cleaner — no spurious warning in hook logs.
+    source: >
+      uv help sync --active flag description; ctx7 /astral-sh/uv VIRTUAL_ENV handling docs;
+      empirical dry-run test output showing warning text.
+    confidence: HIGH
+
+timing:
+  warm_cache_warm_venv: "~63-96ms (observed: 63ms no-VIRTUAL_ENV, 96ms with unset VIRTUAL_ENV, 740ms with mise overhead — confirmed 2026-03-30)"
+  warm_cache_cold_venv_worktree: "~158ms warm (23ms pkg check) after initial install; first-time cold install of 111 packages took ~200ms+198ms=~400ms — confirmed 2026-03-30"
+  cold_cache_cold_venv: "~10-60s (estimate, packages need download — not measured)"
+  note: >
+    Warm cache numbers from this repo (111 packages). uv uses hardlinks by default
+    (UV_LINK_MODE defaults to hardlink on macOS) which explains sub-500ms cold-venv times.
+    Live tests 2026-03-30: worktree at .claude/worktrees/ci-fix (no .venv present) completed
+    first-time install in ~400ms total, second run (warm) in ~158ms.
+
+live_tests_2026_03_30:
+  main_repo_warm_venv: "0.74s wall-clock (includes mise init overhead), 2ms pkg check"
+  main_repo_warm_venv_no_mise: "0.096s wall-clock, 6ms pkg check"
+  worktree_cold_venv_first_run: "198ms install (111 packages) + build time ~= 400ms total"
+  worktree_warm_venv_second_run: "0.158s wall-clock (23ms pkg check)"
+  worktree_VIRTUAL_ENV_warning: "uv printed warning then proceeded correctly — warning text confirmed"
+  note: "mise init adds ~600ms overhead. Direct uv binary: 96-158ms for warm runs."
+
+hook_design_implications:
+  - "Use `uv sync --frozen` not `uv sync` — avoids resolver, safe for hook timeout budget"
+  - "uv creates .venv in worktree dir automatically — no setup needed"
+  - "VIRTUAL_ENV warning is harmless but noisy — unset it in subprocess env or pass --no-active"
+  - "Total expected hook time: ~300-500ms for cold .venv, ~63ms for warm .venv"
+  - "For editable install of mde package, src/ must be present in worktree — git worktrees provide this"
+  - "UV_PROJECT_ENVIRONMENT can override .venv location if needed (env var, not flag)"
+  - "Consider `--no-install-project` if the hook runs before src/ is fully set up"
+
+gaps:
+  - "Cold cache timing not empirically tested — estimate only"
+  - "Exact behavior when pyproject.toml has workspace members not tested"
+  - "Whether uv picks up UV_PROJECT_ENVIRONMENT from the project's pyproject.toml [tool.uv] section — unclear"
+
+evidence:
+  - "uv help sync: '--frozen: Sync without updating the uv.lock file... uses versions in lockfile as source of truth'"
+  - "uv help sync: 'The project is re-locked before syncing unless the --locked or --frozen flag is provided'"
+  - "Dry-run test output: 'warning: VIRTUAL_ENV=.../.venv does not match... and will be ignored'"
+  - "Dry-run test output: 'Would create project environment at: .venv' (in worktree temp dir)"
+  - "Warm-venv timing: 'Checked 111 packages in 2ms' + total 63ms wall-clock"
+  - "Cold-venv timing: 281ms, 417ms, 302ms across 3 runs (111 packages, warm pkg cache)"
+
+implication: >
+  The WorktreeCreate hook can safely use `uv sync --frozen` with confidence:
+  (1) Resolution is fully skipped — lockfile read is the only dependency check,
+  (2) Performance is acceptable: <500ms warm cache, predictable cold cache,
+  (3) VIRTUAL_ENV from the parent worktree is automatically ignored — no env manipulation needed
+      (though unsetting it suppresses the warning),
+  (4) uv creates the .venv in the correct location (worktree dir) without any configuration.
+
+status: confirmed
