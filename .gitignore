@@ -43,6 +43,10 @@ docker/observability/.env
 # Backup files
 CLAUDE.md.backup
 
+# Transient logs and scratch files
+mde-update-results.current.log
+my_diff.txt
+
 # Backup archives
 *.tar.gz
 
