@@ -20,7 +20,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
-from mde.hooks._common import repo_root
+from mde.lib.paths import get_paths
 from mde.log import get_tracer, logger
 
 _tracer = get_tracer(__name__)
@@ -79,8 +79,10 @@ def persist_transcripts() -> int:
     with _tracer.start_as_current_span("mde.hook.persist_transcripts") as span:
         span.set_attribute("hook.event", "persist_transcripts")
 
-        repo = repo_root()
-        dest_dir = repo / "docs" / "research" / "trail" / "deep-reviews" / "agent-transcripts"
+        paths = get_paths()
+        assert paths.dir_transcripts is not None  # noqa: S101 — always set by model_post_init
+        assert paths.project_dir is not None  # noqa: S101 — always set by model_post_init
+        dest_dir = paths.dir_transcripts
         dest_dir.mkdir(parents=True, exist_ok=True)
 
         task_dirs = _find_task_dirs()
@@ -131,7 +133,7 @@ def persist_transcripts() -> int:
         if persisted > 0:
             logger.bind(
                 count=persisted,
-                dest=str(dest_dir.relative_to(repo)),
+                dest=str(dest_dir.relative_to(paths.project_dir)),
             ).info("transcripts_persisted")
 
         logger.bind(

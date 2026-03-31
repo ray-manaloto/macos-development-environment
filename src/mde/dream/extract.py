@@ -14,7 +14,7 @@ from pathlib import Path
 
 from mde.dream.models import DreamState, Pattern, PatternSource
 from mde.dream.state import load_state, save_state
-from mde.lib.paths import generated_dir, repo_root
+from mde.lib.paths import get_paths
 
 
 def extract_patterns() -> DreamState:
@@ -84,7 +84,9 @@ def _scan_auto_memory() -> list[str]:
 
 def _scan_remember() -> list[str]:
     """Extract pattern keys from remember plugin files."""
-    remember_dir = generated_dir() / "remember"
+    _dir_remember = get_paths().dir_remember
+    assert _dir_remember is not None  # noqa: S101 — always set by model_post_init
+    remember_dir = _dir_remember
     patterns: list[str] = []
 
     for name in ("now.md", "recent.md", "archive.md"):
@@ -121,7 +123,9 @@ def _scan_remember() -> list[str]:
 
 def _scan_retros() -> list[str]:
     """Extract pattern keys from retro snapshots."""
-    retro_dir = repo_root() / ".claude-octopus" / "retros"
+    _project_dir = get_paths().project_dir
+    assert _project_dir is not None  # noqa: S101 — always set by model_post_init
+    retro_dir = _project_dir / ".claude-octopus" / "retros"
     patterns: list[str] = []
 
     if not retro_dir.exists():
@@ -152,7 +156,9 @@ def _scan_retros() -> list[str]:
 
 def _scan_hook_feedback() -> list[str]:
     """Extract pattern keys from hook block events in context snapshot."""
-    snapshot_path = generated_dir() / "context-snapshot.json"
+    _dir_context = get_paths().dir_context
+    assert _dir_context is not None  # noqa: S101 — always set by model_post_init
+    snapshot_path = _dir_context / "context-snapshot.json"
     patterns: list[str] = []
 
     if not snapshot_path.exists():
@@ -175,7 +181,9 @@ def _scan_hook_feedback() -> list[str]:
 
 def _scan_learnings() -> list[str]:
     """Extract pattern keys from agent-written .generated/learnings/ files."""
-    learnings_dir = generated_dir() / "learnings"
+    _dir_learnings = get_paths().dir_learnings
+    assert _dir_learnings is not None  # noqa: S101 — always set by model_post_init
+    learnings_dir = _dir_learnings
     patterns: list[str] = []
 
     if not learnings_dir.exists():

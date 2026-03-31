@@ -23,7 +23,7 @@ import os
 import subprocess
 from datetime import UTC, datetime
 
-from mde.lib.paths import generated_dir
+from mde.lib.paths import get_paths
 from mde.log import get_tracer, logger
 
 _tracer = get_tracer(__name__)
@@ -51,9 +51,10 @@ def context_snapshot() -> int:
 
         try:
             snapshot = _build_snapshot()
-            gen = generated_dir()
-            gen.mkdir(parents=True, exist_ok=True)
-            snapshot_path = gen / "context-snapshot.json"
+            ctx_dir = get_paths().dir_context
+            assert ctx_dir is not None  # noqa: S101 — always set by model_post_init
+            ctx_dir.mkdir(parents=True, exist_ok=True)
+            snapshot_path = ctx_dir / "context-snapshot.json"
             snapshot_path.write_text(json.dumps(snapshot, indent=2) + "\n")
             logger.bind(path=str(snapshot_path)).info("context_snapshot_written")
         except Exception:  # noqa: BLE001
