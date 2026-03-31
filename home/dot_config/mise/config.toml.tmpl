@@ -5,6 +5,7 @@
 experimental = true
 not_found_auto_install = true
 status = { missing_tools = "always" }
+env_shell_expand = true
 
 [settings.npm]
 package_manager = "bun"
@@ -21,6 +22,21 @@ GIT_TERMINAL_PROMPT = "0"
 
 # NotebookLM auth: standardize paths so agents find credentials consistently
 NOTEBOOKLM_HOME = "~/.notebooklm"
+
+# MDE path management — single source of truth for .generated/ structure
+# Layer 1: chezmoi renders .chezmoi.sourceDir|dir to absolute repo root at `chezmoi apply`
+# Layer 2: mise expands $MDE_PROJECT_DIR/$MDE_GENERATED_DIR at shell activation via env_shell_expand
+# RULE: Only MDE_PROJECT_DIR uses the chezmoi template variable directly.
+#       All other vars MUST compose from $MDE_PROJECT_DIR or $MDE_GENERATED_DIR.
+MDE_PROJECT_DIR = "{{ .chezmoi.sourceDir | dir }}"
+MDE_GENERATED_DIR = "$MDE_PROJECT_DIR/.generated"
+MDE_DIR_REMEMBER = "$MDE_GENERATED_DIR/remember"
+MDE_DIR_LEARNINGS = "$MDE_GENERATED_DIR/learnings"
+MDE_DIR_TRANSCRIPTS = "$MDE_GENERATED_DIR/transcripts"
+MDE_DIR_SCHEMAS = "$MDE_GENERATED_DIR/schemas"
+MDE_DIR_REPORTS = "$MDE_GENERATED_DIR/reports"
+MDE_DIR_CONTEXT = "$MDE_GENERATED_DIR/context"
+MDE_DIR_DREAM = "$MDE_GENERATED_DIR/dream"
 
 {{ if eq .chezmoi.os "darwin" -}}
 {{   $brewPrefix := "/opt/homebrew" -}}

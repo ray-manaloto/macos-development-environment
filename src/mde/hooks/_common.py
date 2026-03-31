@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-import contextlib
 import json
 import os
-import subprocess
 import sys
 from contextlib import contextmanager
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from mde.lib.paths import repo_root
 from mde.log import get_tracer, logger
+
+_GIT_ENV = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -20,27 +20,10 @@ if TYPE_CHECKING:
 
 _tracer = get_tracer("mde.hooks")
 
-_GIT_ENV = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
-
 
 def parse_hook_stdin() -> dict[str, Any]:
     """Parse Claude Code hook JSON from stdin."""
     return json.load(sys.stdin)
-
-
-def repo_root() -> Path:
-    """Return the git repository root, falling back to cwd."""
-    with contextlib.suppress(subprocess.TimeoutExpired, OSError):
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            env=_GIT_ENV,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return Path(result.stdout.strip())
-    return Path.cwd()
 
 
 @contextmanager
@@ -60,4 +43,4 @@ def hook_span(
         yield span
 
 
-__all__ = ["hook_span", "logger", "parse_hook_stdin", "repo_root"]
+__all__ = ["_GIT_ENV", "hook_span", "logger", "parse_hook_stdin", "repo_root"]
