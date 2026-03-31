@@ -30,6 +30,7 @@ def extract_patterns() -> DreamState:
         (PatternSource.RETRO, _scan_retros()),
         (PatternSource.HOOK_FEEDBACK, _scan_hook_feedback()),
         (PatternSource.LEARNINGS, _scan_learnings()),
+        (PatternSource.TRANSCRIPTS, _scan_transcripts()),
     ]
 
     now = datetime.now(tz=UTC)
@@ -208,6 +209,63 @@ def _scan_learnings() -> list[str]:
                 r"(?:never|always|don'?t|must|avoid)\s+(\w[\w\s]{3,30})", text, re.IGNORECASE
             )
         )
+
+    return patterns
+
+
+def _scan_transcripts() -> list[str]:
+    """Extract pattern keys from agent transcripts in .generated/transcripts/.
+
+    Scans the most recent 50 transcripts for:
+    - Severity findings (CRITICAL/HIGH from code reviews)
+    - File hotspots (files mentioned in FILE: lines)
+    - Error/fix patterns (similar to remember scanner)
+    """
+    _dir_transcripts = get_paths().dir_transcripts
+    assert _dir_transcripts is not None  # noqa: S101 — always set by model_post_init
+    transcripts_dir = _dir_transcripts
+    patterns: list[str] = []
+
+    if not transcripts_dir.exists():
+        return patterns
+
+    # Process only the last 50 transcripts (sorted by filename = by date)
+    _max_transcripts = 50
+    transcript_files = sorted(transcripts_dir.glob("*.md"))[-_max_transcripts:]
+
+    for md_file in transcript_files:
+        try:
+            text = md_file.read_text()
+        except OSError:
+            continue
+
+        # Extract severity findings (code review structured output)
+        for match in re.finditer(r"SEVERITY:\s*(critical|high)\b", text, re.IGNORECASE):
+            severity = match.group(1).lower()
+            # Try to extract the associated FILE: line nearby
+            context_window = text[match.start() : min(match.start() + 300, len(text))]
+            file_match = re.search(r"FILE:\s*`?([^\n`]+)`?", context_window)
+            if file_match:
+                file_stem = Path(file_match.group(1).strip()).stem
+                patterns.append(f"transcript.{severity}.{_slugify(file_stem)}")
+            else:
+                patterns.append(f"transcript.{severity}.unspecified")
+
+        # Extract file hotspots (files repeatedly mentioned in findings)
+        for match in re.finditer(r"FILE:\s*`?([^\n`]+)`?", text):
+            file_stem = Path(match.group(1).strip()).stem
+            patterns.append(f"transcript.hotspot.{_slugify(file_stem)}")
+
+        # Extract error/fix patterns (same approach as _scan_remember)
+        for match in re.finditer(
+            r"(?:fix|bug|error|broke|failed)[\s:]+(.{10,60})", text, re.IGNORECASE
+        ):
+            # Skip commit messages: check if a SHA prefix precedes this match on the same line
+            line_start = text.rfind("\n", 0, match.start()) + 1
+            line_prefix = text[line_start : match.start()]
+            if re.match(r"^[0-9a-f]{7,}\s*$", line_prefix):
+                continue
+            patterns.append(f"transcript.error.{_slugify(match.group(1)[:30])}")
 
     return patterns
 

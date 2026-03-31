@@ -20,6 +20,7 @@ class PatternSource(str, Enum):
     HOOK_FEEDBACK = "hook_feedback"
     GITHUB_ISSUES = "github_issues"
     LEARNINGS = "learnings"
+    TRANSCRIPTS = "transcripts"
 
 
 class PromotionTarget(str, Enum):

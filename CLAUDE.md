@@ -56,7 +56,7 @@ mise fmt --check               # mise config formatting
 - `src/mde/hooks/` — Claude Code hooks (22 handlers, auto-discovered via `__hook_meta__`)
 - `src/mde/validate/` — Validators for configs, plugins, brew, docker, paths
 - `src/mde/debate/` — Multi-model debate library (codex/gemini CLIs)
-- `src/mde/dream/` — Self-improvement pipeline (extract/propose/apply/status)
+- `src/mde/dream/` — Self-improvement pipeline (extract/propose/apply/status); extract scans 6 sources: auto-memory, remember files, retro snapshots, hook feedback, learnings (`$MDE_DIR_LEARNINGS`), transcripts (`$MDE_DIR_TRANSCRIPTS`)
 - `src/mde/secrets/` — Doppler/fnox secrets sync and validation
 - `src/mde/research/` — Research pipeline CLI and clients
 - `src/mde/lib/` — Shared utilities (`paths.py` MdePaths BaseSettings, logging)
@@ -87,6 +87,7 @@ mise fmt --check               # mise config formatting
 - **Lazy CLI imports**: `cli.py` uses deferred imports for startup speed
 - **Validator pattern**: each validator returns `(errors, warnings)` tuples; quality gate aggregates
 - **Domain codegen**: JSON Schema → Pydantic models via `mde:codegen:all`
+- **Dream promotion ladder**: patterns reach thresholds (MEMORY=1, DOCS=2, RULE/CLAUDE_MD=3, AGENT_DEF=5, HOOK/SKILL=10); AUTO tier applied without approval, APPROVE tier requires user review
 <!-- END AUTO-MANAGED -->
 
 ## Enforcement (zero tolerance)
