@@ -140,6 +140,49 @@ class TestValidatePathsMiseGlobalMissing:
         mise_errors = [f for f in result.findings if f.rule == "paths.mise-global-missing"]
         assert len(mise_errors) == 1
 
+    def test_error_when_mde_project_dir_commented_out(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """A commented-out MDE_PROJECT_DIR must block validation (error severity)."""
+        fake_home = tmp_path / "fakehome"
+        mise_dir = fake_home / ".config" / "mise"
+        mise_dir.mkdir(parents=True)
+        (mise_dir / "config.toml").write_text(
+            '[env]\n# MDE_PROJECT_DIR = "/some/path"\n[settings]\nenv_shell_expand = true\n'
+        )
+        monkeypatch.setattr(Path, "home", staticmethod(lambda: fake_home))
+        result = validate_paths(root=tmp_path)
+        mise_errors = [f for f in result.findings if f.rule == "paths.mise-global-missing"]
+        assert len(mise_errors) == 1
+        assert mise_errors[0].severity.value == "error"
+        assert not result.passed
+
+    def test_error_on_invalid_toml(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Invalid TOML in mise config should produce exactly one blocking error."""
+        fake_home = tmp_path / "fakehome"
+        mise_dir = fake_home / ".config" / "mise"
+        mise_dir.mkdir(parents=True)
+        (mise_dir / "config.toml").write_text("[env\nbroken toml")
+        monkeypatch.setattr(Path, "home", staticmethod(lambda: fake_home))
+        result = validate_paths(root=tmp_path)
+        toml_errors = [
+            f
+            for f in result.findings
+            if f.rule == "paths.mise-global-missing" and "TOML" in f.message
+        ]
+        assert len(toml_errors) == 1
+        assert toml_errors[0].severity.value == "error"
+        assert not result.passed
+        # Invalid TOML should not emit a misleading secondary env-shell-expand finding
+        expand_errors = [f for f in result.findings if f.rule == "paths.env-shell-expand-missing"]
+        assert len(expand_errors) == 0
+
 
 class TestValidatePathsChezmoiTemplateMissing:
     """Check 5: paths.chezmoi-template-missing."""

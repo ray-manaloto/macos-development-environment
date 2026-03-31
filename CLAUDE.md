@@ -85,7 +85,7 @@ mise fmt --check               # mise config formatting
 - **Hook auto-discovery**: modules in `src/mde/hooks/` with `__hook_meta__` dict are auto-registered
 - **Pydantic BaseSettings**: `MdePaths(BaseSettings)` for env-var-driven path config
 - **Lazy CLI imports**: `cli.py` uses deferred imports for startup speed
-- **Validator pattern**: each validator returns `(errors, warnings)` tuples; quality gate aggregates
+- **Validator pattern**: each validator returns `ValidationResult`; `result.passed` is False when any ERROR-severity finding exists; quality gate aggregates across all validators
 - **Domain codegen**: JSON Schema → Pydantic models via `mde:codegen:all`
 - **Dream promotion ladder**: patterns reach thresholds (MEMORY=1, DOCS=2, RULE/CLAUDE_MD=3, AGENT_DEF=5, HOOK/SKILL=10); AUTO tier applied without approval, APPROVE tier requires user review
 <!-- END AUTO-MANAGED -->
