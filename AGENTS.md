@@ -13,7 +13,7 @@ Typed Python package (`src/mde/`) managing macOS developer tooling. Entry point:
 uv run mde-py quality          # Full quality gate (ruff check + format + ty + pytest) — run before every commit
 uv run mde-py validate --all   # All validators (configs, brew, docker, plugins, skills)
 uv run mde-py validate --plugins  # Plugin validation only (zero warnings tolerance)
-uv run pytest tests/ -v        # Tests only
+uv run pytest tests/ -v -m "not integration"  # Tests only (integration tests need external tools)
 uv run ruff check src/mde/     # Lint only
 uv run ruff format src/mde/    # Format only
 uv run ty check src/mde/       # Type check only
@@ -24,7 +24,7 @@ mise fmt --check               # mise config formatting
 
 - `src/mde/` — All automation lives here as Python modules. **No shell scripts.**
 - `src/mde/cli.py` — CLI dispatcher with lazy imports for startup speed (keep minimal, delegate to modules)
-- `src/mde/hooks/` — Claude Code hook handlers (auto-discovered via `__hook_meta__`, never edit cli.py to add hooks); includes advisory `check-knowledge` (PostToolUse staleness detector), `check-observability` (SessionStart OTEL stack health check), `dream-extract`/`remember-stop` (Stop hooks), and `guard-debate` (PreToolUse debate integrity guard)
+- `src/mde/hooks/` — Claude Code hook handlers (auto-discovered via `__hook_meta__`, never edit cli.py to add hooks); includes advisory `check-knowledge` (PostToolUse staleness detector), `check-observability` (SessionStart OTEL stack health check), `dream-extract`/`remember-stop` (Stop hooks), `guard-debate` (PreToolUse debate integrity guard), and `worktree-create` (WorktreeCreate — replaces default git worktree with mise trust + uv sync)
 - `src/mde/debate/` — Multi-model debate library; wraps codex/gemini CLIs with output validation; use `mde debate` commands, never invoke codex/gemini directly
 - `src/mde/validate/` — Validators for configs, plugins, brew, docker
 - `src/mde/dream/` — Self-improvement pipeline; CLI: `auto-dream` (extract/propose/apply/status) with promotion ladder and tiered autonomy; extract scans 5 signal sources: auto_memory, remember, retro, hook_feedback, learnings
