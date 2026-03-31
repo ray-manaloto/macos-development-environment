@@ -27,6 +27,16 @@ severity level.
 - INFO findings → visible in output → gate passes → informational only
 - The gate failing/passing is determined by severity, NOT by filtering
 
+## Suppression gates (when suppression is unavoidable)
+
+No linter finding may be suppressed (`ignore`, `noqa`, `type: ignore`, etc.) unless both:
+
+1. **Research gate**: PR description documents what the finding says, what was reviewed,
+   and why it cannot be resolved (with specific technical justification or upstream links).
+2. **Human approval gate**: A human explicitly approves. The suppression comment must include
+   the rule ID, one-line justification, and approver name, e.g.:
+   `# noqa: PLR0913 — approved by @ray-manaloto: kwargs pass-through`
+
 ## Why this matters
 Suppression creates blind spots. A "benign" filter today hides a real problem
 tomorrow when the message changes or a new issue shares the same check name.

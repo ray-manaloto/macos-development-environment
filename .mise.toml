@@ -278,13 +278,13 @@ uv run ruff format src/mde/domain/claude_code_settings_models.py
 """
 
 [tasks."mde:schema:fetch-upstream"]
-description = "Fetch latest SchemaStore baseline to .generated/ for comparison (does NOT overwrite local schema)"
+description = "Fetch latest SchemaStore baseline to $MDE_DIR_SCHEMAS for comparison (does NOT overwrite local schema)"
 run = """
-mkdir -p .generated/schemas
+mkdir -p "${MDE_DIR_SCHEMAS:-.generated/schemas}"
 curl -sL "https://json.schemastore.org/claude-code-settings.json" | \
-  python3 -c "import sys,json; json.dump(json.load(sys.stdin), open('.generated/schemas/claude-code-settings-upstream.json','w'), indent=2)"
-echo "Upstream schema saved to .generated/schemas/claude-code-settings-upstream.json"
-echo "Diff: diff <(python3 -m json.tool .generated/schemas/claude-code-settings-upstream.json) <(python3 -m json.tool docs/schemas/claude-code-settings.schema.json)"
+  python3 -c "import sys,json; json.dump(json.load(sys.stdin), open('${MDE_DIR_SCHEMAS:-.generated/schemas}/claude-code-settings-upstream.json','w'), indent=2)"
+echo "Upstream schema saved to ${MDE_DIR_SCHEMAS:-.generated/schemas}/claude-code-settings-upstream.json"
+echo "Diff: diff <(python3 -m json.tool ${MDE_DIR_SCHEMAS:-.generated/schemas}/claude-code-settings-upstream.json) <(python3 -m json.tool docs/schemas/claude-code-settings.schema.json)"
 """
 
 [tasks."mde:codegen:agent-frontmatter"]

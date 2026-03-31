@@ -6,11 +6,11 @@
 
 ### Subagents
 
-Defined in `.claude/agents/`. Use matching specialist types. Core: researcher (Sonnet), coder, tester (pytest/ruff/ty), reviewer (Sonnet, read-only). Specialists: python-coder, mise-specialist, chezmoi-specialist, brew-specialist, security-auditor, claude-code-specialist, remember-specialist. Agents write discoveries to `.generated/learnings/` for dream pipeline consumption.
+Defined in `.claude/agents/`. Use matching specialist types. Core: researcher (Sonnet), coder, tester (pytest/ruff/ty), reviewer (Sonnet, read-only). Specialists: python-coder, mise-specialist, chezmoi-specialist, brew-specialist, security-auditor, claude-code-specialist, remember-specialist. Agents write discoveries to `$MDE_DIR_LEARNINGS` for dream pipeline consumption. All `.generated/` paths are managed via `MDE_*` env vars — see `.claude/rules/generated-paths.md`.
 
 ### Hooks
 
-Auto-discovered in `src/mde/hooks/` via `__hook_meta__`. Never edit `cli.py` to add hooks. Policy files in `.claude/rules/` are loaded automatically. See `hooks-auto-discovery.md` for the convention. Key advisory hooks (all exit 0): `check-knowledge` (PostToolUse — detects stale hook/test/subcommand counts in auto-memory and agent defs), `guard-debate` (PreToolUse — warns when raw codex/gemini CLI used instead of `mde debate`), `check-observability` (SessionStart — verifies OTEL collector health), `dream-extract` (Stop — extracts patterns into dream pipeline), `remember-stop` (Stop — writes session context to `now.md`).
+Auto-discovered in `src/mde/hooks/` via `__hook_meta__`. Never edit `cli.py` to add hooks. Policy files in `.claude/rules/` are loaded automatically. See `hooks-auto-discovery.md` for the convention. Key advisory hooks (all exit 0): `check-knowledge` (PostToolUse — detects stale hook/test/subcommand counts in auto-memory and agent defs), `guard-debate` (PreToolUse — warns when raw codex/gemini CLI used instead of `mde debate`), `check-observability` (SessionStart — checks OTLP :4318/Grafana/Loki/Tempo health + Loki data arrival for all 5 services; port 13133 NOT exposed by grafana/otel-lgtm image), `dream-extract` (Stop — extracts patterns into dream pipeline), `remember-stop` (Stop — writes session context to `now.md`). Full telemetry validation: `uv run mde-py telemetry verify`.
 
 ### Plugins
 

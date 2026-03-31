@@ -23,6 +23,8 @@ _LINT_CHECKS: list[tuple[str, list[str], str]] = [
     ("ruff-format", ["uv", "run", "ruff", "format", "--check", "src/", "tests/"], "Format check"),
     ("ty", ["uv", "run", "ty", "check"], "Type check (ty)"),
     ("pyright", ["uv", "run", "pyright", "src/mde/"], "Type check (pyright)"),
+    ("vulture", ["uv", "run", "vulture", "src/mde/"], "Dead code check"),
+    ("import-linter", ["uv", "run", "lint-imports"], "Architectural contract check"),
 ]
 
 _TEST_CHECKS: list[tuple[str, list[str], str]] = [

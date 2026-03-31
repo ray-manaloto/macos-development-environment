@@ -5,6 +5,7 @@ description = "Typed Python library for macOS development environment management
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.10",
+    "pydantic-settings>=2.13",
     "pyyaml>=6.0",
     "tomli>=2.0; python_version < '3.11'",
     "claude-agent-sdk>=0.1.49",
@@ -142,6 +143,14 @@ ignore = [
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-branches = 12
+max-returns = 6
+max-statements = 50
+
 [tool.ruff.format]
 quote-style = "double"
 docstring-code-format = true
@@ -180,10 +189,42 @@ markers = [
     "integration: tests requiring external tools (mise, chezmoi, docker, gh)",
 ]
 
+# ── vulture: dead code detection ──
+[tool.vulture]
+min_confidence = 80
+paths = ["src/mde/"]
+ignore_names = ["__hook_meta__", "test_*", "cls", "RateLimitType"]
+ignore_decorators = ["@click.*", "@pytest.*", "@classmethod"]
+
+# ── import-linter: architectural boundary enforcement ──
+[tool.importlinter]
+root_packages = ["mde"]
+exclude_type_checking_imports = true
+
+[[tool.importlinter.contracts]]
+name = "lib must not import hooks"
+type = "forbidden"
+source_modules = ["mde.lib"]
+forbidden_modules = ["mde.hooks", "mde.cli"]
+
+[[tool.importlinter.contracts]]
+name = "models must not import hooks or cli"
+type = "forbidden"
+source_modules = ["mde.models"]
+forbidden_modules = ["mde.hooks", "mde.cli", "mde.dream", "mde.debate"]
+
+[[tool.importlinter.contracts]]
+name = "validate must not import hooks"
+type = "forbidden"
+source_modules = ["mde.validate"]
+forbidden_modules = ["mde.hooks"]
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
     "ruff>=0.15.6",
     "ty>=0.0.1a12",
     "datamodel-code-generator[ruff]>=0.55.0",
+    "vulture>=2.16",
+    "import-linter>=2.11",
 ]

@@ -99,7 +99,11 @@ def _invoke_codex(prompt: str, timeout: int = 300) -> InvocationResult:
     # The file content is NOT read back by codex — the prompt is still passed
     # as the last CLI argument. The file exists so operators can inspect
     # exactly what was sent on failure (left on disk) or success (cleaned up).
-    prompt_file = Path.cwd() / ".generated" / "debate" / f"prompt-codex-{time.monotonic_ns()}.txt"
+    from mde.lib.paths import get_paths
+
+    _gen = get_paths().generated_dir
+    assert _gen is not None  # noqa: S101 — always set by model_post_init
+    prompt_file = _gen / "debate" / f"prompt-codex-{time.monotonic_ns()}.txt"
     prompt_file.parent.mkdir(parents=True, exist_ok=True)
     prompt_file.write_text(full_prompt)
 
@@ -683,7 +687,11 @@ def _get_gemini_isolation_settings() -> Path:
     Creates a JSON file under .generated/gemini/ that disables MCP and extensions.
     The file is cached — only written once per directory.
     """
-    isolation_dir = Path.cwd() / ".generated" / "gemini"
+    from mde.lib.paths import get_paths
+
+    _gen = get_paths().generated_dir
+    assert _gen is not None  # noqa: S101 — always set by model_post_init
+    isolation_dir = _gen / "gemini"
     settings_path = isolation_dir / "isolated-settings.json"
     if not settings_path.exists():
         isolation_dir.mkdir(parents=True, exist_ok=True)

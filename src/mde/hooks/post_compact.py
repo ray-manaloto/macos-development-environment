@@ -19,7 +19,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from mde.hooks._common import repo_root
+from mde.lib.paths import get_paths
 from mde.log import get_tracer, logger
 
 _tracer = get_tracer(__name__)
@@ -27,7 +27,9 @@ _tracer = get_tracer(__name__)
 
 def _compact_log() -> Path:
     """Return the compact event log path (computed lazily to avoid git at import time)."""
-    return repo_root() / ".generated" / "compact-events.jsonl"
+    gen = get_paths().generated_dir
+    assert gen is not None  # noqa: S101 — always set by model_post_init
+    return gen / "compact-events.jsonl"
 
 
 def post_compact() -> int:

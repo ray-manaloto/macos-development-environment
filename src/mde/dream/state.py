@@ -10,11 +10,13 @@ import json
 from pathlib import Path
 
 from mde.dream.models import DreamState
-from mde.lib.paths import generated_dir
+from mde.lib.paths import get_paths
 
 
 def _state_dir() -> Path:
-    return generated_dir() / "dream"
+    d = get_paths().dir_dream
+    assert d is not None  # noqa: S101 — always set by model_post_init
+    return d
 
 
 def _state_path() -> Path:

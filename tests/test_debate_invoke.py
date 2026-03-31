@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
+
+if TYPE_CHECKING:
+    import pytest
 
 from mde.debate.invoke import (
     CODEX_MAX_PROMPT_CHARS,
@@ -349,14 +354,20 @@ class TestGeminiUsesJsonOutput:
 class TestGeminiIsolatedEnv:
     """Test gemini config isolation via system settings override."""
 
-    def test_isolation_settings_file_created(self, tmp_path: Path) -> None:
+    def test_isolation_settings_file_created(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         from mde.debate.invoke import _get_gemini_isolation_settings
+        from mde.lib.paths import get_paths
 
-        settings_dir = tmp_path / ".generated" / "gemini"
-        settings_dir.mkdir(parents=True)
-        # Patch Path.cwd() to return tmp_path
-        with patch("mde.debate.invoke.Path.cwd", return_value=tmp_path):
-            settings_path = _get_gemini_isolation_settings()
+        # Redirect get_paths() to tmp_path via env vars
+        monkeypatch.setenv("MDE_PROJECT_DIR", str(tmp_path))
+        for key in list(os.environ):
+            if key.startswith("MDE_") and key != "MDE_PROJECT_DIR":
+                monkeypatch.delenv(key, raising=False)
+        get_paths.cache_clear()
+        settings_path = _get_gemini_isolation_settings()
+        get_paths.cache_clear()
         assert settings_path.exists()
         data = json.loads(settings_path.read_text())
         assert data["admin"]["extensions"]["enabled"] is False
@@ -504,7 +515,11 @@ class TestCodexFileBased:
     @patch("mde.debate.invoke.subprocess.run")
     @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/codex")
     def test_prompt_file_written(
-        self, mock_which: MagicMock, mock_run: MagicMock, tmp_path: Path, monkeypatch: object
+        self,
+        mock_which: MagicMock,
+        mock_run: MagicMock,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Verify .generated/debate/prompt-codex.txt is created."""
         _ = mock_which
@@ -515,11 +530,18 @@ class TestCodexFileBased:
             ),
             stderr="",
         )
-        # Point Path.cwd() to tmp_path so .generated/ is created there
-        monkeypatch.setattr("mde.debate.invoke.Path.cwd", lambda: tmp_path)  # type: ignore[arg-type]
+        # Redirect get_paths() to tmp_path via env vars
+        monkeypatch.setenv("MDE_PROJECT_DIR", str(tmp_path))
+        for key in list(os.environ):
+            if key.startswith("MDE_") and key != "MDE_PROJECT_DIR":
+                monkeypatch.delenv(key, raising=False)
+        from mde.lib.paths import get_paths
+
+        get_paths.cache_clear()
         from mde.debate.invoke import _invoke_codex
 
         _invoke_codex("test prompt for file")
+        get_paths.cache_clear()
         # The file should have been written (may be cleaned up on success)
         # We check that the directory was created
         assert (tmp_path / ".generated" / "debate").exists()
@@ -527,7 +549,11 @@ class TestCodexFileBased:
     @patch("mde.debate.invoke.subprocess.run")
     @patch("mde.debate.invoke.shutil.which", return_value="/usr/bin/codex")
     def test_prompt_file_cleaned_on_success(
-        self, mock_which: MagicMock, mock_run: MagicMock, tmp_path: Path, monkeypatch: object
+        self,
+        mock_which: MagicMock,
+        mock_run: MagicMock,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """File removed after successful invocation."""
         _ = mock_which
@@ -538,10 +564,18 @@ class TestCodexFileBased:
             ),
             stderr="",
         )
-        monkeypatch.setattr("mde.debate.invoke.Path.cwd", lambda: tmp_path)  # type: ignore[arg-type]
+        # Redirect get_paths() to tmp_path via env vars
+        monkeypatch.setenv("MDE_PROJECT_DIR", str(tmp_path))
+        for key in list(os.environ):
+            if key.startswith("MDE_") and key != "MDE_PROJECT_DIR":
+                monkeypatch.delenv(key, raising=False)
+        from mde.lib.paths import get_paths
+
+        get_paths.cache_clear()
         from mde.debate.invoke import _invoke_codex
 
         _invoke_codex("test prompt cleanup")
+        get_paths.cache_clear()
         prompt_file = tmp_path / ".generated" / "debate" / "prompt-codex.txt"
         # On success, the prompt file should be cleaned up
         assert not prompt_file.exists()

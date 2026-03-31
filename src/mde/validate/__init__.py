@@ -14,6 +14,7 @@ from mde.validate.json_validator import validate_json_files
 from mde.validate.memory import validate_memory
 from mde.validate.mise import validate_mise
 from mde.validate.package_managers import validate_package_managers
+from mde.validate.paths import validate_paths
 from mde.validate.plugin_health import validate_plugin_health
 from mde.validate.plugins import validate_plugins
 from mde.validate.shell import validate_shell_scripts
@@ -34,6 +35,7 @@ def run_validators(
     skills_only: bool = False,
     plugins_only: bool = False,
     plugins_health_only: bool = False,
+    paths_only: bool = False,
 ) -> ValidationResult:
     """Run validators and return the result object.
 
@@ -56,6 +58,8 @@ def run_validators(
         result.merge(validate_plugins())
     elif plugins_health_only:
         result.merge(validate_plugin_health())
+    elif paths_only:
+        result.merge(validate_paths())
     else:
         # Full validation
         result.merge(validate_toml_files(fix=fix))
@@ -79,6 +83,9 @@ def run_validators(
         result.merge(validate_hk())
 
         result.merge(validate_structural())
+        # validate_paths() intentionally excluded from --all until Task 12
+        # completes the centralize-generated-paths migration.
+        # Run explicitly via: uv run mde-py validate --paths
 
     return result
 
@@ -94,6 +101,7 @@ def validate_all(
     skills_only: bool = False,
     plugins_only: bool = False,
     plugins_health_only: bool = False,
+    paths_only: bool = False,
 ) -> int:
     """Run validators, print findings, and return exit code.
 
@@ -108,6 +116,7 @@ def validate_all(
         skills_only=skills_only,
         plugins_only=plugins_only,
         plugins_health_only=plugins_health_only,
+        paths_only=paths_only,
     )
 
     if json_output:
