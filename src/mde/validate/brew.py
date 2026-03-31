@@ -8,15 +8,17 @@ import subprocess
 from mde.models.result import Severity, ValidationResult
 
 EXPECTED_FORMULAE = {
-    "gnupg",
-    "curl",
     "chafa",
-    "tree",
-    "llvm",
-    "lld",
     "colima",
+    "curl",
     "docker-buildx",
     "docker-compose",
+    "dockerfilegraph",
+    "gnupg",
+    "lld",
+    "llvm",
+    "tree",
+    "viu",
 }
 
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import re
+import tomllib
 from pathlib import Path
 
 from mde.models.result import ValidationResult
@@ -104,14 +105,24 @@ def _check_remember_symlink(root: Path, result: ValidationResult) -> None:
 # Check 4: paths.mise-global-missing (ERROR)
 # ---------------------------------------------------------------------------
 def _check_mise_global_missing(result: ValidationResult) -> None:
-    """~/.config/mise/config.toml must contain MDE_PROJECT_DIR."""
+    """~/.config/mise/config.toml must contain MDE_PROJECT_DIR in [env]."""
     mise_config = Path.home() / ".config" / "mise" / "config.toml"
     if not mise_config.exists():
         return
 
     result.files_checked += 1
-    content = mise_config.read_text(encoding="utf-8")
-    if "MDE_PROJECT_DIR" not in content:
+    try:
+        parsed = tomllib.loads(mise_config.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError:
+        result.add_error(
+            path=str(mise_config),
+            message="Global mise config is not valid TOML.",
+            rule="paths.mise-global-missing",
+        )
+        return
+
+    env = parsed.get("env", {})
+    if "MDE_PROJECT_DIR" not in env:
         result.add_error(
             path=str(mise_config),
             message="Global mise config missing MDE_PROJECT_DIR in [env].",
@@ -242,14 +253,19 @@ def _check_composition_violation(root: Path, result: ValidationResult) -> None:
 # Check 9: paths.env-shell-expand-missing (ERROR)
 # ---------------------------------------------------------------------------
 def _check_env_shell_expand_missing(result: ValidationResult) -> None:
-    """Global mise config must have env_shell_expand = true."""
+    """Global mise config must have env_shell_expand = true in [settings]."""
     mise_config = Path.home() / ".config" / "mise" / "config.toml"
     if not mise_config.exists():
         return
 
     # files_checked already incremented by check 4
-    content = mise_config.read_text(encoding="utf-8")
-    if "env_shell_expand" not in content:
+    try:
+        parsed = tomllib.loads(mise_config.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError:
+        return  # already reported by check 4
+
+    settings = parsed.get("settings", {})
+    if settings.get("env_shell_expand") is not True:
         result.add_error(
             path=str(mise_config),
             message=(
