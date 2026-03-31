@@ -137,6 +137,7 @@ ignore = [
 "src/mde/statusline/toggle.py" = ["T201"]
 "src/mde/statusline/widget_toggle.py" = ["T201"]
 "src/mde/teams/runner.py" = ["T201"]
+"src/mde/hooks/worktree_create.py" = ["T201"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

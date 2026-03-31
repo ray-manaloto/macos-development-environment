@@ -205,6 +205,16 @@
           }
         ]
       }
+    ],
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run mde-py hooks worktree-create"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
