@@ -9,9 +9,9 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: jdx/mise-action@v2
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v4
+      - uses: astral-sh/setup-uv@v7
       - run: uv sync --frozen --dev
       - run: uv run ruff check src/mde/ tests/mde/
       - run: uv run ruff format --check src/mde/ tests/mde/

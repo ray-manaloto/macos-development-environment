@@ -10,7 +10,7 @@ jobs:
     permissions:
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Fetch and hash current docs
         # To update cached hash after schema changes:
@@ -44,7 +44,7 @@ jobs:
                   --search "Agent schema drift detected" | grep -q .; then
               gh issue create \
                 --title "Agent schema drift detected" \
-                --body "The Claude Code subagent docs page has changed since the last cached snapshot. Review for new frontmatter fields and update docs/schemas/agent-frontmatter.schema.json accordingly." \
+                --body "The Claude Code subagent docs page has changed since the last cached snapshot. Review for new frontmatter fields and update agent-frontmatter.schema.json." \
                 --label "auto:agent-discovered"
             else
               echo "Drift issue already open — skipping duplicate creation."
