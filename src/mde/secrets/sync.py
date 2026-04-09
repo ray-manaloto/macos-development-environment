@@ -1,48 +1,39 @@
-"""Sync secrets from Doppler to local fnox/Keychain."""
+"""Sync secrets from Doppler to the local fnox age-encrypted cache."""
 
 from __future__ import annotations
 
 import subprocess
 
 from mde.log import logger
-from mde.secrets.doppler import doppler_list_secrets, is_doppler_available
+from mde.secrets.doppler import is_doppler_available
 
 
-def sync_doppler_to_fnox(*, project: str = "dotfiles", config: str = "dev") -> int:
-    """Download secrets from Doppler and set them in fnox/Keychain.
+def sync_doppler_to_fnox(*, project: str = "dotfiles", config: str = "dev_personal") -> int:
+    """Run ``fnox sync --provider age --global --force``.
+
+    The ``project``/``config`` arguments are retained for API compatibility but
+    are resolved by fnox from ``~/.config/fnox/config.toml`` at sync time.
 
     Returns:
-        Exit code (0 = success).
+        Exit code (0 = success, 1 = failure).
     """
+    del project, config  # resolved by fnox config, kept for API stability
     if not is_doppler_available():
         logger.error("doppler_not_available")
         return 1
 
-    secrets = doppler_list_secrets(project=project, config=config)
-    if not secrets:
-        logger.error("doppler_sync_no_secrets")
+    try:
+        result = subprocess.run(
+            ["fnox", "sync", "--provider", "age", "--global", "--force"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired:
+        logger.error("fnox_sync_timeout")
         return 1
-
-    failed = 0
-    for key, value in secrets.items():
-        try:
-            result = subprocess.run(
-                ["fnox", "set", key, value, "--provider", "keychain", "--global"],
-                capture_output=True,
-                text=True,
-                timeout=15,
-            )
-        except subprocess.TimeoutExpired:
-            logger.bind(key=key).error("fnox_set_timeout")
-            failed += 1
-            continue
-        if result.returncode != 0:
-            logger.bind(key=key, stderr=result.stderr).error("fnox_set_failed")
-            failed += 1
-
-    if failed:
-        logger.bind(failed=failed, total=len(secrets)).warning("doppler_sync_partial")
+    if result.returncode != 0:
+        logger.bind(stderr=result.stderr).error("fnox_sync_failed")
         return 1
-
-    logger.bind(count=len(secrets)).info("doppler_sync_complete")
+    logger.info("doppler_sync_complete")
     return 0

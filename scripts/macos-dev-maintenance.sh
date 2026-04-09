@@ -552,9 +552,6 @@ main() {
   ensure_gcloud_sdk_location || true
   mde_load_secrets || true
   load_runtime_secrets || true
-  if [[ -x "$SCRIPT_DIR/secrets-smoke-test.sh" ]]; then
-    "$SCRIPT_DIR/secrets-smoke-test.sh" || true
-  fi
 
   failures=0
   update_brew || failures=1

@@ -93,8 +93,6 @@ mise:
         version: latest
 
     infrastructure_darwin:
-      - name: 1password-cli
-        version: latest
       - name: aws-cli
         version: latest
         config:

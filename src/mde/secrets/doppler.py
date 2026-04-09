@@ -9,7 +9,7 @@ import subprocess
 from mde.log import logger
 
 _PROJECT = "dotfiles"
-_CONFIG = "dev"
+_CONFIG = "dev_personal"
 
 
 def is_doppler_available() -> bool:
@@ -101,4 +101,37 @@ def doppler_set_secrets(
     )
     if result.returncode != 0:
         logger.bind(stderr=result.stderr).error("doppler_set_failed")
+    return result.returncode
+
+
+def doppler_delete_secret(
+    key: str,
+    *,
+    project: str = _PROJECT,
+    config: str = _CONFIG,
+) -> int:
+    """Delete a secret from Doppler. Treats "not found" as idempotent success."""
+    result = subprocess.run(
+        [
+            "doppler",
+            "secrets",
+            "delete",
+            key,
+            "--yes",
+            "--project",
+            project,
+            "--config",
+            config,
+            "--silent",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if result.returncode != 0:
+        stderr = (result.stderr or "").lower()
+        if "not found" in stderr or "does not exist" in stderr:
+            logger.bind(key=key).info("doppler_delete_not_found")
+            return 0
+        logger.bind(key=key, stderr=result.stderr).error("doppler_delete_failed")
     return result.returncode

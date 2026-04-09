@@ -5,72 +5,75 @@ globs: ["scripts/*.sh", "fnox.toml", ".env*", ".mcp.json", "src/mde/secrets/*.py
 
 # Secrets Management
 
-## Architecture
+See [`docs/secrets-workflow.md`](../../docs/secrets-workflow.md) for the full
+architecture, diagrams, recovery runbooks, and age key rotation procedure.
 
-All secrets flow through: **Doppler (source of truth) -> sync -> fnox (Keychain cache) -> mise (env) -> tools**
+## Architecture (one line)
 
-1. **Doppler** (project: `dotfiles`, config: `dev`) stores canonical secrets in the cloud
-2. **`uv run mde-py secrets sync`** pulls Doppler secrets into fnox/Keychain
-3. **fnox** caches secrets in macOS Keychain (encrypted, works offline)
-4. **mise** loads them via `_.fnox-env = { tools = true }` in `~/.config/mise/config.toml`
-5. **`.mcp.json`** and other configs reference them as `${VAR_NAME}` — mise resolves at shell init
-6. **chezmoi** manages the mise config file AND has `[doppler]` config for template functions
-7. **chezmoi templates** can use `{{ doppler "KEY" }}` to resolve secrets directly
+`Doppler (dotfiles/dev_personal) → fnox sync --provider age --global → ~/.config/fnox/config.toml → fnox activate zsh hooks → shell env`
 
-## Adding a new secret
+Only two pieces of state live on the local machine:
+
+1. **`DOPPLER_TOKEN`** in macOS Keychain (the bootstrap secret).
+2. **`~/.config/mise/age.txt`** (0600) — the age private key, mirrored in
+   Doppler as `AGE_PRIVATE_KEY` so a fresh machine can recover.
+
+Everything else is encrypted ciphertext inside `~/.config/fnox/config.toml`,
+re-derived from Doppler on every `mde-py secrets sync`.
+
+## Adding / updating a secret
 
 ```bash
-# 1. Add to Doppler (source of truth)
-doppler secrets set KEY=VALUE --project dotfiles --config dev
+echo 'value' | uv run mde-py secrets add KEY        # stdin (preferred)
+uv run mde-py secrets update KEY --value 'value'    # explicit flag
+```
 
-# 2. Sync to local Keychain
+The CLI writes Doppler first, then runs `fnox sync --provider age --global --force`,
+then prints `export KEY='value'` to stdout so the zsh wrapper can eval it into
+the current shell.
+
+## Removing a secret
+
+```bash
+uv run mde-py secrets rm KEY
+```
+
+Deletes from Doppler, re-runs `fnox sync` (which drops the orphaned entry), and
+prints `unset KEY` to stdout.
+
+## Reading / validating
+
+```bash
+doppler secrets get KEY --project dotfiles --config dev_personal --plain
+fnox get KEY                                  # local age-decrypted cache
+uv run mde-py secrets validate                # fnox sync --dry-run drift check
+uv run mde-py secrets doctor                  # full health check
+```
+
+## Fresh-machine bootstrap
+
+```bash
+fnox set DOPPLER_TOKEN <value> --provider keychain --global
+export DOPPLER_TOKEN=$(fnox get DOPPLER_TOKEN)
+doppler secrets get AGE_PRIVATE_KEY --plain \
+  --project dotfiles --config dev_personal > ~/.config/mise/age.txt
+chmod 600 ~/.config/mise/age.txt
+uv run mde-py secrets bootstrap-config
 uv run mde-py secrets sync
-
-# 3. Validate parity
-uv run mde-py secrets validate
 ```
 
-## Reading a secret
-
-```bash
-doppler secrets get KEY --project dotfiles --config dev --plain   # From Doppler
-fnox get KEY                                                       # From local Keychain
-mise env | grep KEY                                                # From mise env
-chezmoi execute-template '{{ doppler "KEY" }}'                     # From chezmoi template
-```
-
-## Validating secrets
-
-```bash
-uv run mde-py secrets validate    # Compare Doppler vs fnox parity
-fnox list | grep KEY               # Check local provider is (keychain)
-doppler secrets --project dotfiles --config dev | grep KEY      # Check Doppler has it
-```
-
-## One-time migration (already done)
-
-```bash
-uv run mde-py secrets export      # fnox -> Doppler (40 secrets migrated)
-uv run mde-py secrets validate    # Verify parity
-```
-
-## Current secrets inventory
-
-Run `doppler secrets --project dotfiles --config dev` for the canonical list.
-Key categories:
-- **LLM API keys**: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY
-- **MCP server keys**: EXA_API_KEY
-- **Cloud/infra**: AWS_*, GITHUB_TOKEN, GITHUB_MCP_PAT
-- **Observability**: OTEL_*, GRAFANA_*, LOKI_*, MIMIR_*, TEMPO_*
-- **Age-encrypted**: OP_SERVICE_ACCOUNT_TOKEN (fnox provider: age, not in Doppler)
+Full runbook (including loss-of-token recovery): [`docs/secrets-workflow.md`](../../docs/secrets-workflow.md).
 
 ## Rules
 
-- NEVER commit plaintext secrets — use Doppler + fnox/Keychain
-- NEVER add secrets directly to fnox without also adding to Doppler
-- NEVER add secrets to `.env` files, shell profiles, or mise `[env]` blocks
-- `.mcp.json` secrets use `${VAR_NAME}` syntax — mise resolves them from fnox/Keychain
-- New secrets go to Doppler FIRST, then `uv run mde-py secrets sync`
-- For AI agent access to secrets: `fnox mcp`
-- Backup tier: age + sops for git-safe encrypted values (fnox.toml with `provider (age)`)
-- Doppler meta keys (DOPPLER_CONFIG, DOPPLER_ENVIRONMENT, DOPPLER_PROJECT) are auto-injected and excluded from parity validation
+- NEVER commit plaintext secrets — Doppler is the source of truth.
+- NEVER add a secret directly to fnox/Keychain without going through Doppler first.
+- NEVER add secrets to `.env` files, shell profiles, or mise `[env]` blocks.
+- NEVER declare a secret in repo `fnox.toml` that the global config owns —
+  repo overlays shadow global, which silently breaks the new architecture.
+- New secrets go through `mde-py secrets add` (Doppler first, sync second).
+- `.mcp.json` references secrets as `${VAR_NAME}` — fnox/mise resolves at shell init.
+- Doppler meta keys (DOPPLER_CONFIG, DOPPLER_ENVIRONMENT, DOPPLER_PROJECT) are
+  auto-injected and excluded from parity validation.
+- 1Password and SOPS providers have been removed (subscription expired,
+  redundant with age). Do not reintroduce them without an architecture review.

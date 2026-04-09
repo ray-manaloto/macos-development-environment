@@ -212,15 +212,15 @@ runtime_repair() {
 }
 
 ensure_secrets_file() {
-  if (( CHECK_ONLY == 1 )); then
-    "$SCRIPT_DIR/secrets-smoke-test.sh" >/dev/null 2>&1
-    return
-  fi
-  "$SCRIPT_DIR/secrets-smoke-test.sh"
+  # Bootstrap chain health check: age key file mode, fnox DOPPLER_TOKEN,
+  # and Doppler/local AGE_PRIVATE_KEY parity. Replaces the deleted
+  # scripts/secrets-smoke-test.sh.
+  uv run mde-py secrets doctor
 }
 
 verify_secrets() {
-  "$SCRIPT_DIR/secrets-smoke-test.sh"
+  # Parity check between Doppler and fnox declarations sourced from Doppler.
+  uv run mde-py secrets validate
 }
 
 verify_tooling_repair() {

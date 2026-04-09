@@ -1,3 +1,7 @@
+Include /Users/rmanaloto/.config/colima/ssh_config
+
+# Added by SkyPilot for ssh config of all clusters
+Include ~/.sky/generated/ssh/*
 # OrbStack: 'orb' SSH host for Linux machines
 # Must be at the top of ssh_config (before any Host blocks).
 Include ~/.orbstack/ssh/config
@@ -9,3 +13,4 @@ Host github.com
   AddKeysToAgent yes
   UseKeychain yes
   IdentityFile ~/.ssh/id_ed25519
+
