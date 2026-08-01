@@ -35,6 +35,19 @@ _FNOX_CONFIG_PATH = Path.home() / ".config" / "fnox" / "config.toml"
 _MAX_SYNC_ATTEMPTS = 2
 _AGE_FILE_MODE = 0o600
 _INVALID_KEY_MSG = "invalid secret key name"
+#: Keys ``bootstrap_config`` never declares and never prunes. ``DOPPLER_TOKEN``
+#: is the keychain-backed bootstrap credential (declared once, by hand),
+#: ``AGE_PRIVATE_KEY`` is bootstrap-only, and the ``DOPPLER_*`` meta keys are
+#: auto-injected by Doppler rather than declared.
+_BOOTSTRAP_SKIP_KEYS = frozenset(
+    {
+        "DOPPLER_TOKEN",
+        "AGE_PRIVATE_KEY",
+        "DOPPLER_PROJECT",
+        "DOPPLER_CONFIG",
+        "DOPPLER_ENVIRONMENT",
+    }
+)
 
 
 def _validate_key(key: str) -> None:
@@ -160,9 +173,10 @@ def add_secret(
         logger.bind(key=key).error("secrets_add_doppler_failed")
         return 1
 
-    # Regenerate declarations so the new key has a fnox entry pointing at
-    # the Doppler provider. Without this, fnox sync has nothing to encrypt
-    # for a brand-new key.
+    # Reconcile declarations so the new key has a fnox entry pointing at the
+    # Doppler provider. Without this, fnox sync has nothing to encrypt for a
+    # brand-new key. This runs on EVERY add, which is why it must not
+    # regenerate the config — see bootstrap_config.
     if bootstrap_config(project=project, config=config) != 0:
         return 2
 
@@ -203,7 +217,7 @@ def remove_secret(
         logger.bind(key=key).error("secrets_remove_doppler_failed")
         return 1
 
-    # Regenerate declarations so the removed key is dropped from the global
+    # Reconcile declarations so the removed key is dropped from the global
     # config, then sync re-encrypts the remaining keys.
     if bootstrap_config(project=project, config=config) != 0:
         return 2
@@ -244,15 +258,146 @@ def _derive_age_recipient(age_key_file: Path) -> str | None:
     return result.stdout.strip() or None
 
 
+def _fnox_declare(key: str, provider: str) -> tuple[bool, str]:
+    """Declare ``key`` as a reference into ``provider``, via fnox itself.
+
+    The Doppler provider advertises only ``RemoteRead``, and ``fnox set`` calls
+    ``put_secret`` **only** for ``Encryption`` or ``RemoteStorage`` providers
+    (``src/commands/set.rs:141-183`` @ v1.31.1) — so this writes a declaration
+    and never attempts a remote write. Passing the key name as the positional
+    value is what lands ``value = "<KEY>"`` in the declaration, which is the
+    shape this module used to emit by hand.
+
+    Never call this for a ``keychain``-backed secret: that provider *does*
+    support storage, so the positional value would be written into the keychain
+    for real.
+    """
+    cmd = ["fnox", "set", key, key, "--provider", provider, "--config", str(_FNOX_CONFIG_PATH)]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    except (subprocess.TimeoutExpired, FileNotFoundError) as exc:
+        return False, str(exc)
+    return result.returncode == 0, result.stderr
+
+
+def _fnox_undeclare(key: str) -> tuple[bool, str]:
+    """Drop a stale declaration, via fnox itself."""
+    cmd = ["fnox", "remove", key, "--config", str(_FNOX_CONFIG_PATH)]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    except (subprocess.TimeoutExpired, FileNotFoundError) as exc:
+        return False, str(exc)
+    return result.returncode == 0, result.stderr
+
+
+def _render_initial_config(recipient: str, project: str, config: str) -> str:
+    """Providers block plus the ``DOPPLER_TOKEN`` declaration, for a fresh config.
+
+    ``DOPPLER_TOKEN`` is emitted as a *declaration* only — the token itself is a
+    one-time manual ``fnox set DOPPLER_TOKEN <value> --provider keychain
+    --global``, and this function must never write it.
+    """
+    return (
+        "\n".join(
+            [
+                "# Bootstrapped by `mde-py secrets bootstrap-config`.",
+                "# Declarations below are maintained through `fnox set` / `fnox remove`,",
+                "# so hand-added fields (`env`, per-secret `env = true`) survive.",
+                "",
+                "[providers.keychain]",
+                'type = "keychain"',
+                'service = "mde-fnox"',
+                "",
+                "[providers.age]",
+                'type = "age"',
+                f'recipients = ["{recipient}"]',
+                "",
+                f"[providers.doppler_{project}_{config}]",
+                'type = "doppler"',
+                f'project = "{project}"',
+                f'config = "{config}"',
+                "",
+                "[secrets]",
+                'DOPPLER_TOKEN = { provider = "keychain", value = "DOPPLER_TOKEN" }',
+            ]
+        )
+        + "\n"
+    )
+
+
+def _write_initial_config(text: str) -> None:
+    """Create the config atomically at 0o600 — first run only.
+
+    Temp-write then ``os.replace``, so a crash or a concurrent reader never sees
+    a half-written file. No lock is taken: this path runs only when the config
+    does not exist, which is not a concurrent situation. Every *subsequent*
+    write goes through fnox — see ``bootstrap_config``.
+    """
+    _FNOX_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = _FNOX_CONFIG_PATH.with_name(f"{_FNOX_CONFIG_PATH.name}.{os.getpid()}.tmp")
+    try:
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, _AGE_FILE_MODE)
+        with os.fdopen(fd, "w") as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        tmp.replace(_FNOX_CONFIG_PATH)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def _reconcile_declarations(desired: set[str], declared: set[str], provider_name: str) -> int:
+    """Bring the config's declaration set in line with Doppler, via fnox.
+
+    Returns the number of failed fnox invocations, so the caller can fail loud
+    rather than report a partial reconciliation as success.
+    """
+    failures = 0
+    for key in sorted(desired - declared):
+        ok, stderr = _fnox_declare(key, provider_name)
+        if not ok:
+            failures += 1
+            logger.bind(key=key, stderr=_sanitize_log(stderr)).error("bootstrap_declare_failed")
+    # Prune only what this module is responsible for. DOPPLER_TOKEN and the
+    # other skip-list keys are declared by hand or auto-injected, so a
+    # declaration this module did not create is never one it removes.
+    for key in sorted(declared - desired - _BOOTSTRAP_SKIP_KEYS):
+        ok, stderr = _fnox_undeclare(key)
+        if not ok:
+            failures += 1
+            logger.bind(key=key, stderr=_sanitize_log(stderr)).error("bootstrap_undeclare_failed")
+    return failures
+
+
 def bootstrap_config(
     *,
     project: str = _DEFAULT_PROJECT,
     config: str = _DEFAULT_CONFIG,
 ) -> int:
-    """Idempotently write ``~/.config/fnox/config.toml`` with providers + declarations.
+    """Reconcile ``~/.config/fnox/config.toml`` declarations against Doppler.
 
-    Reads the age public key from ``~/.config/mise/age.txt`` (see H3 amendment)
-    and preserves any existing ``DOPPLER_TOKEN`` keychain entry.
+    In steady state this performs **no direct write** to the config: each
+    declaration is added or dropped by invoking ``fnox`` itself, so fnox owns
+    the read-modify-write. Two consequences, both deliberate:
+
+    1. **It cannot lose a concurrent edit across a network call.** The previous
+       implementation read the whole config, called Doppler, and only then
+       rewrote the file — a read-modify-write whose window spanned a network
+       round-trip. There is no such window now: the Doppler call happens before
+       any write, and each write is a short fnox-internal operation.
+    2. **It cannot drop the ``env`` mode or a per-secret ``env = true`` opt-in**
+       (mde #82). Those were lost *by construction*, because the file was
+       regenerated from a template that never emitted them. Nothing is
+       regenerated now, so there is nothing to drop.
+
+    The providers block is still written directly, but **only when the config
+    does not exist**: ``fnox provider add`` cannot set provider fields from the
+    CLI (it writes ``project = "my-project"`` placeholders and tells you to edit
+    the file), so there is no fnox-native path for it. When the config exists
+    but a provider is missing, this fails loud rather than performing a
+    read-modify-write of a file it no longer owns.
+
+    Reads the age public key from ``~/.config/mise/age.txt`` (see H3 amendment).
     """
     if not _AGE_KEY_PATH.exists():
         logger.bind(path=str(_AGE_KEY_PATH)).error("bootstrap_age_key_missing")
@@ -262,65 +407,41 @@ def bootstrap_config(
         logger.error("bootstrap_age_recipient_unavailable")
         return 1
 
-    existing = _read_existing_config()
-    existing_secrets = existing.get("secrets") if existing else None
-    preserved_doppler_token: dict[str, object] | None = None
-    if isinstance(existing_secrets, dict):
-        dt = existing_secrets.get("DOPPLER_TOKEN")  # type: ignore[call-overload]
-        if isinstance(dt, dict):
-            preserved_doppler_token = dt
-
-    provider_name = f"doppler_{project}_{config}"
-    lines: list[str] = [
-        "# Managed by `mde-py secrets bootstrap-config`. Do not edit by hand.",
-        "",
-        "[providers.keychain]",
-        'type = "keychain"',
-        'service = "mde-fnox"',
-        "",
-        "[providers.age]",
-        'type = "age"',
-        f'recipients = ["{recipient}"]',
-        "",
-        f"[providers.{provider_name}]",
-        'type = "doppler"',
-        f'project = "{project}"',
-        f'config = "{config}"',
-        "",
-        "[secrets]",
-    ]
-    if preserved_doppler_token is not None:
-        provider = preserved_doppler_token.get("provider", "keychain")
-        lines.append(f'DOPPLER_TOKEN = {{ provider = "{provider}", value = "DOPPLER_TOKEN" }}')
-    else:
-        lines.append('DOPPLER_TOKEN = { provider = "keychain", value = "DOPPLER_TOKEN" }')
-
-    # Enumerate Doppler secrets and emit declarations for each (excluding
-    # DOPPLER_TOKEN itself + AGE_PRIVATE_KEY which is bootstrap-only + Doppler
-    # meta keys that are auto-injected).
     # FAIL CLOSED on empty results: doppler_list_secrets returns {} on both
-    # "project genuinely empty" and "CLI failure / invalid JSON". A truncated
-    # config would wipe our declaration set on the next sync (codex H2).
+    # "project genuinely empty" and "CLI failure / invalid JSON". Reconciling
+    # against an empty set would undeclare everything (codex H2).
     remote = doppler_list_secrets(project=project, config=config)
     if not remote:
         logger.error("bootstrap_doppler_list_empty_or_failed")
         return 1
-    skip = {
-        "DOPPLER_TOKEN",
-        "AGE_PRIVATE_KEY",
-        "DOPPLER_PROJECT",
-        "DOPPLER_CONFIG",
-        "DOPPLER_ENVIRONMENT",
-    }
-    for key in sorted(remote):
-        if key in skip:
-            continue
-        lines.append(f'{key} = {{ provider = "{provider_name}", value = "{key}" }}')
-    lines.append("")
 
-    _FNOX_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _FNOX_CONFIG_PATH.write_text("\n".join(lines))
-    logger.bind(path=str(_FNOX_CONFIG_PATH)).info("bootstrap_config_written")
+    provider_name = f"doppler_{project}_{config}"
+
+    if not _FNOX_CONFIG_PATH.exists():
+        _write_initial_config(_render_initial_config(recipient, project, config))
+        logger.bind(path=str(_FNOX_CONFIG_PATH)).info("bootstrap_config_created")
+
+    existing = _read_existing_config()
+    providers = existing.get("providers")
+    present: set[str] = {str(name) for name in providers} if isinstance(providers, dict) else set()
+    missing = [p for p in ("keychain", "age", provider_name) if p not in present]
+    if missing:
+        logger.bind(missing=",".join(missing), path=str(_FNOX_CONFIG_PATH)).error(
+            "bootstrap_providers_missing"
+        )
+        return 1
+
+    existing_secrets = existing.get("secrets")
+    declared: set[str] = (
+        {str(key) for key in existing_secrets} if isinstance(existing_secrets, dict) else set()
+    )
+    desired: set[str] = {key for key in remote if key not in _BOOTSTRAP_SKIP_KEYS}
+
+    failures = _reconcile_declarations(desired, declared, provider_name)
+    if failures:
+        logger.bind(failures=failures).error("bootstrap_config_incomplete")
+        return 1
+    logger.bind(path=str(_FNOX_CONFIG_PATH), declared=len(desired)).info("bootstrap_config_synced")
     return 0
 
 
