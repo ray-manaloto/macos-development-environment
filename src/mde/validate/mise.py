@@ -10,6 +10,16 @@ from typing import Any
 
 from mde.models.result import Severity, ValidationResult
 
+#: Platforms this project installs tools on besides the local machine's.
+#:
+#: ``jdx/mise-action`` resolves ``[tools]`` in ``--locked`` mode, so a lockfile
+#: with no URL for the runner's platform hard-fails the workflow before a single
+#: check runs. Every runner in ``.github/workflows/`` is ``ubuntu-latest``, i.e.
+#: ``linux-x64``. Treating that entry as foreign made CI unfixable by
+#: construction: the lockfile could satisfy this validator or the workflow, never
+#: both. Extend this set when a workflow starts running on another platform.
+_REQUIRED_PLATFORMS = frozenset({"linux-x64"})
+
 
 def validate_mise(root: Path | None = None) -> ValidationResult:
     """Run mise validation checks.
@@ -80,11 +90,11 @@ def _check_mise_fmt(root: Path, result: ValidationResult) -> None:
 
 
 def _check_mise_lockfile_platforms(root: Path, result: ValidationResult) -> None:
-    """Verify lockfiles only contain entries for the current platform.
+    """Verify lockfiles only cover platforms this project actually installs on.
 
-    Lockfiles with entries for non-local platforms waste time during
-    ``mise lock`` and indicate a misconfigured lock command (missing
-    ``--platform`` flag).
+    That is the current machine plus ``_REQUIRED_PLATFORMS`` (the CI runners).
+    Anything else wastes time during ``mise lock`` and indicates a misconfigured
+    lock command (missing ``--platform`` flag).
     """
     import platform as _platform
 
@@ -99,7 +109,7 @@ def _check_mise_lockfile_platforms(root: Path, result: ValidationResult) -> None
             continue
         result.files_checked += 1
         try:
-            foreign = _find_foreign_platforms(lock_path, current)
+            foreign = _find_foreign_platforms(lock_path, current, allowed=_REQUIRED_PLATFORMS)
         except LockfileParseError as exc:
             result.add(
                 path=str(lock_path),
@@ -109,12 +119,13 @@ def _check_mise_lockfile_platforms(root: Path, result: ValidationResult) -> None
             )
             continue
         if foreign:
+            expected = ",".join(sorted({current, *_REQUIRED_PLATFORMS}))
             result.add(
                 path=str(lock_path),
                 message=(
-                    f"lockfile contains {len(foreign)} non-local platform(s): "
+                    f"lockfile contains {len(foreign)} unused platform(s): "
                     f"{', '.join(sorted(foreign))}. "
-                    f"Run: mise lock --platform {current}"
+                    f"Run: mise lock --platform {expected}"
                 ),
                 severity=Severity.ERROR,
                 rule="mise.lockfile-platforms",
@@ -126,8 +137,14 @@ class LockfileParseError(Exception):
     """Raised when a lockfile cannot be parsed."""
 
 
-def _find_foreign_platforms(lock_path: Path, current: str) -> set[str]:
-    """Extract platform names from a lockfile that don't match current.
+def _find_foreign_platforms(
+    lock_path: Path, current: str, allowed: frozenset[str] = frozenset()
+) -> set[str]:
+    """Extract platform names from a lockfile that are neither current nor allowed.
+
+    Policy lives at the call site: this returns the plain set difference, so
+    ``allowed`` defaults to empty and the caller decides which extra platforms
+    the project legitimately locks for.
 
     Raises:
         LockfileParseError: If the lockfile cannot be read or parsed.
@@ -152,7 +169,7 @@ def _find_foreign_platforms(lock_path: Path, current: str) -> set[str]:
             for key in entry:
                 if key.startswith("platforms."):
                     plat = key.removeprefix("platforms.")
-                    if plat != current:
+                    if plat != current and plat not in allowed:
                         foreign.add(plat)
     return foreign
 

@@ -4,6 +4,11 @@
 version = "3.75.3"
 backend = "github:DopplerHQ/cli"
 
+[tools.doppler."platforms.linux-x64"]
+checksum = "sha256:9c840cdd32cffff06d048329549ba2fa908146b385f21cd1d54bf34a0082d0db"
+url = "https://github.com/DopplerHQ/cli/releases/download/3.75.3/doppler_3.75.3_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/DopplerHQ/cli/releases/assets/357572305"
+
 [tools.doppler."platforms.macos-arm64"]
 checksum = "sha256:1c56e625ea460b3af8b2ea88b89183af50b85f02c1fc9c06d0684586d12a54e4"
 url = "https://github.com/DopplerHQ/cli/releases/download/3.75.3/doppler_3.75.3_macOS_arm64.tar.gz"
@@ -12,6 +17,11 @@ url_api = "https://api.github.com/repos/DopplerHQ/cli/releases/assets/357572303"
 [[tools.hk]]
 version = "1.39.0"
 backend = "aqua:jdx/hk"
+
+[tools.hk."platforms.linux-x64"]
+checksum = "sha256:559c72b512f7ec3df48f7a1e0f4d1c1082dd24a26f7d40865805dcc12dbf2a7c"
+url = "https://github.com/jdx/hk/releases/download/v1.39.0/hk-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/jdx/hk/releases/assets/379245632"
 
 [tools.hk."platforms.macos-arm64"]
 checksum = "sha256:0df1d19a8a7b052def3b1048a38681218ce4e04579c1805fa74457f8e634ee82"

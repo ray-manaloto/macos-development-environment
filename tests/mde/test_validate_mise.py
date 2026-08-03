@@ -50,6 +50,26 @@ class TestLockfilePlatformValidator:
         result = _find_foreign_platforms(lock, "macos-arm64")
         assert result == set()
 
+    def test_allowed_platform_is_not_foreign(self, tmp_path: Path) -> None:
+        lock = tmp_path / "mise.lock"
+        lock.write_text(
+            '[tools.node]\n"platforms.macos-arm64" = "22.0.0"\n"platforms.linux-x64" = "22.0.0"\n'
+        )
+        result = _find_foreign_platforms(lock, "macos-arm64", allowed=frozenset({"linux-x64"}))
+        assert result == set()
+
+    def test_allowing_one_platform_does_not_allow_others(self, tmp_path: Path) -> None:
+        """The control arm: `allowed` must not blanket-permit every non-local entry."""
+        lock = tmp_path / "mise.lock"
+        lock.write_text(
+            "[tools.node]\n"
+            '"platforms.macos-arm64" = "22.0.0"\n'
+            '"platforms.linux-x64" = "22.0.0"\n'
+            '"platforms.windows-x64" = "22.0.0"\n'
+        )
+        result = _find_foreign_platforms(lock, "macos-arm64", allowed=frozenset({"linux-x64"}))
+        assert result == {"windows-x64"}
+
 
 class TestLockfilePlatformValidation:
     """Tests for _check_mise_lockfile_platforms handling parse errors."""
@@ -66,6 +86,44 @@ class TestLockfilePlatformValidation:
         errors = [f for f in result.findings if f.rule == "mise.lockfile-corrupt"]
         assert len(errors) == 1
         assert "corrupted" in errors[0].message
+
+    def test_ci_platform_does_not_error(self, tmp_path: Path) -> None:
+        """A linux-x64 entry is what `mise-action --locked` needs; it must not error."""
+        from mde.models.result import ValidationResult
+        from mde.validate.mise import _REQUIRED_PLATFORMS, _check_mise_lockfile_platforms
+
+        assert "linux-x64" in _REQUIRED_PLATFORMS
+        lock = tmp_path / "mise.lock"
+        lock.write_text('[tools.hk]\n"platforms.linux-x64" = "1.39.0"\n')
+
+        result = ValidationResult()
+        _check_mise_lockfile_platforms(tmp_path, result)
+        # Filter by path: the check also reads ~/.config/mise/mise.lock, whose
+        # contents are host state and must not decide this test.
+        assert [
+            f
+            for f in result.findings
+            if f.rule == "mise.lockfile-platforms" and f.path == str(lock)
+        ] == []
+
+    def test_truly_unused_platform_still_errors(self, tmp_path: Path) -> None:
+        """The failing arm: widening the policy must not disable the check."""
+        from mde.models.result import ValidationResult
+        from mde.validate.mise import _REQUIRED_PLATFORMS, _check_mise_lockfile_platforms
+
+        assert "windows-x64" not in _REQUIRED_PLATFORMS
+        lock = tmp_path / "mise.lock"
+        lock.write_text('[tools.hk]\n"platforms.windows-x64" = "1.39.0"\n')
+
+        result = ValidationResult()
+        _check_mise_lockfile_platforms(tmp_path, result)
+        errors = [
+            f
+            for f in result.findings
+            if f.rule == "mise.lockfile-platforms" and f.path == str(lock)
+        ]
+        assert len(errors) == 1
+        assert "windows-x64" in errors[0].message
 
 
 class TestMiseDoctorErrorKeyword:
