@@ -64,6 +64,8 @@ mise fmt --check               # mise config formatting
 - `src/mde/domain/` — Pydantic domain models (some codegen'd — don't hand-edit `*_models.py`)
 - `src/mde/codegen/` — Codegen postprocessors (run via `mise run mde:codegen:all`)
 - `docs/schemas/` — JSON Schema sources for codegen
+- `docs/research/cache/` — Cached hashes for drift detection (e.g., `subagents-docs.sha256`)
+- `.devcontainer/` — Devcontainer image (Dockerfile + mise.toml + post-create.sh); CI builds multi-arch (amd64+arm64) and publishes to `ghcr.io/ray-manaloto/macos-development-environment/devcontainer`
 - `tests/` — pytest tests; `@pytest.mark.integration` for tests needing external tools
 - `.generated/` — Runtime artifacts via `MDE_*` env vars; use `from mde.lib.paths import get_paths`
 <!-- END AUTO-MANAGED -->
@@ -88,6 +90,7 @@ mise fmt --check               # mise config formatting
 - **Validator pattern**: each validator returns `ValidationResult`; `result.passed` is False when any ERROR-severity finding exists; quality gate aggregates across all validators
 - **Domain codegen**: JSON Schema → Pydantic models via `mde:codegen:all`
 - **Dream promotion ladder**: patterns reach thresholds (MEMORY=1, DOCS=2, RULE/CLAUDE_MD=3, AGENT_DEF=5, HOOK/SKILL=10); AUTO tier applied without approval, APPROVE tier requires user review
+- **Schema drift detection**: `.github/workflows/schema-drift-check.yml` runs weekly; fetches Claude Code subagent docs, compares SHA256 against `docs/research/cache/subagents-docs.sha256`, opens a GitHub issue (`auto:agent-discovered`) on change — update cached hash after intentional schema updates
 <!-- END AUTO-MANAGED -->
 
 ## Enforcement (zero tolerance)
@@ -101,7 +104,7 @@ mise fmt --check               # mise config formatting
 
 ## Secrets
 
-All secrets: **Doppler (source of truth) -> sync -> fnox (Keychain cache) -> mise (env) -> tools**. New secrets: `doppler secrets set KEY=VAL --project dotfiles --config dev`, then `uv run mde-py secrets sync`. Validate: `uv run mde-py secrets validate`. See `.claude/rules/secrets-management.md` for full guide.
+Doppler (`dotfiles/dev_personal`) is the source of truth; only `DOPPLER_TOKEN` lives in macOS Keychain under service `mde-fnox` (seed via `fnox set DOPPLER_TOKEN "$(doppler configure get token --plain)" --provider keychain --global` on machines where `doppler login` already ran; see [`docs/secrets-workflow.md#doppler_token-setup`](docs/secrets-workflow.md#doppler_token-setup) for fresh-machine path), the age private key in `~/.config/mise/age.txt`, and `fnox sync --provider age --global` keeps `~/.config/fnox/config.toml` in sync. CLI: `uv run mde-py secrets {add,update,rm,sync,validate,bootstrap-config,doctor}` (e.g. `echo VAL | uv run mde-py secrets add KEY`). Shell wrappers `mde-secret-{add,update,remove}` propagate exports into the current shell via `~/.zshrc.d/50-mde-secrets.zsh`. Full architecture, recovery runbooks, and rotation procedure: [`docs/secrets-workflow.md`](docs/secrets-workflow.md). Policy: [`.claude/rules/secrets-management.md`](.claude/rules/secrets-management.md).
 
 ## MCP Access
 

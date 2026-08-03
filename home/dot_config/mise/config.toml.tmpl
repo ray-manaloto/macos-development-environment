@@ -13,11 +13,21 @@ package_manager = "bun"
 [settings.python]
 uv_venv_auto = true
 
-[plugins]
-fnox-env = "https://github.com/jdx/mise-env-fnox"
+# mise-env-fnox is intentionally disabled. Empirical reproduction on
+# 2026-04-09 showed that enabling it spawns runaway `fnox config-files`
+# subprocesses (10+ concurrent at 100% CPU each, shell hangs during
+# login-shell sourcing). Authoritative rationale + repro + suspected root
+# causes are tracked in:
+#   https://github.com/ray-manaloto/macos-development-environment/issues/75
+# Secrets env loading is now handled by `fnox activate zsh` in
+# home/dot_zshrc.d/50-mde-secrets.zsh, which installs chpwd/precmd hooks
+# that decrypt the age-encrypted sync cache into the shell environment.
+# See docs/secrets-workflow.md for the full architecture.
+#[plugins]
+#fnox-env = "https://github.com/jdx/mise-env-fnox"
 
 [env]
-_.fnox-env = { tools = true }
+#_.fnox-env = { tools = true }
 GIT_TERMINAL_PROMPT = "0"
 
 # NotebookLM auth: standardize paths so agents find credentials consistently

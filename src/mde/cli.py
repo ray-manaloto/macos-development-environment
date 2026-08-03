@@ -200,8 +200,14 @@ def _build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     # secrets
     secrets_p = sub.add_parser("secrets", help="Secrets management")
     secrets_p.add_argument(
-        "action", choices=["refresh", "smoke", "export", "sync", "validate"], help="Secrets action"
+        "action",
+        choices=["sync", "validate", "add", "update", "rm", "bootstrap-config", "doctor"],
+        help="Secrets action",
     )
+    secrets_p.add_argument("key", nargs="?", default=None, help="Secret key (add/update/rm)")
+    secrets_p.add_argument("--value", default=None, help="Secret value (omit for stdin/prompt)")
+    secrets_p.add_argument("--project", default=None, help="Doppler project override")
+    secrets_p.add_argument("--config", default=None, help="Doppler config override")
 
     # learn
     learn_p = sub.add_parser("learn", help="Learning system")
@@ -441,7 +447,13 @@ def _cmd_secrets(args: argparse.Namespace) -> int:
     with _traced_command("secrets", action=args.action) as ctx:
         from mde.secrets import dispatch_secrets
 
-        result = dispatch_secrets(args.action)
+        result = dispatch_secrets(
+            args.action,
+            key=getattr(args, "key", None),
+            value=getattr(args, "value", None),
+            project=getattr(args, "project", None),
+            config=getattr(args, "config", None),
+        )
         ctx["span"].set_attribute("secrets.action", args.action)
         ctx["result"] = result
         return result

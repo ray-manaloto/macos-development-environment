@@ -15,7 +15,7 @@ url = "https://github.com/DopplerHQ/cli/releases/download/3.75.3/doppler_3.75.3_
 url_api = "https://api.github.com/repos/DopplerHQ/cli/releases/assets/357572303"
 
 [[tools.hk]]
-version = "1.39.0"
+version = "1.41.0"
 backend = "aqua:jdx/hk"
 
 [tools.hk."platforms.linux-x64"]
@@ -24,12 +24,16 @@ url = "https://github.com/jdx/hk/releases/download/v1.39.0/hk-x86_64-unknown-lin
 url_api = "https://api.github.com/repos/jdx/hk/releases/assets/379245632"
 
 [tools.hk."platforms.macos-arm64"]
-checksum = "sha256:0df1d19a8a7b052def3b1048a38681218ce4e04579c1805fa74457f8e634ee82"
-url = "https://github.com/jdx/hk/releases/download/v1.39.0/hk-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:25c9e973993c1607247e97ec558d747483ab4c48380485d69ea617161939544c"
+url = "https://github.com/jdx/hk/releases/download/v1.41.0/hk-aarch64-apple-darwin.tar.gz"
 
 [[tools."npm:claude-code-lint"]]
 version = "0.3.0"
 backend = "npm:claude-code-lint"
+
+[[tools."npm:oh-my-claude-sisyphus"]]
+version = "4.11.2"
+backend = "npm:oh-my-claude-sisyphus"
 
 [[tools."npm:skillfish"]]
 version = "1.0.30"

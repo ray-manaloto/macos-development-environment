@@ -118,17 +118,17 @@ run = "scripts/setup-mcp-servers.sh"
 description = "Review repo agent surfaces and supporting contracts"
 run = "scripts/mde-agents-review.sh"
 
-[tasks."mde:secrets:refresh"]
-description = "Refresh the global SOPS runtime secret file from the merged fnox secret set"
-run = "uv run mde-py secrets refresh"
+[tasks."mde:secrets:sync"]
+description = "Sync Doppler secrets into fnox via age encryption (dev_personal config)"
+run = "uv run mde-py secrets sync"
 
-[tasks."mde:secrets:restore:keychain"]
-description = "Restore the global SOPS runtime secret file into keychain-backed fnox entries"
-run = "scripts/mde-sops-secrets-import-keychain.sh"
+[tasks."mde:secrets:validate"]
+description = "Validate parity between Doppler and fnox declarations"
+run = "uv run mde-py secrets validate"
 
-[tasks."mde:secrets:backup:1password"]
-description = "Back up the encrypted global SOPS runtime secret file into 1Password"
-run = "scripts/mde-sops-secrets-backup-1password.sh"
+[tasks."mde:secrets:doctor"]
+description = "Check the secrets bootstrap chain (age key, DOPPLER_TOKEN, parity)"
+run = "uv run mde-py secrets doctor"
 
 [tasks."mde:remediate"]
 description = "Run deterministic host remediation workflow"
@@ -395,3 +395,4 @@ hk = "latest"
 doppler = "latest"
 "npm:claude-code-lint" = "latest"
 "npm:skillfish" = "latest"
+"npm:oh-my-claude-sisyphus" = "latest"
