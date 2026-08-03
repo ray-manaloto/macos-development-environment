@@ -48,10 +48,16 @@ def test_mise_no_missing_tools() -> None:
 
 
 @pytest.mark.integration
-def test_project_lockfile_single_platform() -> None:
-    """Project mise.lock must only contain entries for the current platform."""
+def test_project_lockfile_no_unused_platforms() -> None:
+    """Project mise.lock must cover the local platform and the CI runners, no more.
+
+    Delegates to the validator rather than re-deriving the rule: this test used
+    to carry its own copy, which drifted into forbidding the very ``linux-x64``
+    entry ``mise-action`` needs in ``--locked`` mode.
+    """
     import platform as _platform
-    import tomllib
+
+    from mde.validate.mise import _REQUIRED_PLATFORMS, _find_foreign_platforms
 
     lock_path = Path.cwd() / "mise.lock"
     if not lock_path.exists():
@@ -63,23 +69,12 @@ def test_project_lockfile_single_platform() -> None:
     arch_map = {"arm64": "arm64", "aarch64": "arm64", "x86_64": "x64", "amd64": "x64"}
     current = f"{os_map.get(system, system)}-{arch_map.get(machine, machine)}"
 
-    data = tomllib.loads(lock_path.read_text())
-    foreign: set[str] = set()
-    for tool_entries in data.get("tools", {}).values():
-        entries = tool_entries if isinstance(tool_entries, list) else [tool_entries]
-        for entry in entries:
-            if not isinstance(entry, dict):
-                continue
-            for key in entry:
-                if key.startswith("platforms."):
-                    plat = key.removeprefix("platforms.")
-                    if plat != current:
-                        foreign.add(plat)
-
+    foreign = _find_foreign_platforms(lock_path, current, allowed=_REQUIRED_PLATFORMS)
     if foreign:
+        expected = ",".join(sorted({current, *_REQUIRED_PLATFORMS}))
         pytest.fail(
-            f"mise.lock has {len(foreign)} foreign platform(s): {sorted(foreign)}. "
-            f"Run: mise lock --platform {current}"
+            f"mise.lock has {len(foreign)} unused platform(s): {sorted(foreign)}. "
+            f"Run: mise lock --platform {expected}"
         )
 
 
